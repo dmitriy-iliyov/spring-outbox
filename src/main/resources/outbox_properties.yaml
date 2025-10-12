@@ -1,0 +1,30 @@
+outbox:
+  sender:
+    type: kafka
+    kafka:
+      bootstrap-servers: localhost:9092
+      acks: all
+
+  defaults:
+    batch-size: 50
+    initial-delay: 5s
+    fixed-delay: 30s
+    max-retries: 3
+
+  events:
+    account-delete:
+      topic: account_delete
+      batch-size: 10
+      fixed-delay: 10s
+    rating-update:
+      topic: rating_update
+      batch-size: 50
+      initial-delay: 1s
+      fixed-delay: 20s
+
+  clean-up:
+    enabled: true
+    batch-size: 20
+    after: 1h
+    initial-delay: 10s
+    fixed-delay: 1h

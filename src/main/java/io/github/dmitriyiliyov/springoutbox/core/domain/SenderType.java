@@ -1,0 +1,16 @@
+package io.github.dmitriyiliyov.springoutbox.core.domain;
+
+public enum SenderType {
+    KAFKA;
+
+    public static SenderType fromString(String value) {
+        if (value == null) {
+            throw new IllegalArgumentException("ConsumerType is null");
+        }
+        try {
+            return valueOf(value.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown ConsumerType: " + value);
+        }
+    }
+}
