@@ -1,7 +1,5 @@
-package io.github.dmitriyiliyov.springoutbox;
+package io.github.dmitriyiliyov.springoutbox.core;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxProcessor;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxStatus;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +34,12 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
     @Transactional
     @Override
     public void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount) {
-        repository.updateBatchStatus(processedIds, OutboxStatus.PROCESSED);
-        repository.incrementRetryCountOrSetFailed(failedIds, maxRetryCount);
+        if (processedIds != null && !processedIds.isEmpty()) {
+            repository.updateBatchStatus(processedIds, OutboxStatus.PROCESSED);
+        }
+        if (failedIds != null && !failedIds.isEmpty()) {
+            repository.incrementRetryCountOrSetFailed(failedIds, maxRetryCount);
+        }
     }
 
     @Override

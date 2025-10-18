@@ -1,9 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox;
+package io.github.dmitriyiliyov.springoutbox.core;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisher;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSerializer;
-import io.github.dmitriyiliyov.springoutbox.core.config.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +10,6 @@ import java.util.Objects;
 public class DefaultOutboxPublisher implements OutboxPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxPublisher.class);
-
     private final OutboxProperties properties;
     private final OutboxSerializer serializer;
     private final OutboxRepository repository;

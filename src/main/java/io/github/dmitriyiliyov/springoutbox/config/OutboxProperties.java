@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.config;
+package io.github.dmitriyiliyov.springoutbox.config;
 
 import io.github.dmitriyiliyov.springoutbox.core.domain.SenderType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -12,21 +12,25 @@ import java.util.stream.Collectors;
 @ConfigurationProperties(prefix = "outbox")
 public class OutboxProperties {
 
+    private static final int DEFAULT_THREAD_POOL_SIZE = 5;
     private final SenderProperties sender;
     private final Defaults defaults;
     private final Map<String, EventProperties> events;
-    private final CleanupProperties cleanup;
+    private final CleanUpProperties cleanUp;
+    private final Integer threadPoolSize;
 
     @ConstructorBinding
     public OutboxProperties(SenderProperties sender,
                             Defaults defaults,
                             Map<String, EventProperties> events,
-                            CleanupProperties cleanup) {
+                            CleanUpProperties cleanUp,
+                            Integer threadPoolSize) {
         this.sender = Objects.requireNonNull(sender, "sender cannot be null");
         this.defaults = defaults == null ? new Defaults() : defaults;
         Objects.requireNonNull(events, "events cannot be null");
         this.events = applyDefaults(events);
-        this.cleanup = cleanup;
+        this.cleanUp = cleanUp;
+        this.threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
     }
 
     private Map<String, EventProperties> applyDefaults(Map<String, EventProperties> eventPropertiesMap) {
@@ -46,7 +50,7 @@ public class OutboxProperties {
                             Duration initialDelay = event.initialDelay == null ? defaults.initialDelay : event.initialDelay;
                             Duration fixedDelay = event.fixedDelay == null ? defaults.fixedDelay : event.fixedDelay;
                             Integer maxRetries = event.maxRetries == null ? defaults.maxRetries : event.maxRetries;
-                            return new EventProperties(event.topic, batchSize, initialDelay, fixedDelay, maxRetries);
+                            return new EventProperties(e.getKey(), event.topic, batchSize, initialDelay, fixedDelay, maxRetries);
                         }
                 ));
     }
@@ -55,27 +59,27 @@ public class OutboxProperties {
         return sender;
     }
 
-    public Defaults getDefaults() {
-        return defaults;
-    }
-
     public Map<String, EventProperties> getEvents() {
         return events;
     }
 
-    public CleanupProperties getCleanup() {
-        return cleanup;
+    public CleanUpProperties getCleanUp() {
+        return cleanUp;
     }
 
     public boolean existEventType(String eventType) {
         return events.containsKey(eventType);
     }
 
+    public Integer getThreadPoolSize() {
+        return threadPoolSize;
+    }
+
     public record SenderProperties(SenderType type) {
             public SenderProperties(SenderType type) {
                 this.type = Objects.requireNonNull(type, "senderType cannot be null");
             }
-        }
+    }
 
     public static class Defaults {
 
@@ -120,9 +124,8 @@ public class OutboxProperties {
         }
     }
 
-    public record EventProperties(String topic, Integer batchSize, Duration initialDelay, Duration fixedDelay,
-                                  Integer maxRetries) {
-
+    public record EventProperties(String eventType, String topic, Integer batchSize, Duration initialDelay,
+                                  Duration fixedDelay, Integer maxRetries) {
         public EventProperties {
             Objects.requireNonNull(topic, "topic cannot be null");
             if (topic.isBlank()) {
@@ -131,25 +134,32 @@ public class OutboxProperties {
         }
     }
 
-    public static class CleanupProperties {
+    public static class CleanUpProperties {
 
         private static final int DEFAULT_BATCH_SIZE = 50;
-        private static final Duration DEFAULT_AFTER = Duration.ofHours(24);
+        private static final Duration DEFAULT_TTL = Duration.ofHours(24);
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(1800);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(300);
 
         private final Boolean enabled;
         private final Integer batchSize;
-        private final Duration after;
+        private final Duration ttl;
         private final Duration initialDelay;
         private final Duration fixedDelay;
 
-        public CleanupProperties(Boolean enabled, Integer batchSize, Duration after, Duration initialDelay, Duration fixedDelay) {
+        public CleanUpProperties(Boolean enabled, Integer batchSize, Duration ttl, Duration initialDelay, Duration fixedDelay) {
             this.enabled = enabled;
-            this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
-            this.after = after;
-            this.initialDelay = initialDelay;
-            this.fixedDelay = fixedDelay;
+            if (enabled == null || enabled) {
+                this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+                this.ttl = ttl == null ? DEFAULT_TTL : ttl;
+                this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
+                this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+            } else {
+                this.batchSize = 0;
+                this.ttl = null;
+                this.initialDelay =  null;
+                this.fixedDelay =  null;
+            }
         }
 
         public boolean isEnabled() {
@@ -160,8 +170,8 @@ public class OutboxProperties {
             return batchSize;
         }
 
-        public Duration getAfter() {
-            return after;
+        public Duration getTtl() {
+            return ttl;
         }
 
         public Duration getInitialDelay() {

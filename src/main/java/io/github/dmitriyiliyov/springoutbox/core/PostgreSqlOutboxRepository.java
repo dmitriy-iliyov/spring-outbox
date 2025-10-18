@@ -1,6 +1,5 @@
-package io.github.dmitriyiliyov.springoutbox;
+package io.github.dmitriyiliyov.springoutbox.core;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxStatus;
 import org.springframework.jdbc.core.JdbcTemplate;

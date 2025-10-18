@@ -1,6 +1,5 @@
-package io.github.dmitriyiliyov.springoutbox.core;
+package io.github.dmitriyiliyov.springoutbox.config;
 
-import io.github.dmitriyiliyov.springoutbox.core.config.OutboxAutoConfiguration;
 import org.springframework.context.annotation.Import;
 
 import java.lang.annotation.ElementType;
@@ -11,5 +10,4 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Import(OutboxAutoConfiguration.class)
-public @interface EnableOutbox {
-}
+public @interface EnableOutbox { }

@@ -1,15 +1,14 @@
-package io.github.dmitriyiliyov.springoutbox;
+package io.github.dmitriyiliyov.springoutbox.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSerializer;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.utils.UuidGenerator;
 
 import java.util.List;
 import java.util.UUID;
 
-public final class JacksonOutboxSerializer implements OutboxSerializer {
+public class JacksonOutboxSerializer implements OutboxSerializer {
 
     private final ObjectMapper mapper;
     private final UuidGenerator uuidGenerator;
@@ -23,7 +22,7 @@ public final class JacksonOutboxSerializer implements OutboxSerializer {
     public <T> OutboxEvent serialize(String eventType, T event) {
         try {
             UUID id = uuidGenerator.generate();
-            String payloadType = event.getClass().getSimpleName();
+            String payloadType = event.getClass().getName();
             String payload = mapper.writeValueAsString(event);
             return new OutboxEvent(id, eventType, payloadType,  payload);
         } catch (JsonProcessingException e) {
