@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @ConfigurationProperties(prefix = "outbox")
 public class OutboxProperties {
 
-    private static final int DEFAULT_THREAD_POOL_SIZE = 5;
+    private static final int DEFAULT_THREAD_POOL_SIZE = Math.min(Runtime.getRuntime().availableProcessors(), 5);
     private final SenderProperties sender;
     private final Defaults defaults;
     private final Map<String, EventProperties> events;
@@ -75,9 +75,14 @@ public class OutboxProperties {
         return threadPoolSize;
     }
 
-    public record SenderProperties(SenderType type) {
-            public SenderProperties(SenderType type) {
+    public record SenderProperties(SenderType type, String beanName) {
+            public SenderProperties(SenderType type, String beanName) {
                 this.type = Objects.requireNonNull(type, "senderType cannot be null");
+                Objects.requireNonNull(beanName, "beanName cannot be null");
+                if (beanName.isBlank()) {
+                    throw new IllegalArgumentException("BeanName cannot be blank");
+                }
+                this.beanName = beanName;
             }
     }
 

@@ -3,31 +3,35 @@ package io.github.dmitriyiliyov.springoutbox.core;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.domain.SenderResult;
-import io.github.dmitriyiliyov.springoutbox.utils.ClassResolver;
+import io.github.dmitriyiliyov.springoutbox.utils.CacheableClassResolver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class SyncKafkaOutboxSender implements OutboxSender {
+public class KafkaOutboxSender implements OutboxSender {
 
-    private static final Logger log = LoggerFactory.getLogger(SyncKafkaOutboxSender.class);
+    private static final Logger log = LoggerFactory.getLogger(KafkaOutboxSender.class);
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper mapper;
-    private final ClassResolver classResolver;
+    private final CacheableClassResolver classResolver;
 
-    public SyncKafkaOutboxSender(KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper mapper) {
+    public KafkaOutboxSender(KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper mapper) {
         this.kafkaTemplate = kafkaTemplate;
         this.mapper = mapper;
-        this.classResolver = new ClassResolver();
+        this.classResolver = new CacheableClassResolver();
     }
 
     @Override
     public SenderResult sendEvents(String topic, List<OutboxEvent> events) {
-        Set<UUID> processedIds = new HashSet<>();
-        Set<UUID> failedIds = new HashSet<>();
+        if (events == null || events.isEmpty()) {
+            return SenderResult.empty();
+        }
+        Set<UUID> processedIds = ConcurrentHashMap.newKeySet();
+        Set<UUID> failedIds = ConcurrentHashMap.newKeySet();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         for (OutboxEvent event : events) {
             try {
@@ -36,12 +40,12 @@ public class SyncKafkaOutboxSender implements OutboxSender {
                         .thenAccept(success -> processedIds.add(event.getId()))
                         .exceptionally(ex -> {
                             failedIds.add(event.getId());
-                            log.error("Error when sending event with id={} to topic={}, ", event.getId(), topic, ex);
+                            log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, ex);
                             return null;
                         });
                 futures.add(future);
             } catch (Exception e) {
-                log.error("Error when sending event with id={} to topic={}, ", event.getId(), topic, e);
+                log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, e);
                 failedIds.add(event.getId());
             }
         }

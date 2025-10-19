@@ -1,49 +1,40 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
+import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxStatus;
-import org.springframework.transaction.annotation.Transactional;
+import io.github.dmitriyiliyov.springoutbox.core.domain.SenderResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class DefaultOutboxProcessor implements OutboxProcessor {
 
-    private final OutboxRepository repository;
+    private static final Logger log = LoggerFactory.getLogger(DefaultOutboxProcessor.class);
+    protected final OutboxManager manager;
+    protected final OutboxSender sender;
 
-    public DefaultOutboxProcessor(OutboxRepository repository) {
-        this.repository = repository;
+    public DefaultOutboxProcessor(OutboxManager manager, OutboxSender sender) {
+        this.manager = manager;
+        this.sender = sender;
     }
 
-    @Transactional
     @Override
-    public List<OutboxEvent> loadBatch(String eventType, int batchSize) {
-        List<OutboxEvent> events = repository.findBatchByEventTypeAndStatus(eventType, OutboxStatus.PENDING, batchSize);
-        repository.updateBatchStatus(
-                events.stream()
-                        .map(OutboxEvent::getId)
-                        .collect(Collectors.toSet()),
-                OutboxStatus.IN_PROCESS
-        );
-        return events;
-    }
-
-    @Transactional
-    @Override
-    public void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount) {
-        if (processedIds != null && !processedIds.isEmpty()) {
-            repository.updateBatchStatus(processedIds, OutboxStatus.PROCESSED);
+    public void process(OutboxProperties.EventProperties properties) {
+        List<OutboxEvent> events = manager.loadBatch(properties.eventType(), properties.batchSize());
+        SenderResult result;
+        try {
+            result = sender.sendEvents(properties.topic(), events);
+        } catch (Exception e) {
+            log.error("Error when processing batch {} events with size={}", properties.eventType(), properties.batchSize());
+            result = new SenderResult(
+                    null,
+                    events.stream()
+                            .map(OutboxEvent::getId)
+                            .collect(Collectors.toSet())
+            );
         }
-        if (failedIds != null && !failedIds.isEmpty()) {
-            repository.incrementRetryCountOrSetFailed(failedIds, maxRetryCount);
-        }
-    }
-
-    @Override
-    public void cleanUpBatch(Instant threshold, int batchSize) {
-        repository.deleteBatchByProcessedAfterThreshold(threshold, batchSize);
+        manager.finalizeBatch(result.processedIds(), result.failedIds(), properties.maxRetries());
     }
 }

@@ -1,9 +1,7 @@
 outbox:
   sender:
     type: kafka
-    kafka:
-      bootstrap-servers: localhost:9092
-      acks: all
+    bean-name:
 
   defaults:
     batch-size: 50
@@ -13,11 +11,12 @@ outbox:
 
   events:
     account-delete:
-      topic: account_delete
+      topic: account-delete
       batch-size: 10
       fixed-delay: 10s
+
     rating-update:
-      topic: rating_update
+      topic: rating-update
       batch-size: 50
       initial-delay: 1s
       fixed-delay: 20s

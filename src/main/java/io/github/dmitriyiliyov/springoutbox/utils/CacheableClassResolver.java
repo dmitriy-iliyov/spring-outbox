@@ -3,16 +3,16 @@ package io.github.dmitriyiliyov.springoutbox.utils;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class ClassResolver {
+public final class CacheableClassResolver {
 
-    private final Map<String, Class<?>> classes;
+    private final Map<String, Class<?>> cachedClasses;
 
-    public ClassResolver() {
-        this.classes = new HashMap<>();
+    public CacheableClassResolver() {
+        this.cachedClasses = new HashMap<>();
     }
 
     public Class<?> resolve(String className) {
-        return classes.computeIfAbsent(
+        return cachedClasses.computeIfAbsent(
                 className,
                 c -> {
                     try {

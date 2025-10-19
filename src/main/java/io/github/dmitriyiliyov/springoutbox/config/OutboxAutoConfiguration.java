@@ -1,11 +1,13 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.aop.OutboxEventAspect;
 import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.*;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxSender;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxSenderFactory;
 import io.github.dmitriyiliyov.springoutbox.utils.BeanNameUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.UuidV7Generator;
+import jakarta.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -15,29 +17,32 @@ import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
 @EnableConfigurationProperties(OutboxProperties.class)
-public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProcessor {
+public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxAutoConfiguration.class);
     private final OutboxProperties properties;
     private final ObjectMapper mapper;
+    private ApplicationContext applicationContext;
 
     public OutboxAutoConfiguration(OutboxProperties properties, ObjectMapper mapper) {
         this.properties = properties;
         this.mapper = mapper;
+    }
+
+    @Override
+    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     @Bean
@@ -65,37 +70,50 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
-        DefaultOutboxProcessor processor = beanFactory.getBean(DefaultOutboxProcessor.class);
-        OutboxSender sender = new SyncKafkaOutboxSender(null, mapper);
-        ScheduledExecutorService executor = beanFactory.getBean("outboxScheduledExecutorService", ScheduledExecutorService.class);
-        for (OutboxProperties.EventProperties eventProperties : properties.getEvents().values()) {
-            BeanDefinition schedulerBean = BeanDefinitionBuilder
-                    .genericBeanDefinition(OutboxEventScheduler.class)
-                    .addConstructorArgValue(eventProperties)
-                    .addConstructorArgValue(processor)
-                    .addConstructorArgValue(sender)
-                    .addConstructorArgValue(executor)
+        BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+
+        if (!registry.containsBeanDefinition("outboxSender")) {
+            BeanDefinition senderBean = BeanDefinitionBuilder
+                    .genericBeanDefinition(OutboxSender.class, () ->
+                            OutboxSenderFactory.generate(properties.getSender(), applicationContext, mapper)
+                    )
                     .getBeanDefinition();
+            registry.registerBeanDefinition("outboxSender", senderBean);
+        }
+
+        ScheduledExecutorService executor =
+                beanFactory.getBean("outboxScheduledExecutorService", ScheduledExecutorService.class);
+
+        for (OutboxProperties.EventProperties eventProperties : properties.getEvents().values()) {
             String beanName = BeanNameUtils.toBeanName(eventProperties.eventType(), "OutboxScheduler");
-            if (!((BeanDefinitionRegistry) beanFactory).containsBeanDefinition(beanName)) {
-                ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanName, schedulerBean);
+            if (!registry.containsBeanDefinition(beanName)) {
+                BeanDefinition schedulerBean = BeanDefinitionBuilder
+                        .genericBeanDefinition(OutboxEventScheduler.class)
+                        .addConstructorArgValue(eventProperties)
+                        .addConstructorArgReference("defaultOutboxManager")
+                        .addConstructorArgReference("outboxSender")
+                        .addConstructorArgValue(executor)
+                        .getBeanDefinition();
+
+                registry.registerBeanDefinition(beanName, schedulerBean);
             } else {
                 log.warn("Scheduler bean {} already exists, skipping registration", beanName);
             }
-            ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition(beanName, schedulerBean);
         }
+
         OutboxProperties.CleanUpProperties cleanUpProperties = properties.getCleanUp();
         if (cleanUpProperties.isEnabled()) {
-            BeanDefinition schedulerBean = BeanDefinitionBuilder
+            BeanDefinition cleanUpBean = BeanDefinitionBuilder
                     .genericBeanDefinition(OutboxCleanUpScheduler.class)
                     .addConstructorArgValue(cleanUpProperties)
-                    .addConstructorArgValue(processor)
+                    .addConstructorArgReference("defaultOutboxProcessor")
                     .addConstructorArgValue(executor)
                     .getBeanDefinition();
-            ((BeanDefinitionRegistry) beanFactory).registerBeanDefinition("defaultOutboxCleanUpScheduler", schedulerBean);
+
+            registry.registerBeanDefinition("defaultOutboxCleanUpScheduler", cleanUpBean);
         } else {
             log.warn("Outbox is configured without a cleanup scheduler bean because clean-up is disabled; " +
-                     "outbox storage will not be cleaned automatically.");
+                    "outbox storage will not be cleaned automatically.");
         }
     }
 

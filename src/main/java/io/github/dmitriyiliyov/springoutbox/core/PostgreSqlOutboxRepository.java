@@ -13,6 +13,27 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * PostgreSQL-specific implementation of {@link OutboxRepository}.
+ * <p>Details:
+ * <ul>
+ *     <li> uses {@link Transactional @Transactional} with
+ *     {@link Propagation#MANDATORY}, ensuring that all outbox entries are persisted atomically
+ *     as part of the business transaction.</li>
+ *
+ *     <li>uses the PostgreSQL-specific clause
+ *     <code>FOR UPDATE SKIP LOCKED</code> (available since PostgreSQL 9.5) to allow multiple service instances
+ *     to process outbox batches in parallel without conflicting on the same rows.</li>
+ *
+ *     <li>performs batched deletion of processed events using a CTE
+ *     (<code>WITH ... DELETE</code>), ensuring predictable load on the database.</li>
+ *
+ *     <li> provides a mechanism for incrementing retry counters and marking permanently failed events.</li>
+ * </ul>
+ * <p>
+ * <b>Note:</b> This implementation is tightly coupled to PostgreSQL syntax. For other relational databases
+ * (e.g., Oracle, MySQL, MSSQL), extend this class and adapt the SQL queries to their dialects and locking semantics.
+ */
 public class PostgreSqlOutboxRepository implements OutboxRepository {
 
     private final JdbcTemplate jdbcTemplate;
@@ -157,7 +178,7 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
             return false;
         }
         if (ids.size() > 100) {
-            throw new IllegalArgumentException("Batch size too large: " + ids.size() + ", max 1000");
+            throw new IllegalArgumentException("Batch size too large: " + ids.size() + ", max 100");
         }
         return true;
     }
