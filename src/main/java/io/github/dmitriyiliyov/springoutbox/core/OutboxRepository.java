@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
+import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxStatus;
 
 import java.time.Instant;
 import java.util.List;
@@ -13,20 +13,22 @@ public interface OutboxRepository {
 
     void saveBatch(List<OutboxEvent> eventBatch);
 
+    List<OutboxEvent> findBatchByStatus(EventStatus status, int batchSize, String orderBy);
+
     /**
      * Ensures that batches can be safely processed by multiple instances concurrently,
      * so that no event is deleted twice or skipped.
      */
-    List<OutboxEvent> findBatchByEventTypeAndStatus(String eventType, OutboxStatus status, int batchSize);
+    List<OutboxEvent> findBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize);
 
     /**
      * Updates the status of a batch of events.
      *
      * @param ids   the ids of the events to update; must not be null or empty
-     * @param status the new status to set; must not be {@link OutboxStatus#FAILED}
+     * @param status the new status to set; must not be {@link EventStatus#FAILED}
      *               (use {@link #incrementRetryCountOrSetFailed(Set, int)} for FAILED)
      */
-    void updateBatchStatus(Set<UUID> ids, OutboxStatus status);
+    void updateBatchStatus(Set<UUID> ids, EventStatus status);
 
     /**
      * Increments the retry count for a batch of events, and sets the status to FAILED
@@ -36,6 +38,8 @@ public interface OutboxRepository {
      * @param maxRetryCount the maximum number of retry attempts before marking an event as FAILED
      */
     void incrementRetryCountOrSetFailed(Set<UUID> ids, int maxRetryCount);
+
+    void deleteBatch(Set<UUID> ids);
 
     /**
      * Deletes processed events older than a specified threshold, in batches.

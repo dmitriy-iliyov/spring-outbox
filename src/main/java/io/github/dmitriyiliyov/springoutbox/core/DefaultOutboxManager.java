@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
+import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxStatus;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -21,12 +21,25 @@ public class DefaultOutboxManager implements OutboxManager {
     @Transactional
     @Override
     public List<OutboxEvent> loadBatch(String eventType, int batchSize) {
-        List<OutboxEvent> events = repository.findBatchByEventTypeAndStatus(eventType, OutboxStatus.PENDING, batchSize);
+        List<OutboxEvent> events = repository.findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize);
         repository.updateBatchStatus(
                 events.stream()
                         .map(OutboxEvent::getId)
                         .collect(Collectors.toSet()),
-                OutboxStatus.IN_PROCESS
+                EventStatus.IN_PROCESS
+        );
+        return events;
+    }
+
+    @Transactional
+    @Override
+    public List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy) {
+        List<OutboxEvent> events = repository.findBatchByStatus(status, batchSize, orderBy);
+        repository.updateBatchStatus(
+                events.stream()
+                        .map(OutboxEvent::getId)
+                        .collect(Collectors.toSet()),
+                EventStatus.IN_PROCESS
         );
         return events;
     }
@@ -35,7 +48,7 @@ public class DefaultOutboxManager implements OutboxManager {
     @Override
     public void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount) {
         if (processedIds != null && !processedIds.isEmpty()) {
-            repository.updateBatchStatus(processedIds, OutboxStatus.PROCESSED);
+            repository.updateBatchStatus(processedIds, EventStatus.PROCESSED);
         }
         if (failedIds != null && !failedIds.isEmpty()) {
             repository.incrementRetryCountOrSetFailed(failedIds, maxRetryCount);
@@ -43,7 +56,15 @@ public class DefaultOutboxManager implements OutboxManager {
     }
 
     @Override
-    public void cleanUpBatch(Instant threshold, int batchSize) {
+    public void deleteBatch(Instant threshold, int batchSize) {
         repository.deleteBatchByProcessedAfterThreshold(threshold, batchSize);
+    }
+
+    @Override
+    public void deleteBatch(Set<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        repository.deleteBatch(ids);
     }
 }

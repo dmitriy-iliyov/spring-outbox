@@ -1,10 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
+import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.*;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSender;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSenderFactory;
 import io.github.dmitriyiliyov.springoutbox.utils.BeanNameUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.UuidV7Generator;
 import jakarta.annotation.Nonnull;
@@ -60,6 +58,11 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
         return new DefaultOutboxPublisher(properties, serializer, repository);
     }
 
+    @Bean
+    public OutboxManager outboxManager(OutboxRepository repository) {
+        return new DefaultOutboxManager(repository);
+    }
+
     @Bean(destroyMethod = "shutdown")
     public ScheduledExecutorService outboxScheduledExecutorService() {
         return Executors.newScheduledThreadPool(properties.getThreadPoolSize());
@@ -71,50 +74,91 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
         BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+        defineSender(registry);
+        defineProcessor(registry);
+        ScheduledExecutorService executor =
+                beanFactory.getBean("outboxScheduledExecutorService", ScheduledExecutorService.class);
+        defineEventSchedulers(registry, executor);
+        defineCleanUpScheduler(registry, executor);
+        defineDlqComponents(registry, executor);
+    }
 
+    private void defineSender(BeanDefinitionRegistry registry) {
         if (!registry.containsBeanDefinition("outboxSender")) {
             BeanDefinition senderBean = BeanDefinitionBuilder
-                    .genericBeanDefinition(OutboxSender.class, () ->
-                            OutboxSenderFactory.generate(properties.getSender(), applicationContext, mapper)
+                    .genericBeanDefinition(
+                            OutboxSender.class,
+                            () -> OutboxSenderFactory.generate(properties.getSender(), applicationContext, mapper)
                     )
                     .getBeanDefinition();
             registry.registerBeanDefinition("outboxSender", senderBean);
         }
+    }
 
-        ScheduledExecutorService executor =
-                beanFactory.getBean("outboxScheduledExecutorService", ScheduledExecutorService.class);
+    private void defineProcessor(BeanDefinitionRegistry registry) {
+        if (!registry.containsBeanDefinition("outboxProcessor")) {
+            BeanDefinition processorBean = BeanDefinitionBuilder
+                    .genericBeanDefinition(
+                            OutboxProcessor.class,
+                            () -> new DefaultOutboxProcessor(
+                                    (OutboxManager) applicationContext.getBean("outboxManager"),
+                                    (OutboxSender) applicationContext.getBean("outboxSender")
+                            )
+                    )
+                    .getBeanDefinition();
+            registry.registerBeanDefinition("outboxProcessor", processorBean);
+        }
+    }
 
+    private void defineEventSchedulers(BeanDefinitionRegistry registry, ScheduledExecutorService executor) {
         for (OutboxProperties.EventProperties eventProperties : properties.getEvents().values()) {
             String beanName = BeanNameUtils.toBeanName(eventProperties.eventType(), "OutboxScheduler");
             if (!registry.containsBeanDefinition(beanName)) {
                 BeanDefinition schedulerBean = BeanDefinitionBuilder
                         .genericBeanDefinition(OutboxEventScheduler.class)
                         .addConstructorArgValue(eventProperties)
-                        .addConstructorArgReference("defaultOutboxManager")
-                        .addConstructorArgReference("outboxSender")
                         .addConstructorArgValue(executor)
+                        .addConstructorArgReference("outboxProcessor")
                         .getBeanDefinition();
-
                 registry.registerBeanDefinition(beanName, schedulerBean);
             } else {
                 log.warn("Scheduler bean {} already exists, skipping registration", beanName);
             }
         }
+    }
 
+    private void defineCleanUpScheduler(BeanDefinitionRegistry registry, ScheduledExecutorService executor) {
         OutboxProperties.CleanUpProperties cleanUpProperties = properties.getCleanUp();
-        if (cleanUpProperties.isEnabled()) {
+        if (cleanUpProperties.enabled()) {
             BeanDefinition cleanUpBean = BeanDefinitionBuilder
                     .genericBeanDefinition(OutboxCleanUpScheduler.class)
-                    .addConstructorArgValue(cleanUpProperties)
-                    .addConstructorArgReference("defaultOutboxProcessor")
                     .addConstructorArgValue(executor)
+                    .addConstructorArgValue(cleanUpProperties)
+                    .addConstructorArgReference("outboxManager")
                     .getBeanDefinition();
-
             registry.registerBeanDefinition("defaultOutboxCleanUpScheduler", cleanUpBean);
         } else {
             log.warn("Outbox is configured without a cleanup scheduler bean because clean-up is disabled; " +
                     "outbox storage will not be cleaned automatically.");
         }
+    }
+
+    private void defineDlqComponents(BeanDefinitionRegistry registry, ScheduledExecutorService executor) {
+        OutboxProperties.DlqProperties dlqProperties = properties.getDlq();
+        if (dlqProperties.enabled()) {
+
+        } else {
+            log.warn("Outbox is configured with DLQ disabled; no dead letter queue beans will be registered. " +
+                    "Failed events will not be automatically cleaned or moved to DLQ.");
+        }
+    }
+
+    private void defineDlqManager() {
+
+    }
+
+    private void defineDlqScheduler() {
+
     }
 
     @Bean

@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
+import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxRepository}.
- * <p>Details:
  * <ul>
  *     <li> uses {@link Transactional @Transactional} with
  *     {@link Propagation#MANDATORY}, ensuring that all outbox entries are persisted atomically
@@ -47,8 +46,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     public void save(OutboxEvent event) {
         String sql = """
             INSERT INTO outbox_events 
-            (id, status, event_type, payload_type, payload, retry_count, created_at, processed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (id, status, event_type, payload_type, payload, retry_count, created_at, processed_at, failed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         jdbcTemplate.update(
                 sql,
@@ -59,7 +58,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
                 event.getPayload(),
                 event.getRetryCount(),
                 event.getCreatedAt(),
-                event.getProcessedAt()
+                event.getProcessedAt(),
+                event.getFailedAt()
         );
     }
 
@@ -68,8 +68,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     public void saveBatch(List<OutboxEvent> eventBatch) {
         String sql = """
             INSERT INTO outbox_events 
-            (id, status, event_type, payload_type, payload, retry_count, created_at, processed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            (id, status, event_type, payload_type, payload, retry_count, created_at, processed_at, failed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         List<Object[]> params = eventBatch.stream()
                 .map(e ->
@@ -81,7 +81,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
                                 e.getPayload(),
                                 e.getRetryCount(),
                                 e.getCreatedAt(),
-                                e.getProcessedAt()
+                                e.getProcessedAt(),
+                                e.getFailedAt()
                 })
                 .toList();
         jdbcTemplate.batchUpdate(sql, params);
@@ -89,9 +90,34 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
 
     @Transactional
     @Override
-    public List<OutboxEvent> findBatchByEventTypeAndStatus(String eventType, OutboxStatus status, int batchSize) {
+    public List<OutboxEvent> findBatchByStatus(EventStatus status, int batchSize, String orderBy) {
+        List<String> allowedOrderBy = List.of("created_at", "processed_at", "failed_at");
+        if (!allowedOrderBy.contains(orderBy)) {
+            throw new IllegalArgumentException("Not allowed orderBy");
+        }
         String sql = """
-            SELECT id, status, event_type, payload_type, payload, retry_count, created_at, processed_at 
+            SELECT id, status, event_type, payload_type, payload, retry_count, created_at, processed_at, failed_at
+            FROM outbox_events
+            WHERE status = ?
+            ORDER BY %s
+            LIMIT ?
+            FOR UPDATE SKIP LOCKED
+        """.formatted(orderBy);
+        return jdbcTemplate.query(
+                sql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    ps.setInt(2, batchSize);
+                },
+                (rs, rowNum) -> toEvent(rs)
+        );
+    }
+
+    @Transactional
+    @Override
+    public List<OutboxEvent> findBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize) {
+        String sql = """
+            SELECT id, status, event_type, payload_type, payload, retry_count, created_at, processed_at, failed_at 
             FROM outbox_events
             WHERE event_type = ? AND status = ?
             ORDER BY created_at
@@ -111,15 +137,15 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
 
     @Transactional
     @Override
-    public void updateBatchStatus(Set<UUID> ids, OutboxStatus status) {
+    public void updateBatchStatus(Set<UUID> ids, EventStatus status) {
         if (!validateIds(ids)) return;
-        if (status.equals(OutboxStatus.FAILED)) {
-            throw new IllegalArgumentException("Use updateBatchStatusWithRetry() for FAILED batch");
+        if (status.equals(EventStatus.FAILED)) {
+            throw new IllegalArgumentException("Use incrementRetryCountOrSetFailed() for FAILED batch");
         }
         String placeholders = generatePlaceholders(ids);
         String sql;
         List<Object> params = new ArrayList<>();
-        if (status.equals(OutboxStatus.PROCESSED)) {
+        if (status.equals(EventStatus.PROCESSED)) {
             sql = "UPDATE outbox_events SET status = ?, processed_at = ? WHERE id IN (" + placeholders + ")";
             params.add(status.name());
             params.add(Timestamp.from(Instant.now()));
@@ -141,15 +167,26 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
                 SET 
                     retry_count = CASE WHEN retry_count < ? THEN retry_count + 1 ELSE retry_count END,
                     status = CASE WHEN retry_count + 1 < ? THEN ? ELSE ? END
+                    failed_at = CASE WHEN retry_count + 1 < ? THEN ? ELSE failed_at
                 WHERE id IN (%s)
             """.formatted(generatePlaceholders(ids));
         List<Object> params = new ArrayList<>();
         params.add(maxRetryCount);
         params.add(maxRetryCount);
-        params.add(OutboxStatus.PENDING.name());
-        params.add(OutboxStatus.FAILED.name());
+        params.add(EventStatus.PENDING.name());
+        params.add(EventStatus.FAILED.name());
+        params.add(maxRetryCount);
+        params.add(Instant.now());
         params.addAll(ids);
         jdbcTemplate.update(sql, params.toArray());
+    }
+
+    @Transactional
+    @Override
+    public void deleteBatch(Set<UUID> ids) {
+        validateIds(ids);
+        String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(generatePlaceholders(ids));
+        jdbcTemplate.update(sql, ids.toArray());
     }
 
     @Transactional
@@ -190,14 +227,16 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     private OutboxEvent toEvent(ResultSet rs) throws SQLException {
         return new OutboxEvent(
                 rs.getObject("id", UUID.class),
-                OutboxStatus.fromString(rs.getString("status")),
+                EventStatus.fromString(rs.getString("status")),
                 rs.getString("event_type"),
                 rs.getString("payload_type"),
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("processed_at") != null
-                        ? rs.getTimestamp("processed_at").toInstant() : null
+                        ? rs.getTimestamp("processed_at").toInstant() : null,
+                rs.getTimestamp("failed_at") != null
+                        ? rs.getTimestamp("failed_at").toInstant() : null
         );
     }
 }

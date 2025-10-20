@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.domain;
+package io.github.dmitriyiliyov.springoutbox.config;
 
 public enum SenderType {
     KAFKA, RABBIT_MQ;

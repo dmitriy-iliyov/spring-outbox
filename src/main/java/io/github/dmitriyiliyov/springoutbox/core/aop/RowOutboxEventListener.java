@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.aop;
+package io.github.dmitriyiliyov.springoutbox.core.aop;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisher;
 import org.springframework.transaction.event.TransactionPhase;

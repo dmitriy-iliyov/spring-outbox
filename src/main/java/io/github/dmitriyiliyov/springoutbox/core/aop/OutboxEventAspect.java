@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.aop;
+package io.github.dmitriyiliyov.springoutbox.core.aop;
 
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
@@ -35,7 +35,7 @@ public class OutboxEventAspect {
             argNames = "joinPoint,outboxEvent,result"
     )
     public void publishEvent(JoinPoint joinPoint, OutboxEvent outboxEvent, Object result) {
-        StandardEvaluationContext context = parseContext(joinPoint);
+        StandardEvaluationContext context = getContext(joinPoint);
         context.setVariable("result", result);
         Object payload = result;
         String spelPayload = outboxEvent.payload();
@@ -50,7 +50,7 @@ public class OutboxEventAspect {
         eventPublisher.publishEvent(new RowOutboxEvent(outboxEvent.eventType(), payload));
     }
 
-    private StandardEvaluationContext parseContext(JoinPoint joinPoint) {
+    private StandardEvaluationContext getContext(JoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String[] paramNames = signature.getParameterNames();
         Object[] args = joinPoint.getArgs();

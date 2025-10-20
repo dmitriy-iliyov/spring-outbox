@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.aop;
+package io.github.dmitriyiliyov.springoutbox.core.aop;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

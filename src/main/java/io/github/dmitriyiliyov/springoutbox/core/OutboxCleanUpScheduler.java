@@ -6,17 +6,17 @@ import java.time.Instant;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class OutboxCleanUpScheduler implements OutboxScheduler {
+public final class OutboxCleanUpScheduler implements OutboxScheduler {
 
+    private final ScheduledExecutorService executor;
     private final OutboxProperties.CleanUpProperties cleanupProperties;
     private final OutboxManager manager;
-    private final ScheduledExecutorService executor;
 
-    public OutboxCleanUpScheduler(OutboxProperties.CleanUpProperties cleanupProperties, OutboxManager manager,
-                                  ScheduledExecutorService executor) {
+    public OutboxCleanUpScheduler(OutboxProperties.CleanUpProperties cleanupProperties, ScheduledExecutorService executor,
+                                  OutboxManager manager) {
         this.cleanupProperties = cleanupProperties;
-        this.manager = manager;
         this.executor = executor;
+        this.manager = manager;
     }
 
     /**
@@ -32,11 +32,11 @@ public class OutboxCleanUpScheduler implements OutboxScheduler {
     public void schedule() {
         executor.scheduleWithFixedDelay(
                 () -> {
-                    Instant threshold = Instant.now().minus(cleanupProperties.getTtl());
-                    manager.cleanUpBatch(threshold, cleanupProperties.getBatchSize());
+                    Instant threshold = Instant.now().minus(cleanupProperties.ttl());
+                    manager.deleteBatch(threshold, cleanupProperties.batchSize());
                 },
-                cleanupProperties.getInitialDelay().getSeconds(),
-                cleanupProperties.getFixedDelay().getSeconds(),
+                cleanupProperties.initialDelay().getSeconds(),
+                cleanupProperties.fixedDelay().getSeconds(),
                 TimeUnit.SECONDS
         );
     }

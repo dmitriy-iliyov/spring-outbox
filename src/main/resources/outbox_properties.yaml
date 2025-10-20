@@ -1,7 +1,7 @@
 outbox:
   sender:
     type: kafka
-    bean-name:
+    bean-name: outboxKafkaTemplate
 
   defaults:
     batch-size: 50

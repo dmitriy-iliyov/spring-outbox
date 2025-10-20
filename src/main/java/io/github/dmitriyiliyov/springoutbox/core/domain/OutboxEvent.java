@@ -4,29 +4,32 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
-public final class OutboxEvent {
+public class OutboxEvent {
 
-    private final UUID id;
-    private OutboxStatus status;
-    private final String eventType;
-    private final String payloadType;
-    private final String payload;
-    private int retryCount;
-    private final Instant createdAt;
-    private Instant processedAt;
+    protected final UUID id;
+    protected final EventStatus status;
+    protected final String eventType;
+    protected final String payloadType;
+    protected final String payload;
+    protected final int retryCount;
+    protected final Instant createdAt;
+    protected final Instant processedAt;
+    protected final Instant failedAt;
 
     public OutboxEvent(UUID id, String eventType, String payloadType, String payload) {
         this.id = id;
-        this.status = OutboxStatus.PENDING;
+        this.status = EventStatus.PENDING;
         this.eventType = eventType;
         this.payloadType = payloadType;
         this.payload = payload;
         this.retryCount = 0;
         this.createdAt = Instant.now();
         this.processedAt = null;
+        this.failedAt = null;
     }
 
-    public OutboxEvent(UUID id, OutboxStatus status, String eventType, String payloadType, String payload, int retryCount, Instant createdAt, Instant processedAt) {
+    public OutboxEvent(UUID id, EventStatus status, String eventType, String payloadType, String payload, int retryCount,
+                       Instant createdAt, Instant processedAt, Instant failedAt) {
         this.id = id;
         this.status = status;
         this.eventType = eventType;
@@ -35,6 +38,7 @@ public final class OutboxEvent {
         this.retryCount = retryCount;
         this.createdAt = createdAt;
         this.processedAt = processedAt;
+        this.failedAt = failedAt;
     }
 
     @Override
@@ -54,7 +58,7 @@ public final class OutboxEvent {
         return id;
     }
 
-    public OutboxStatus getStatus() {
+    public EventStatus getStatus() {
         return status;
     }
 
@@ -80,5 +84,9 @@ public final class OutboxEvent {
 
     public Instant getProcessedAt() {
         return processedAt;
+    }
+
+    public Instant getFailedAt() {
+        return failedAt;
     }
 }

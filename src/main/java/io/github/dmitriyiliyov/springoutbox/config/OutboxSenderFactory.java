@@ -1,8 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.core;
+package io.github.dmitriyiliyov.springoutbox.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.core.domain.SenderType;
+import io.github.dmitriyiliyov.springoutbox.core.KafkaOutboxSender;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;

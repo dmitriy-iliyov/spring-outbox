@@ -1,5 +1,7 @@
-package io.github.dmitriyiliyov.springoutbox.core;
+package io.github.dmitriyiliyov.springoutbox.config;
 
+import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.PostgreSqlOutboxRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;

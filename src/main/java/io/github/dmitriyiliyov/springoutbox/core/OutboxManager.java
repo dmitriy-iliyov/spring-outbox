@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
+import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 
 import java.time.Instant;
@@ -10,7 +11,11 @@ import java.util.UUID;
 public interface OutboxManager {
     List<OutboxEvent> loadBatch(String eventType, int batchSize);
 
+    List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy);
+
     void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount);
 
-    void cleanUpBatch(Instant threshold, int batchSize);
+    void deleteBatch(Instant threshold, int batchSize);
+
+    void deleteBatch(Set<UUID> ids);
 }

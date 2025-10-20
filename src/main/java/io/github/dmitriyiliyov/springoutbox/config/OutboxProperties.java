@@ -1,6 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
-import io.github.dmitriyiliyov.springoutbox.core.domain.SenderType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
@@ -13,24 +12,28 @@ import java.util.stream.Collectors;
 public class OutboxProperties {
 
     private static final int DEFAULT_THREAD_POOL_SIZE = Math.min(Runtime.getRuntime().availableProcessors(), 5);
+
     private final SenderProperties sender;
+    private final Integer threadPoolSize;
     private final Defaults defaults;
     private final Map<String, EventProperties> events;
     private final CleanUpProperties cleanUp;
-    private final Integer threadPoolSize;
+    private final DlqProperties dlq;
 
     @ConstructorBinding
     public OutboxProperties(SenderProperties sender,
+                            Integer threadPoolSize,
                             Defaults defaults,
                             Map<String, EventProperties> events,
                             CleanUpProperties cleanUp,
-                            Integer threadPoolSize) {
+                            DlqProperties dlq) {
         this.sender = Objects.requireNonNull(sender, "sender cannot be null");
+        this.threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
         this.defaults = defaults == null ? new Defaults() : defaults;
         Objects.requireNonNull(events, "events cannot be null");
         this.events = applyDefaults(events);
         this.cleanUp = cleanUp;
-        this.threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
+        this.dlq = dlq;
     }
 
     private Map<String, EventProperties> applyDefaults(Map<String, EventProperties> eventPropertiesMap) {
@@ -59,6 +62,10 @@ public class OutboxProperties {
         return sender;
     }
 
+    public Integer getThreadPoolSize() {
+        return threadPoolSize;
+    }
+
     public Map<String, EventProperties> getEvents() {
         return events;
     }
@@ -71,8 +78,8 @@ public class OutboxProperties {
         return events.containsKey(eventType);
     }
 
-    public Integer getThreadPoolSize() {
-        return threadPoolSize;
+    public DlqProperties getDlq() {
+        return dlq;
     }
 
     public record SenderProperties(SenderType type, String beanName) {
@@ -139,52 +146,49 @@ public class OutboxProperties {
         }
     }
 
-    public static class CleanUpProperties {
+    public record CleanUpProperties(Boolean enabled, Integer batchSize, Duration ttl, Duration initialDelay,
+                                    Duration fixedDelay) {
 
         private static final int DEFAULT_BATCH_SIZE = 50;
         private static final Duration DEFAULT_TTL = Duration.ofHours(24);
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(1800);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(300);
 
-        private final Boolean enabled;
-        private final Integer batchSize;
-        private final Duration ttl;
-        private final Duration initialDelay;
-        private final Duration fixedDelay;
-
-        public CleanUpProperties(Boolean enabled, Integer batchSize, Duration ttl, Duration initialDelay, Duration fixedDelay) {
-            this.enabled = enabled;
-            if (enabled == null || enabled) {
-                this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
-                this.ttl = ttl == null ? DEFAULT_TTL : ttl;
-                this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
-                this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+        public CleanUpProperties {
+            if (enabled != null && enabled) {
+                enabled = true;
+                batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+                ttl = ttl == null ? DEFAULT_TTL : ttl;
+                initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
+                fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
             } else {
-                this.batchSize = 0;
-                this.ttl = null;
-                this.initialDelay =  null;
-                this.fixedDelay =  null;
+                enabled = false;
+                batchSize = 0;
+                ttl = null;
+                initialDelay = null;
+                fixedDelay = null;
             }
         }
-
-        public boolean isEnabled() {
-            return enabled;
-        }
-
-        public int getBatchSize() {
-            return batchSize;
-        }
-
-        public Duration getTtl() {
-            return ttl;
-        }
-
-        public Duration getInitialDelay() {
-            return initialDelay;
-        }
-
-        public Duration getFixedDelay() {
-            return fixedDelay;
-        }
     }
+
+    public record DlqProperties(Boolean enabled, Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+
+            private static final int DEFAULT_BATCH_SIZE = 50;
+            private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(1800);
+            private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(300);
+
+            public DlqProperties(Boolean enabled, Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+                if (enabled) {
+                    this.enabled = true;
+                    this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+                    this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
+                    this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+                } else {
+                    this.enabled = false;
+                    this.batchSize = 0;
+                    this.initialDelay = null;
+                    this.fixedDelay = null;
+                }
+            }
+        }
 }

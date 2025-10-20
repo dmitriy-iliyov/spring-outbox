@@ -5,7 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class OutboxEventScheduler implements OutboxScheduler {
+public final class OutboxEventScheduler implements OutboxScheduler {
 
     private final OutboxProperties.EventProperties eventProperties;
     private final ScheduledExecutorService executor;
