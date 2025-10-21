@@ -41,7 +41,7 @@ public final class DefaultDlqTransfer implements DlqTransfer {
                                 .collect(Collectors.toSet())
                 );
             } catch (Exception e) {
-                log.error("Error when transferring event batch from Outbox to DLQ table", e);
+                log.error("Error when transferring events from Outbox to DLQ", e);
                 throw e;
             }
         });
@@ -63,7 +63,7 @@ public final class DefaultDlqTransfer implements DlqTransfer {
                         .collect(Collectors.toSet())
                 );
             } catch (Exception e) {
-                log.error("Error when transferring event batch from DLQ to Outbox table", e);
+                log.error("Error when transferring events from DLQ to Outbox", e);
                 throw e;
             }
         });
