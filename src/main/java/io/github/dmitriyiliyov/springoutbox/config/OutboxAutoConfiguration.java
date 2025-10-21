@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -160,5 +161,10 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
     @Bean
     public OutboxMetrics defaultOutboxMetrics(MeterRegistry registry, OutboxManager manager) {
         return new DefaultOutboxMetrics(registry, properties, manager);
+    }
+
+    @Bean
+    public OutboxStarter start(List<OutboxScheduler> schedulers, List<OutboxMetrics> metrics) {
+        return new OutboxStarter(schedulers, metrics);
     }
 }

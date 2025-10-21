@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.metrics;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.core.dlq.DlqStatus;
-import io.github.dmitriyiliyov.springoutbox.core.dlq.OutboxDlqManager;
+import io.github.dmitriyiliyov.springoutbox.dlq.DlqStatus;
+import io.github.dmitriyiliyov.springoutbox.dlq.OutboxDlqManager;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 

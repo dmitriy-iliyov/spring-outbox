@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.dlq;
+package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
@@ -27,7 +27,7 @@ public final class DefaultDlqTransfer implements DlqTransfer {
     }
 
     @Override
-    public void transferBatch(int batchSize) {
+    public void transferOutboxToDlq(int batchSize) {
         List<OutboxEvent> events = manager.loadBatch(EventStatus.FAILED, batchSize, "failed_at");
         if (events == null || events.isEmpty()) {
             return;
@@ -41,11 +41,32 @@ public final class DefaultDlqTransfer implements DlqTransfer {
                                 .collect(Collectors.toSet())
                 );
             } catch (Exception e) {
-                log.error("Error when transferring event batch to DLQ ", e);
+                log.error("Error when transferring event batch from Outbox to DLQ table", e);
                 throw e;
             }
         });
         handler.handle(events);
+    }
+
+    @Override
+    public void transferDlqToOutbox(int batchSize) {
+        List<OutboxDlqEvent> dlqEvents = dlqManager.loadBatch(DlqStatus.TO_RETRY, batchSize);
+        if (dlqEvents == null || dlqEvents.isEmpty()) {
+            return;
+        }
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                manager.saveBatch(toOutboxEvents(dlqEvents));
+                dlqManager.deleteBatch(
+                        dlqEvents.stream()
+                        .map(OutboxDlqEvent::getId)
+                        .collect(Collectors.toSet())
+                );
+            } catch (Exception e) {
+                log.error("Error when transferring event batch from DLQ to Outbox table", e);
+                throw e;
+            }
+        });
     }
 
     private OutboxDlqEvent toDlqEvent(OutboxEvent event) {
@@ -66,6 +87,26 @@ public final class DefaultDlqTransfer implements DlqTransfer {
     private List<OutboxDlqEvent> toDlqEvents(List<OutboxEvent> events) {
         return events.stream()
                 .map(this::toDlqEvent)
+                .toList();
+    }
+
+    private OutboxEvent toOutboxEvent(OutboxDlqEvent event) {
+        return new OutboxEvent(
+                event.getId(),
+                event.getStatus(),
+                event.getEventType(),
+                event.getPayloadType(),
+                event.getPayload(),
+                event.getRetryCount(),
+                event.getCreatedAt(),
+                event.getProcessedAt(),
+                event.getFailedAt()
+        );
+    }
+
+    private List<OutboxEvent> toOutboxEvents(List<OutboxDlqEvent> events) {
+        return events.stream()
+                .map(this::toOutboxEvent)
                 .toList();
     }
 }

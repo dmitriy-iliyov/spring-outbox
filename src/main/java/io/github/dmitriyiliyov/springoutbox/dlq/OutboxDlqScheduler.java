@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.dlq;
+package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
@@ -22,7 +22,13 @@ public final class OutboxDlqScheduler implements OutboxScheduler {
     @Override
     public void schedule() {
         executor.scheduleWithFixedDelay(
-                () -> transfer.transferBatch(properties.batchSize()),
+                () -> transfer.transferOutboxToDlq(properties.batchSize()),
+                properties.initialDelay().getSeconds(),
+                properties.fixedDelay().getSeconds(),
+                TimeUnit.SECONDS
+        );
+        executor.scheduleWithFixedDelay(
+                () -> transfer.transferDlqToOutbox(properties.batchSize()),
                 properties.initialDelay().getSeconds(),
                 properties.fixedDelay().getSeconds(),
                 TimeUnit.SECONDS

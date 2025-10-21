@@ -1,9 +1,9 @@
-package io.github.dmitriyiliyov.springoutbox.core.dlq;
+package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import java.util.Objects;
 
 public enum DlqStatus {
-    NEW, IN_PROCESS, RESOLVED;
+    NEW, IN_PROCESS, RESOLVED, TO_RETRY;
 
     public static DlqStatus fromString(String value) {
         Objects.requireNonNull(value, "value cannot be null");

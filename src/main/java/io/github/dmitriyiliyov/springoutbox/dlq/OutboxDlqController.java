@@ -1,6 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.dlq;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+package io.github.dmitriyiliyov.springoutbox.dlq;
 
 public class OutboxDlqController {
 

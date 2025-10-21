@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.dlq;
+package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import org.slf4j.Logger;
