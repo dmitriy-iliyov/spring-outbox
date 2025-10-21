@@ -18,4 +18,10 @@ public interface OutboxManager {
     void deleteBatch(Instant threshold, int batchSize);
 
     void deleteBatch(Set<UUID> ids);
+
+    long count();
+
+    long countByStatus(EventStatus status);
+
+    long countByEventTypeAndStatus(String eventType, EventStatus status);
 }

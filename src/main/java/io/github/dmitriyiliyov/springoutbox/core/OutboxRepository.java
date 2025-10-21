@@ -50,4 +50,10 @@ public interface OutboxRepository {
      * @param batchSize the maximum number of events to delete in one batch
      */
     void deleteBatchByProcessedAfterThreshold(Instant threshold, int batchSize);
+
+    long count();
+
+    long countByStatus(EventStatus status);
+
+    long countByEventTypeAndStatus(String eventType, EventStatus status);
 }

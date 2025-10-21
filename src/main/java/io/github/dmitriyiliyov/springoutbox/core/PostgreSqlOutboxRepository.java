@@ -209,6 +209,30 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
         jdbcTemplate.update(sql, params.toArray());
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM outbox_events";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count == null ? 0 : count;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countByStatus(EventStatus status) {
+        String sql = "SELECT COUNT(*) FROM outbox_events WHERE status = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
+        return count == null ? 0 : count;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
+        String sql = "SELECT COUNT(*) FROM outbox_events WHERE event_type = ? AND status = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, eventType, status.name());
+        return count == null ? 0 : count;
+    }
+
     private boolean validateIds(Set<UUID> ids) {
         Objects.requireNonNull(ids, "ids cannot be null");
         if (ids.isEmpty()) {

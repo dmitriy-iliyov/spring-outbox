@@ -3,9 +3,10 @@ package io.github.dmitriyiliyov.springoutbox.core;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DumOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
+public class DumbOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
 
     private final CachedCount totalCount;
     private final Duration COUNT_BY_STATUS_TTL;
@@ -14,11 +15,14 @@ public class DumOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
     private static final String KEY_TEMPLATE = "%s:%s";
     private final Map<String, CachedCount> countByEventTypeAndStatus;
 
-    public DumOutboxCache(long ... ttlSecs) {
-        this.totalCount = new CachedCount(Duration.ofSeconds(ttlSecs[0]));
-        this.COUNT_BY_STATUS_TTL = Duration.ofSeconds(ttlSecs[1]);
+    public DumbOutboxCache(long ... ttls) {
+        if (ttls.length != 3) {
+            throw new IllegalArgumentException("Ttls should contain three values");
+        }
+        this.totalCount = new CachedCount(Duration.ofSeconds(ttls[0]));
+        this.COUNT_BY_STATUS_TTL = Duration.ofSeconds(ttls[1]);
         this.countByStatus = new ConcurrentHashMap<>();
-        this.COUNT_BY_EVENT_TYPE_AND_STATUS_TTL = Duration.ofSeconds(ttlSecs[2]);
+        this.COUNT_BY_EVENT_TYPE_AND_STATUS_TTL = Duration.ofSeconds(ttls[2]);
         this.countByEventTypeAndStatus = new ConcurrentHashMap<>();
     }
 
@@ -64,14 +68,14 @@ public class DumOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
                 .setCount(count);
     }
 
-    private static class CachedCount {
+    protected static class CachedCount {
 
         private final Duration ttl;
         private Long count;
         private Instant cachedAt;
 
         private CachedCount(Duration ttl) {
-            this.ttl = ttl;
+            this.ttl = Objects.requireNonNull(ttl, "ttl cannot be null");
         }
 
         public synchronized Long setCount(long newCount) {

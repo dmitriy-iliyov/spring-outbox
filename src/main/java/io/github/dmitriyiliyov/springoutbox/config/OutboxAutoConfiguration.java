@@ -1,10 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.*;
+import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEventListener;
+import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.metrics.DefaultOutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.utils.BeanNameUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.UuidV7Generator;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.Nonnull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.sql.DataSource;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -35,7 +40,7 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
 
     public OutboxAutoConfiguration(OutboxProperties properties, ObjectMapper mapper) {
         this.properties = properties;
-        this.mapper = mapper;
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
     }
 
     @Override
@@ -49,6 +54,11 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
     }
 
     @Bean
+    public OutboxCache<EventStatus> outboxCache() {
+        return new DumbOutboxCache<>(60, 30, 30);
+    }
+
+    @Bean
     public OutboxSerializer outboxSerializer() {
         return new JacksonOutboxSerializer(mapper, new UuidV7Generator());
     }
@@ -59,8 +69,8 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
     }
 
     @Bean
-    public OutboxManager outboxManager(OutboxRepository repository) {
-        return new DefaultOutboxManager(repository);
+    public OutboxManager outboxManager(OutboxRepository repository, OutboxCache<EventStatus> cache) {
+        return new DefaultOutboxManager(repository, cache);
     }
 
     @Bean(destroyMethod = "shutdown")
@@ -69,7 +79,7 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
     }
 
     @Override
-    public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException { }
+    public void postProcessBeanDefinitionRegistry(@Nonnull BeanDefinitionRegistry registry) throws BeansException { }
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
@@ -80,7 +90,6 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
                 beanFactory.getBean("outboxScheduledExecutorService", ScheduledExecutorService.class);
         defineEventSchedulers(registry, executor);
         defineCleanUpScheduler(registry, executor);
-        defineDlqComponents(registry, executor);
     }
 
     private void defineSender(BeanDefinitionRegistry registry) {
@@ -143,26 +152,13 @@ public class OutboxAutoConfiguration implements BeanDefinitionRegistryPostProces
         }
     }
 
-    private void defineDlqComponents(BeanDefinitionRegistry registry, ScheduledExecutorService executor) {
-        OutboxProperties.DlqProperties dlqProperties = properties.getDlq();
-        if (dlqProperties.enabled()) {
-
-        } else {
-            log.warn("Outbox is configured with DLQ disabled; no dead letter queue beans will be registered. " +
-                    "Failed events will not be automatically cleaned or moved to DLQ.");
-        }
-    }
-
-    private void defineDlqManager() {
-
-    }
-
-    private void defineDlqScheduler() {
-
-    }
-
     @Bean
     public RowOutboxEventListener rowOutboxEventListener(OutboxPublisher publisher) {
         return new RowOutboxEventListener(publisher);
+    }
+
+    @Bean
+    public OutboxMetrics defaultOutboxMetrics(MeterRegistry registry, OutboxManager manager) {
+        return new DefaultOutboxMetrics(registry, properties, manager);
     }
 }

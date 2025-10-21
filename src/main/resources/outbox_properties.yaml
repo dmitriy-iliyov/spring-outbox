@@ -27,3 +27,6 @@ outbox:
     after: 1h
     initial-delay: 10s
     fixed-delay: 1h
+
+  dlq:
+    enabled: true

@@ -13,9 +13,11 @@ import java.util.stream.Collectors;
 public class DefaultOutboxManager implements OutboxManager {
 
     private final OutboxRepository repository;
+    private final OutboxCache<EventStatus> cache;
 
-    public DefaultOutboxManager(OutboxRepository repository) {
+    public DefaultOutboxManager(OutboxRepository repository, OutboxCache<EventStatus> cache) {
         this.repository = repository;
+        this.cache = cache;
     }
 
     @Transactional
@@ -66,5 +68,35 @@ public class DefaultOutboxManager implements OutboxManager {
             return;
         }
         repository.deleteBatch(ids);
+    }
+
+    @Override
+    public long count() {
+        Long count = cache.getCount();
+        if (count != null) {
+            return count;
+        }
+        return cache.putCount(repository.count());
+    }
+
+    @Override
+    public long countByStatus(EventStatus status) {
+        Long count = cache.getCountByStatus(status);
+        if (count != null) {
+            return count;
+        }
+        return cache.putCountByStatus(status, repository.countByStatus(status));
+    }
+
+    @Override
+    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
+        Long count = cache.getCountByEventTypeAndStatus(eventType, status);
+        if (count != null) {
+            return count;
+        }
+        return cache.putCountByEventTypeAndStatus(
+                eventType, status,
+                repository.countByEventTypeAndStatus(eventType, status)
+        );
     }
 }
