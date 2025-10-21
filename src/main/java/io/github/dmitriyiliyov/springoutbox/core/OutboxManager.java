@@ -9,19 +9,23 @@ import java.util.Set;
 import java.util.UUID;
 
 public interface OutboxManager {
-    List<OutboxEvent> loadBatch(String eventType, int batchSize);
+    void save(OutboxEvent event);
 
-    List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy);
-
-    void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount);
-
-    void deleteBatch(Instant threshold, int batchSize);
-
-    void deleteBatch(Set<UUID> ids);
+    void saveBatch(List<OutboxEvent> eventBatch);
 
     long count();
 
     long countByStatus(EventStatus status);
 
     long countByEventTypeAndStatus(String eventType, EventStatus status);
+
+    List<OutboxEvent> loadBatch(String eventType, int batchSize);
+
+    List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy);
+
+    void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount);
+
+    void deleteProcessedBatch(Instant threshold, int batchSize);
+
+    void deleteBatch(Set<UUID> ids);
 }

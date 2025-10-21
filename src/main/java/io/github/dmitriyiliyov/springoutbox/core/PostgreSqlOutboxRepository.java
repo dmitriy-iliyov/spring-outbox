@@ -88,6 +88,30 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
         jdbcTemplate.batchUpdate(sql, params);
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public long count() {
+        String sql = "SELECT COUNT(*) FROM outbox_events";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class);
+        return count == null ? 0 : count;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countByStatus(EventStatus status) {
+        String sql = "SELECT COUNT(*) FROM outbox_events WHERE status = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
+        return count == null ? 0 : count;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
+        String sql = "SELECT COUNT(*) FROM outbox_events WHERE event_type = ? AND status = ?";
+        Long count = jdbcTemplate.queryForObject(sql, Long.class, eventType, status.name());
+        return count == null ? 0 : count;
+    }
+
     @Transactional
     @Override
     public List<OutboxEvent> findBatchByStatus(EventStatus status, int batchSize, String orderBy) {
@@ -184,7 +208,7 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     @Transactional
     @Override
     public void deleteBatch(Set<UUID> ids) {
-        validateIds(ids);
+        if (!validateIds(ids)) return;
         String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(generatePlaceholders(ids));
         jdbcTemplate.update(sql, ids.toArray());
     }
@@ -199,7 +223,7 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
                 ORDER BY processed_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
-            )   
+            )
             DELETE FROM outbox_events 
             WHERE id IN (SELECT id FROM to_delete)
         """;
@@ -207,30 +231,6 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
         params.add(threshold);
         params.add(batchSize);
         jdbcTemplate.update(sql, params.toArray());
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long count() {
-        String sql = "SELECT COUNT(*) FROM outbox_events";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class);
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long countByStatus(EventStatus status) {
-        String sql = "SELECT COUNT(*) FROM outbox_events WHERE status = ?";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
-        String sql = "SELECT COUNT(*) FROM outbox_events WHERE event_type = ? AND status = ?";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, eventType, status.name());
-        return count == null ? 0 : count;
     }
 
     private boolean validateIds(Set<UUID> ids) {

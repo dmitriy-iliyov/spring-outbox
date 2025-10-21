@@ -66,7 +66,23 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
 
     @Transactional
     @Override
+    public void updateStatus(UUID id, DlqStatus status) {
+        String sql = "UPDATE outbox_dlq_events SET dlq_status = ? WHERE id = ?";
+        jdbcTemplate.update(
+                sql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    ps.setObject(2, id);
+                }
+        );
+    }
+
+    @Transactional
+    @Override
     public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
+        String sql = """
+            
+        """;
 
     }
 

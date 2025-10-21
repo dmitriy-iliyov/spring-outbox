@@ -12,19 +12,19 @@ public class DefaultOutboxPublisher implements OutboxPublisher {
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxPublisher.class);
     private final OutboxProperties properties;
     private final OutboxSerializer serializer;
-    private final OutboxRepository repository;
+    private final OutboxManager manager;
 
-    public DefaultOutboxPublisher(OutboxProperties properties, OutboxSerializer serializer, OutboxRepository repository) {
+    public DefaultOutboxPublisher(OutboxProperties properties, OutboxSerializer serializer, OutboxManager manager) {
         this.properties = properties;
         this.serializer = serializer;
-        this.repository = repository;
+        this.manager = manager;
     }
 
     @Override
     public <T> void publish(String eventType, T event) {
         validateEventType(eventType);
         Objects.requireNonNull(event, "event cannot be null");
-        repository.save(serializer.serialize(eventType, event));
+        manager.save(serializer.serialize(eventType, event));
     }
 
     @Override
@@ -35,7 +35,7 @@ public class DefaultOutboxPublisher implements OutboxPublisher {
             log.warn("Events is empty");
             return;
         }
-        repository.saveBatch(serializer.serialize(eventType, events));
+        manager.saveBatch(serializer.serialize(eventType, events));
     }
 
     private void validateEventType(String eventType) {

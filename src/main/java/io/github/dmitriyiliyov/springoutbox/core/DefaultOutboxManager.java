@@ -20,10 +20,38 @@ public class DefaultOutboxManager implements OutboxManager {
         this.cache = cache;
     }
 
+    @Override
+    public void save(OutboxEvent event) {
+        repository.save(event);
+    }
+
+    @Override
+    public void saveBatch(List<OutboxEvent> eventBatch) {
+        repository.saveBatch(eventBatch);
+    }
+
+    @Override
+    public long count() {
+        return CacheHelper.count(cache, repository::count);
+    }
+
+    @Override
+    public long countByStatus(EventStatus status) {
+        return CacheHelper.countByStatus(cache, status, repository::countByStatus);
+    }
+
+    @Override
+    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
+        return CacheHelper.countByEventTypeAndStatus(cache, eventType, status, repository::countByEventTypeAndStatus);
+    }
+
     @Transactional
     @Override
     public List<OutboxEvent> loadBatch(String eventType, int batchSize) {
         List<OutboxEvent> events = repository.findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize);
+        if (events.isEmpty()) {
+            return events;
+        }
         repository.updateBatchStatus(
                 events.stream()
                         .map(OutboxEvent::getId)
@@ -37,6 +65,9 @@ public class DefaultOutboxManager implements OutboxManager {
     @Override
     public List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy) {
         List<OutboxEvent> events = repository.findBatchByStatus(status, batchSize, orderBy);
+        if (events.isEmpty()) {
+            return events;
+        }
         repository.updateBatchStatus(
                 events.stream()
                         .map(OutboxEvent::getId)
@@ -58,7 +89,7 @@ public class DefaultOutboxManager implements OutboxManager {
     }
 
     @Override
-    public void deleteBatch(Instant threshold, int batchSize) {
+    public void deleteProcessedBatch(Instant threshold, int batchSize) {
         repository.deleteBatchByProcessedAfterThreshold(threshold, batchSize);
     }
 
@@ -68,35 +99,5 @@ public class DefaultOutboxManager implements OutboxManager {
             return;
         }
         repository.deleteBatch(ids);
-    }
-
-    @Override
-    public long count() {
-        Long count = cache.getCount();
-        if (count != null) {
-            return count;
-        }
-        return cache.putCount(repository.count());
-    }
-
-    @Override
-    public long countByStatus(EventStatus status) {
-        Long count = cache.getCountByStatus(status);
-        if (count != null) {
-            return count;
-        }
-        return cache.putCountByStatus(status, repository.countByStatus(status));
-    }
-
-    @Override
-    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
-        Long count = cache.getCountByEventTypeAndStatus(eventType, status);
-        if (count != null) {
-            return count;
-        }
-        return cache.putCountByEventTypeAndStatus(
-                eventType, status,
-                repository.countByEventTypeAndStatus(eventType, status)
-        );
     }
 }
