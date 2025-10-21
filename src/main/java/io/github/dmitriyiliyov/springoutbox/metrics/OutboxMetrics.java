@@ -1,4 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.metrics;
 
-public class OutboxDlqMetricsService {
+public interface OutboxMetrics {
+    void register();
 }
