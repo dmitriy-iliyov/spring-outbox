@@ -1,14 +1,25 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
+/**
+ * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
+ * <ul>
+ *     <li>uses the PostgreSQL-specific clause
+ *     <code>FOR UPDATE SKIP LOCKED</code> (available since PostgreSQL 9.5) in {@link #findBatchByStatus(DlqStatus, int)}
+ *     to allow multiple service instances to process outbox DLQ batches in parallel without conflicting on the same rows</li>
+ * </ul>
+ */
 public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
 
     private final JdbcTemplate jdbcTemplate;
@@ -123,8 +134,8 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
     @Transactional
     @Override
     public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
-        if (!validateIds(ids)) return;
-        String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + generatePlaceholders(ids) + ")";
+        if (!RepositoryUtils.validateIds(ids)) return;
+        String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
         List<Object> params = new ArrayList<>();
         params.add(status.name());
         params.addAll(ids);
@@ -134,26 +145,11 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
     @Transactional
     @Override
     public void deleteBatch(Set<UUID> ids) {
-        if (!validateIds(ids)) return;
-        String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + generatePlaceholders(ids) + ")";
+        if (!RepositoryUtils.validateIds(ids)) return;
+        String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
         List<Object> params = new ArrayList<>();
         params.addAll(ids);
         jdbcTemplate.update(sql, params.toArray());
-    }
-
-    private boolean validateIds(Set<UUID> ids) {
-        Objects.requireNonNull(ids, "ids cannot be null");
-        if (ids.isEmpty()) {
-            return false;
-        }
-        if (ids.size() > 100) {
-            throw new IllegalArgumentException("Batch size too large: " + ids.size() + ", max 100");
-        }
-        return true;
-    }
-
-    private String generatePlaceholders(Set<UUID> ids) {
-        return ids.stream().map(id -> "?").collect(Collectors.joining(", "));
     }
 
     private OutboxDlqEvent toEvent(ResultSet rs) throws SQLException {

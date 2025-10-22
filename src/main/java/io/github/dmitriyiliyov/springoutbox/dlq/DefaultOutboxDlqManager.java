@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.CacheHelper;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.utils.CacheHelper;
+import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

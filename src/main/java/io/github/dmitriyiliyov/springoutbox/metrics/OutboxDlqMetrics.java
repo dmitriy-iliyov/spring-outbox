@@ -8,7 +8,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.Arrays;
 
-public class OutboxDlqMetrics implements OutboxMetrics {
+public final class OutboxDlqMetrics implements OutboxMetrics {
 
     private final MeterRegistry registry;
     private final OutboxProperties properties;

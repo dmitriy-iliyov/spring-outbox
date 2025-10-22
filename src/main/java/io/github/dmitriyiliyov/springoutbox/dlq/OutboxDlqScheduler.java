@@ -9,28 +9,28 @@ import java.util.concurrent.TimeUnit;
 public final class OutboxDlqScheduler implements OutboxScheduler {
 
     private final OutboxProperties.DlqProperties properties;
-    private final DlqTransfer transfer;
     private final ScheduledExecutorService executor;
+    private final OutboxDlqTransfer transfer;
 
-    public OutboxDlqScheduler(OutboxProperties.DlqProperties properties, DlqTransfer transfer,
-                              ScheduledExecutorService executor) {
+    public OutboxDlqScheduler(OutboxProperties.DlqProperties properties, ScheduledExecutorService executor,
+                              OutboxDlqTransfer transfer) {
         this.properties = properties;
-        this.transfer = transfer;
         this.executor = executor;
+        this.transfer = transfer;
     }
 
     @Override
     public void schedule() {
         executor.scheduleWithFixedDelay(
                 () -> transfer.transferOutboxToDlq(properties.batchSize()),
-                properties.initialDelay().getSeconds(),
-                properties.fixedDelay().getSeconds(),
+                properties.transferToDlqInitialDelay().getSeconds(),
+                properties.transferToDlqFixedDelay().getSeconds(),
                 TimeUnit.SECONDS
         );
         executor.scheduleWithFixedDelay(
                 () -> transfer.transferDlqToOutbox(properties.batchSize()),
-                properties.initialDelay().getSeconds(),
-                properties.fixedDelay().getSeconds(),
+                properties.transferFromDlqInitialDelay().getSeconds(),
+                properties.transferFormDlqFixedDelay().getSeconds(),
                 TimeUnit.SECONDS
         );
     }

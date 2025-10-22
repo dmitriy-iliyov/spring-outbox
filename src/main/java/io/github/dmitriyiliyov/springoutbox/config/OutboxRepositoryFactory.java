@@ -2,6 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.config;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.PostgreSqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.OutboxDlqRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.PostgreSqlOutboxDlqRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -11,24 +13,30 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.function.Function;
 
 public final class OutboxRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxRepositoryFactory.class);
-
-    private static final Map<String, Function<DataSource, OutboxRepository>> SUPPORTED_DB = Map.of(
-            "postgresql", dataSource -> new PostgreSqlOutboxRepository(getSynchronizedJdbcTemplate(dataSource))
+    private static final Object SUPPLIER_LOCK = new Object();
+    private static volatile OutboxRepositoriesSupplier SUPPLIER;
+    private static final Map<String, OutboxRepositoriesSupplier> SUPPORTED_DB = Map.of(
+            "postgresql", new PostgreSqlOutboxRepositoriesSupplier()
     );
 
     private OutboxRepositoryFactory() {}
 
-    public static OutboxRepository generate(DataSource dataSource) {
+    public static OutboxRepositoriesSupplier.OutboxRepositoriesPair generate(DataSource dataSource) {
         try (Connection conn = dataSource.getConnection()) {
             String dbName = conn.getMetaData().getDatabaseProductName().toLowerCase();
-            Function<DataSource, OutboxRepository> function = SUPPORTED_DB.get(dbName);
-            if (function != null) {
-                return function.apply(dataSource);
+            if (SUPPLIER == null) {
+                synchronized (SUPPLIER_LOCK) {
+                    if (SUPPLIER == null) {
+                        SUPPLIER = SUPPORTED_DB.get(dbName);
+                    }
+                }
+            }
+            if (SUPPLIER != null) {
+                return SUPPLIER.supply(dataSource);
             } else {
                 throw new IllegalArgumentException("Unsupported database: " + dbName);
             }
@@ -38,7 +46,34 @@ public final class OutboxRepositoryFactory {
         }
     }
 
-    private static JdbcTemplate getSynchronizedJdbcTemplate(DataSource dataSource) {
-        return new JdbcTemplate(new TransactionAwareDataSourceProxy(dataSource));
+    @FunctionalInterface
+    private interface OutboxRepositoriesSupplier {
+
+        record OutboxRepositoriesPair(
+                OutboxRepository main,
+                OutboxDlqRepository dlq
+        ){}
+
+        OutboxRepositoriesPair supply(DataSource dataSource);
+    }
+
+    private static final class PostgreSqlOutboxRepositoriesSupplier implements OutboxRepositoriesSupplier {
+
+        private volatile JdbcTemplate jdbcTemplate;
+
+        @Override
+        public OutboxRepositoriesPair supply(DataSource dataSource) {
+            if (jdbcTemplate == null) {
+                synchronized (this) {
+                    if (jdbcTemplate == null) {
+                        jdbcTemplate = new JdbcTemplate(new TransactionAwareDataSourceProxy(dataSource));
+                    }
+                }
+            }
+            return new OutboxRepositoriesPair(
+                    new PostgreSqlOutboxRepository(jdbcTemplate),
+                    new PostgreSqlOutboxDlqRepository(jdbcTemplate)
+            );
+        }
     }
 }

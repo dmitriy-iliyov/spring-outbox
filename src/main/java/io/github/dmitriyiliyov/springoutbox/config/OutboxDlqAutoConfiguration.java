@@ -1,23 +1,61 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
-import jakarta.annotation.Nonnull;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxDlqMetrics;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.utils.DumbOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.transaction.support.TransactionTemplate;
 
-public class OutboxDlqAutoConfiguration implements BeanDefinitionRegistryPostProcessor, ApplicationContextAware {
+import javax.sql.DataSource;
+import java.util.concurrent.ScheduledExecutorService;
 
-    private ApplicationContext context;
+@Configuration
+@ConditionalOnProperty(prefix = "outbox.dlq", name = "enable", havingValue = "true")
+public class OutboxDlqAutoConfiguration {
 
-    @Override
-    public void postProcessBeanDefinitionRegistry(@Nonnull BeanDefinitionRegistry registry) throws BeansException {
-
+    @Bean
+    public OutboxDlqRepository outboxDlqRepository(DataSource dataSource) {
+        return OutboxRepositoryFactory.generate(dataSource).dlq();
     }
 
-    @Override
-    public void setApplicationContext(@Nonnull ApplicationContext applicationContext) throws BeansException {
-        this.context = applicationContext;
+    @Bean
+    public OutboxCache<DlqStatus> outboxDlqCache() {
+        return new DumbOutboxCache<>(30, 30, 30);
+    }
+
+    @Bean
+    public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository, OutboxCache<DlqStatus> cache) {
+        return new DefaultOutboxDlqManager(repository, cache);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public OutboxDlqHandler outboxDlqHandler() {
+        return new LogOutboxDlqHandler();
+    }
+
+    @Bean
+    public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager, OutboxDlqManager dlqManager, OutboxDlqHandler handler,
+                                               TransactionTemplate transactionTemplate) {
+        return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler);
+    }
+
+    @Bean
+    public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService outboxScheduledExecutorService,
+                                              OutboxProperties properties, OutboxDlqTransfer transfer) {
+        return new OutboxDlqScheduler(properties.getDlq(), outboxScheduledExecutorService, transfer);
+    }
+
+    @Bean
+    public OutboxMetrics outboxDlqMetrics(OutboxProperties properties, MeterRegistry registry, OutboxDlqManager manager) {
+        return new OutboxDlqMetrics(registry, properties, manager);
     }
 }

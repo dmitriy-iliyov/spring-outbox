@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core;
+package io.github.dmitriyiliyov.springoutbox.utils;
 
 public interface OutboxCache<S extends Enum<S>> {
     Long getCount();

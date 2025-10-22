@@ -10,20 +10,21 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class DefaultDlqTransfer implements DlqTransfer {
+public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultDlqTransfer.class);
-    private final OutboxManager manager;
-    private final OutboxDlqHandler handler;
-    private final OutboxDlqManager dlqManager;
+    private static final Logger log = LoggerFactory.getLogger(DefaultOutboxDlqTransfer.class);
+
     private final TransactionTemplate transactionTemplate;
+    private final OutboxManager manager;
+    private final OutboxDlqManager dlqManager;
+    private final OutboxDlqHandler handler;
 
-    public DefaultDlqTransfer(OutboxManager manager, OutboxDlqHandler handler, OutboxDlqManager dlqManager,
-                              TransactionTemplate transactionTemplate) {
-        this.manager = manager;
-        this.handler = handler;
-        this.dlqManager = dlqManager;
+    public DefaultOutboxDlqTransfer(TransactionTemplate transactionTemplate, OutboxManager manager,
+                                    OutboxDlqManager dlqManager, OutboxDlqHandler handler) {
         this.transactionTemplate = transactionTemplate;
+        this.manager = manager;
+        this.dlqManager = dlqManager;
+        this.handler = handler;
     }
 
     @Override

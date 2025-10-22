@@ -1,10 +1,10 @@
-package io.github.dmitriyiliyov.springoutbox.core;
+package io.github.dmitriyiliyov.springoutbox.utils;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-public class CacheHelper {
+public final class CacheHelper {
 
     public static <S extends Enum<S>> long count(OutboxCache<S> cache, Supplier<Long> countSupplier) {
         Long count = cache.getCount();

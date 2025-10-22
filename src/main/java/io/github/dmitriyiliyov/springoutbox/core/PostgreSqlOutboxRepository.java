@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.core;
 
 import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,8 +11,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxRepository}.
@@ -29,9 +32,6 @@ import java.util.stream.Collectors;
  *
  *     <li> provides a mechanism for incrementing retry counters and marking permanently failed events.</li>
  * </ul>
- * <p>
- * <b>Note:</b> This implementation is tightly coupled to PostgreSQL syntax. For other relational databases
- * (e.g., Oracle, MySQL, MSSQL), extend this class and adapt the SQL queries to their dialects and locking semantics.
  */
 public class PostgreSqlOutboxRepository implements OutboxRepository {
 
@@ -162,11 +162,11 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     @Transactional
     @Override
     public void updateBatchStatus(Set<UUID> ids, EventStatus status) {
-        if (!validateIds(ids)) return;
+        if (!RepositoryUtils.validateIds(ids)) return;
         if (status.equals(EventStatus.FAILED)) {
             throw new IllegalArgumentException("Use incrementRetryCountOrSetFailed() for FAILED batch");
         }
-        String placeholders = generatePlaceholders(ids);
+        String placeholders = RepositoryUtils.generatePlaceholders(ids);
         String sql;
         List<Object> params = new ArrayList<>();
         if (status.equals(EventStatus.PROCESSED)) {
@@ -185,7 +185,7 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     @Transactional
     @Override
     public void incrementRetryCountOrSetFailed(Set<UUID> ids, int maxRetryCount) {
-        if (!validateIds(ids)) return;
+        if (!RepositoryUtils.validateIds(ids)) return;
         String sql = """
                 UPDATE outbox_events 
                 SET 
@@ -193,7 +193,7 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
                     status = CASE WHEN retry_count + 1 < ? THEN ? ELSE ? END
                     failed_at = CASE WHEN retry_count + 1 < ? THEN ? ELSE failed_at
                 WHERE id IN (%s)
-            """.formatted(generatePlaceholders(ids));
+            """.formatted(RepositoryUtils.generatePlaceholders(ids));
         List<Object> params = new ArrayList<>();
         params.add(maxRetryCount);
         params.add(maxRetryCount);
@@ -208,8 +208,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     @Transactional
     @Override
     public void deleteBatch(Set<UUID> ids) {
-        if (!validateIds(ids)) return;
-        String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(generatePlaceholders(ids));
+        if (!RepositoryUtils.validateIds(ids)) return;
+        String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generatePlaceholders(ids));
         jdbcTemplate.update(sql, ids.toArray());
     }
 
@@ -231,21 +231,6 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
         params.add(threshold);
         params.add(batchSize);
         jdbcTemplate.update(sql, params.toArray());
-    }
-
-    private boolean validateIds(Set<UUID> ids) {
-        Objects.requireNonNull(ids, "ids cannot be null");
-        if (ids.isEmpty()) {
-            return false;
-        }
-        if (ids.size() > 100) {
-            throw new IllegalArgumentException("Batch size too large: " + ids.size() + ", max 100");
-        }
-        return true;
-    }
-
-    private String generatePlaceholders(Set<UUID> ids) {
-        return ids.stream().map(id -> "?").collect(Collectors.joining(", "));
     }
 
     private OutboxEvent toEvent(ResultSet rs) throws SQLException {
