@@ -40,7 +40,7 @@ public class OutboxAutoConfiguration {
 
     @Bean
     public OutboxRepository outboxRepository(DataSource dataSource) {
-        return OutboxRepositoryFactory.generate(dataSource).main();
+        return OutboxRepositoryFactory.generate(dataSource);
     }
 
     @Bean

@@ -22,8 +22,8 @@ import java.util.concurrent.ScheduledExecutorService;
 public class OutboxDlqAutoConfiguration {
 
     @Bean
-    public OutboxDlqRepository outboxDlqRepository(DataSource dataSource) {
-        return OutboxRepositoryFactory.generate(dataSource).dlq();
+    public OutboxDlqRepository outboxRepository(DataSource dataSource) {
+        return OutboxDlqRepositoryFactory.generate(dataSource);
     }
 
     @Bean

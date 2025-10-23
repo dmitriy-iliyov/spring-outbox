@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.PostgreSqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.OutboxDlqRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.PostgreSqlOutboxDlqRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,20 +11,20 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.function.Function;
 
-public final class OutboxRepositoryFactory {
+public final class OutboxDlqRepositoryFactory {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxRepositoryFactory.class);
-    private static final Map<String, Function<DataSource, OutboxRepository>> SUPPORTED_SUPPLIERS = Map.of(
+    private static final Logger log = LoggerFactory.getLogger(OutboxDlqRepositoryFactory.class);
+    private static final Map<String, Function<DataSource, OutboxDlqRepository>> SUPPORTED_SUPPLIERS = Map.of(
             "postgresql",
-            dataSource -> new PostgreSqlOutboxRepository(JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource))
+            dataSource -> new PostgreSqlOutboxDlqRepository(JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource))
     );
 
-    private OutboxRepositoryFactory() {}
+    private OutboxDlqRepositoryFactory() {}
 
-    public static OutboxRepository generate(DataSource dataSource) {
+    public static OutboxDlqRepository generate(DataSource dataSource) {
         try (Connection conn = dataSource.getConnection()) {
             String dbName = conn.getMetaData().getDatabaseProductName().toLowerCase();
-            Function<DataSource, OutboxRepository> supplier = SUPPORTED_SUPPLIERS.get(dbName);
+            Function<DataSource, OutboxDlqRepository> supplier = SUPPORTED_SUPPLIERS.get(dbName);
             if (supplier != null) {
                 return supplier.apply(dataSource);
             } else {
