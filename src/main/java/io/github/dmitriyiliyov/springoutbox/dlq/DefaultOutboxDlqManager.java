@@ -1,6 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqEventNotFoundException;
+import io.github.dmitriyiliyov.springoutbox.dlq.dto.BatchRequest;
+import io.github.dmitriyiliyov.springoutbox.dlq.dto.BatchUpdateRequest;
 import io.github.dmitriyiliyov.springoutbox.utils.CacheHelper;
 import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +46,11 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
         return CacheHelper.countByEventTypeAndStatus(cache, eventType, status, repository::countByEventTypeAndStatus);
     }
 
+    @Override
+    public OutboxDlqEvent loadById(UUID id) {
+        return repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
+    }
+
     @Transactional
     @Override
     public List<OutboxDlqEvent> loadBatch(DlqStatus status, int batchSize) {
@@ -60,21 +68,29 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
     }
 
     @Override
-    public List<OutboxDlqEvent> loadBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
-        return repository.findBatchByStatus(status, batchNumber, batchSize);
+    public List<OutboxDlqEvent> loadBatch(BatchRequest request) {
+        return repository.findBatchByStatus(request.status(), request.batchNumber(), request.batchSize());
     }
 
     @Override
     public void updateStatus(UUID id, DlqStatus status) {
-        repository.updateStatus(id, status);
+        int updatedColumnCount = repository.updateStatus(id, status);
+        if (updatedColumnCount == 0) {
+            throw new OutboxDlqEventNotFoundException(id);
+        }
     }
 
     @Override
-    public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
-        if (ids == null || ids.isEmpty()) {
+    public void updateBatchStatus(BatchUpdateRequest request) {
+        if (request.ids() == null || request.ids().isEmpty()) {
             return;
         }
-        repository.updateBatchStatus(ids, status);
+        repository.updateBatchStatus(request.ids(), request.status());
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        repository.deleteById(id);
     }
 
     @Override

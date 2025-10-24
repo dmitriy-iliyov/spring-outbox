@@ -7,10 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.sql.Timestamp;
+import java.util.*;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
@@ -77,6 +75,22 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
         return count == null ? 0 : count;
     }
 
+    @Transactional(readOnly = true)
+    @Override
+    public Optional<OutboxDlqEvent> findById(UUID id) {
+        String sql = """
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, created_at, processed_at, failed_at
+            FROM outbox_dlq_events
+            WHERE id = ?
+        """;
+        List<OutboxDlqEvent> results = jdbcTemplate.query(
+                sql,
+                ps -> ps.setObject(1, id),
+                (rs, rowNum) -> toEvent(rs)
+        );
+        return results.stream().findFirst();
+    }
+
     @Transactional
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize) {
@@ -120,9 +134,9 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
 
     @Transactional
     @Override
-    public void updateStatus(UUID id, DlqStatus status) {
+    public int updateStatus(UUID id, DlqStatus status) {
         String sql = "UPDATE outbox_dlq_events SET dlq_status = ? WHERE id = ?";
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setString(1, status.name());
@@ -144,6 +158,13 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
 
     @Transactional
     @Override
+    public void deleteById(UUID id) {
+        String sql = "DELETE FROM outbox_dlq_events WHERE id = ?";
+        jdbcTemplate.update(sql, ps -> ps.setObject(1, id));
+    }
+
+    @Transactional
+    @Override
     public void deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return;
         String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
@@ -153,6 +174,8 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
     }
 
     private OutboxDlqEvent toEvent(ResultSet rs) throws SQLException {
+        Timestamp processedAt = rs.getTimestamp("processed_at");
+        Timestamp failedAt = rs.getTimestamp("failed_at");
         return new OutboxDlqEvent(
                 rs.getObject("id", UUID.class),
                 EventStatus.fromString(rs.getString("status")),
@@ -161,10 +184,8 @@ public class PostgreSqlOutboxDlqRepository implements OutboxDlqRepository {
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
                 rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("processed_at") != null
-                        ? rs.getTimestamp("processed_at").toInstant() : null,
-                rs.getTimestamp("failed_at") != null
-                        ? rs.getTimestamp("failed_at").toInstant() : null,
+                processedAt != null ? processedAt.toInstant() : null,
+                failedAt != null ? failedAt.toInstant() : null,
                 DlqStatus.fromString(rs.getString("dlq_status"))
         );
     }

@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,13 +14,17 @@ public interface OutboxDlqRepository {
 
     long countByEventTypeAndStatus(String eventType, DlqStatus status);
 
+    Optional<OutboxDlqEvent> findById(UUID id);
+
     List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize);
 
     List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize);
 
-    void updateStatus(UUID id, DlqStatus status);
+    int updateStatus(UUID id, DlqStatus status);
 
     void updateBatchStatus(Set<UUID> ids, DlqStatus status);
+
+    void deleteById(UUID id);
 
     void deleteBatch(Set<UUID> ids);
 }
