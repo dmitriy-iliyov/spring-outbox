@@ -64,6 +64,21 @@ public final class OutboxSenderFactory {
                 );
             }
             KafkaTemplate<String, Object> kafkaTemplate = context.getBean(beanName, KafkaTemplate.class);
+            Map<String, Object> configs = kafkaTemplate.getProducerFactory().getConfigurationProperties();
+            String acks = (String) configs.get("acks");
+            if (acks != null && !acks.equals("all")) {
+                log.warn("Kafka producer factory is configured without 'acks=all'. Outbox cannot guarantee at-least-once delivery.");
+            }
+            Boolean idempotence = null;
+            Object idempotenceObj = configs.get("enable.idempotence");
+            if (idempotenceObj instanceof Boolean) {
+                idempotence = (Boolean) idempotenceObj;
+            } else if (idempotenceObj instanceof String) {
+                idempotence = Boolean.parseBoolean((String) idempotenceObj);
+            }
+            if (idempotence != null && !idempotence) {
+                log.warn("Kafka producer is not idempotent. It is recommended to enable 'enable.idempotence=true' to avoid message duplication.");
+            }
             return new KafkaOutboxSender(kafkaTemplate, mapper);
         }
     }

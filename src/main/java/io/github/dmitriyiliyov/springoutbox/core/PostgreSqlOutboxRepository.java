@@ -234,6 +234,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
     }
 
     private OutboxEvent toEvent(ResultSet rs) throws SQLException {
+        Timestamp processedAt = rs.getTimestamp("processed_at");
+        Timestamp failedAt = rs.getTimestamp("failed_at");
         return new OutboxEvent(
                 rs.getObject("id", UUID.class),
                 EventStatus.fromString(rs.getString("status")),
@@ -242,10 +244,8 @@ public class PostgreSqlOutboxRepository implements OutboxRepository {
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
                 rs.getTimestamp("created_at").toInstant(),
-                rs.getTimestamp("processed_at") != null
-                        ? rs.getTimestamp("processed_at").toInstant() : null,
-                rs.getTimestamp("failed_at") != null
-                        ? rs.getTimestamp("failed_at").toInstant() : null
+                processedAt != null ? processedAt.toInstant() : null,
+                failedAt != null ? failedAt.toInstant() : null
         );
     }
 }

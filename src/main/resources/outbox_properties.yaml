@@ -22,11 +22,11 @@ outbox:
       fixed-delay: 20s
 
   clean-up:
-    enabled: true
+    enable: true
     batch-size: 20
     after: 1h
     initial-delay: 10s
     fixed-delay: 1h
 
   dlq:
-    enabled: true
+    enable: true
