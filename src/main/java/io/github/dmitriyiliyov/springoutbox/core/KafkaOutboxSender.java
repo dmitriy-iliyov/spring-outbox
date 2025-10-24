@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class KafkaOutboxSender implements OutboxSender {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaOutboxSender.class);
+
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ObjectMapper mapper;
     private final CacheableClassResolver classResolver;

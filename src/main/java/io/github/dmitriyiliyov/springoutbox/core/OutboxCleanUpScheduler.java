@@ -1,12 +1,16 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class OutboxCleanUpScheduler implements OutboxScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxCleanUpScheduler.class);
 
     private final ScheduledExecutorService executor;
     private final OutboxProperties.CleanUpProperties cleanupProperties;
@@ -32,8 +36,12 @@ public final class OutboxCleanUpScheduler implements OutboxScheduler {
     public void schedule() {
         executor.scheduleWithFixedDelay(
                 () -> {
-                    Instant threshold = Instant.now().minus(cleanupProperties.ttl());
-                    manager.deleteProcessedBatch(threshold, cleanupProperties.batchSize());
+                    try {
+                        Instant threshold = Instant.now().minus(cleanupProperties.ttl());
+                        manager.deleteProcessedBatch(threshold, cleanupProperties.batchSize());
+                    } catch (Exception e) {
+                        log.error("Error process clean up outbox", e);
+                    }
                 },
                 cleanupProperties.initialDelay().getSeconds(),
                 cleanupProperties.fixedDelay().getSeconds(),

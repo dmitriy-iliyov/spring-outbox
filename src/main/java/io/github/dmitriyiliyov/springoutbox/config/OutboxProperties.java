@@ -43,7 +43,7 @@ public class OutboxProperties {
                             String eventType = e.getKey();
                             Objects.requireNonNull(eventType, "eventType cannot be null");
                             if (eventType.isBlank()) {
-                                throw new IllegalArgumentException("Topic cannot be blank");
+                                throw new IllegalArgumentException("Event type cannot be blank");
                             }
                             return eventType;
                         },
@@ -87,13 +87,12 @@ public class OutboxProperties {
     }
 
     public record SenderProperties(SenderType type, String beanName) {
-            public SenderProperties(SenderType type, String beanName) {
-                this.type = Objects.requireNonNull(type, "senderType cannot be null");
+            public SenderProperties {
+                Objects.requireNonNull(type, "senderType cannot be null");
                 Objects.requireNonNull(beanName, "beanName cannot be null");
                 if (beanName.isBlank()) {
                     throw new IllegalArgumentException("BeanName cannot be blank");
                 }
-                this.beanName = beanName;
             }
     }
 
@@ -143,6 +142,10 @@ public class OutboxProperties {
     public record EventProperties(String eventType, String topic, Integer batchSize, Duration initialDelay,
                                   Duration fixedDelay, Integer maxRetries) {
         public EventProperties {
+            Objects.requireNonNull(eventType, "eventType cannot be null");
+            if (eventType.isBlank()) {
+                throw new IllegalArgumentException("Event type cannot be blank");
+            }
             Objects.requireNonNull(topic, "topic cannot be null");
             if (topic.isBlank()) {
                 throw new IllegalArgumentException("Topic cannot be blank");

@@ -24,7 +24,7 @@ public class JacksonOutboxSerializer implements OutboxSerializer {
             UUID id = uuidGenerator.generate();
             String payloadType = event.getClass().getName();
             String payload = mapper.writeValueAsString(event);
-            return new OutboxEvent(id, eventType, payloadType,  payload);
+            return new OutboxEvent(id, eventType, payloadType, payload);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         } catch (Exception e) {

@@ -2,11 +2,15 @@ package io.github.dmitriyiliyov.springoutbox.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class OutboxDlqScheduler implements OutboxScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxDlqScheduler.class);
 
     private final OutboxProperties.DlqProperties properties;
     private final ScheduledExecutorService executor;
@@ -22,13 +26,25 @@ public final class OutboxDlqScheduler implements OutboxScheduler {
     @Override
     public void schedule() {
         executor.scheduleWithFixedDelay(
-                () -> transfer.transferOutboxToDlq(properties.batchSize()),
+                () -> {
+                    try {
+                        transfer.transferOutboxToDlq(properties.batchSize());
+                    } catch (Exception e) {
+                        log.error("Error process transfer failed events from outbox to DLQ", e);
+                    }
+                },
                 properties.transferToDlqInitialDelay().getSeconds(),
                 properties.transferToDlqFixedDelay().getSeconds(),
                 TimeUnit.SECONDS
         );
         executor.scheduleWithFixedDelay(
-                () -> transfer.transferDlqToOutbox(properties.batchSize()),
+                () -> {
+                    try {
+                        transfer.transferDlqToOutbox(properties.batchSize());
+                    } catch (Exception e) {
+                        log.error("Error process transfer failed events from DLQ to outbox to retry", e);
+                    }
+                },
                 properties.transferFromDlqInitialDelay().getSeconds(),
                 properties.transferFormDlqFixedDelay().getSeconds(),
                 TimeUnit.SECONDS

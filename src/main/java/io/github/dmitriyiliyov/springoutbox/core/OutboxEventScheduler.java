@@ -1,11 +1,15 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class OutboxEventScheduler implements OutboxScheduler {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxEventScheduler.class);
 
     private final OutboxProperties.EventProperties eventProperties;
     private final ScheduledExecutorService executor;
@@ -30,7 +34,13 @@ public final class OutboxEventScheduler implements OutboxScheduler {
     @Override
     public void schedule() {
         executor.scheduleAtFixedRate(
-                () -> processor.process(eventProperties),
+                () -> {
+                    try {
+                        processor.process(eventProperties);
+                    } catch (Exception e) {
+                        log.error("Error process outbox events for type={}", eventProperties.eventType(), e);
+                    }
+                },
                 eventProperties.initialDelay().getSeconds(),
                 eventProperties.fixedDelay().getSeconds(),
                 TimeUnit.SECONDS
