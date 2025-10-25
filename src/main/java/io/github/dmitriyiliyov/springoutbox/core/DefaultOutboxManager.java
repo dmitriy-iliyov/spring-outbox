@@ -13,14 +13,13 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class DefaultOutboxManager implements OutboxManager {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxManager.class);
 
-    private final OutboxRepository repository;
-    private final OutboxCache<EventStatus> cache;
+    protected final OutboxRepository repository;
+    protected final OutboxCache<EventStatus> cache;
 
     public DefaultOutboxManager(OutboxRepository repository, OutboxCache<EventStatus> cache) {
         this.repository = repository;
@@ -52,36 +51,19 @@ public class DefaultOutboxManager implements OutboxManager {
         return CacheHelper.countByEventTypeAndStatus(cache, eventType, status, repository::countByEventTypeAndStatus);
     }
 
-    @Transactional
     @Override
     public List<OutboxEvent> loadBatch(String eventType, int batchSize) {
-        List<OutboxEvent> events = repository.findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize);
-        if (events.isEmpty()) {
-            return events;
-        }
-        repository.updateBatchStatus(
-                events.stream()
-                        .map(OutboxEvent::getId)
-                        .collect(Collectors.toSet()),
+        return repository.findAndLockBatchByEventTypeAndStatus(
+                eventType,
+                EventStatus.PENDING,
+                batchSize,
                 EventStatus.IN_PROCESS
         );
-        return events;
     }
 
-    @Transactional
     @Override
-    public List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy) {
-        List<OutboxEvent> events = repository.findBatchByStatus(status, batchSize, orderBy);
-        if (events.isEmpty()) {
-            return events;
-        }
-        repository.updateBatchStatus(
-                events.stream()
-                        .map(OutboxEvent::getId)
-                        .collect(Collectors.toSet()),
-                EventStatus.IN_PROCESS
-        );
-        return events;
+    public List<OutboxEvent> loadBatch(EventStatus status, int batchSize) {
+        return repository.findAndLockBatchByStatus(status, batchSize, EventStatus.IN_PROCESS);
     }
 
     @Transactional
@@ -113,8 +95,16 @@ public class DefaultOutboxManager implements OutboxManager {
     }
 
     @Override
+    public void recoverStuckBatch(int batchSize) {
+        int recoverSize = repository.updateBatchStatusByStatus(EventStatus.IN_PROCESS, batchSize, EventStatus.PENDING);
+        if (recoverSize > 0) {
+            log.warn("Stuck events batch recovered, recoveredSize={}; batchSize={} ", recoverSize, batchSize);
+        }
+    }
+
+    @Override
     public void deleteProcessedBatch(Instant threshold, int batchSize) {
-        repository.deleteBatchByProcessedAfterThreshold(threshold, batchSize);
+        repository.deleteBatchByStatusAndThreshold(EventStatus.PROCESSED, threshold, batchSize);
     }
 
     @Override

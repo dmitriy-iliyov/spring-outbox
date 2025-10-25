@@ -21,9 +21,11 @@ public interface OutboxManager {
 
     List<OutboxEvent> loadBatch(String eventType, int batchSize);
 
-    List<OutboxEvent> loadBatch(EventStatus status, int batchSize, String orderBy);
+    List<OutboxEvent> loadBatch(EventStatus status, int batchSize);
 
     void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount);
+
+    void recoverStuckBatch(int batchSize);
 
     void deleteProcessedBatch(Instant threshold, int batchSize);
 

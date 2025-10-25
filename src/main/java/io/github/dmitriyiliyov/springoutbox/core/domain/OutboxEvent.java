@@ -13,8 +13,7 @@ public class OutboxEvent {
     protected final String payload;
     protected final int retryCount;
     protected final Instant createdAt;
-    protected final Instant processedAt;
-    protected final Instant failedAt;
+    protected final Instant updatedAt;
 
     public OutboxEvent(UUID id, String eventType, String payloadType, String payload) {
         this.id = id;
@@ -24,12 +23,11 @@ public class OutboxEvent {
         this.payload = payload;
         this.retryCount = 0;
         this.createdAt = Instant.now();
-        this.processedAt = null;
-        this.failedAt = null;
+        this.updatedAt = null;
     }
 
     public OutboxEvent(UUID id, EventStatus status, String eventType, String payloadType, String payload, int retryCount,
-                       Instant createdAt, Instant processedAt, Instant failedAt) {
+                       Instant createdAt, Instant updatedAt) {
         this.id = id;
         this.status = status;
         this.eventType = eventType;
@@ -37,8 +35,7 @@ public class OutboxEvent {
         this.payload = payload;
         this.retryCount = retryCount;
         this.createdAt = createdAt;
-        this.processedAt = processedAt;
-        this.failedAt = failedAt;
+        this.updatedAt = updatedAt;
     }
 
     @Override
@@ -82,11 +79,7 @@ public class OutboxEvent {
         return createdAt;
     }
 
-    public Instant getProcessedAt() {
-        return processedAt;
-    }
-
-    public Instant getFailedAt() {
-        return failedAt;
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 }

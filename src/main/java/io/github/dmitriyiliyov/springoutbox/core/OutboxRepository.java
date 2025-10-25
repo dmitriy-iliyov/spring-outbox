@@ -19,13 +19,11 @@ public interface OutboxRepository {
 
     long countByEventTypeAndStatus(String eventType, EventStatus status);
 
-    List<OutboxEvent> findBatchByStatus(EventStatus status, int batchSize, String orderBy);
+    List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize,
+                                                           EventStatus lockStatus
+    );
 
-    /**
-     * Ensures that batches can be safely processed by multiple instances concurrently,
-     * so that no event is deleted twice or skipped.
-     */
-    List<OutboxEvent> findBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize);
+    List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus);
 
     /**
      * Updates the status of a batch of events.
@@ -50,10 +48,14 @@ public interface OutboxRepository {
     /**
      * Deletes processed events older than a specified threshold, in batches.
      * Ensures that batches can be safely processed by multiple instances concurrently,
-     * so that no event is deleted twice or skipped.
+     * so that no event is deleted twice or skipped. Only events with
+     * {@code status = PROCESSED} and {@code updated_At < threshold} will be deleted.
      *
-     * @param threshold the cutoff {@link Instant}; only events with {@code processedAt < threshold} will be deleted
+     * @param status the status of processed event {@link EventStatus};
+     * @param threshold the cutoff {@link Instant};
      * @param batchSize the maximum number of events to delete in one batch
      */
-    void deleteBatchByProcessedAfterThreshold(Instant threshold, int batchSize);
+    void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize);
+
+    int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus);
 }
