@@ -1,10 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.ResultSetMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
@@ -39,7 +43,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                     LIMIT ?
                     FOR UPDATE SKIP LOCKED
                 )
-                RETURNING id, status, event_type, payload_type, payload, retry_count, created_at, processed_at, failed_at
+                RETURNING id, status, event_type, payload_type, payload, retry_count, created_at, updated_at
             )
             SELECT * FROM to_lock
         """;

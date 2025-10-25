@@ -79,6 +79,27 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         return results.stream().findFirst();
     }
 
+    @Transactional
+    @Override
+    public List<OutboxDlqEvent> findBatch(Set<UUID> ids) {
+        if (!RepositoryUtils.validateIds(ids)) return List.of();
+        String sql = """
+            SELECT id, status, event_type, payload_type, payload, retry_count, created_at, updated_at
+            FROM outbox_dlq_events
+            WHERE id IN (%s)
+        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        return jdbcTemplate.query(
+                sql,
+                ps -> {
+                    int i = 1;
+                    for (UUID id: ids) {
+                        ps.setObject(i++, id);
+                    }
+                },
+                (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
+        );
+    }
+
     @Transactional(readOnly = true)
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
