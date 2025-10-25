@@ -5,8 +5,8 @@ import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxDlqMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
-import io.github.dmitriyiliyov.springoutbox.utils.DumbOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.utils.SimpleOutboxCache;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -28,7 +28,7 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     public OutboxCache<DlqStatus> outboxDlqCache() {
-        return new DumbOutboxCache<>(30, 30, 30);
+        return new SimpleOutboxCache<>(30, 30, 30);
     }
 
     @Bean

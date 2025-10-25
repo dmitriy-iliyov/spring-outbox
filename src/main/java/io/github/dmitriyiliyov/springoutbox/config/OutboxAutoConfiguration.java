@@ -45,7 +45,7 @@ public class OutboxAutoConfiguration {
 
     @Bean
     public OutboxCache<EventStatus> outboxCache() {
-        return new DumbOutboxCache<>(60, 30, 30);
+        return new SimpleOutboxCache<>(60, 30, 30);
     }
 
     @Bean
@@ -79,8 +79,12 @@ public class OutboxAutoConfiguration {
                     factory.registerSingleton(name, new OutboxEventScheduler(event, executor, processor));
                 }
             }
+            OutboxManager manager = factory.getBean(OutboxManager.class);
+            factory.registerSingleton("outboxStuckEventRecoveryScheduler",
+                    new OutboxStuckEventRecoveryScheduler(properties.getStuckEventRecovery(), executor, manager)
+            );
+
             if (properties.isCleanUpEnable()) {
-                OutboxManager manager = factory.getBean(OutboxManager.class);
                 factory.registerSingleton(
                         "outboxCleanUpScheduler",
                         new OutboxCleanUpScheduler(properties.getCleanUp(), executor, manager)
@@ -89,6 +93,7 @@ public class OutboxAutoConfiguration {
                 log.warn("Outbox is configured without a cleanup scheduler bean because clean-up is disabled; " +
                         "outbox storage will not be cleaned automatically.");
             }
+
         };
     }
 

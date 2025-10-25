@@ -17,6 +17,7 @@ public class OutboxProperties {
     private final Integer threadPoolSize;
     private final Defaults defaults;
     private final Map<String, EventProperties> events;
+    private final StuckEventRecoveryProperties stuckEventRecovery;
     private final CleanUpProperties cleanUp;
     private final DlqProperties dlq;
 
@@ -25,6 +26,7 @@ public class OutboxProperties {
                             Integer threadPoolSize,
                             Defaults defaults,
                             Map<String, EventProperties> events,
+                            StuckEventRecoveryProperties stuckEventRecovery,
                             CleanUpProperties cleanUp,
                             DlqProperties dlq) {
         this.sender = Objects.requireNonNull(sender, "sender cannot be null");
@@ -32,6 +34,7 @@ public class OutboxProperties {
         this.defaults = defaults == null ? new Defaults() : defaults;
         Objects.requireNonNull(events, "events cannot be null");
         this.events = applyDefaults(events);
+        this.stuckEventRecovery = stuckEventRecovery;
         this.cleanUp = cleanUp;
         this.dlq = dlq;
     }
@@ -68,6 +71,10 @@ public class OutboxProperties {
 
     public Map<String, EventProperties> getEvents() {
         return events;
+    }
+
+    public StuckEventRecoveryProperties getStuckEventRecovery() {
+        return stuckEventRecovery;
     }
 
     public boolean isCleanUpEnable() {
@@ -206,5 +213,18 @@ public class OutboxProperties {
                     this.transferFormDlqFixedDelay = null;
                 }
             }
+    }
+
+    public record StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+
+        private static final int DEFAULT_BATCH_SIZE = 50;
+        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(120);
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(10);
+
+        public StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+            this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+            this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
+            this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+        }
     }
 }
