@@ -102,9 +102,9 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
 
     @Transactional
     @Override
-    public int updateStatus(UUID id, DlqStatus status) {
+    public void updateStatus(UUID id, DlqStatus status) {
         String sql = "UPDATE outbox_dlq_events SET dlq_status = ? WHERE id = ?";
-        return jdbcTemplate.update(
+        jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setString(1, status.name());

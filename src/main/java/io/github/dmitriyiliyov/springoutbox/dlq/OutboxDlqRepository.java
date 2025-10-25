@@ -16,13 +16,15 @@ public interface OutboxDlqRepository {
 
     Optional<OutboxDlqEvent> findById(UUID id);
 
+    List<OutboxDlqEvent> findBatch(Set<UUID> ids);
+
     List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus);
 
     List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize);
 
     List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize);
 
-    int updateStatus(UUID id, DlqStatus status);
+    void updateStatus(UUID id, DlqStatus status);
 
     void updateBatchStatus(Set<UUID> ids, DlqStatus status);
 

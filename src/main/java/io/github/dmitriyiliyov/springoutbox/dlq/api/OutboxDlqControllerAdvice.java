@@ -1,5 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.dlq.api;
 
+import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.BadRequestException;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -47,7 +49,7 @@ public class OutboxDlqControllerAdvice {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.NOT_FOUND,
                 "/errors/outbox/not-found",
-                "Not found",
+                "Not Found",
                 e.getDetail(),
                 request.getRequestURI(),
                 Instant.now()
@@ -57,12 +59,27 @@ public class OutboxDlqControllerAdvice {
                 .body(problemDetail);
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ProblemDetail> handleNotFoundException(BadRequestException e, HttpServletRequest request) {
+        ProblemDetail problemDetail = createProblemDetail(
+                HttpStatus.BAD_REQUEST,
+                "/errors/outbox/bad-request",
+                "Bad Request",
+                e.getDetail(),
+                request.getRequestURI(),
+                Instant.now()
+        );
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(problemDetail);
+    }
+
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     public ResponseEntity<ProblemDetail> handleValidationExceptions(Exception e, HttpServletRequest request) {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.BAD_REQUEST,
                 "/errors/outbox/validation",
-                "Validation failed",
+                "Validation Failed",
                 "Request validation failed",
                 request.getRequestURI(),
                 Instant.now()
@@ -90,7 +107,7 @@ public class OutboxDlqControllerAdvice {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.BAD_REQUEST,
                 "/errors/outbox/validation/constraint-violation",
-                "Validation failed",
+                "Validation Failed",
                 "Constraint validation failed",
                 request.getRequestURI(),
                 Instant.now()
@@ -111,7 +128,7 @@ public class OutboxDlqControllerAdvice {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "/errors/outbox/database",
-                "Database access error",
+                "Database Access Error",
                 "A database operation failed: " + e.getMostSpecificCause().getMessage(),
                 request.getRequestURI(),
                 Instant.now()

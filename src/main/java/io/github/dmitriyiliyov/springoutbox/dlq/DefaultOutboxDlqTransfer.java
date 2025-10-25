@@ -5,7 +5,6 @@ import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
@@ -47,69 +46,31 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 );
             } catch (Exception e) {
                 log.error("Error when transferring events from Outbox to DLQ", e);
-                throw e;
             }
         });
         handler.handle(events);
     }
 
-    @Transactional
     @Override
     public void transferDlqToOutbox(int batchSize) {
-        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
-        if (dlqEvents == null || dlqEvents.isEmpty()) {
-            return;
-        }
-        manager.saveBatch(toOutboxEvents(dlqEvents));
-        dlqManager.deleteBatch(
-                dlqEvents.stream()
-                        .map(OutboxDlqEvent::getId)
-                        .collect(Collectors.toSet())
+        transactionTemplate.executeWithoutResult(
+                (status) -> {
+                    try {
+                        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
+                        if (dlqEvents == null || dlqEvents.isEmpty()) {
+                            return;
+                        }
+                        manager.saveBatch(toOutboxEvents(dlqEvents));
+                        dlqManager.deleteBatch(
+                                dlqEvents.stream()
+                                        .map(OutboxDlqEvent::getId)
+                                        .collect(Collectors.toSet()));
+                    } catch (Exception e) {
+                        log.error("Error when transferring events from DLQ to Outbox", e);
+                    }
+                }
         );
     }
-
-//    @Override
-//    public void transferOutboxToDlq(int batchSize) {
-//        List<OutboxEvent> events = manager.loadBatch(EventStatus.FAILED, batchSize, "failed_at");
-//        if (events == null || events.isEmpty()) {
-//            return;
-//        }
-//        transactionTemplate.executeWithoutResult(status -> {
-//            try {
-//                dlqManager.saveBatch(toDlqEvents(events));
-//                manager.deleteBatch(
-//                        events.stream()
-//                                .map(OutboxEvent::getId)
-//                                .collect(Collectors.toSet())
-//                );
-//            } catch (Exception e) {
-//                log.error("Error when transferring events from Outbox to DLQ", e);
-//                throw e;
-//            }
-//        });
-//        handler.handle(events);
-//    }
-//
-//    @Override
-//    public void transferDlqToOutbox(int batchSize) {
-//        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
-//        if (dlqEvents == null || dlqEvents.isEmpty()) {
-//            return;
-//        }
-//        transactionTemplate.executeWithoutResult(status -> {
-//            try {
-//                manager.saveBatch(toOutboxEvents(dlqEvents));
-//                dlqManager.deleteBatch(
-//                        dlqEvents.stream()
-//                        .map(OutboxDlqEvent::getId)
-//                        .collect(Collectors.toSet())
-//                );
-//            } catch (Exception e) {
-//                log.error("Error when transferring events from DLQ to Outbox", e);
-//                throw e;
-//            }
-//        });
-//    }
 
     private OutboxDlqEvent toDlqEvent(OutboxEvent event) {
         return new OutboxDlqEvent(
@@ -138,7 +99,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 event.getEventType(),
                 event.getPayloadType(),
                 event.getPayload(),
-                event.getRetryCount(),
+                0,
                 event.getCreatedAt(),
                 Instant.now()
         );
