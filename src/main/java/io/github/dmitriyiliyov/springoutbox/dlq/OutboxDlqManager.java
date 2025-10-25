@@ -18,7 +18,7 @@ public interface OutboxDlqManager {
 
     OutboxDlqEvent loadById(UUID id);
 
-    List<OutboxDlqEvent> loadBatch(DlqStatus status, int batchSize);
+    List<OutboxDlqEvent> loadAndLockBatch(DlqStatus status, int batchSize);
 
     List<OutboxDlqEvent> loadBatch(BatchRequest request);
 

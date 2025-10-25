@@ -16,6 +16,8 @@ public interface OutboxDlqRepository {
 
     Optional<OutboxDlqEvent> findById(UUID id);
 
+    List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus);
+
     List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize);
 
     List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize);

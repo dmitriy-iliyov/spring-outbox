@@ -6,5 +6,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 public class KafkaOutboxSenderUnitTests {
 
-    @
+//    @Test
+//    @DisplayName("")
+//    public void sendEvents()
 }

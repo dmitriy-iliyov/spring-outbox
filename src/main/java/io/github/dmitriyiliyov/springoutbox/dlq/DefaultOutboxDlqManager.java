@@ -1,17 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqEventNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.dlq.dto.BatchRequest;
 import io.github.dmitriyiliyov.springoutbox.dlq.dto.BatchUpdateRequest;
 import io.github.dmitriyiliyov.springoutbox.utils.CacheHelper;
 import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class DefaultOutboxDlqManager implements OutboxDlqManager {
 
@@ -51,20 +48,9 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
         return repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
     }
 
-    @Transactional
     @Override
-    public List<OutboxDlqEvent> loadBatch(DlqStatus status, int batchSize) {
-        List<OutboxDlqEvent> events = repository.findBatchByStatus(status, batchSize);
-        if (events.isEmpty()) {
-            return events;
-        }
-        repository.updateBatchStatus(
-                events.stream()
-                        .map(OutboxEvent::getId)
-                        .collect(Collectors.toSet()),
-                DlqStatus.IN_PROCESS
-        );
-        return events;
+    public List<OutboxDlqEvent> loadAndLockBatch(DlqStatus status, int batchSize) {
+        return repository.findAndLockBatchByStatus(status, batchSize, DlqStatus.IN_PROCESS);
     }
 
     @Override
@@ -74,6 +60,7 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
 
     @Override
     public void updateStatus(UUID id, DlqStatus status) {
+        // FIXME IN_PROCESS
         int updatedColumnCount = repository.updateStatus(id, status);
         if (updatedColumnCount == 0) {
             throw new OutboxDlqEventNotFoundException(id);
@@ -82,6 +69,7 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
 
     @Override
     public void updateBatchStatus(BatchUpdateRequest request) {
+        // FIXME IN_PROCESS
         if (request.ids() == null || request.ids().isEmpty()) {
             return;
         }
@@ -90,6 +78,7 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
 
     @Override
     public void deleteById(UUID id) {
+        // FIXME IN_PROCESS
         repository.deleteById(id);
     }
 
@@ -98,6 +87,7 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
         if (ids == null || ids.isEmpty()) {
             return;
         }
+        // FIXME IN_PROCESS
         repository.deleteBatch(ids);
     }
 }

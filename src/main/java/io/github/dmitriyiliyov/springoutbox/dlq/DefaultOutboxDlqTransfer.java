@@ -5,8 +5,11 @@ import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,12 +32,13 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
 
     @Override
     public void transferOutboxToDlq(int batchSize) {
-        List<OutboxEvent> events = manager.loadBatch(EventStatus.FAILED, batchSize, "failed_at");
-        if (events == null || events.isEmpty()) {
-            return;
-        }
+        final List<OutboxEvent> events = new ArrayList<>();
         transactionTemplate.executeWithoutResult(status -> {
             try {
+                events.addAll(manager.loadBatch(EventStatus.FAILED, batchSize));
+                if (events.isEmpty()) {
+                    return;
+                }
                 dlqManager.saveBatch(toDlqEvents(events));
                 manager.deleteBatch(
                         events.stream()
@@ -49,26 +53,63 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
         handler.handle(events);
     }
 
+    @Transactional
     @Override
     public void transferDlqToOutbox(int batchSize) {
-        List<OutboxDlqEvent> dlqEvents = dlqManager.loadBatch(DlqStatus.TO_RETRY, batchSize);
+        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
         if (dlqEvents == null || dlqEvents.isEmpty()) {
             return;
         }
-        transactionTemplate.executeWithoutResult(status -> {
-            try {
-                manager.saveBatch(toOutboxEvents(dlqEvents));
-                dlqManager.deleteBatch(
-                        dlqEvents.stream()
+        manager.saveBatch(toOutboxEvents(dlqEvents));
+        dlqManager.deleteBatch(
+                dlqEvents.stream()
                         .map(OutboxDlqEvent::getId)
                         .collect(Collectors.toSet())
-                );
-            } catch (Exception e) {
-                log.error("Error when transferring events from DLQ to Outbox", e);
-                throw e;
-            }
-        });
+        );
     }
+
+//    @Override
+//    public void transferOutboxToDlq(int batchSize) {
+//        List<OutboxEvent> events = manager.loadBatch(EventStatus.FAILED, batchSize, "failed_at");
+//        if (events == null || events.isEmpty()) {
+//            return;
+//        }
+//        transactionTemplate.executeWithoutResult(status -> {
+//            try {
+//                dlqManager.saveBatch(toDlqEvents(events));
+//                manager.deleteBatch(
+//                        events.stream()
+//                                .map(OutboxEvent::getId)
+//                                .collect(Collectors.toSet())
+//                );
+//            } catch (Exception e) {
+//                log.error("Error when transferring events from Outbox to DLQ", e);
+//                throw e;
+//            }
+//        });
+//        handler.handle(events);
+//    }
+//
+//    @Override
+//    public void transferDlqToOutbox(int batchSize) {
+//        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
+//        if (dlqEvents == null || dlqEvents.isEmpty()) {
+//            return;
+//        }
+//        transactionTemplate.executeWithoutResult(status -> {
+//            try {
+//                manager.saveBatch(toOutboxEvents(dlqEvents));
+//                dlqManager.deleteBatch(
+//                        dlqEvents.stream()
+//                        .map(OutboxDlqEvent::getId)
+//                        .collect(Collectors.toSet())
+//                );
+//            } catch (Exception e) {
+//                log.error("Error when transferring events from DLQ to Outbox", e);
+//                throw e;
+//            }
+//        });
+//    }
 
     private OutboxDlqEvent toDlqEvent(OutboxEvent event) {
         return new OutboxDlqEvent(
@@ -79,8 +120,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 event.getPayload(),
                 event.getRetryCount(),
                 event.getCreatedAt(),
-                event.getProcessedAt(),
-                event.getFailedAt(),
+                event.getUpdatedAt(),
                 DlqStatus.NEW
         );
     }
@@ -94,14 +134,13 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
     private OutboxEvent toOutboxEvent(OutboxDlqEvent event) {
         return new OutboxEvent(
                 event.getId(),
-                event.getStatus(),
+                EventStatus.PENDING,
                 event.getEventType(),
                 event.getPayloadType(),
                 event.getPayload(),
                 event.getRetryCount(),
                 event.getCreatedAt(),
-                event.getProcessedAt(),
-                event.getFailedAt()
+                Instant.now()
         );
     }
 

@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class DumbOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
+public class SimpleOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
 
     private final CachedCount currentTotalCount;
     private final Duration COUNT_BY_STATUS_TTL;
@@ -15,7 +15,7 @@ public class DumbOutboxCache<S extends Enum<S>> implements OutboxCache<S> {
     private static final String KEY_TEMPLATE = "%s:%s";
     private final Map<String, CachedCount> countByEventTypeAndStatus;
 
-    public DumbOutboxCache(long ... ttls) {
+    public SimpleOutboxCache(long ... ttls) {
         if (ttls.length != 3) {
             throw new IllegalArgumentException("Ttls should contain three values");
         }
