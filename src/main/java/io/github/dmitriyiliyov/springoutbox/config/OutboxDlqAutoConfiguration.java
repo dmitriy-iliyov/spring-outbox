@@ -8,6 +8,8 @@ import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.utils.SimpleOutboxCache;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -18,8 +20,10 @@ import javax.sql.DataSource;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
-@ConditionalOnProperty(prefix = "outbox.dlq", name = "enable", havingValue = "true")
+@ConditionalOnProperty(prefix = "outbox.dlq", name = "enabled", havingValue = "true")
 public class OutboxDlqAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxDlqAutoConfiguration.class);
 
     @Bean
     public OutboxDlqRepository outboxRepository(DataSource dataSource) {

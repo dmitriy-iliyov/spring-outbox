@@ -70,14 +70,14 @@ public final class OutboxSenderFactory {
                 log.warn("Kafka producer factory is configured without 'acks=all'. Outbox cannot guarantee at-least-once delivery.");
             }
             Boolean idempotence = null;
-            Object idempotenceObj = configs.get("enable.idempotence");
+            Object idempotenceObj = configs.get("enabled.idempotence");
             if (idempotenceObj instanceof Boolean) {
                 idempotence = (Boolean) idempotenceObj;
             } else if (idempotenceObj instanceof String) {
                 idempotence = Boolean.parseBoolean((String) idempotenceObj);
             }
             if (idempotence != null && !idempotence) {
-                log.warn("Kafka producer is not idempotent. It is recommended to enable 'enable.idempotence=true' to avoid message duplication.");
+                log.warn("Kafka producer is not idempotent. It is recommended to enabled 'enabled.idempotence=true' to avoid message duplication.");
             }
             return new KafkaOutboxSender(kafkaTemplate, mapper);
         }

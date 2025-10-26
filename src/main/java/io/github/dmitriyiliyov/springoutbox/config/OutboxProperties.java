@@ -20,6 +20,7 @@ public class OutboxProperties {
     private final StuckEventRecoveryProperties stuckEventRecovery;
     private final CleanUpProperties cleanUp;
     private final DlqProperties dlq;
+    private final MigrationProperties migration;
 
     @ConstructorBinding
     public OutboxProperties(SenderProperties sender,
@@ -28,7 +29,7 @@ public class OutboxProperties {
                             Map<String, EventProperties> events,
                             StuckEventRecoveryProperties stuckEventRecovery,
                             CleanUpProperties cleanUp,
-                            DlqProperties dlq) {
+                            DlqProperties dlq, MigrationProperties migration) {
         this.sender = Objects.requireNonNull(sender, "sender cannot be null");
         this.threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
         this.defaults = defaults == null ? new Defaults() : defaults;
@@ -37,6 +38,7 @@ public class OutboxProperties {
         this.stuckEventRecovery = stuckEventRecovery;
         this.cleanUp = cleanUp;
         this.dlq = dlq;
+        this.migration = migration;
     }
 
     private Map<String, EventProperties> applyDefaults(Map<String, EventProperties> eventPropertiesMap) {
@@ -77,8 +79,8 @@ public class OutboxProperties {
         return stuckEventRecovery;
     }
 
-    public boolean isCleanUpEnable() {
-        return cleanUp.enable();
+    public boolean isCleanUpEnabled() {
+        return cleanUp.enabled();
     }
 
     public CleanUpProperties getCleanUp() {
@@ -91,6 +93,10 @@ public class OutboxProperties {
 
     public DlqProperties getDlq() {
         return dlq;
+    }
+
+    public MigrationProperties getMigration() {
+        return migration;
     }
 
     public record SenderProperties(SenderType type, String beanName) {
@@ -107,8 +113,8 @@ public class OutboxProperties {
 
         private static final int DEFAULT_BATCH_SIZE = 50;
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(1);
-        private static final int DEFAULT_MAX_RETRY = 3;
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(2);
+        private static final int DEFAULT_MAX_RETRY = 1;
 
         private final Integer batchSize;
         private final Duration initialDelay;
@@ -160,23 +166,36 @@ public class OutboxProperties {
         }
     }
 
-    public record CleanUpProperties(Boolean enable, Integer batchSize, Duration ttl, Duration initialDelay,
+    public record StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+
+        private static final int DEFAULT_BATCH_SIZE = 100;
+        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(1800);
+
+        public StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+            this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+            this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
+            this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+        }
+    }
+
+    public record CleanUpProperties(Boolean enabled, Integer batchSize, Duration ttl, Duration initialDelay,
                                     Duration fixedDelay) {
 
         private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final Duration DEFAULT_TTL = Duration.ofHours(7);
+        private static final Duration DEFAULT_TTL = Duration.ofHours(1);
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(3600);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(300);
 
         public CleanUpProperties {
-            if (enable != null && enable) {
-                enable = true;
+            if (enabled == null || enabled) {
+                enabled = true;
                 batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
                 ttl = ttl == null ? DEFAULT_TTL : ttl;
                 initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
                 fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
             } else {
-                enable = false;
+                enabled = false;
                 batchSize = 0;
                 ttl = null;
                 initialDelay = null;
@@ -185,27 +204,27 @@ public class OutboxProperties {
         }
     }
 
-    public record DlqProperties(Boolean enable, Integer batchSize,
+    public record DlqProperties(Boolean enabled, Integer batchSize,
                                 Duration transferToDlqInitialDelay, Duration transferToDlqFixedDelay,
                                 Duration transferFromDlqInitialDelay, Duration transferFormDlqFixedDelay) {
 
-            private static final int DEFAULT_BATCH_SIZE = 50;
-            private static final Duration DEFAULT_TO_INITIAL_DELAY = Duration.ofSeconds(1800);
-            private static final Duration DEFAULT_TO_FIXED_DELAY = Duration.ofSeconds(120);
-            private static final Duration DEFAULT_FROM_INITIAL_DELAY = Duration.ofSeconds(3600);
-            private static final Duration DEFAULT_FROM_FIXED_DELAY = Duration.ofSeconds(300);
+            private static final int DEFAULT_BATCH_SIZE = 100;
+            private static final Duration DEFAULT_TO_INITIAL_DELAY = Duration.ofSeconds(300);
+            private static final Duration DEFAULT_TO_FIXED_DELAY = Duration.ofSeconds(900);
+            private static final Duration DEFAULT_FROM_INITIAL_DELAY = Duration.ofSeconds(300);
+            private static final Duration DEFAULT_FROM_FIXED_DELAY = Duration.ofSeconds(3600);
 
-            public DlqProperties(Boolean enable, Integer batchSize, Duration transferToDlqInitialDelay, Duration transferToDlqFixedDelay,
+            public DlqProperties(Boolean enabled, Integer batchSize, Duration transferToDlqInitialDelay, Duration transferToDlqFixedDelay,
                                  Duration transferFromDlqInitialDelay, Duration transferFormDlqFixedDelay) {
-                if (enable) {
-                    this.enable = true;
+                if (enabled) {
+                    this.enabled = true;
                     this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
                     this.transferToDlqInitialDelay = transferToDlqInitialDelay == null ? DEFAULT_TO_INITIAL_DELAY : transferToDlqInitialDelay;
                     this.transferToDlqFixedDelay = transferToDlqFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToDlqFixedDelay;
                     this.transferFromDlqInitialDelay = transferFromDlqInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromDlqInitialDelay;
                     this.transferFormDlqFixedDelay = transferFormDlqFixedDelay == null ? DEFAULT_FROM_FIXED_DELAY : transferFormDlqFixedDelay;
                 } else {
-                    this.enable = false;
+                    this.enabled = false;
                     this.batchSize = 0;
                     this.transferToDlqInitialDelay = null;
                     this.transferToDlqFixedDelay = null;
@@ -215,16 +234,21 @@ public class OutboxProperties {
             }
     }
 
-    public record StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+    public record MigrationProperties(Boolean enabled, String location, String table) {
 
-        private static final int DEFAULT_BATCH_SIZE = 50;
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(120);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(10);
+        private static final String DEFAULT_LOCATION = "classpath:db/migration/outbox";
+        private static final String DEFAULT_TABLE = "outbox_schema_history";
 
-        public StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
-            this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
-            this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
-            this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+        public MigrationProperties(Boolean enabled, String location, String table) {
+            if (enabled == null || enabled) {
+                this.enabled = true;
+                this.location = location == null || location.isBlank() ? DEFAULT_LOCATION : location;
+                this.table = table == null || table.isBlank() ? DEFAULT_TABLE : table;
+            } else {
+                this.enabled = false;
+                this.location = null;
+                this.table = null;
+            }
         }
     }
 }

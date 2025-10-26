@@ -13,7 +13,6 @@ import java.util.UUID;
 public final class ResultSetMapper {
 
     public static OutboxEvent toEvent(ResultSet rs) throws SQLException {
-        Timestamp updatedAt = rs.getTimestamp("updated_at");
         return new OutboxEvent(
                 rs.getObject("id", UUID.class),
                 EventStatus.fromString(rs.getString("status")),
@@ -22,12 +21,11 @@ public final class ResultSetMapper {
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
                 rs.getTimestamp("created_at").toInstant(),
-                updatedAt != null ? updatedAt.toInstant() : null
+                rs.getTimestamp("updated_at").toInstant()
         );
     }
 
     public static OutboxDlqEvent toDlqEvent(ResultSet rs) throws SQLException {
-        Timestamp updatedAt = rs.getTimestamp("updated_at");
         return new OutboxDlqEvent(
                 rs.getObject("id", UUID.class),
                 EventStatus.fromString(rs.getString("status")),
@@ -36,7 +34,7 @@ public final class ResultSetMapper {
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
                 rs.getTimestamp("created_at").toInstant(),
-                updatedAt != null ? updatedAt.toInstant() : null,
+                rs.getTimestamp("updated_at").toInstant(),
                 DlqStatus.fromString(rs.getString("dlq_status"))
         );
     }

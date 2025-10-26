@@ -23,7 +23,7 @@ public class OutboxEvent {
         this.payload = payload;
         this.retryCount = 0;
         this.createdAt = Instant.now();
-        this.updatedAt = null;
+        this.updatedAt = Instant.now();
     }
 
     public OutboxEvent(UUID id, EventStatus status, String eventType, String payloadType, String payload, int retryCount,

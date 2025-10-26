@@ -10,6 +10,7 @@ import java.util.Objects;
 public class DefaultOutboxPublisher implements OutboxPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxPublisher.class);
+
     private final OutboxProperties properties;
     private final OutboxSerializer serializer;
     private final OutboxManager manager;
@@ -32,7 +33,7 @@ public class DefaultOutboxPublisher implements OutboxPublisher {
         validateEventType(eventType);
         Objects.requireNonNull(events, "events cannot be null");
         if (events.isEmpty()) {
-            log.warn("Published event list is empty");
+            log.warn("Published outbox event list is empty");
             return;
         }
         manager.saveBatch(serializer.serialize(eventType, events));

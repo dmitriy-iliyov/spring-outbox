@@ -48,7 +48,9 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 log.error("Error when transferring events from Outbox to DLQ", e);
             }
         });
-        handler.handle(events);
+        if (!events.isEmpty()) {
+            handler.handle(events);
+        }
     }
 
     @Override

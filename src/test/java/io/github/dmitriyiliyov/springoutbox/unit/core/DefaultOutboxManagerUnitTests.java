@@ -38,16 +38,14 @@ public class DefaultOutboxManagerUnitTests {
         // given
         String eventType = "event-type";
         int batchSize = 10;
+        EventStatus lockStatus = EventStatus.IN_PROCESS;
 
         OutboxEvent event1 = mock(OutboxEvent.class);
         OutboxEvent event2 = mock(OutboxEvent.class);
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-        when(event1.getId()).thenReturn(id1);
-        when(event2.getId()).thenReturn(id2);
         List<OutboxEvent> eventMocks = List.of(event1, event2);
 
-        when(repository.findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize)).thenReturn(eventMocks);
+        when(repository.findAndLockBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize, lockStatus))
+                .thenReturn(eventMocks);
 
         // when
         List<OutboxEvent> result = tested.loadBatch(eventType, batchSize);
@@ -58,13 +56,7 @@ public class DefaultOutboxManagerUnitTests {
                 .containsExactly(event1, event2);
 
         verify(repository, times(1))
-                .findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize);
-
-        ArgumentCaptor<Set<UUID>> idsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .updateBatchStatus(idsCaptor.capture(), eq(EventStatus.IN_PROCESS));
-        assertThat(idsCaptor.getValue()).containsExactlyInAnyOrder(id1, id2);
-
+                .findAndLockBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize, lockStatus);
         verifyNoMoreInteractions(repository);
     }
 
@@ -74,8 +66,10 @@ public class DefaultOutboxManagerUnitTests {
         // given
         String eventType = "event-type";
         int batchSize = 10;
+        EventStatus lockStatus = EventStatus.IN_PROCESS;
 
-        when(repository.findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize)).thenReturn(List.of());
+        when(repository.findAndLockBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize, lockStatus))
+                .thenReturn(List.of());
 
         // when
         List<OutboxEvent> result = tested.loadBatch(eventType, batchSize);
@@ -84,7 +78,7 @@ public class DefaultOutboxManagerUnitTests {
         assertTrue(result.isEmpty());
 
         verify(repository, times(1))
-                .findBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize);
+                .findAndLockBatchByEventTypeAndStatus(eventType, EventStatus.PENDING, batchSize, lockStatus);
         verifyNoMoreInteractions(repository);
     }
 
@@ -94,33 +88,23 @@ public class DefaultOutboxManagerUnitTests {
         // given
         EventStatus status = EventStatus.FAILED;
         int batchSize = 10;
-        String orderBy = "order-by";
+        EventStatus lockStatus = EventStatus.IN_PROCESS;
 
         OutboxEvent event1 = mock(OutboxEvent.class);
         OutboxEvent event2 = mock(OutboxEvent.class);
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-        when(event1.getId()).thenReturn(id1);
-        when(event2.getId()).thenReturn(id2);
         List<OutboxEvent> eventMocks = List.of(event1, event2);
 
-        when(repository.findBatchByStatus(status, batchSize, orderBy)).thenReturn(eventMocks);
+        when(repository.findAndLockBatchByStatus(status, batchSize, lockStatus)).thenReturn(eventMocks);
 
         // when
-        List<OutboxEvent> result = tested.loadBatch(status, batchSize, orderBy);
+        List<OutboxEvent> result = tested.loadBatch(status, batchSize);
 
         // then
         assertThat(result)
                 .hasSize(2)
                 .containsExactly(event1, event2);
 
-        verify(repository, times(1)).findBatchByStatus(status, batchSize, orderBy);
-
-        ArgumentCaptor<Set<UUID>> idsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .updateBatchStatus(idsCaptor.capture(), eq(EventStatus.IN_PROCESS));
-        assertThat(idsCaptor.getValue()).containsExactlyInAnyOrder(id1, id2);
-
+        verify(repository, times(1)).findAndLockBatchByStatus(status, batchSize, lockStatus);
         verifyNoMoreInteractions(repository);
     }
 
@@ -130,16 +114,16 @@ public class DefaultOutboxManagerUnitTests {
         // given
         EventStatus status = EventStatus.FAILED;
         int batchSize = 10;
-        String orderBy = "order-by";
+        EventStatus lockStatus = EventStatus.IN_PROCESS;
 
-        when(repository.findBatchByStatus(status, batchSize, orderBy)).thenReturn(List.of());
+        when(repository.findAndLockBatchByStatus(status, batchSize, lockStatus)).thenReturn(List.of());
 
         // when
-        List<OutboxEvent> result = tested.loadBatch(status, batchSize, orderBy);
+        List<OutboxEvent> result = tested.loadBatch(status, batchSize);
 
         // then
         assertTrue(result.isEmpty());
-        verify(repository, times(1)).findBatchByStatus(status, batchSize, orderBy);
+        verify(repository, times(1)).findAndLockBatchByStatus(status, batchSize, lockStatus);
         verifyNoMoreInteractions(repository);
     }
 

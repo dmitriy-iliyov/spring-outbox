@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class OutboxAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxAutoConfiguration.class);
+
     private final OutboxProperties properties;
     private final ObjectMapper mapper;
 
@@ -83,8 +84,7 @@ public class OutboxAutoConfiguration {
             factory.registerSingleton("outboxStuckEventRecoveryScheduler",
                     new OutboxStuckEventRecoveryScheduler(properties.getStuckEventRecovery(), executor, manager)
             );
-
-            if (properties.isCleanUpEnable()) {
+            if (properties.isCleanUpEnabled()) {
                 factory.registerSingleton(
                         "outboxCleanUpScheduler",
                         new OutboxCleanUpScheduler(properties.getCleanUp(), executor, manager)

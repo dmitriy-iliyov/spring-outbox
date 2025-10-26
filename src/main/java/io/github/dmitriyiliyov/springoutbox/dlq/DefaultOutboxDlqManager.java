@@ -1,6 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventBatchNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventInProcessException;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventNotFoundException;
