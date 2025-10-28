@@ -9,6 +9,7 @@ import io.github.dmitriyiliyov.springoutbox.metrics.DefaultOutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.utils.*;
 import io.micrometer.core.instrument.MeterRegistry;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
@@ -22,8 +23,10 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableConfigurationProperties(OutboxProperties.class)
@@ -33,10 +36,12 @@ public class OutboxAutoConfiguration {
 
     private final OutboxProperties properties;
     private final ObjectMapper mapper;
+    private final ScheduledExecutorService executor;
 
-    public OutboxAutoConfiguration(OutboxProperties properties, ObjectMapper mapper) {
+    public OutboxAutoConfiguration(OutboxProperties properties, ObjectMapper mapper, ScheduledExecutorService executor) {
         this.properties = properties;
         this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
+        this.executor = executor;
     }
 
     @Bean
@@ -64,9 +69,25 @@ public class OutboxAutoConfiguration {
         return new DefaultOutboxProcessor(manager, sender);
     }
 
-    @Bean(destroyMethod = "shutdown")
+    @Bean
     public ScheduledExecutorService outboxScheduledExecutorService() {
         return Executors.newScheduledThreadPool(properties.getThreadPoolSize());
+    }
+
+    @PreDestroy
+    public void onDestroy() {
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
+                    log.warn("ExecutorService shutdown incorrectly");
+                }
+            }
+        } catch (InterruptedException ie) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Bean

@@ -40,8 +40,7 @@ public class KafkaOutboxSender implements OutboxSender {
         for (OutboxEvent event : events) {
             try {
                 CompletableFuture<Void> future = kafkaTemplate
-                        //.send(topic, mapper.readValue(event.getPayload(), classResolver.resolve(event.getPayloadType())))
-                        .send(topic, event.getPayload())
+                        .send(topic, mapper.readValue(event.getPayload(), classResolver.resolve(event.getPayloadType())))
                         .thenAccept(success -> processedIds.add(event.getId()))
                         .exceptionally(ex -> {
                             failedIds.add(event.getId());

@@ -19,6 +19,7 @@ public final class RepositoryUtils {
         }
         if (ids.size() > 100) {
             log.warn("Batch size {} is too large...", ids.size());
+            return false;
         }
         return true;
     }

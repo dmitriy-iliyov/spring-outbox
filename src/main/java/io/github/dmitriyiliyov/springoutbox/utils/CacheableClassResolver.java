@@ -1,22 +1,18 @@
 package io.github.dmitriyiliyov.springoutbox.utils;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class CacheableClassResolver {
 
-    private final Map<String, Class<?>> cachedClasses;
-
-    public CacheableClassResolver() {
-        this.cachedClasses = new HashMap<>();
-    }
+    private final Map<String, Class<?>> cachedClasses = new ConcurrentHashMap<>();
 
     public Class<?> resolve(String className) {
         return cachedClasses.computeIfAbsent(
                 className,
                 c -> {
                     try {
-                        return Class.forName(className);
+                        return Class.forName(c);
                     } catch (ClassNotFoundException e) {
                         throw new RuntimeException(e);
                     }
