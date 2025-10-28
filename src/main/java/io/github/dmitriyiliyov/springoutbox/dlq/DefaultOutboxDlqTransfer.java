@@ -86,6 +86,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 event.getPayloadType(),
                 event.getPayload(),
                 event.getRetryCount(),
+                event.getNextRetryAt(),
                 event.getCreatedAt(),
                 event.getUpdatedAt(),
                 DlqStatus.NEW
@@ -106,6 +107,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 event.getPayloadType(),
                 event.getPayload(),
                 0,
+                Instant.now(),
                 event.getCreatedAt(),
                 Instant.now()
         );

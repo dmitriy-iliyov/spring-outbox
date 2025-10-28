@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 public interface OutboxManager {
     void save(OutboxEvent event);
@@ -23,7 +24,8 @@ public interface OutboxManager {
 
     List<OutboxEvent> loadBatch(EventStatus status, int batchSize);
 
-    void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount);
+    void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
+                       int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier);
 
     void recoverStuckBatch(int batchSize);
 

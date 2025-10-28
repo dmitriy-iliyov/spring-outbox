@@ -48,6 +48,14 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
                             .collect(Collectors.toSet())
             );
         }
-        manager.finalizeBatch(result.processedIds(), result.failedIds(), properties.maxRetries());
+        manager.finalizeBatch(
+                events,
+                result.processedIds(),
+                result.failedIds(),
+                properties.maxRetries(),
+                retryCount -> Instant.now().plusSeconds(
+                        (long) Math.pow(properties.backoffMultiplier(), retryCount) * properties.backoffDelay()
+                )
+        );
     }
 }

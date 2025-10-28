@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 public class DefaultOutboxManager implements OutboxManager {
 
@@ -68,7 +69,8 @@ public class DefaultOutboxManager implements OutboxManager {
 
     @Transactional
     @Override
-    public void finalizeBatch(Set<UUID> processedIds, Set<UUID> failedIds, int maxRetryCount) {
+    public void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
+                              int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier) {
         if (maxRetryCount < 0) {
             throw new IllegalArgumentException("Parameter maxRetryCount is negative for some reason");
         }
@@ -84,14 +86,44 @@ public class DefaultOutboxManager implements OutboxManager {
             if (!processedIds.isEmpty()) {
                 repository.updateBatchStatus(processedIds, EventStatus.PROCESSED);
             }
-            repository.incrementRetryCountOrSetFailed(failedIds, maxRetryCount);
+            repository.partiallyUpdateBatch(prepareFailedEvents(events, failedIds, maxRetryCount, nextRetryAtSupplier));
         } else if (hasProcessed) {
             repository.updateBatchStatus(processedIds, EventStatus.PROCESSED);
         } else if (hasFailed) {
-            repository.incrementRetryCountOrSetFailed(failedIds, maxRetryCount);
+            repository.partiallyUpdateBatch(prepareFailedEvents(events, failedIds, maxRetryCount, nextRetryAtSupplier));
         } else {
             log.warn("Finalization nullable or empty batch not delegating to repository layer");
         }
+    }
+
+    private List<OutboxEvent> prepareFailedEvents(List<OutboxEvent> events, Set<UUID> failedIds,
+                                                  int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier) {
+        return events.stream()
+                .filter(event -> failedIds.contains(event.getId()))
+                .map(event -> {
+                            EventStatus newStatus;
+                            int newRetryCount = event.getRetryCount() + 1;
+                            Instant nextRetryAt;
+                            if (newRetryCount <= maxRetryCount) {
+                                newStatus = EventStatus.PENDING;
+                                nextRetryAt = nextRetryAtSupplier.apply(event.getRetryCount());
+                            } else {
+                                newStatus = EventStatus.FAILED;
+                                nextRetryAt = event.getNextRetryAt();
+                            }
+                            return new OutboxEvent(
+                                    event.getId(),
+                                    newStatus,
+                                    event.getEventType(),
+                                    event.getPayloadType(),
+                                    event.getPayload(),
+                                    Math.min(newRetryCount, maxRetryCount),
+                                    nextRetryAt,
+                                    event.getCreatedAt(),
+                                    Instant.now()
+                            );
+                })
+                .toList();
     }
 
     @Override

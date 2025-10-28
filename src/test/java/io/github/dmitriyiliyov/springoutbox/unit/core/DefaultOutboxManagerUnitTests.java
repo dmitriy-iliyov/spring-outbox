@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -135,153 +136,103 @@ public class DefaultOutboxManagerUnitTests {
         Set<UUID> failedIds = Set.of(UUID.randomUUID());
         int maxRetryCount = -1;
 
-        // then
+        // when / then
         assertThrows(IllegalArgumentException.class,
-                () -> tested.finalizeBatch(processedIds, failedIds, maxRetryCount));
+                () -> tested.finalizeBatch(List.of(), processedIds, failedIds, maxRetryCount, i -> Instant.now()));
 
         verifyNoInteractions(repository);
     }
 
     @Test
-    @DisplayName("UT finalizeBatch() when params are valid")
-    public void finalizeBatch_whenParamsAreValid_shouldUpdateAndIncrement() {
+    @DisplayName("UT finalizeBatch() when processed and failed ids are non-empty")
+    public void finalizeBatch_whenProcessedAndFailed_shouldCallCorrectRepositoryMethods() {
         // given
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-        Set<UUID> processedIds = new HashSet<>(Set.of(id1));
-        Set<UUID> failedIds = new HashSet<>(Set.of(id2));
-        int maxRetryCount = 3;
+        UUID idProcessed = UUID.randomUUID();
+        UUID idFailed = UUID.randomUUID();
+        OutboxEvent failedEvent = new OutboxEvent(idFailed, EventStatus.PENDING, "type", "payloadType",
+                "payload", 0, Instant.now(), Instant.now(), Instant.now());
+        List<OutboxEvent> events = List.of(failedEvent);
+        Set<UUID> processedIds = new HashSet<>(Set.of(idProcessed));
+        Set<UUID> failedIds = new HashSet<>(Set.of(idFailed));
 
         // when
-        tested.finalizeBatch(processedIds, failedIds, maxRetryCount);
+        tested.finalizeBatch(events, processedIds, failedIds, 3, i -> Instant.now().plusSeconds(60));
 
         // then
-        ArgumentCaptor<Set<UUID>> processedIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .updateBatchStatus(processedIdsCaptor.capture(), eq(EventStatus.PROCESSED));
-        assertThat(processedIdsCaptor.getValue()).containsExactlyInAnyOrder(id1);
+        verify(repository, times(1)).updateBatchStatus(processedIds, EventStatus.PROCESSED);
 
-        ArgumentCaptor<Set<UUID>> failedIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .incrementRetryCountOrSetFailed(failedIdsCaptor.capture(), eq(maxRetryCount));
-        assertThat(failedIdsCaptor.getValue()).containsExactlyInAnyOrder(id2);
-
-        verifyNoMoreInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT finalizeBatch() when id sets are overlapping, should remove overlap")
-    public void finalizeBatch_whenSetOverlap_shouldRemoveOverlap() {
-        // given
-        UUID common = UUID.randomUUID();
-        UUID id1 = UUID.randomUUID();
-        UUID id2 = UUID.randomUUID();
-        Set<UUID> processedIds = new HashSet<>(Set.of(common, id1));
-        Set<UUID> failedIds = new HashSet<>(Set.of(common, id2));
-        int maxRetryCount = 3;
-
-        // when
-        tested.finalizeBatch(processedIds, failedIds, maxRetryCount);
-
-        // then
-        ArgumentCaptor<Set<UUID>> processedIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .updateBatchStatus(processedIdsCaptor.capture(), eq(EventStatus.PROCESSED));
-        assertThat(processedIdsCaptor.getValue()).containsExactlyInAnyOrder(id1);
-
-        ArgumentCaptor<Set<UUID>> failedIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .incrementRetryCountOrSetFailed(failedIdsCaptor.capture(), eq(maxRetryCount));
-        assertThat(failedIdsCaptor.getValue()).containsExactlyInAnyOrder(id2, common);
-
-        verifyNoMoreInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT finalizeBatch() when processed ids set is empty after remove overlapped id, should not call repository to upd to PROCESSED")
-    public void finalizeBatch_whenProcessedIsEmptyAfterRemoveOverlap_shouldNotUpdToPROCESSED() {
-        // given
-        UUID common = UUID.randomUUID();
-        Set<UUID> processedIds = new HashSet<>(Set.of(common));
-        Set<UUID> failedIds = new HashSet<>(Set.of(common));
-        int maxRetryCount = 2;
-
-        // when
-        tested.finalizeBatch(processedIds, failedIds, maxRetryCount);
-
-        // then
-        verify(repository, never()).updateBatchStatus(any(), eq(EventStatus.PROCESSED));
-        ArgumentCaptor<Set<UUID>> failedIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(repository, times(1))
-                .incrementRetryCountOrSetFailed(failedIdsCaptor.capture(), eq(maxRetryCount));
-        assertThat(failedIdsCaptor.getValue()).containsExactlyInAnyOrder(common);
-
-        verifyNoMoreInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT finalizeBatch() when processed ids is empty")
-    public void finalizeBatch_whenProcessedIdsIsEmpty_shouldNotUpdateToPROCESSED() {
-        // given
-        Set<UUID> processedIds = Collections.emptySet();
-        Set<UUID> failedIds = Set.of(UUID.randomUUID());
-
-        // when
-        tested.finalizeBatch(processedIds, failedIds, 1);
-
-        // then
-        verify(repository, never()).updateBatchStatus(any(), eq(EventStatus.PROCESSED));
-        verify(repository, times(1)).incrementRetryCountOrSetFailed(failedIds, 1);
+        ArgumentCaptor<List<OutboxEvent>> failedCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository, times(1)).partiallyUpdateBatch(failedCaptor.capture());
+        assertThat(failedCaptor.getValue()).hasSize(1);
+        assertThat(failedCaptor.getValue().get(0).getId()).isEqualTo(idFailed);
 
         verifyNoMoreInteractions(repository);
     }
 
     @Test
     @DisplayName("UT finalizeBatch() when processed ids is null")
-    public void finalizeBatch_whenProcessedIdsIsNull_shouldNotUpdateToPROCESSED() {
+    public void finalizeBatch_whenProcessedIdsNull_shouldProcessFailedOnly() {
         // given
-        Set<UUID> failedIds = Set.of(UUID.randomUUID());
+        UUID idFailed = UUID.randomUUID();
+        OutboxEvent failedEvent = new OutboxEvent(idFailed, EventStatus.PENDING, "type", "payloadType",
+                "payload", 0, Instant.now(), Instant.now(), Instant.now());
+        List<OutboxEvent> events = List.of(failedEvent);
 
         // when
-        tested.finalizeBatch(null, failedIds, 1);
+        tested.finalizeBatch(events, null, Set.of(idFailed), 2, i -> Instant.now());
 
         // then
-        verify(repository, never()).updateBatchStatus(any(), eq(EventStatus.PROCESSED));
-        verify(repository, times(1)).incrementRetryCountOrSetFailed(failedIds, 1);
-
-        verifyNoMoreInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT finalizeBatch() when failed ids is empty")
-    public void finalizeBatch_whenFailedIdsIsEmpty_shouldNotIncrement() {
-        // given
-        Set<UUID> processedIds = Set.of(UUID.randomUUID());
-        Set<UUID> failedIds = Collections.emptySet();
-
-        // when
-        tested.finalizeBatch(processedIds, failedIds, 1);
-
-        // then
-        verify(repository, times(1)).updateBatchStatus(processedIds, EventStatus.PROCESSED);
-        verify(repository, never()).incrementRetryCountOrSetFailed(any(), anyInt());
-
+        verify(repository, never()).updateBatchStatus(any(), any());
+        verify(repository, times(1)).partiallyUpdateBatch(any());
         verifyNoMoreInteractions(repository);
     }
 
     @Test
     @DisplayName("UT finalizeBatch() when failed ids is null")
-    public void finalizeBatch_whenFailedIdsIsNull_shouldNotIncrement() {
+    public void finalizeBatch_whenFailedIdsNull_shouldProcessProcessedOnly() {
         // given
-        Set<UUID> processedIds = Set.of(UUID.randomUUID());
+        UUID idProcessed = UUID.randomUUID();
+        Set<UUID> processedIds = Set.of(idProcessed);
 
         // when
-        tested.finalizeBatch(processedIds, null, 1);
+        tested.finalizeBatch(List.of(), processedIds, null, 2, i -> Instant.now());
 
         // then
         verify(repository, times(1)).updateBatchStatus(processedIds, EventStatus.PROCESSED);
-        verify(repository, never()).incrementRetryCountOrSetFailed(any(), anyInt());
+        verify(repository, never()).partiallyUpdateBatch(any());
+        verifyNoMoreInteractions(repository);
+    }
 
+    @Test
+    @DisplayName("UT finalizeBatch() when both processedIds and failedIds empty should not call repository")
+    public void finalizeBatch_whenBothEmpty_shouldNotCallRepository() {
+        // given / when
+        tested.finalizeBatch(List.of(), Collections.emptySet(), Collections.emptySet(), 1, i -> Instant.now());
+
+        // then
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT finalizeBatch() when processedIds and failedIds overlap should remove overlap from processed")
+    public void finalizeBatch_whenOverlap_shouldRemoveOverlapFromProcessed() {
+        // given
+        UUID common = UUID.randomUUID();
+        UUID idProcessed = UUID.randomUUID();
+        UUID idFailed = UUID.randomUUID();
+        Set<UUID> processedIds = new HashSet<>(Set.of(common, idProcessed));
+        Set<UUID> failedIds = new HashSet<>(Set.of(common, idFailed));
+        List<OutboxEvent> events = List.of(
+                new OutboxEvent(common, EventStatus.PENDING, "type", "payloadType", "payload", 0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed, EventStatus.PENDING, "type", "payloadType", "payload", 0, Instant.now(), Instant.now(), Instant.now())
+        );
+
+        // when
+        tested.finalizeBatch(events, processedIds, failedIds, 3, i -> Instant.now());
+
+        // then
+        verify(repository, times(1)).updateBatchStatus(Set.of(idProcessed), EventStatus.PROCESSED);
+        verify(repository, times(1)).partiallyUpdateBatch(any());
         verifyNoMoreInteractions(repository);
     }
 

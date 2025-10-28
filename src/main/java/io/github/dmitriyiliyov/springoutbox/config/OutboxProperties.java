@@ -58,7 +58,23 @@ public class OutboxProperties {
                             Duration initialDelay = event.initialDelay == null ? defaults.initialDelay : event.initialDelay;
                             Duration fixedDelay = event.fixedDelay == null ? defaults.fixedDelay : event.fixedDelay;
                             Integer maxRetries = event.maxRetries == null ? defaults.maxRetries : event.maxRetries;
-                            return new EventProperties(e.getKey(), event.topic, batchSize, initialDelay, fixedDelay, maxRetries);
+                            BackoffProperties backoff = new BackoffProperties(
+                                    event.backoff().getDelay() == null ?
+                                            defaults.getBackoff().getDelay() :
+                                            event.backoff().getDelay(),
+                                    event.backoff().getMultiplier() == null || event.backoff().getMultiplier() < 1 ?
+                                            defaults.getBackoff().getMultiplier() :
+                                            event.backoff().getMultiplier()
+                            );
+                            return new EventProperties(
+                                    e.getKey(),
+                                    event.topic,
+                                    batchSize,
+                                    initialDelay,
+                                    fixedDelay,
+                                    maxRetries,
+                                    backoff
+                            );
                         }
                 ));
     }
@@ -115,24 +131,28 @@ public class OutboxProperties {
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(2);
         private static final int DEFAULT_MAX_RETRY = 1;
+        private static final BackoffProperties DEFAULT_BACKOFF = new BackoffProperties();
 
         private final Integer batchSize;
         private final Duration initialDelay;
         private final Duration fixedDelay;
         private final Integer maxRetries;
+        private final BackoffProperties backoff;
 
         public Defaults() {
             this.batchSize = DEFAULT_BATCH_SIZE;
             this.initialDelay = DEFAULT_INITIAL_DELAY;
             this.fixedDelay = DEFAULT_FIXED_DELAY;
             this.maxRetries = DEFAULT_MAX_RETRY;
+            this.backoff = DEFAULT_BACKOFF;
         }
 
-        public Defaults(Integer batchSize, Duration initialDelay, Duration fixedDelay, Integer maxRetries) {
+        public Defaults(Integer batchSize, Duration initialDelay, Duration fixedDelay, Integer maxRetries, BackoffProperties backoff) {
             this.batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
             this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
             this.maxRetries = maxRetries == null || maxRetries < 0 ? DEFAULT_MAX_RETRY : maxRetries;
+            this.backoff = backoff == null ? DEFAULT_BACKOFF : backoff;
         }
 
         public int getBatchSize() {
@@ -150,10 +170,41 @@ public class OutboxProperties {
         public int getMaxRetries() {
             return maxRetries;
         }
+
+        public BackoffProperties getBackoff() {
+            return backoff;
+        }
+    }
+
+    public static final class BackoffProperties {
+
+        private static final Duration DEFAULT_DELAY = Duration.ofSeconds(10);
+        private static final Long DEFAULT_MULTIPLIER = 1L;
+
+        private final Duration delay;
+        private final Long multiplier;
+
+        public BackoffProperties() {
+            this.delay = DEFAULT_DELAY;
+            this.multiplier = DEFAULT_MULTIPLIER;
+        }
+
+        public BackoffProperties(Duration delay, Long multiplier) {
+            this.delay = delay == null ? DEFAULT_DELAY : delay;
+            this.multiplier = multiplier == null || multiplier < 1 ? DEFAULT_MULTIPLIER : multiplier;
+        }
+
+        public Duration getDelay() {
+            return delay;
+        }
+
+        public Long getMultiplier() {
+            return multiplier;
+        }
     }
 
     public record EventProperties(String eventType, String topic, Integer batchSize, Duration initialDelay,
-                                  Duration fixedDelay, Integer maxRetries) {
+                                  Duration fixedDelay, Integer maxRetries, BackoffProperties backoff) {
         public EventProperties {
             Objects.requireNonNull(eventType, "eventType cannot be null");
             if (eventType.isBlank()) {
@@ -163,6 +214,14 @@ public class OutboxProperties {
             if (topic.isBlank()) {
                 throw new IllegalArgumentException("Topic cannot be blank");
             }
+        }
+
+        public long backoffMultiplier() {
+            return backoff.getMultiplier();
+        }
+
+        public long backoffDelay() {
+            return backoff.getDelay().toSeconds();
         }
     }
 

@@ -60,7 +60,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=PROCESSED, should update batch")
-    public void updateBatchStatus_whenArgumentsValidAndStatusPROCESSED_shouldUpdate() {
+    public void updateBatchStatus_whenArgumentsValidAndStatusPROCESSED_shouldUpdateProcessedFailed() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         EventStatus status = EventStatus.PROCESSED;
@@ -75,7 +75,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=IN_PROCESS, should update batch")
-    public void updateBatchStatus_whenArgumentsValidAndStatusIN_PROCESS_shouldUpdate() {
+    public void updateBatchStatus_whenArgumentsValidAndStatusIN_PROCESS_shouldUpdateProcessedFailed() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         EventStatus status = EventStatus.IN_PROCESS;
@@ -90,7 +90,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=PENDING, should update batch")
-    public void updateBatchStatus_whenArgumentsValidAndStatusPENDING_shouldUpdate() {
+    public void updateBatchStatus_whenArgumentsValidAndStatusPENDING_shouldUpdateProcessedFailed() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         EventStatus status = EventStatus.PENDING;
@@ -105,7 +105,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=FAILED, should update batch")
-    public void updateBatchStatus_whenArgumentsValidAndStatusFAILED_shouldUpdate() {
+    public void updateBatchStatus_whenArgumentsValidAndStatusFAILED_shouldUpdateProcessedFailed() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         EventStatus status = EventStatus.FAILED;
@@ -118,7 +118,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when ids is empty should early return")
-    public void updateBatchStatus_whenIdsIsEmpty_shouldEarlyReturn() {
+    public void updateFailedBatchStatus_whenIdsIsEmpty_shouldEarlyReturn() {
         // given
         Set<UUID> ids = Set.of();
         EventStatus status = EventStatus.PENDING;
@@ -132,7 +132,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when ids is null should throws")
-    public void updateBatchStatus_whenIdsIsNull_shouldThrows() {
+    public void updateFailedBatchStatus_whenIdsIsNull_shouldThrows() {
         // given
         Set<UUID> ids = null;
         EventStatus status = EventStatus.PENDING;
@@ -146,7 +146,7 @@ public class AbstractOutboxRepositoryUnitTests {
 
     @Test
     @DisplayName("UT updateBatchStatus() when ids size is to big should early return")
-    public void updateBatchStatus_whenIdsIsToBig_shouldEarlyReturn() {
+    public void updateFailedBatchStatus_whenIdsIsToBig_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>(101);
         EventStatus status = EventStatus.PENDING;
@@ -159,42 +159,26 @@ public class AbstractOutboxRepositoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT incrementRetryCountOrSetFailed() when ids is empty should early return")
-    public void incrementRetryCountOrSetFailed_whenIdsIsEmpty_shouldEarlyReturn() {
+    @DisplayName("UT partiallyUpdateFailedBatch() when ids is empty should early return")
+    public void partiallyUpdateBatch_whenIdsIsEmpty_shouldEarlyReturn() {
         // given
-        Set<UUID> ids = Set.of();
-        int maxRetryCount = 1;
+        List<OutboxEvent> events = List.of();
 
         // when
-        tested.incrementRetryCountOrSetFailed(ids, maxRetryCount);
+        tested.partiallyUpdateBatch(events);
 
         // then
         verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT incrementRetryCountOrSetFailed() when ids is null should throws")
-    public void incrementRetryCountOrSetFailed_whenIdsIsNull_shouldThrows() {
+    @DisplayName("UT partiallyUpdateFailedBatch() when ids is null should throws")
+    public void partiallyUpdateBatch_whenIdsIsNull_shouldThrows() {
         // given
-        Set<UUID> ids = null;
-        int maxRetryCount = 1;
+        List<OutboxEvent> events = null;
 
         // when
-        assertThrows(NullPointerException.class, () -> tested.incrementRetryCountOrSetFailed(ids, maxRetryCount));
-
-        // then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT incrementRetryCountOrSetFailed() when ids size is to big should early return")
-    public void incrementRetryCountOrSetFailed_whenIdsIsToBig_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = new HashSet<>(101);
-        int maxRetryCount = 1;
-
-        // when
-        tested.incrementRetryCountOrSetFailed(ids, maxRetryCount);
+        tested.partiallyUpdateBatch(events);
 
         // then
         verifyNoInteractions(jdbcTemplate);

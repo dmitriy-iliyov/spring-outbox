@@ -19,6 +19,7 @@ public final class ResultSetMapper {
                 rs.getString("payload_type"),
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
+                rs.getTimestamp("next_retry_at").toInstant(),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant()
         );
@@ -32,6 +33,7 @@ public final class ResultSetMapper {
                 rs.getString("payload_type"),
                 rs.getString("payload"),
                 rs.getInt("retry_count"),
+                rs.getTimestamp("next_retry_at").toInstant(),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant(),
                 DlqStatus.fromString(rs.getString("dlq_status"))

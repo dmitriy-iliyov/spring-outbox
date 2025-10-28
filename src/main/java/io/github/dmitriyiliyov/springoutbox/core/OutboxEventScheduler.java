@@ -41,8 +41,8 @@ public final class OutboxEventScheduler implements OutboxScheduler {
                         log.error("Error process outbox events for type={}", eventProperties.eventType(), e);
                     }
                 },
-                eventProperties.initialDelay().getSeconds(),
-                eventProperties.fixedDelay().getSeconds(),
+                eventProperties.initialDelay().toSeconds(),
+                eventProperties.fixedDelay().toSeconds(),
                 TimeUnit.SECONDS
         );
     }

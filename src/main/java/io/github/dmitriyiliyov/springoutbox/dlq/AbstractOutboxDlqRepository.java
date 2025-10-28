@@ -20,7 +20,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public void saveBatch(List<OutboxDlqEvent> eventBatch) {
         String sql = """
             INSERT INTO outbox_dlq_events
-            (id, status, dlq_status, event_type, payload_type, payload, retry_count, created_at, updated_at)
+            (id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         List<Object[]> params = eventBatch.stream()
@@ -67,7 +67,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Override
     public Optional<OutboxDlqEvent> findById(UUID id) {
         String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, created_at, updated_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             FROM outbox_dlq_events
             WHERE id = ?
         """;
@@ -84,7 +84,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public List<OutboxDlqEvent> findBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return List.of();
         String sql = """
-            SELECT id, status, event_type, payload_type, payload, retry_count, created_at, updated_at
+            SELECT id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             FROM outbox_dlq_events
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
@@ -104,7 +104,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
         String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, created_at, updated_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             FROM outbox_dlq_events
             WHERE dlq_status = ?
             OFFSET ?

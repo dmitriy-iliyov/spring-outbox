@@ -39,12 +39,12 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     SET status = ?
                 WHERE id IN(
                     SELECT id FROM outbox_events 
-                    WHERE event_type = ? AND status = ?
-                    ORDER BY created_at
+                    WHERE event_type = ? AND status = ? AND next_retry_at <= ?
+                    ORDER BY next_retry_at
                     LIMIT ?
                     FOR UPDATE SKIP LOCKED
                 )
-                RETURNING id, status, event_type, payload_type, payload, retry_count, created_at, updated_at
+                RETURNING id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             )
             SELECT * FROM to_lock
         """;
@@ -54,7 +54,8 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     ps.setString(1, lockStatus.name());
                     ps.setString(2, eventType);
                     ps.setString(3, status.name());
-                    ps.setInt(4, batchSize);
+                    ps.setTimestamp(4, Timestamp.from(Instant.now()));
+                    ps.setInt(5, batchSize);
                 },
                 (rs, rowNum) -> ResultSetMapper.toEvent(rs)
         );
@@ -74,7 +75,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     LIMIT ?
                     FOR UPDATE SKIP LOCKED
                 )
-                RETURNING id, status, event_type, payload_type, payload, retry_count, created_at, updated_at
+                RETURNING id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             )
             SELECT * FROM to_lock
         """;
@@ -86,30 +87,6 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     ps.setInt(3, batchSize);
                 },
                 (rs, rowNum) -> ResultSetMapper.toEvent(rs)
-        );
-    }
-
-    @Transactional
-    @Override
-    public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
-        String sql = """
-            WITH to_delete AS(
-                SELECT id FROM outbox_events 
-                WHERE status = ? AND updated_at < ?
-                ORDER BY updated_at
-                LIMIT ?
-                FOR UPDATE SKIP LOCKED
-            )
-            DELETE FROM outbox_events 
-            WHERE id IN (SELECT id FROM to_delete)
-        """;
-        jdbcTemplate.update(
-                sql,
-                ps -> {
-                    ps.setString(1, status.name());
-                    ps.setTimestamp(2, Timestamp.from(threshold));
-                    ps.setInt(3, batchSize);
-                }
         );
     }
 
@@ -134,6 +111,30 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     ps.setString(1, status.name());
                     ps.setInt(2, batchSize);
                     ps.setString(3, newStatus.name());
+                }
+        );
+    }
+
+    @Transactional
+    @Override
+    public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
+        String sql = """
+            WITH to_delete AS(
+                SELECT id FROM outbox_events 
+                WHERE status = ? AND updated_at < ?
+                ORDER BY updated_at
+                LIMIT ?
+                FOR UPDATE SKIP LOCKED
+            )
+            DELETE FROM outbox_events 
+            WHERE id IN (SELECT id FROM to_delete)
+        """;
+        jdbcTemplate.update(
+                sql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    ps.setTimestamp(2, Timestamp.from(threshold));
+                    ps.setInt(3, batchSize);
                 }
         );
     }

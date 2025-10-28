@@ -39,7 +39,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                     LIMIT ?
                     FOR UPDATE SKIP LOCKED
                 )
-                RETURNING id, status, dlq_status, event_type, payload_type, payload, retry_count, created_at, updated_at
+                RETURNING id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             )
             SELECT * FROM to_lock
         """;
@@ -58,7 +58,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize) {
         String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, created_at, updated_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
             FROM outbox_dlq_events
             WHERE dlq_status = ?
             LIMIT ?

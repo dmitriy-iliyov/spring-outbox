@@ -39,7 +39,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     public void save(OutboxEvent event) {
         String sql = """
             INSERT INTO outbox_events 
-            (id, status, event_type, payload_type, payload, retry_count, created_at, updated_at)
+            (id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         jdbcTemplate.update(
@@ -60,7 +60,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     public void saveBatch(List<OutboxEvent> eventBatch) {
         String sql = """
             INSERT INTO outbox_events 
-            (id, status, event_type, payload_type, payload, retry_count, created_at, updated_at)
+            (id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         List<Object[]> params = eventBatch.stream()
@@ -105,22 +105,22 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
 
     @Transactional
     @Override
-    public void updateBatchStatus(Set<UUID> ids, EventStatus status) {
+    public void updateBatchStatus(Set<UUID> ids, EventStatus newStatus) {
         if (!RepositoryUtils.validateIds(ids)) return;
-        if (status.equals(EventStatus.FAILED)) {
-            throw new IllegalArgumentException("Use incrementRetryCountOrSetFailed() for FAILED batch");
+        if (newStatus.equals(EventStatus.FAILED)) {
+            throw new IllegalArgumentException("Use partiallyUpdateBatch() for update FAILED batch");
         }
         String placeholders = RepositoryUtils.generatePlaceholders(ids);
         String sql;
         List<Object> params = new ArrayList<>();
-        if (status.equals(EventStatus.PROCESSED)) {
+        if (newStatus.equals(EventStatus.PROCESSED)) {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
-            params.add(status.name());
+            params.add(newStatus.name());
             params.add(Timestamp.from(Instant.now()));
             params.addAll(ids);
         } else {
             sql = "UPDATE outbox_events SET status = ? WHERE id IN (" + placeholders + ")";
-            params.add(status.name());
+            params.add(newStatus.name());
             params.addAll(ids);
         }
         jdbcTemplate.update(sql, params.toArray());
@@ -128,25 +128,29 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
 
     @Transactional
     @Override
-    public void incrementRetryCountOrSetFailed(Set<UUID> ids, int maxRetryCount) {
-        if (!RepositoryUtils.validateIds(ids)) return;
+    public void partiallyUpdateBatch(List<OutboxEvent> events) {
+        if (events == null || events.isEmpty()) return;
         String sql = """
-                UPDATE outbox_events 
-                SET 
-                    retry_count = CASE WHEN retry_count < ? THEN retry_count + 1 ELSE retry_count END,
-                    status = CASE WHEN retry_count + 1 < ? THEN ? ELSE ? END,
-                    updated_at = ?
-                WHERE id IN (%s)
-            """.formatted(RepositoryUtils.generatePlaceholders(ids));
-        List<Object> params = new ArrayList<>();
-        params.add(maxRetryCount);
-        params.add(maxRetryCount);
-        params.add(EventStatus.PENDING.name());
-        params.add(EventStatus.FAILED.name());
-        params.add(maxRetryCount);
-        params.add(Instant.now());
-        params.addAll(ids);
-        jdbcTemplate.update(sql, params.toArray());
+            UPDATE outbox_events
+            SET
+                retry_count = ?,
+                status = ?,
+                next_retry_at = ?,
+                updated_at = ?
+            WHERE id = ?
+        """;
+        Instant updatedAt = Instant.now();
+        jdbcTemplate.batchUpdate(
+                sql,
+                events,
+                events.size(),
+                (ps, event) -> {
+                    ps.setInt(1, event.getRetryCount());
+                    ps.setString(2, event.getStatus().name());
+                    ps.setTimestamp(3, Timestamp.from(event.getNextRetryAt()));
+                    ps.setTimestamp(4, Timestamp.from(updatedAt));
+                    ps.setObject(5, event.getId());
+                });
     }
 
     @Transactional

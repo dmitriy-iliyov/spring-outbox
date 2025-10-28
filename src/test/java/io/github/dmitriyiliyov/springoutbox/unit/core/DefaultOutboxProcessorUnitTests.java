@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -77,7 +78,7 @@ class DefaultOutboxProcessorUnitTests {
         // then
         verify(manager, times(1)).loadBatch(eventType, batchSize);
         verify(sender, times(1)).sendEvents(topic, events);
-        verify(manager, times(1)).finalizeBatch(processedIds, failedIds, maxRetries);
+        verify(manager, times(1)).finalizeBatch(eq(events), eq(processedIds), eq(failedIds), eq(maxRetries), any(Function.class));
         verifyNoMoreInteractions(manager, sender);
     }
 
@@ -105,7 +106,7 @@ class DefaultOutboxProcessorUnitTests {
 
         verify(manager).loadBatch(eventType, batchSize);
         verify(sender).sendEvents(topic, events);
-        verify(manager).finalizeBatch(processedCaptor.capture(), failedCaptor.capture(), eq(maxRetries));
+        verify(manager).finalizeBatch(eq(events), processedCaptor.capture(), failedCaptor.capture(), eq(maxRetries), any(Function.class));
 
         assertThat(processedCaptor.getValue()).isNull();
         assertThat(failedCaptor.getValue()).containsExactlyInAnyOrder(id1, id2);

@@ -82,6 +82,7 @@ public class KafkaOutboxSenderUnitTests {
                 "{\"id\":\"%s\"}".formatted(UUID.randomUUID()),
                 0,
                 Instant.now(),
+                Instant.now(),
                 Instant.now()
         );
         List<OutboxEvent> events = List.of(event);
@@ -112,6 +113,7 @@ public class KafkaOutboxSenderUnitTests {
                 "{\"id\":\"%s\"}".formatted(UUID.randomUUID()),
                 0,
                 Instant.now(),
+                Instant.now(),
                 Instant.now()
         );
         List<OutboxEvent> events = List.of(event);
@@ -141,6 +143,7 @@ public class KafkaOutboxSenderUnitTests {
                 "io.github.dmitriyiliyov.springoutbox.unit.core.TestOutboxEvent",
                 "{\"id\":\"%s\"}".formatted(UUID.randomUUID()),
                 0,
+                Instant.now(),
                 Instant.now(),
                 Instant.now()
         );

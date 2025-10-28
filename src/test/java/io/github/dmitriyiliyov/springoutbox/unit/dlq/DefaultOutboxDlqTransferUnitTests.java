@@ -80,6 +80,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "{\"orderId\":\"123\"}",
                 3,
                 Instant.now(),
+                Instant.now(),
                 Instant.now()
         );
 
@@ -90,6 +91,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "com.example.UserRegisteredEvent",
                 "{\"userId\":\"456\"}",
                 2,
+                Instant.now(),
                 Instant.now(),
                 Instant.now()
         );
@@ -145,6 +147,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "{\"orderId\":\"123\"}",
                 3,
                 Instant.now(),
+                Instant.now(),
                 Instant.now()
         );
 
@@ -182,6 +185,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "com.example.OrderCreatedEvent",
                 "{\"orderId\":\"123\"}",
                 3,
+                Instant.now(),
                 Instant.now(),
                 Instant.now()
         );
@@ -266,6 +270,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "com.example.OrderCreatedEvent",
                 "{\"orderId\":\"123\"}",
                 3,
+                Instant.now(),
                 now.minusSeconds(3600),
                 now,
                 DlqStatus.TO_RETRY
@@ -278,6 +283,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "com.example.UserRegisteredEvent",
                 "{\"userId\":\"456\"}",
                 2,
+                Instant.now(),
                 now.minusSeconds(7200),
                 now,
                 DlqStatus.TO_RETRY
@@ -335,6 +341,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 3,
                 Instant.now(),
                 Instant.now(),
+                Instant.now(),
                 DlqStatus.TO_RETRY
         );
 
@@ -370,7 +377,8 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "OrderCreated",
                 "com.example.OrderCreatedEvent",
                 "{\"orderId\":\"123\"}",
-                5,  // 5 retries в DLQ
+                5,
+                Instant.now(),
                 Instant.now(),
                 Instant.now(),
                 DlqStatus.TO_RETRY
@@ -412,6 +420,7 @@ public class DefaultOutboxDlqTransferUnitTests {
                 "com.example.OrderCreatedEvent",
                 "{\"orderId\":\"123\"}",
                 3,
+                Instant.now(),
                 originalCreatedAt,
                 Instant.now(),
                 DlqStatus.TO_RETRY

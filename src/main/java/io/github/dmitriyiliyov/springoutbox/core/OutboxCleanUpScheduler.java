@@ -43,8 +43,8 @@ public final class OutboxCleanUpScheduler implements OutboxScheduler {
                         log.error("Error process clean up outbox", e);
                     }
                 },
-                cleanupProperties.initialDelay().getSeconds(),
-                cleanupProperties.fixedDelay().getSeconds(),
+                cleanupProperties.initialDelay().toSeconds(),
+                cleanupProperties.fixedDelay().toSeconds(),
                 TimeUnit.SECONDS
         );
     }
