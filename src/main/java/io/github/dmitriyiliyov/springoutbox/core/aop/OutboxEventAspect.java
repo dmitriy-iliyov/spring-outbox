@@ -37,7 +37,7 @@ public class OutboxEventAspect {
         context.setVariable("result", result);
         Object payload = result;
         String spelPayload = outboxEvent.payload();
-        if (spelPayload != null && !spelPayload.isBlank()) {
+        if (spelPayload != null && !spelPayload.isBlank() && !spelPayload.equals("#result")) {
             payload = expressionParser.parseExpression(spelPayload).getValue(context);
         }
         Objects.requireNonNull(payload, "payload cannot be null");

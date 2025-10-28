@@ -15,4 +15,8 @@ public class OutboxDlqEventBatchNotFoundException extends BadRequestException {
     public String getDetail() {
         return "Outbox DLQ events with ids=%s not found, operation unavailable".formatted(notFoundIds);
     }
+
+    public Set<UUID> getNotFoundIds() {
+        return notFoundIds;
+    }
 }

@@ -14,4 +14,8 @@ public class OutboxDlqEventInProcessException extends BadRequestException {
     public String getDetail() {
         return "Outbox DLQ event with id=%s is IN_PROCESS, interaction impossible".formatted(id);
     }
+
+    public UUID getId() {
+        return id;
+    }
 }

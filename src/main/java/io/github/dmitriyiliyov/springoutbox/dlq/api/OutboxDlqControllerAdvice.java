@@ -148,6 +148,7 @@ public class OutboxDlqControllerAdvice {
         problemDetail.setType(URI.create(type));
         problemDetail.setTitle(title);
         problemDetail.setDetail(detail);
+        problemDetail.setInstance(URI.create(path));
         problemDetail.setProperty("path", path);
         problemDetail.setProperty("timestamp", timestamp);
         return problemDetail;
