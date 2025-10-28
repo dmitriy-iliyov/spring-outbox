@@ -46,32 +46,36 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 );
             } catch (Exception e) {
                 log.error("Error when transferring events from Outbox to DLQ", e);
+                throw e;
             }
         });
         if (!events.isEmpty()) {
-            handler.handle(events);
+            try {
+                handler.handle(events);
+            } catch (Exception e) {
+                log.error("Error when handle events after transferring to DLQ", e);
+            }
         }
     }
 
     @Override
     public void transferDlqToOutbox(int batchSize) {
-        transactionTemplate.executeWithoutResult(
-                (status) -> {
-                    try {
-                        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
-                        if (dlqEvents == null || dlqEvents.isEmpty()) {
-                            return;
-                        }
-                        manager.saveBatch(toOutboxEvents(dlqEvents));
-                        dlqManager.deleteBatch(
-                                dlqEvents.stream()
-                                        .map(OutboxDlqEvent::getId)
-                                        .collect(Collectors.toSet()));
-                    } catch (Exception e) {
-                        log.error("Error when transferring events from DLQ to Outbox", e);
-                    }
+        transactionTemplate.executeWithoutResult(status -> {
+            try {
+                List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
+                if (dlqEvents == null || dlqEvents.isEmpty()) {
+                    return;
                 }
-        );
+                manager.saveBatch(toOutboxEvents(dlqEvents));
+                dlqManager.deleteBatch(
+                        dlqEvents.stream()
+                                .map(OutboxDlqEvent::getId)
+                                .collect(Collectors.toSet()));
+            } catch (Exception e) {
+                log.error("Error when transferring events from DLQ to Outbox", e);
+                throw e;
+            }
+        });
     }
 
     private OutboxDlqEvent toDlqEvent(OutboxEvent event) {
