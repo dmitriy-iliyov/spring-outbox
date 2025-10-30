@@ -78,7 +78,8 @@ class DefaultOutboxProcessorUnitTests {
         // then
         verify(manager, times(1)).loadBatch(eventType, batchSize);
         verify(sender, times(1)).sendEvents(topic, events);
-        verify(manager, times(1)).finalizeBatch(eq(events), eq(processedIds), eq(failedIds), eq(maxRetries), any(Function.class));
+        verify(manager, times(1)).finalizeBatch(eq(events), eq(processedIds), eq(failedIds),
+                eq(maxRetries), any(Function.class));
         verifyNoMoreInteractions(manager, sender);
     }
 

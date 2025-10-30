@@ -17,8 +17,7 @@ import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -188,6 +187,24 @@ public class DefaultOutboxManagerUnitTests {
     }
 
     @Test
+    @DisplayName("UT finalizeBatch() when processed ids is empty")
+    public void finalizeBatch_whenProcessedIdsEmpty_shouldProcessFailedOnly() {
+        // given
+        UUID idFailed = UUID.randomUUID();
+        OutboxEvent failedEvent = new OutboxEvent(idFailed, EventStatus.PENDING, "type", "payloadType",
+                "payload", 0, Instant.now(), Instant.now(), Instant.now());
+        List<OutboxEvent> events = List.of(failedEvent);
+
+        // when
+        tested.finalizeBatch(events, Set.of(), Set.of(idFailed), 2, i -> Instant.now());
+
+        // then
+        verify(repository, never()).updateBatchStatus(any(), any());
+        verify(repository, times(1)).partiallyUpdateBatch(any());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
     @DisplayName("UT finalizeBatch() when failed ids is null")
     public void finalizeBatch_whenFailedIdsNull_shouldProcessProcessedOnly() {
         // given
@@ -223,8 +240,12 @@ public class DefaultOutboxManagerUnitTests {
         Set<UUID> processedIds = new HashSet<>(Set.of(common, idProcessed));
         Set<UUID> failedIds = new HashSet<>(Set.of(common, idFailed));
         List<OutboxEvent> events = List.of(
-                new OutboxEvent(common, EventStatus.PENDING, "type", "payloadType", "payload", 0, Instant.now(), Instant.now(), Instant.now()),
-                new OutboxEvent(idFailed, EventStatus.PENDING, "type", "payloadType", "payload", 0, Instant.now(), Instant.now(), Instant.now())
+                new OutboxEvent(common, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idProcessed, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 0, Instant.now(), Instant.now(), Instant.now())
         );
 
         // when
@@ -232,7 +253,112 @@ public class DefaultOutboxManagerUnitTests {
 
         // then
         verify(repository, times(1)).updateBatchStatus(Set.of(idProcessed), EventStatus.PROCESSED);
+        ArgumentCaptor<List<OutboxEvent>> eventsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository, times(1)).partiallyUpdateBatch(eventsCaptor.capture());
+        assertThat(eventsCaptor.getValue()).containsExactlyInAnyOrder(
+                new OutboxEvent(common, EventStatus.PENDING, "type", "payloadType",
+                        "payload", 1, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed, EventStatus.PENDING, "type", "payloadType",
+                        "payload", 1, Instant.now(), Instant.now(), Instant.now())
+        );
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT finalizeBatch() when processedIds after overlap resolving is empty")
+    public void finalizeBatch_whenProcessedIdsIsEmptyAfterOverlapResolve_shouldNotInvolveRepository() {
+        // given
+        UUID common = UUID.randomUUID();
+        UUID idFailed = UUID.randomUUID();
+        Set<UUID> processedIds = new HashSet<>(Set.of(common));
+        Set<UUID> failedIds = new HashSet<>(Set.of(common, idFailed));
+        List<OutboxEvent> events = List.of(
+                new OutboxEvent(common, EventStatus.IN_PROCESS, "type", "payloadType", "payload", 0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed, EventStatus.IN_PROCESS, "type", "payloadType", "payload", 0, Instant.now(), Instant.now(), Instant.now())
+        );
+
+        // when
+        tested.finalizeBatch(events, processedIds, failedIds, 3, i -> Instant.now());
+
+        // then
+        verify(repository, never()).updateBatchStatus(any(Set.class), any(EventStatus.class));
         verify(repository, times(1)).partiallyUpdateBatch(any());
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT prepareFailedEvents() when retry count exceeded threshold should set FAILED as new status")
+    public void prepareFailedEvents_whenRetryCountExceededThreshold_shouldSetFailed() {
+        // given
+        UUID common = UUID.randomUUID();
+        UUID idProcessed = UUID.randomUUID();
+        UUID idFailed1 = UUID.randomUUID();
+        UUID idFailed2 = UUID.randomUUID();
+        Set<UUID> processedIds = new HashSet<>(Set.of(common, idProcessed));
+        Set<UUID> failedIds = new HashSet<>(Set.of(common, idFailed1, idFailed2));
+        List<OutboxEvent> events = List.of(
+                new OutboxEvent(common, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idProcessed, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload",  0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed1, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 1, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed2, EventStatus.IN_PROCESS, "failed-event", "payloadType",
+                        "payload", 3, Instant.now(), Instant.now(), Instant.now())
+        );
+
+        // when
+        tested.finalizeBatch(events, processedIds, failedIds, 3, i -> Instant.now());
+
+        // then
+        verify(repository, times(1)).updateBatchStatus(any(Set.class), any(EventStatus.class));
+        ArgumentCaptor<List<OutboxEvent>> eventsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository, times(1)).partiallyUpdateBatch(eventsCaptor.capture());
+        List<OutboxEvent> resultEvents = eventsCaptor.getValue();
+        assertEquals(3, resultEvents.size());
+        for (OutboxEvent event: resultEvents) {
+            if (event.getId().equals(idFailed2)) {
+                assertEquals("failed-event", event.getEventType());
+                assertEquals(EventStatus.FAILED, event.getStatus());
+            } else {
+                assertEquals(EventStatus.PENDING, event.getStatus());
+            }
+        }
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT prepareFailedEvents() when retry count not exceeded threshold should set FAILED as new status")
+    public void prepareFailedEvents_whenRetryCountNotExceededThreshold_shouldSetNotFailed() {
+        // given
+        UUID common = UUID.randomUUID();
+        UUID idProcessed = UUID.randomUUID();
+        UUID idFailed1 = UUID.randomUUID();
+        UUID idFailed2 = UUID.randomUUID();
+        Set<UUID> processedIds = new HashSet<>(Set.of(common, idProcessed));
+        Set<UUID> failedIds = new HashSet<>(Set.of(common, idFailed1, idFailed2));
+        List<OutboxEvent> events = List.of(
+                new OutboxEvent(common, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 1, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idProcessed, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload",  0, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed1, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 1, Instant.now(), Instant.now(), Instant.now()),
+                new OutboxEvent(idFailed2, EventStatus.IN_PROCESS, "type", "payloadType",
+                        "payload", 2, Instant.now(), Instant.now(), Instant.now())
+        );
+
+        // when
+        tested.finalizeBatch(events, processedIds, failedIds, 3, i -> Instant.now());
+
+        // then
+        verify(repository, times(1)).updateBatchStatus(processedIds, EventStatus.PROCESSED);
+        ArgumentCaptor<List<OutboxEvent>> eventsCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repository, times(1)).partiallyUpdateBatch(eventsCaptor.capture());
+        List<OutboxEvent> resultEvents = eventsCaptor.getValue();
+        for (OutboxEvent event: resultEvents) {
+            assertEquals(EventStatus.PENDING, event.getStatus());
+        }
         verifyNoMoreInteractions(repository);
     }
 
