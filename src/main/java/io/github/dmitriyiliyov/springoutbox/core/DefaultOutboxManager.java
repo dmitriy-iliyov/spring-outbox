@@ -81,7 +81,7 @@ public class DefaultOutboxManager implements OutboxManager {
         if (hasProcessed && hasFailed) {
             boolean wasOverlapped = processedIds.removeAll(failedIds);
             if (wasOverlapped) {
-                log.warn("Set of ids was overlapped, all overlapped ids deleted from processedIds set");
+                log.warn("Set of ids was overlapped, all overlapped ids deleted moved from processedIds set to failedIds");
             }
             if (!processedIds.isEmpty()) {
                 repository.updateBatchStatus(processedIds, EventStatus.PROCESSED);

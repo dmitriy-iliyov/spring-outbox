@@ -8,8 +8,6 @@ import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.utils.SimpleOutboxCache;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -22,8 +20,6 @@ import java.util.concurrent.ScheduledExecutorService;
 @Configuration
 @ConditionalOnProperty(prefix = "outbox.dlq", name = "enabled", havingValue = "true")
 public class OutboxDlqAutoConfiguration {
-
-    private static final Logger log = LoggerFactory.getLogger(OutboxDlqAutoConfiguration.class);
 
     @Bean
     public OutboxDlqRepository outboxRepository(DataSource dataSource) {
@@ -55,7 +51,9 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService outboxScheduledExecutorService,
                                               OutboxProperties properties, OutboxDlqTransfer transfer) {
-        return new OutboxDlqScheduler(properties.getDlq(), outboxScheduledExecutorService, transfer);
+        OutboxProperties.DlqProperties dlqProperties = properties.getDlq()
+                .orElseThrow(() -> new RuntimeException("OutboxProperties.DlqProperties is null for some reason"));
+        return new OutboxDlqScheduler(dlqProperties, outboxScheduledExecutorService, transfer);
     }
 
     @Bean

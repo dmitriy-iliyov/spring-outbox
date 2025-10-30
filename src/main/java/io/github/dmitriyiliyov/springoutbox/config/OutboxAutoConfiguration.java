@@ -40,7 +40,7 @@ public class OutboxAutoConfiguration {
     public OutboxAutoConfiguration(OutboxProperties properties, ObjectMapper mapper, ScheduledExecutorService executor) {
         this.properties = properties;
         this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
-        this.executor = executor;
+        this.executor = Objects.requireNonNull(executor, "executor cannot be null");
     }
 
     @Bean
@@ -105,15 +105,16 @@ public class OutboxAutoConfiguration {
                     new OutboxStuckEventRecoveryScheduler(properties.getStuckEventRecovery(), executor, manager)
             );
             if (properties.isCleanUpEnabled()) {
+                OutboxProperties.CleanUpProperties cleanUpProperties = properties.getCleanUp()
+                        .orElseThrow(() -> new RuntimeException("OutboxProperties.CleanUpProperties is null for some reason"));
                 factory.registerSingleton(
                         "outboxCleanUpScheduler",
-                        new OutboxCleanUpScheduler(properties.getCleanUp(), executor, manager)
+                        new OutboxCleanUpScheduler(cleanUpProperties, executor, manager)
                 );
             } else {
                 log.warn("Outbox is configured without a cleanup scheduler bean because clean-up is disabled; " +
                         "outbox storage will not be cleaned automatically.");
             }
-
         };
     }
 

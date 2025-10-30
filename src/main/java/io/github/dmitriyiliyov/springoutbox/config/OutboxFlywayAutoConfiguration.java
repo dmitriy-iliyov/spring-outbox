@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import javax.sql.DataSource;
 
 @Configuration
-@ConditionalOnProperty(prefix = "outbox.migration", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "outbox.migration", name = "enabled", havingValue = "true")
 @ConditionalOnClass(Flyway.class)
 public class OutboxFlywayAutoConfiguration {
 
@@ -25,13 +25,12 @@ public class OutboxFlywayAutoConfiguration {
         OutboxProperties.MigrationProperties properties = outboxProperties.getMigration();
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
-                .locations(properties.location())
-                .table(properties.table())
+                .locations(properties.getLocation())
+                .table(properties.getTable())
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
                 .validateOnMigrate(true)
                 .load();
-
         flyway.migrate();
         log.info("Outbox Flyway migrations completed");
         return flyway;

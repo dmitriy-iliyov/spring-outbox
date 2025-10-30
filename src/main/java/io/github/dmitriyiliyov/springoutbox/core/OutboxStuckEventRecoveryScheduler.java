@@ -27,13 +27,13 @@ public final class OutboxStuckEventRecoveryScheduler implements OutboxScheduler 
         executor.scheduleWithFixedDelay(
                 () -> {
                     try {
-                        manager.recoverStuckBatch(properties.batchSize());
+                        manager.recoverStuckBatch(properties.getBatchSize());
                     } catch (Exception e) {
                         log.error("Error process recover stuck outbox events", e);
                     }
                 },
-                properties.initialDelay().toSeconds(),
-                properties.fixedDelay().toSeconds(),
+                properties.getInitialDelay().toSeconds(),
+                properties.getFixedDelay().toSeconds(),
                 TimeUnit.SECONDS
         );
     }

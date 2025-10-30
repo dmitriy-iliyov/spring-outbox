@@ -1,17 +1,21 @@
 package io.github.dmitriyiliyov.springoutbox.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @ConfigurationProperties(prefix = "outbox")
 public class OutboxProperties {
 
     private static final int DEFAULT_THREAD_POOL_SIZE = Math.min(Runtime.getRuntime().availableProcessors(), 5);
+    private static final Logger log = LoggerFactory.getLogger(OutboxProperties.class);
 
     private final SenderProperties sender;
     private final Integer threadPoolSize;
@@ -29,16 +33,21 @@ public class OutboxProperties {
                             Map<String, EventProperties> events,
                             StuckEventRecoveryProperties stuckEventRecovery,
                             CleanUpProperties cleanUp,
-                            DlqProperties dlq, MigrationProperties migration) {
+                            DlqProperties dlq,
+                            MigrationProperties migration) {
         this.sender = Objects.requireNonNull(sender, "sender cannot be null");
         this.threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
         this.defaults = defaults == null ? new Defaults() : defaults;
         Objects.requireNonNull(events, "events cannot be null");
+        if (events.isEmpty()) {
+            log.warn("Outbox configuring with out events");
+        }
         this.events = applyDefaults(events);
-        this.stuckEventRecovery = stuckEventRecovery;
+        this.stuckEventRecovery = stuckEventRecovery == null ?
+                new StuckEventRecoveryProperties() : stuckEventRecovery;
         this.cleanUp = cleanUp;
         this.dlq = dlq;
-        this.migration = migration;
+        this.migration = migration == null ? new MigrationProperties() : migration;
     }
 
     private Map<String, EventProperties> applyDefaults(Map<String, EventProperties> eventPropertiesMap) {
@@ -58,14 +67,22 @@ public class OutboxProperties {
                             Duration initialDelay = event.initialDelay == null ? defaults.initialDelay : event.initialDelay;
                             Duration fixedDelay = event.fixedDelay == null ? defaults.fixedDelay : event.fixedDelay;
                             Integer maxRetries = event.maxRetries == null ? defaults.maxRetries : event.maxRetries;
-                            BackoffProperties backoff = new BackoffProperties(
-                                    event.backoff().getDelay() == null ?
-                                            defaults.getBackoff().getDelay() :
-                                            event.backoff().getDelay(),
-                                    event.backoff().getMultiplier() == null || event.backoff().getMultiplier() < 1 ?
-                                            defaults.getBackoff().getMultiplier() :
-                                            event.backoff().getMultiplier()
-                            );
+                            BackoffProperties backoff;
+                            if (event.backoff() == null) {
+                                backoff = defaults.getBackoff();
+                            } else if (!event.backoff().isEnabled()) {
+                                backoff = new BackoffProperties(false, null, null);
+                            } else {
+                                backoff = new BackoffProperties(
+                                        true,
+                                        event.backoff().getDelay() == null ?
+                                                defaults.getBackoff().getDelay() :
+                                                event.backoff().getDelay(),
+                                        event.backoff().getMultiplier() == null || event.backoff().getMultiplier() < 1 ?
+                                                defaults.getBackoff().getMultiplier() :
+                                                event.backoff().getMultiplier()
+                                );
+                            }
                             return new EventProperties(
                                     e.getKey(),
                                     event.topic,
@@ -87,6 +104,10 @@ public class OutboxProperties {
         return threadPoolSize;
     }
 
+    public OutboxProperties.Defaults getDefaults() {
+        return this.defaults;
+    }
+
     public Map<String, EventProperties> getEvents() {
         return events;
     }
@@ -96,19 +117,22 @@ public class OutboxProperties {
     }
 
     public boolean isCleanUpEnabled() {
+        if (cleanUp == null) {
+            return false;
+        }
         return cleanUp.enabled();
     }
 
-    public CleanUpProperties getCleanUp() {
-        return cleanUp;
+    public Optional<CleanUpProperties> getCleanUp() {
+        return Optional.of(cleanUp);
     }
 
     public boolean existEventType(String eventType) {
         return events.containsKey(eventType);
     }
 
-    public DlqProperties getDlq() {
-        return dlq;
+    public Optional<DlqProperties> getDlq() {
+        return Optional.of(dlq);
     }
 
     public MigrationProperties getMigration() {
@@ -125,12 +149,12 @@ public class OutboxProperties {
             }
     }
 
-    public static class Defaults {
+    public static final class Defaults {
 
         private static final int DEFAULT_BATCH_SIZE = 50;
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(2);
-        private static final int DEFAULT_MAX_RETRY = 1;
+        private static final int DEFAULT_MAX_RETRY = 3;
         private static final BackoffProperties DEFAULT_BACKOFF = new BackoffProperties();
 
         private final Integer batchSize;
@@ -174,24 +198,54 @@ public class OutboxProperties {
         public BackoffProperties getBackoff() {
             return backoff;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Defaults defaults = (Defaults) o;
+            return Objects.equals(batchSize, defaults.batchSize) &&
+                    Objects.equals(initialDelay, defaults.initialDelay) &&
+                    Objects.equals(fixedDelay, defaults.fixedDelay) &&
+                    Objects.equals(maxRetries, defaults.maxRetries) &&
+                    Objects.equals(backoff, defaults.backoff);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(batchSize, initialDelay, fixedDelay, maxRetries, backoff);
+        }
     }
 
     public static final class BackoffProperties {
 
         private static final Duration DEFAULT_DELAY = Duration.ofSeconds(10);
-        private static final Long DEFAULT_MULTIPLIER = 1L;
+        private static final Long DEFAULT_MULTIPLIER = 3L;
 
+        private final Boolean enabled;
         private final Duration delay;
         private final Long multiplier;
 
         public BackoffProperties() {
+            this.enabled = true;
             this.delay = DEFAULT_DELAY;
             this.multiplier = DEFAULT_MULTIPLIER;
         }
 
-        public BackoffProperties(Duration delay, Long multiplier) {
-            this.delay = delay == null ? DEFAULT_DELAY : delay;
-            this.multiplier = multiplier == null || multiplier < 1 ? DEFAULT_MULTIPLIER : multiplier;
+        public BackoffProperties(Boolean enabled, Duration delay, Long multiplier) {
+            if (enabled == null || enabled) {
+                this.enabled = true;
+                this.delay = delay == null ? DEFAULT_DELAY : delay;
+                this.multiplier = multiplier == null || multiplier < 1 ? DEFAULT_MULTIPLIER : multiplier;
+            } else {
+                this.enabled = false;
+                this.delay = Duration.ofSeconds(0);
+                this.multiplier = 1L;
+            }
+        }
+
+        public Boolean isEnabled() {
+            return enabled;
         }
 
         public Duration getDelay() {
@@ -200,6 +254,21 @@ public class OutboxProperties {
 
         public Long getMultiplier() {
             return multiplier;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BackoffProperties that = (BackoffProperties) o;
+            return Objects.equals(enabled, that.enabled) &&
+                    Objects.equals(delay, that.delay) &&
+                    Objects.equals(multiplier, that.multiplier);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, delay, multiplier);
         }
     }
 
@@ -225,40 +294,78 @@ public class OutboxProperties {
         }
     }
 
-    public record StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
+    public static final class StuckEventRecoveryProperties {
 
         private static final int DEFAULT_BATCH_SIZE = 100;
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(1800);
+
+        private final Integer batchSize;
+        private final Duration initialDelay;
+        private final Duration fixedDelay;
+
+        public StuckEventRecoveryProperties() {
+            this.batchSize = DEFAULT_BATCH_SIZE;
+            this.initialDelay = DEFAULT_INITIAL_DELAY;
+            this.fixedDelay = DEFAULT_FIXED_DELAY;
+        }
 
         public StuckEventRecoveryProperties(Integer batchSize, Duration initialDelay, Duration fixedDelay) {
             this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
             this.initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
             this.fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
         }
+
+        public Integer getBatchSize() {
+            return batchSize;
+        }
+
+        public Duration getInitialDelay() {
+            return initialDelay;
+        }
+
+        public Duration getFixedDelay() {
+            return fixedDelay;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            StuckEventRecoveryProperties that = (StuckEventRecoveryProperties) o;
+            return Objects.equals(batchSize, that.batchSize) &&
+                    Objects.equals(initialDelay, that.initialDelay) &&
+                    Objects.equals(fixedDelay, that.fixedDelay);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(batchSize, initialDelay, fixedDelay);
+        }
     }
 
-    public record CleanUpProperties(Boolean enabled, Integer batchSize, Duration ttl, Duration initialDelay,
-                                    Duration fixedDelay) {
+    public record CleanUpProperties(Boolean enabled, Integer batchSize, Duration threshold,
+                                    Duration initialDelay, Duration fixedDelay) {
 
         private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final Duration DEFAULT_TTL = Duration.ofHours(1);
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(3600);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(300);
+        private static final Duration DEFAULT_THRESHOLD = Duration.ofHours(1);
+        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(5);
 
-        public CleanUpProperties {
-            if (enabled == null || enabled) {
-                enabled = true;
-                batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
-                ttl = ttl == null ? DEFAULT_TTL : ttl;
-                initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
-                fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+        public CleanUpProperties(Boolean enabled, Integer batchSize, Duration threshold,
+                                 Duration initialDelay, Duration fixedDelay) {
+            if (enabled != null && enabled) {
+                this.enabled = true;
+                this.batchSize = (batchSize == null || batchSize < 0) ? DEFAULT_BATCH_SIZE : batchSize;
+                this.threshold = (threshold == null) ? DEFAULT_THRESHOLD : threshold;
+                this.initialDelay = (initialDelay == null) ? DEFAULT_INITIAL_DELAY : initialDelay;
+                this.fixedDelay = (fixedDelay == null) ? DEFAULT_FIXED_DELAY : fixedDelay;
             } else {
-                enabled = false;
-                batchSize = 0;
-                ttl = null;
-                initialDelay = null;
-                fixedDelay = null;
+                this.enabled = false;
+                this.batchSize = 0;
+                this.threshold = null;
+                this.initialDelay = null;
+                this.fixedDelay = null;
             }
         }
     }
@@ -275,7 +382,7 @@ public class OutboxProperties {
 
             public DlqProperties(Boolean enabled, Integer batchSize, Duration transferToDlqInitialDelay, Duration transferToDlqFixedDelay,
                                  Duration transferFromDlqInitialDelay, Duration transferFormDlqFixedDelay) {
-                if (enabled) {
+                if (enabled != null && enabled) {
                     this.enabled = true;
                     this.batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
                     this.transferToDlqInitialDelay = transferToDlqInitialDelay == null ? DEFAULT_TO_INITIAL_DELAY : transferToDlqInitialDelay;
@@ -293,21 +400,58 @@ public class OutboxProperties {
             }
     }
 
-    public record MigrationProperties(Boolean enabled, String location, String table) {
+    public static final class MigrationProperties {
 
         private static final String DEFAULT_LOCATION = "classpath:db/migration/outbox";
         private static final String DEFAULT_TABLE = "outbox_schema_history";
 
+        private final Boolean enabled;
+        private final String location;
+        private final String table;
+
+        public MigrationProperties() {
+            this.enabled = true;
+            this.location = DEFAULT_LOCATION;
+            this.table = DEFAULT_TABLE;
+        }
+
         public MigrationProperties(Boolean enabled, String location, String table) {
             if (enabled == null || enabled) {
                 this.enabled = true;
-                this.location = location == null || location.isBlank() ? DEFAULT_LOCATION : location;
-                this.table = table == null || table.isBlank() ? DEFAULT_TABLE : table;
+                this.location = (location == null || location.isBlank()) ? DEFAULT_LOCATION : location;
+                this.table = (table == null || table.isBlank()) ? DEFAULT_TABLE : table;
             } else {
                 this.enabled = false;
                 this.location = null;
                 this.table = null;
             }
+        }
+
+        public Boolean isEnabled() {
+            return enabled;
+        }
+
+        public String getLocation() {
+            return location;
+        }
+
+        public String getTable() {
+            return table;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            MigrationProperties that = (MigrationProperties) o;
+            return Objects.equals(enabled, that.enabled) &&
+                    Objects.equals(location, that.location) &&
+                    Objects.equals(table, that.table);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(enabled, location, table);
         }
     }
 }
