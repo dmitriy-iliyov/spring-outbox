@@ -44,14 +44,17 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         """;
         jdbcTemplate.update(
                 sql,
-                event.getId(),
-                event.getStatus().name(),
-                event.getEventType(),
-                event.getPayloadType(),
-                event.getPayload(),
-                event.getRetryCount(),
-                event.getCreatedAt(),
-                event.getUpdatedAt()
+                ps -> {
+                    ps.setObject(1, event.getId());
+                    ps.setString(2, event.getStatus().name());
+                    ps.setString(3, event.getEventType());
+                    ps.setString(4, event.getPayloadType());
+                    ps.setObject(5, event.getPayload());
+                    ps.setInt(6, event.getRetryCount());
+                    ps.setTimestamp(7, Timestamp.from(event.getNextRetryAt()));
+                    ps.setTimestamp(8, Timestamp.from(event.getCreatedAt()));
+                    ps.setTimestamp(9, Timestamp.from(event.getUpdatedAt()));
+                }
         );
     }
 
@@ -72,8 +75,9 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                                 e.getPayloadType(),
                                 e.getPayload(),
                                 e.getRetryCount(),
-                                e.getCreatedAt(),
-                                e.getUpdatedAt()
+                                Timestamp.from(e.getNextRetryAt()),
+                                Timestamp.from(e.getCreatedAt()),
+                                Timestamp.from(e.getUpdatedAt())
                 })
                 .toList();
         jdbcTemplate.batchUpdate(sql, params);

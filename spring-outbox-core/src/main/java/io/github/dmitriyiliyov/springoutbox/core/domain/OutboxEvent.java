@@ -22,7 +22,7 @@ public class OutboxEvent {
         this.eventType = eventType;
         this.payloadType = payloadType;
         this.payload = payload;
-        this.retryCount = 0;
+        this.retryCount = -1;
         this.nextRetryAt = Instant.now();
         this.createdAt = Instant.now();
         this.updatedAt = Instant.now();
