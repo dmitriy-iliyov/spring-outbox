@@ -28,25 +28,27 @@ public final class OutboxDlqTransferScheduler implements OutboxScheduler {
         executor.scheduleWithFixedDelay(
                 () -> {
                     try {
-                        transfer.transferOutboxToDlq(properties.getBatchSize());
+                        log.debug("Start transferring failed outbox events to DLQ");
+                        transfer.transferToDlq(properties.getBatchSize());
                     } catch (Exception e) {
                         log.error("Error process transfer failed events from outbox to DLQ", e);
                     }
                 },
-                properties.getTransferToDlqInitialDelay().toSeconds(),
-                properties.getTransferToDlqFixedDelay().toSeconds(),
+                properties.getTransferToInitialDelay().toSeconds(),
+                properties.getTransferToFixedDelay().toSeconds(),
                 TimeUnit.SECONDS
         );
         executor.scheduleWithFixedDelay(
                 () -> {
                     try {
-                        transfer.transferDlqToOutbox(properties.getBatchSize());
+                        log.debug("Start transferring events from DLQ to outbox");
+                        transfer.transferFromDlq(properties.getBatchSize());
                     } catch (Exception e) {
                         log.error("Error process transfer failed events from DLQ to outbox to retry", e);
                     }
                 },
-                properties.getTransferFromDlqInitialDelay().toSeconds(),
-                properties.getTransferFromDlqFixedDelay().toSeconds(),
+                properties.getTransferFromInitialDelay().toSeconds(),
+                properties.getTransferFromFixedDelay().toSeconds(),
                 TimeUnit.SECONDS
         );
     }

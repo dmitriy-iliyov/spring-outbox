@@ -21,8 +21,8 @@ public class OutboxFlywayAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(name = "outboxFlyway")
     public Flyway outboxFlyway(DataSource dataSource, OutboxProperties outboxProperties) {
-        log.info("Initializing Outbox Flyway migrations");
         OutboxProperties.MigrationProperties properties = outboxProperties.getMigration();
+        log.info("Start Outbox Flyway migrations");
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
                 .locations(properties.getLocation())
