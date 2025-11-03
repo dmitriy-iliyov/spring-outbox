@@ -56,7 +56,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferOutboxToDlq(batchSize);
+        tested.transferToDlq(batchSize);
 
         // then
         verify(manager).loadBatch(EventStatus.FAILED, batchSize);
@@ -107,7 +107,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferOutboxToDlq(batchSize);
+        tested.transferToDlq(batchSize);
 
         // then
         verify(manager).loadBatch(EventStatus.FAILED, batchSize);
@@ -135,7 +135,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferOutboxToDlq() when exception in transaction, should not call handler")
-    public void transferOutboxToDlq_whenExceptionInTransaction_shouldNotCallHandler() {
+    public void transferToDlq_whenExceptionInTransaction_shouldNotCallHandler() {
         // given
         int batchSize = 50;
         UUID eventId = UUID.randomUUID();
@@ -163,7 +163,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        assertThrows(RuntimeException.class, () -> tested.transferOutboxToDlq(batchSize));
+        assertThrows(RuntimeException.class, () -> tested.transferToDlq(batchSize));
 
         // then
         verify(manager).loadBatch(EventStatus.FAILED, batchSize);
@@ -174,7 +174,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferOutboxToDlq() when handler throws exception, should not affect transaction")
-    public void transferOutboxToDlq_whenHandlerThrows_shouldNotAffectTransaction() {
+    public void transferToDlq_whenHandlerThrows_shouldNotAffectTransaction() {
         // given
         int batchSize = 50;
         UUID eventId = UUID.randomUUID();
@@ -203,7 +203,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         doThrow(new RuntimeException("Handler error")).when(handler).handle(anyList());
 
         // when/then - should not throw
-        assertDoesNotThrow(() -> tested.transferOutboxToDlq(batchSize));
+        assertDoesNotThrow(() -> tested.transferToDlq(batchSize));
 
         verify(manager).loadBatch(EventStatus.FAILED, batchSize);
         verify(dlqManager).saveBatch(anyList());
@@ -213,7 +213,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferDlqToOutbox() when dlq events is null, should not transfer")
-    public void transferDlqToOutbox_whenDlqEventsIsNull_shouldNotTransfer() {
+    public void transferDlqToOutbox_whenDlqEventsIsNull_shouldNotTransferFrom() {
         // given
         int batchSize = 50;
 
@@ -225,7 +225,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferDlqToOutbox(batchSize);
+        tested.transferFromDlq(batchSize);
 
         // then
         verify(dlqManager).loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
@@ -235,7 +235,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferDlqToOutbox() when dlq events is empty, should not transfer")
-    public void transferDlqToOutbox_whenDlqEventsIsEmpty_shouldNotTransfer() {
+    public void transferDlqToOutbox_whenDlqEventsIsEmpty_shouldNotTransferFrom() {
         // given
         int batchSize = 50;
 
@@ -247,7 +247,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferDlqToOutbox(batchSize);
+        tested.transferFromDlq(batchSize);
 
         // then
         verify(dlqManager).loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
@@ -257,7 +257,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferDlqToOutbox() when dlq events exist, should transfer to outbox")
-    public void transferDlqToOutbox_whenDlqEventsExist_shouldTransferToOutbox() {
+    public void transferDlqToOutbox_whenDlqEventsExist_shouldTransferFrom() {
         // given
         int batchSize = 50;
         UUID eventId1 = UUID.randomUUID();
@@ -300,7 +300,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferDlqToOutbox(batchSize);
+        tested.transferFromDlq(batchSize);
 
         // then
         verify(dlqManager).loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
@@ -328,7 +328,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferDlqToOutbox() when exception occurs, should not delete from dlq")
-    public void transferDlqToOutbox_whenExceptionOccurs_shouldNotDeleteFromDlq() {
+    public void transferDlqToOutbox_whenExceptionOccurs_shouldNotDeleteFromFromDlq() {
         // given
         int batchSize = 50;
         UUID eventId = UUID.randomUUID();
@@ -357,7 +357,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        assertThrows(RuntimeException.class, () -> tested.transferDlqToOutbox(batchSize));
+        assertThrows(RuntimeException.class, () -> tested.transferFromDlq(batchSize));
 
         // then
         verify(dlqManager).loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
@@ -367,7 +367,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferDlqToOutbox() should reset retry count to zero")
-    public void transferDlqToOutbox_shouldResetRetryCountToZero() {
+    public void transferFromDlqToOutbox_shouldResetRetryCountToZero() {
         // given
         int batchSize = 50;
         UUID eventId = UUID.randomUUID();
@@ -395,7 +395,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferDlqToOutbox(batchSize);
+        tested.transferFromDlq(batchSize);
 
         // then
         ArgumentCaptor<List<OutboxEvent>> outboxEventsCaptor = ArgumentCaptor.forClass(List.class);
@@ -408,7 +408,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
     @Test
     @DisplayName("UT transferDlqToOutbox() should preserve original created_at timestamp")
-    public void transferDlqToOutbox_shouldPreserveOriginalCreatedAt() {
+    public void transferFromDlq_shouldPreserveOriginalCreatedAt() {
         // given
         int batchSize = 50;
         UUID eventId = UUID.randomUUID();
@@ -437,7 +437,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         }).when(transactionTemplate).executeWithoutResult(any());
 
         // when
-        tested.transferDlqToOutbox(batchSize);
+        tested.transferFromDlq(batchSize);
 
         // then
         ArgumentCaptor<List<OutboxEvent>> outboxEventsCaptor = ArgumentCaptor.forClass(List.class);

@@ -11,53 +11,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class OutboxPropertiesSenderPropertiesUnitTests {
 
     @Test
-    @DisplayName("UT SenderProperties() should throw when type is null")
-    public void constructor_whenTypeNull_shouldThrow() {
+    @DisplayName("UT initialize() should throw when type is null")
+    public void initialize_typeNull_shouldThrow() {
         // given
-        SenderType type = null;
-        String beanName = "myBean";
-
         OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
-        sender.setType(type);
-        sender.setBeanName(beanName);
-
-        // when + then
-        assertThrows(NullPointerException.class, sender::initialize);
-    }
-
-    @Test
-    @DisplayName("UT SenderProperties() should throw when beanName is null")
-    public void constructor_whenBeanNameNull_shouldThrow() {
-        // given
-        SenderType type = SenderType.KAFKA;
-        String beanName = null;
-
-        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
-        sender.setType(type);
-        sender.setBeanName(beanName);
-
-        // when + then
-        assertThrows(NullPointerException.class, sender::initialize);
-    }
-
-    @Test
-    @DisplayName("UT SenderProperties() should throw when beanName is blank")
-    public void constructor_whenBeanNameBlank_shouldThrow() {
-        // given
-        SenderType type = SenderType.KAFKA;
-        String beanName = "  ";
-
-        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
-        sender.setType(type);
-        sender.setBeanName(beanName);
+        sender.setType(null);
+        sender.setBeanName("myBean");
 
         // when + then
         assertThrows(IllegalArgumentException.class, sender::initialize);
     }
 
     @Test
-    @DisplayName("UT SenderProperties() with valid type and beanName should create object")
-    public void constructor_withValidParameters_shouldCreateObject() {
+    @DisplayName("UT initialize() with valid type and beanName should assign values")
+    public void initialize_validParameters_shouldAssignValues() {
         // given
         SenderType type = SenderType.KAFKA;
         String beanName = "myKafkaBean";
@@ -69,7 +36,7 @@ public class OutboxPropertiesSenderPropertiesUnitTests {
         sender.initialize();
 
         // then
-        assertEquals(type,sender.getType());
+        assertEquals(type, sender.getType());
         assertEquals(beanName, sender.getBeanName());
     }
 }

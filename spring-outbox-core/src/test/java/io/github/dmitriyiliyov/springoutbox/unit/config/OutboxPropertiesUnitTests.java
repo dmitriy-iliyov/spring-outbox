@@ -1,879 +1,1186 @@
-//package io.github.dmitriyiliyov.springoutbox.unit.config;
-//
-//import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-//import io.github.dmitriyiliyov.springoutbox.config.SenderType;
-//import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
-//
-//import java.time.Duration;
-//import java.util.HashMap;
-//import java.util.Map;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//
-//public class OutboxPropertiesUnitTests {
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should throw when sender is null")
-//    public void constructor_whenSenderNull_thenThrow() {
-//        // given + when + then
-//        assertThrows(NullPointerException.class,
-//                () -> new OutboxProperties(
-//                        null, null, null, null, null, null, null, null
-//                )
-//        );
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use default threadPoolSize when null")
-//    public void constructor_whenThreadPoolSizeNull_thenUseDefault() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertEquals(Math.min(Runtime.getRuntime().availableProcessors(), 5), properties.getThreadPoolSize());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use provided threadPoolSize")
-//    public void constructor_whenThreadPoolSizeProvided_thenUseIt() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                10, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertEquals(10, properties.getThreadPoolSize());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should throw when events is null")
-//    public void constructor_whenEventsNull_thenThrow() {
-//        // given + when + then
-//        assertThrows(NullPointerException.class,
-//                () -> new OutboxProperties(
-//                        new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                        1, null, null, null, null, null, null
-//                )
-//        );
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should accept empty events map")
-//    public void constructor_whenEventsEmpty_thenAccept() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertTrue(properties.getEvents().isEmpty());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should throw when event type is null")
-//    public void constructor_whenEventTypeNull_thenThrow() {
-//        // given
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put(null, new OutboxProperties.EventProperties(
-//                "test", "topic", 10, Duration.ofSeconds(5), Duration.ofSeconds(30), 3, null
-//        ));
-//
-//        // when + then
-//        assertThrows(NullPointerException.class,
-//                () -> new OutboxProperties(
-//                        new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                        null, null, events, null, null, null, null
-//                )
-//        );
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should throw when event type is blank")
-//    public void constructor_whenEventTypeBlank_thenThrow() {
-//        // given
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("  ", new OutboxProperties.EventProperties(
-//                "test", "topic", 10, Duration.ofSeconds(5), Duration.ofSeconds(30), 3, null
-//        ));
-//
-//        // when + then
-//        assertThrows(IllegalArgumentException.class,
-//                () -> new OutboxProperties(
-//                        new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                        null, null, events, null, null, null, null
-//                )
-//        );
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should initialize stuckEventRecovery when null")
-//    public void constructor_whenStuckEventRecoveryNull_thenUseDefault() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertEquals(new OutboxProperties.StuckEventRecoveryProperties(), properties.getStuckEventRecovery());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should initialize migration when null")
-//    public void constructor_whenMigrationNull_thenUseDefault() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertEquals(new OutboxProperties.MigrationProperties(), properties.getMigration());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should initialize defaults when null")
-//    public void constructor_whenDefaultsNull_thenUseDefault() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "beanName"),
-//                null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertEquals(new OutboxProperties.Defaults(), properties.getDefaults());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() with full defaults should initialize all properties correctly")
-//    public void constructor_withDefaults_shouldInitializeAll() {
-//        // given
-//        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties(SenderType.KAFKA, "kafkaOutboxTemplate");
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("account-delete", new OutboxProperties.EventProperties(
-//                "account-delete", "account-delete", null, null, Duration.ofSeconds(10), 1, null
-//        ));
-//        events.put("user-registered", new OutboxProperties.EventProperties(
-//                "user-registered", "user-registered", null, null, null, 4, new OutboxProperties.BackoffProperties()
-//        ));
-//        OutboxProperties.StuckEventRecoveryProperties stuckRecovery = new OutboxProperties.StuckEventRecoveryProperties(null, null, null);
-//        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties(null, null, null, null, null);
-//        OutboxProperties.DlqProperties dlq = new OutboxProperties.DlqProperties(true, null, null, null, null, null);
-//        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties(null, null, null);
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(null, null, null, null, null);
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(sender, 5, defaults, events, stuckRecovery, cleanUp, dlq, migration);
-//
-//        // then
-//        assertEquals(SenderType.KAFKA, sender.type());
-//        assertEquals("kafkaOutboxTemplate", sender.beanName());
-//        assertEquals(5, properties.getThreadPoolSize());
-//
-//        OutboxProperties.Defaults resultDefaults = properties.getDefaults();
-//        OutboxProperties.Defaults defaultDefaults = new OutboxProperties.Defaults();
-//        assertEquals(defaultDefaults, resultDefaults);
-//
-//        assertEquals(defaultDefaults.getBatchSize(), properties.getEvents().get("account-delete").batchSize());
-//        assertEquals(defaultDefaults.getInitialDelay(), properties.getEvents().get("account-delete").initialDelay());
-//        assertNotEquals(defaultDefaults.getFixedDelay(), properties.getEvents().get("account-delete").fixedDelay());
-//        assertNotEquals(defaultDefaults.getMaxRetries(), properties.getEvents().get("account-delete").maxRetries());
-//        assertEquals(defaultDefaults.getBackoff(), properties.getEvents().get("account-delete").backoff());
-//
-//        assertEquals(defaultDefaults.getBatchSize(), properties.getEvents().get("user-registered").batchSize());
-//        assertEquals(defaultDefaults.getInitialDelay(), properties.getEvents().get("user-registered").initialDelay());
-//        assertEquals(defaultDefaults.getFixedDelay(), properties.getEvents().get("user-registered").fixedDelay());
-//        assertNotEquals(defaultDefaults.getMaxRetries(), properties.getEvents().get("user-registered").maxRetries());
-//        assertEquals(defaultDefaults.getBackoff(), properties.getEvents().get("user-registered").backoff());
-//
-//        assertEquals(100, properties.getStuckEventRecovery().getBatchSize());
-//        assertEquals(Duration.ofSeconds(300), properties.getStuckEventRecovery().getInitialDelay());
-//        assertEquals(Duration.ofSeconds(1800), properties.getStuckEventRecovery().getFixedDelay());
-//
-//        assertFalse(properties.isCleanUpEnabled());
-//        assertTrue(properties.getMigration().isEnabled());
-//        assertEquals("classpath:db/migration/outbox", properties.getMigration().getLocation());
-//        assertEquals("outbox_schema_history", properties.getMigration().getTable());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should handle Backoff in defaults correctly")
-//    public void constructor_whenBackoffDisabledInDefaults_thenApplyCorrectly() {
-//        // given
-//        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties(SenderType.KAFKA, "kafkaOutboxTemplate");
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("account-delete", new OutboxProperties.EventProperties(
-//                "account-delete", "account-delete", null, null, Duration.ofSeconds(10), 1, null
-//        ));
-//        events.put("user-registered", new OutboxProperties.EventProperties(
-//                "user-registered", "user-registered", null, null, null, 4, new OutboxProperties.BackoffProperties()
-//        ));
-//        OutboxProperties.StuckEventRecoveryProperties stuckRecovery = new OutboxProperties.StuckEventRecoveryProperties(null, null, null);
-//        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties(true, null, null, null, null);
-//        OutboxProperties.DlqProperties dlq = new OutboxProperties.DlqProperties(true, null, null, null, null, null);
-//        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties(null, null, null);
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(null, null, null, null,
-//                new OutboxProperties.BackoffProperties(false, null, null));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(sender, 5, defaults, events, stuckRecovery, cleanUp, dlq, migration);
-//
-//        // then
-//        OutboxProperties.Defaults resultDefaults = properties.getDefaults();
-//        OutboxProperties.Defaults defaultDefaults = new OutboxProperties.Defaults();
-//        assertNotEquals(defaultDefaults, resultDefaults);
-//        assertFalse(resultDefaults.getBackoff().isEnabled());
-//
-//        assertFalse(properties.getEvents().get("account-delete").backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(0), properties.getEvents().get("account-delete").backoff().getDelay());
-//        assertEquals(1, properties.getEvents().get("account-delete").backoff().getMultiplier());
-//
-//        assertTrue(properties.getEvents().get("user-registered").backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(10), properties.getEvents().get("user-registered").backoff().getDelay());
-//        assertEquals(3, properties.getEvents().get("user-registered").backoff().getMultiplier());
-//
-//        assertEquals(100, properties.getStuckEventRecovery().getBatchSize());
-//        assertEquals(Duration.ofSeconds(300), properties.getStuckEventRecovery().getInitialDelay());
-//        assertEquals(Duration.ofSeconds(1800), properties.getStuckEventRecovery().getFixedDelay());
-//
-//        assertTrue(properties.isCleanUpEnabled());
-//        OutboxProperties.CleanUpProperties cleanUpProperties = properties.getCleanUp().get();
-//        assertEquals(100, cleanUpProperties.batchSize());
-//        assertEquals(Duration.ofHours(1), cleanUpProperties.threshold());
-//        assertEquals(Duration.ofSeconds(300), cleanUpProperties.initialDelay());
-//        assertEquals(Duration.ofSeconds(5), cleanUpProperties.fixedDelay());
-//
-//        assertTrue(properties.getMigration().isEnabled());
-//        assertEquals("classpath:db/migration/outbox", properties.getMigration().getLocation());
-//        assertEquals("outbox_schema_history", properties.getMigration().getTable());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should apply defaults to event properties with null values")
-//    public void constructor_whenEventPropertiesNull_thenApplyDefaults() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(5), 2L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null, null
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertEquals(50, event.batchSize());
-//        assertEquals(Duration.ofSeconds(10), event.initialDelay());
-//        assertEquals(Duration.ofSeconds(60), event.fixedDelay());
-//        assertEquals(5, event.maxRetries());
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(5), event.backoff().getDelay());
-//        assertEquals(2, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should override defaults with event specific values")
-//    public void constructor_whenEventPropertiesProvided_thenOverrideDefaults() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(5), 2L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", 100, Duration.ofSeconds(20),
-//                Duration.ofSeconds(120), 10,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 5L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertEquals(100, event.batchSize());
-//        assertEquals(Duration.ofSeconds(20), event.initialDelay());
-//        assertEquals(Duration.ofSeconds(120), event.fixedDelay());
-//        assertEquals(10, event.maxRetries());
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(15), event.backoff().getDelay());
-//        assertEquals(5, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should handle disabled backoff in event properties")
-//    public void constructor_whenEventBackoffDisabled_thenApplyCorrectly() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(5), 2L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(false, null, null)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertFalse(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(0), event.backoff().getDelay());
-//        assertEquals(1, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should handle backoff with invalid multiplier")
-//    public void constructor_whenBackoffMultiplierInvalid_thenUseDefault() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(5), 3L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 0L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertEquals(3, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use default backoff delay when event backoff delay is null")
-//    public void constructor_whenEventBackoffDelayNull_thenUseDefaultDelay() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 3L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, null, 5L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(10), event.backoff().getDelay());
-//        assertEquals(5, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use event backoff delay when provided")
-//    public void constructor_whenEventBackoffDelayProvided_thenUseEventDelay() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 3L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(25), 5L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(25), event.backoff().getDelay());
-//        assertEquals(5, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use default backoff multiplier when event multiplier is null")
-//    public void constructor_whenEventBackoffMultiplierNull_thenUseDefaultMultiplier() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(20), null)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(20), event.backoff().getDelay());
-//        assertEquals(3, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use default backoff multiplier when event multiplier is zero")
-//    public void constructor_whenEventBackoffMultiplierZero_thenUseDefaultMultiplier() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(20), 0L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(20), event.backoff().getDelay());
-//        assertEquals(3, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use default backoff multiplier when event multiplier is negative")
-//    public void constructor_whenEventBackoffMultiplierNegative_thenUseDefaultMultiplier() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(20), -2L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(20), event.backoff().getDelay());
-//        assertEquals(3, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use event backoff multiplier when it is 1")
-//    public void constructor_whenEventBackoffMultiplierOne_thenUseEventMultiplier() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(20), 1L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(20), event.backoff().getDelay());
-//        assertEquals(1, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use event backoff multiplier when greater than 1")
-//    public void constructor_whenEventBackoffMultiplierGreaterThanOne_thenUseEventMultiplier() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(20), 7L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(20), event.backoff().getDelay());
-//        assertEquals(7, event.backoff().getMultiplier());;
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use both defaults when event backoff delay and multiplier are null")
-//    public void constructor_whenEventBackoffDelayAndMultiplierNull_thenUseBothDefaults() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, null, null)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(10), event.backoff().getDelay());
-//        assertEquals(3, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should use both event values when backoff delay and multiplier are provided")
-//    public void constructor_whenEventBackoffDelayAndMultiplierProvided_thenUseBothEventValues() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(25), 6L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(25), event.backoff().getDelay());
-//        assertEquals(6, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should mix defaults and event values correctly")
-//    public void constructor_whenMixingDefaultsAndEventValues_thenApplyCorrectly() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                50, Duration.ofSeconds(10), Duration.ofSeconds(60), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(15), 4L)
-//        );
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", null, null, null, null,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(25), 0L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event = properties.getEvents().get("test-event");
-//        assertTrue(event.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(25), event.backoff().getDelay());
-//        assertEquals(3, event.backoff().getMultiplier());
-//    }
-//
-//    @Test
-//    @DisplayName("UT isCleanUpEnabled() should return false when cleanUp is null")
-//    public void isCleanUpEnabled_whenCleanUpNull_thenReturnFalse() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertFalse(properties.isCleanUpEnabled());
-//    }
-//
-//    @Test
-//    @DisplayName("UT isCleanUpEnabled() should return true when cleanUp enabled")
-//    public void isCleanUpEnabled_whenCleanUpEnabled_thenReturnTrue() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, new HashMap<>(), null,
-//                new OutboxProperties.CleanUpProperties(true, null, null, null, null),
-//                null, null
-//        );
-//
-//        // then
-//        assertTrue(properties.isCleanUpEnabled());
-//    }
-//
-//    @Test
-//    @DisplayName("UT isCleanUpEnabled() should return false when cleanUp disabled")
-//    public void isCleanUpEnabled_whenCleanUpDisabled_thenReturnFalse() {
-//        // given + when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, new HashMap<>(), null,
-//                new OutboxProperties.CleanUpProperties(false, null, null, null, null),
-//                null, null
-//        );
-//
-//        // then
-//        assertFalse(properties.isCleanUpEnabled());
-//    }
-//
-//    @Test
-//    @DisplayName("UT getCleanUp() should return Optional with cleanUp")
-//    public void getCleanUp_whenCleanUpProvided_thenReturnOptional() {
-//        // given
-//        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties(
-//                true, 50, Duration.ofHours(2), Duration.ofMinutes(5), Duration.ofMinutes(30)
-//        );
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, new HashMap<>(), null, cleanUp, null, null
-//        );
-//
-//        // then
-//        assertTrue(properties.getCleanUp().isPresent());
-//        assertEquals(cleanUp, properties.getCleanUp().get());
-//    }
-//
-//    @Test
-//    @DisplayName("UT getDlq() should return Optional with dlq")
-//    public void getDlq_whenDlqProvided_thenReturnOptional() {
-//        // given
-//        OutboxProperties.DlqProperties dlq = new OutboxProperties.DlqProperties(
-//                true, 100, Duration.ofSeconds(60), Duration.ofSeconds(60), null, null
-//        );
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, new HashMap<>(), null, null, dlq, null
-//        );
-//
-//        // then
-//        assertTrue(properties.getDlq().isPresent());
-//        assertEquals(dlq, properties.getDlq().get());
-//    }
-//
-//    @Test
-//    @DisplayName("UT existEventType() should return true when event exists")
-//    public void existEventType_whenEventExists_thenReturnTrue() {
-//        // given
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", 10, Duration.ofSeconds(5),
-//                Duration.ofSeconds(30), 3, null
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, events, null, null, null, null
-//        );
-//
-//        // then
-//        assertTrue(properties.existEventType("test-event"));
-//    }
-//
-//    @Test
-//    @DisplayName("UT existEventType() should return false when event does not exist")
-//    public void existEventType_whenEventDoesNotExist_thenReturnFalse() {
-//        // given
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", 10, Duration.ofSeconds(5),
-//                Duration.ofSeconds(30), 3, null
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, events, null, null, null, null
-//        );
-//
-//        // then
-//        assertFalse(properties.existEventType("non-existing-event"));
-//    }
-//
-//    @Test
-//    @DisplayName("UT getEvents() should return unmodifiable map")
-//    public void getEvents_shouldReturnUnmodifiableMap() {
-//        // given
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("test-event", new OutboxProperties.EventProperties(
-//                "test-event", "test-topic", 10, Duration.ofSeconds(5),
-//                Duration.ofSeconds(30), 3, null
-//        ));
-//
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, events, null, null, null, null
-//        );
-//
-//        // when + then
-//        assertThrows(UnsupportedOperationException.class,
-//                () -> properties.getEvents().put("new-event", new OutboxProperties.EventProperties(
-//                        "new-event", "topic", 1, Duration.ofSeconds(1),
-//                        Duration.ofSeconds(1), 1, null
-//                ))
-//        );
-//    }
-//
-//    @Test
-//    @DisplayName("UT getSender() should return sender properties")
-//    public void getSender_shouldReturnSenderProperties() {
-//        // given
-//        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties(
-//                SenderType.KAFKA, "testBean"
-//        );
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                sender, null, null, new HashMap<>(), null, null, null, null
-//        );
-//
-//        // then
-//        assertEquals(sender, properties.getSender());
-//        assertEquals(SenderType.KAFKA, properties.getSender().type());
-//        assertEquals("testBean", properties.getSender().beanName());
-//    }
-//
-//    @Test
-//    @DisplayName("UT getMigration() should return migration properties")
-//    public void getMigration_shouldReturnMigrationProperties() {
-//        // given
-//        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties(
-//                true, "custom/location", "custom_table"
-//        );
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, null, new HashMap<>(), null, null, null, migration
-//        );
-//
-//        // then
-//        assertEquals(migration, properties.getMigration());
-//        assertTrue(properties.getMigration().isEnabled());
-//        assertEquals("custom/location", properties.getMigration().getLocation());
-//        assertEquals("custom_table", properties.getMigration().getTable());
-//    }
-//
-//    @Test
-//    @DisplayName("UT OutboxProperties() should handle multiple events with mixed configurations")
-//    public void constructor_withMultipleEvents_shouldApplyCorrectly() {
-//        // given
-//        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults(
-//                100, Duration.ofSeconds(5), Duration.ofSeconds(30), 3,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(10), 2L)
-//        );
-//
-//        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
-//        events.put("event1", new OutboxProperties.EventProperties(
-//                "event1", "topic1", null, null, null, null, null
-//        ));
-//        events.put("event2", new OutboxProperties.EventProperties(
-//                "event2", "topic2", 50, null, Duration.ofSeconds(60), null,
-//                new OutboxProperties.BackoffProperties(false, null, null)
-//        ));
-//        events.put("event3", new OutboxProperties.EventProperties(
-//                "event3", "topic3", 200, Duration.ofSeconds(15),
-//                Duration.ofSeconds(90), 5,
-//                new OutboxProperties.BackoffProperties(true, Duration.ofSeconds(20), 3L)
-//        ));
-//
-//        // when
-//        OutboxProperties properties = new OutboxProperties(
-//                new OutboxProperties.SenderProperties(SenderType.KAFKA, "bean"),
-//                null, defaults, events, null, null, null, null
-//        );
-//
-//        // then
-//        OutboxProperties.EventProperties event1 = properties.getEvents().get("event1");
-//        assertEquals(100, event1.batchSize());
-//        assertEquals(Duration.ofSeconds(5), event1.initialDelay());
-//        assertEquals(Duration.ofSeconds(30), event1.fixedDelay());
-//        assertEquals(3, event1.maxRetries());
-//        assertTrue(event1.backoff().isEnabled());
-//
-//        OutboxProperties.EventProperties event2 = properties.getEvents().get("event2");
-//        assertEquals(50, event2.batchSize());
-//        assertEquals(Duration.ofSeconds(5), event2.initialDelay());
-//        assertEquals(Duration.ofSeconds(60), event2.fixedDelay());
-//        assertEquals(3, event2.maxRetries());
-//        assertFalse(event2.backoff().isEnabled());
-//
-//        OutboxProperties.EventProperties event3 = properties.getEvents().get("event3");
-//        assertEquals(200, event3.batchSize());
-//        assertEquals(Duration.ofSeconds(15), event3.initialDelay());
-//        assertEquals(Duration.ofSeconds(90), event3.fixedDelay());
-//        assertEquals(5, event3.maxRetries());
-//        assertTrue(event3.backoff().isEnabled());
-//        assertEquals(Duration.ofSeconds(20), event3.backoff().getDelay());
-//        assertEquals(3, event3.backoff().getMultiplier());
-//    }
-//}
+package io.github.dmitriyiliyov.springoutbox.unit.config;
+
+import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.config.SenderType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class OutboxPropertiesUnitTests {
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should throw when sender is null")
+    public void initialize_whenSenderNull_thenThrow() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        properties.setEvents(new HashMap<>());
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, properties::initialize);
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use default threadPoolSize when null")
+    public void initialize_whenThreadPoolSizeNull_thenUseDefault() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertEquals(Math.min(Runtime.getRuntime().availableProcessors(), 5), properties.getThreadPoolSize());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use provided threadPoolSize")
+    public void initialize_whenThreadPoolSizeProvided_thenUseIt() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+        properties.setThreadPoolSize(10);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertEquals(10, properties.getThreadPoolSize());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should throw when events is null")
+    public void initialize_whenEventsNull_thenThrow() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, properties::initialize);
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should accept empty events map")
+    public void initialize_whenEventsEmpty_thenAccept() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertTrue(properties.getEvents().isEmpty());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should throw when event type is null")
+    public void initialize_whenEventTypeNull_thenThrow() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("topic");
+        events.put(null, event);
+        properties.setEvents(events);
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, properties::initialize);
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should throw when event type is blank")
+    public void initialize_whenEventTypeBlank_thenThrow() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("topic");
+        events.put("  ", event);
+        properties.setEvents(events);
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, properties::initialize);
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should initialize stuckRecovery when null")
+    public void initialize_whenStuckRecoveryNull_thenUseDefault() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getStuckRecovery());
+        assertEquals(100, properties.getStuckRecovery().getBatchSize());
+        assertEquals(Duration.ofSeconds(300), properties.getStuckRecovery().getInitialDelay());
+        assertEquals(Duration.ofSeconds(1800), properties.getStuckRecovery().getFixedDelay());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should initialize migration when null")
+    public void initialize_whenMigrationNull_thenUseDefault() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getMigration());
+        assertTrue(properties.getMigration().isEnabled());
+        assertEquals("classpath:db/migration/outbox", properties.getMigration().getLocation());
+        assertEquals("outbox_schema_history", properties.getMigration().getTable());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should initialize defaults when null")
+    public void initialize_whenDefaultsNull_thenUseDefault() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("beanName");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getDefaults());
+        assertEquals(50, properties.getDefaults().getBatchSize());
+        assertEquals(Duration.ofSeconds(300), properties.getDefaults().getInitialDelay());
+        assertEquals(Duration.ofSeconds(2), properties.getDefaults().getFixedDelay());
+        assertEquals(3, properties.getDefaults().getMaxRetries());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() with full configuration should initialize all properties correctly")
+    public void initialize_withFullConfiguration_shouldInitializeAll() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("kafkaOutboxTemplate");
+        properties.setSender(sender);
+        properties.setThreadPoolSize(5);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+
+        OutboxProperties.EventProperties accountDelete = new OutboxProperties.EventProperties();
+        accountDelete.setTopic("account-delete");
+        accountDelete.setFixedDelay(Duration.ofSeconds(10));
+        accountDelete.setMaxRetries(1);
+        events.put("account-delete", accountDelete);
+
+        OutboxProperties.EventProperties userRegistered = new OutboxProperties.EventProperties();
+        userRegistered.setTopic("user-registered");
+        userRegistered.setMaxRetries(4);
+        OutboxProperties.BackoffProperties backoff = new OutboxProperties.BackoffProperties();
+        userRegistered.setBackoff(backoff);
+        events.put("user-registered", userRegistered);
+
+        properties.setEvents(events);
+
+        OutboxProperties.StuckRecoveryProperties stuckRecovery = new OutboxProperties.StuckRecoveryProperties();
+        properties.setStuckRecovery(stuckRecovery);
+
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        properties.setCleanUp(cleanUp);
+
+        OutboxProperties.DlqProperties dlq = new OutboxProperties.DlqProperties();
+        dlq.setEnabled(true);
+        properties.setDlq(dlq);
+
+        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties();
+        properties.setMigration(migration);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        properties.setDefaults(defaults);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertEquals(SenderType.KAFKA, properties.getSender().getType());
+        assertEquals("kafkaOutboxTemplate", properties.getSender().getBeanName());
+        assertEquals(5, properties.getThreadPoolSize());
+
+        assertEquals(50, properties.getEvents().get("account-delete").getBatchSize());
+        assertEquals(Duration.ofSeconds(300), properties.getEvents().get("account-delete").getInitialDelay());
+        assertEquals(Duration.ofSeconds(10), properties.getEvents().get("account-delete").getFixedDelay());
+        assertEquals(1, properties.getEvents().get("account-delete").getMaxRetries());
+
+        assertEquals(50, properties.getEvents().get("user-registered").getBatchSize());
+        assertEquals(Duration.ofSeconds(300), properties.getEvents().get("user-registered").getInitialDelay());
+        assertEquals(Duration.ofSeconds(2), properties.getEvents().get("user-registered").getFixedDelay());
+        assertEquals(4, properties.getEvents().get("user-registered").getMaxRetries());
+
+        assertEquals(100, properties.getStuckRecovery().getBatchSize());
+        assertEquals(Duration.ofSeconds(300), properties.getStuckRecovery().getInitialDelay());
+        assertEquals(Duration.ofSeconds(1800), properties.getStuckRecovery().getFixedDelay());
+
+        assertFalse(properties.isCleanUpEnabled());
+        assertTrue(properties.getMigration().isEnabled());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should handle disabled backoff in defaults correctly")
+    public void initialize_whenBackoffDisabledInDefaults_thenApplyCorrectly() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("kafkaOutboxTemplate");
+        properties.setSender(sender);
+        properties.setThreadPoolSize(5);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(false);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+
+        OutboxProperties.EventProperties accountDelete = new OutboxProperties.EventProperties();
+        accountDelete.setTopic("account-delete");
+        accountDelete.setFixedDelay(Duration.ofSeconds(10));
+        accountDelete.setMaxRetries(1);
+        events.put("account-delete", accountDelete);
+
+        OutboxProperties.EventProperties userRegistered = new OutboxProperties.EventProperties();
+        userRegistered.setTopic("user-registered");
+        userRegistered.setMaxRetries(4);
+        OutboxProperties.BackoffProperties backoff = new OutboxProperties.BackoffProperties();
+        userRegistered.setBackoff(backoff);
+        events.put("user-registered", userRegistered);
+
+        properties.setEvents(events);
+
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        cleanUp.setEnabled(true);
+        properties.setCleanUp(cleanUp);
+
+        OutboxProperties.DlqProperties dlq = new OutboxProperties.DlqProperties();
+        dlq.setEnabled(true);
+        properties.setDlq(dlq);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertFalse(properties.getDefaults().getBackoff().isEnabled());
+        assertFalse(properties.getEvents().get("account-delete").getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(0), properties.getEvents().get("account-delete").getBackoff().getDelay());
+        assertEquals(1, properties.getEvents().get("account-delete").getBackoff().getMultiplier());
+
+        assertTrue(properties.getEvents().get("user-registered").getBackoff().isEnabled());
+        assertTrue(properties.isCleanUpEnabled());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should apply defaults to event properties with null values")
+    public void initialize_whenEventPropertiesNull_thenApplyDefaults() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        defaults.setBatchSize(50);
+        defaults.setInitialDelay(Duration.ofSeconds(10));
+        defaults.setFixedDelay(Duration.ofSeconds(60));
+        defaults.setMaxRetries(5);
+        OutboxProperties.BackoffProperties backoff = new OutboxProperties.BackoffProperties();
+        backoff.setEnabled(true);
+        backoff.setDelay(Duration.ofSeconds(5));
+        backoff.setMultiplier(2L);
+        defaults.setBackoff(backoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertEquals(50, resultEvent.getBatchSize());
+        assertEquals(Duration.ofSeconds(10), resultEvent.getInitialDelay());
+        assertEquals(Duration.ofSeconds(60), resultEvent.getFixedDelay());
+        assertEquals(5, resultEvent.getMaxRetries());
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(5), resultEvent.getBackoff().getDelay());
+        assertEquals(2, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should override defaults with event specific values")
+    public void initialize_whenEventPropertiesProvided_thenOverrideDefaults() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        defaults.setBatchSize(50);
+        defaults.setInitialDelay(Duration.ofSeconds(10));
+        defaults.setFixedDelay(Duration.ofSeconds(60));
+        defaults.setMaxRetries(5);
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(5));
+        defaultBackoff.setMultiplier(2L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        event.setBatchSize(100);
+        event.setInitialDelay(Duration.ofSeconds(20));
+        event.setFixedDelay(Duration.ofSeconds(120));
+        event.setMaxRetries(10);
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(15));
+        eventBackoff.setMultiplier(5L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertEquals(100, resultEvent.getBatchSize());
+        assertEquals(Duration.ofSeconds(20), resultEvent.getInitialDelay());
+        assertEquals(Duration.ofSeconds(120), resultEvent.getFixedDelay());
+        assertEquals(10, resultEvent.getMaxRetries());
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(15), resultEvent.getBackoff().getDelay());
+        assertEquals(5, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should handle disabled backoff in event properties")
+    public void initialize_whenEventBackoffDisabled_thenApplyCorrectly() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        defaults.setBatchSize(50);
+        defaults.setInitialDelay(Duration.ofSeconds(10));
+        defaults.setFixedDelay(Duration.ofSeconds(60));
+        defaults.setMaxRetries(5);
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(5));
+        defaultBackoff.setMultiplier(2L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(false);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertFalse(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(0), resultEvent.getBackoff().getDelay());
+        assertEquals(1, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use default backoff delay when event backoff delay is null")
+    public void initialize_whenEventBackoffDelayNull_thenUseDefaultDelay() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        defaults.setInitialDelay(Duration.ofSeconds(10));
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(3L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setMultiplier(5L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(10), resultEvent.getBackoff().getDelay());
+        assertEquals(5, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use event backoff delay when provided")
+    public void initialize_whenEventBackoffDelayProvided_thenUseEventDelay() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(3L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(25));
+        eventBackoff.setMultiplier(5L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
+        assertEquals(5, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use default backoff multiplier when event multiplier is null")
+    public void initialize_whenEventBackoffMultiplierNull_thenUseDefaultMultiplier() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(20));
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
+        assertEquals(3, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use default backoff multiplier when event multiplier is zero")
+    public void initialize_whenEventBackoffMultiplierZero_thenUseDefaultMultiplier() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(20));
+        eventBackoff.setMultiplier(0L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
+        assertEquals(4L, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use default backoff multiplier when event multiplier is negative")
+    public void initialize_whenEventBackoffMultiplierNegative_thenUseDefaultMultiplier() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(20));
+        eventBackoff.setMultiplier(-2L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
+        assertEquals(4L, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use event backoff multiplier when it is 1")
+    public void initialize_whenEventBackoffMultiplierOne_thenUseEventMultiplier() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(20));
+        eventBackoff.setMultiplier(1L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
+        assertEquals(1, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use event backoff multiplier when greater than 1")
+    public void initialize_whenEventBackoffMultiplierGreaterThanOne_thenUseEventMultiplier() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(20));
+        eventBackoff.setMultiplier(7L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
+        assertEquals(7, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use both defaults when event backoff delay and multiplier are null")
+    public void initialize_whenEventBackoffDelayAndMultiplierNull_thenUseBothDefaults() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        defaults.setInitialDelay(Duration.ofSeconds(10));
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(10), resultEvent.getBackoff().getDelay());
+        assertEquals(3, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should use both event values when backoff delay and multiplier are provided")
+    public void initialize_whenEventBackoffDelayAndMultiplierProvided_thenUseBothEventValues() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(25));
+        eventBackoff.setMultiplier(6L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
+        assertEquals(6, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should mix defaults and event values correctly")
+    public void initialize_whenMixingDefaultsAndEventValues_thenApplyCorrectly() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(15));
+        defaultBackoff.setMultiplier(4L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        OutboxProperties.BackoffProperties eventBackoff = new OutboxProperties.BackoffProperties();
+        eventBackoff.setEnabled(true);
+        eventBackoff.setDelay(Duration.ofSeconds(25));
+        eventBackoff.setMultiplier(0L);
+        event.setBackoff(eventBackoff);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
+        assertTrue(resultEvent.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
+        assertEquals(4L, resultEvent.getBackoff().getMultiplier());
+    }
+
+    @Test
+    @DisplayName("UT isCleanUpEnabled() should return false when cleanUp is null")
+    public void isCleanUpEnabled_whenCleanUpNull_thenReturnFalse() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertFalse(properties.isCleanUpEnabled());
+    }
+
+    @Test
+    @DisplayName("UT isCleanUpEnabled() should return true when cleanUp enabled")
+    public void isCleanUpEnabled_whenCleanUpEnabled_thenReturnTrue() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        cleanUp.setEnabled(true);
+        properties.setCleanUp(cleanUp);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertTrue(properties.isCleanUpEnabled());
+    }
+
+    @Test
+    @DisplayName("UT isCleanUpEnabled() should return false when cleanUp disabled")
+    public void isCleanUpEnabled_whenCleanUpDisabled_thenReturnFalse() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        cleanUp.setEnabled(false);
+        properties.setCleanUp(cleanUp);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertFalse(properties.isCleanUpEnabled());
+    }
+
+    @Test
+    @DisplayName("UT getCleanUp() should return cleanUp properties when provided")
+    public void getCleanUp_whenCleanUpProvided_thenReturnProperties() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        cleanUp.setEnabled(true);
+        cleanUp.setBatchSize(50);
+        cleanUp.setThreshold(Duration.ofHours(2));
+        cleanUp.setInitialDelay(Duration.ofMinutes(5));
+        cleanUp.setFixedDelay(Duration.ofMinutes(30));
+        properties.setCleanUp(cleanUp);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getCleanUp());
+        assertEquals(50, properties.getCleanUp().getBatchSize());
+        assertEquals(Duration.ofHours(2), properties.getCleanUp().getThreshold());
+        assertEquals(Duration.ofMinutes(5), properties.getCleanUp().getInitialDelay());
+        assertEquals(Duration.ofMinutes(30), properties.getCleanUp().getFixedDelay());
+    }
+
+    @Test
+    @DisplayName("UT getDlq() should return dlq properties when provided")
+    public void getDlq_whenDlqProvided_thenReturnProperties() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        OutboxProperties.DlqProperties dlq = new OutboxProperties.DlqProperties();
+        dlq.setEnabled(true);
+        dlq.setBatchSize(100);
+        dlq.setTransferToInitialDelay(Duration.ofSeconds(60));
+        dlq.setTransferToFixedDelay(Duration.ofSeconds(60));
+        properties.setDlq(dlq);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getDlq());
+        assertEquals(100, properties.getDlq().getBatchSize());
+        assertEquals(Duration.ofSeconds(60), properties.getDlq().getTransferToInitialDelay());
+        assertEquals(Duration.ofSeconds(60), properties.getDlq().getTransferToFixedDelay());
+    }
+
+    @Test
+    @DisplayName("UT existEventType() should return true when event exists")
+    public void existEventType_whenEventExists_thenReturnTrue() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        event.setBatchSize(10);
+        event.setInitialDelay(Duration.ofSeconds(5));
+        event.setFixedDelay(Duration.ofSeconds(30));
+        event.setMaxRetries(3);
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertTrue(properties.existEventType("test-event"));
+    }
+
+    @Test
+    @DisplayName("UT existEventType() should return false when event does not exist")
+    public void existEventType_whenEventDoesNotExist_thenReturnFalse() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertFalse(properties.existEventType("non-existing-event"));
+    }
+
+    @Test
+    @DisplayName("UT getEvents() should return unmodifiable map")
+    public void getEvents_shouldReturnUnmodifiableMap() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+        OutboxProperties.EventProperties event = new OutboxProperties.EventProperties();
+        event.setTopic("test-topic");
+        events.put("test-event", event);
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties newEvent = new OutboxProperties.EventProperties();
+        newEvent.setTopic("topic");
+        assertThrows(UnsupportedOperationException.class,
+                () -> properties.getEvents().put("new-event", newEvent)
+        );
+    }
+
+    @Test
+    @DisplayName("UT getSender() should return sender properties")
+    public void getSender_shouldReturnSenderProperties() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("testBean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getSender());
+        assertEquals(SenderType.KAFKA, properties.getSender().getType());
+        assertEquals("testBean", properties.getSender().getBeanName());
+    }
+
+    @Test
+    @DisplayName("UT getMigration() should return migration properties")
+    public void getMigration_shouldReturnMigrationProperties() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties();
+        migration.setEnabled(true);
+        migration.setLocation("custom/location");
+        migration.setTable("custom_table");
+        properties.setMigration(migration);
+
+        // when
+        properties.initialize();
+
+        // then
+        assertNotNull(properties.getMigration());
+        assertTrue(properties.getMigration().isEnabled());
+        assertEquals("custom/location", properties.getMigration().getLocation());
+        assertEquals("custom_table", properties.getMigration().getTable());
+    }
+
+    @Test
+    @DisplayName("UT OutboxProperties.initialize() should handle multiple events with mixed configurations")
+    public void initialize_withMultipleEvents_shouldApplyCorrectly() {
+        // given
+        OutboxProperties properties = new OutboxProperties();
+
+        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+
+        OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
+        defaults.setBatchSize(100);
+        defaults.setInitialDelay(Duration.ofSeconds(5));
+        defaults.setFixedDelay(Duration.ofSeconds(30));
+        defaults.setMaxRetries(3);
+        OutboxProperties.BackoffProperties defaultBackoff = new OutboxProperties.BackoffProperties();
+        defaultBackoff.setEnabled(true);
+        defaultBackoff.setDelay(Duration.ofSeconds(10));
+        defaultBackoff.setMultiplier(2L);
+        defaults.setBackoff(defaultBackoff);
+        properties.setDefaults(defaults);
+
+        Map<String, OutboxProperties.EventProperties> events = new HashMap<>();
+
+        OutboxProperties.EventProperties event1 = new OutboxProperties.EventProperties();
+        event1.setTopic("topic1");
+        events.put("event1", event1);
+
+        OutboxProperties.EventProperties event2 = new OutboxProperties.EventProperties();
+        event2.setTopic("topic2");
+        event2.setBatchSize(50);
+        event2.setFixedDelay(Duration.ofSeconds(60));
+        OutboxProperties.BackoffProperties backoff2 = new OutboxProperties.BackoffProperties();
+        backoff2.setEnabled(false);
+        event2.setBackoff(backoff2);
+        events.put("event2", event2);
+
+        OutboxProperties.EventProperties event3 = new OutboxProperties.EventProperties();
+        event3.setTopic("topic3");
+        event3.setBatchSize(200);
+        event3.setInitialDelay(Duration.ofSeconds(15));
+        event3.setFixedDelay(Duration.ofSeconds(90));
+        event3.setMaxRetries(5);
+        OutboxProperties.BackoffProperties backoff3 = new OutboxProperties.BackoffProperties();
+        backoff3.setEnabled(true);
+        backoff3.setDelay(Duration.ofSeconds(20));
+        backoff3.setMultiplier(3L);
+        event3.setBackoff(backoff3);
+        events.put("event3", event3);
+
+        properties.setEvents(events);
+
+        // when
+        properties.initialize();
+
+        // then
+        OutboxProperties.EventProperties resultEvent1 = properties.getEvents().get("event1");
+        assertEquals(100, resultEvent1.getBatchSize());
+        assertEquals(Duration.ofSeconds(5), resultEvent1.getInitialDelay());
+        assertEquals(Duration.ofSeconds(30), resultEvent1.getFixedDelay());
+        assertEquals(3, resultEvent1.getMaxRetries());
+        assertTrue(resultEvent1.getBackoff().isEnabled());
+
+        OutboxProperties.EventProperties resultEvent2 = properties.getEvents().get("event2");
+        assertEquals(50, resultEvent2.getBatchSize());
+        assertEquals(Duration.ofSeconds(5), resultEvent2.getInitialDelay());
+        assertEquals(Duration.ofSeconds(60), resultEvent2.getFixedDelay());
+        assertEquals(3, resultEvent2.getMaxRetries());
+        assertFalse(resultEvent2.getBackoff().isEnabled());
+
+        OutboxProperties.EventProperties resultEvent3 = properties.getEvents().get("event3");
+        assertEquals(200, resultEvent3.getBatchSize());
+        assertEquals(Duration.ofSeconds(15), resultEvent3.getInitialDelay());
+        assertEquals(Duration.ofSeconds(90), resultEvent3.getFixedDelay());
+        assertEquals(5, resultEvent3.getMaxRetries());
+        assertTrue(resultEvent3.getBackoff().isEnabled());
+        assertEquals(Duration.ofSeconds(20), resultEvent3.getBackoff().getDelay());
+        assertEquals(3, resultEvent3.getBackoff().getMultiplier());
+    }
+}
