@@ -1,7 +1,6 @@
 outbox:
   sender:
     type: kafka
-    bean-name: outboxKafkaTemplate
   thread-pool-size: 7
   defaults:
     batch-size: 100
