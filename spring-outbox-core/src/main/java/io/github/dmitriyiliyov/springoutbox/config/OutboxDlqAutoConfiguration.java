@@ -3,11 +3,16 @@ package io.github.dmitriyiliyov.springoutbox.config;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.DlqStatusQueryConverter;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqController;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqControllerAdvice;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxDlqMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.utils.SimpleOutboxCache;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -53,9 +58,24 @@ public class OutboxDlqAutoConfiguration {
                                               OutboxProperties properties, OutboxDlqTransfer transfer) {
         OutboxProperties.DlqProperties dlqProperties = properties.getDlq();
         if (dlqProperties == null) {
-            throw new IllegalStateException("OutboxProperties.DlqProperties is null for some reason");
+            throw new IllegalStateException("OutboxProperties.DlqProperties is null");
         }
         return new OutboxDlqTransferScheduler(dlqProperties, outboxScheduledExecutorService, transfer);
+    }
+
+    @Bean
+    public OutboxDlqController outboxDlqController(OutboxDlqManager dlqManager) {
+        return new OutboxDlqController(dlqManager);
+    }
+
+    @Bean
+    public DlqStatusQueryConverter dlqStatusQueryConverter() {
+        return new DlqStatusQueryConverter();
+    }
+
+    @Bean
+    public OutboxDlqControllerAdvice outboxDlqControllerAdvice() {
+        return new OutboxDlqControllerAdvice();
     }
 
     @Bean

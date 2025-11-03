@@ -7,5 +7,9 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Documented
-@Import({OutboxAutoConfiguration.class, OutboxDlqAutoConfiguration.class})
+@Import({
+        OutboxAutoConfiguration.class,
+        OutboxDlqAutoConfiguration.class,
+        OutboxFlywayAutoConfiguration.class
+})
 public @interface EnableOutbox { }

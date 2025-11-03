@@ -2,24 +2,30 @@ package io.github.dmitriyiliyov.springoutbox.config;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.event.EventListener;
 
-import java.util.List;
+import java.util.Map;
 
-public final class OutboxInitializer {
+public class OutboxInitializer {
 
-    private final List<OutboxScheduler> schedulers;
-    private final List<OutboxMetrics> metrics;
+    private static final Logger log = LoggerFactory.getLogger(OutboxInitializer.class);
 
-    public OutboxInitializer(List<OutboxScheduler> schedulers, List<OutboxMetrics> metrics) {
-        this.schedulers = schedulers;
-        this.metrics = metrics;
+    private final ApplicationContext applicationContext;
+
+    public OutboxInitializer(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void init() {
-        schedulers.forEach(OutboxScheduler::schedule);
-        metrics.forEach(OutboxMetrics::register);
+        Map<String, OutboxScheduler> schedulersMap = applicationContext.getBeansOfType(OutboxScheduler.class);
+        schedulersMap.values().forEach(OutboxScheduler::schedule);
+        Map<String, OutboxMetrics> metricsMap = applicationContext.getBeansOfType(OutboxMetrics.class);
+        metricsMap.values().forEach(OutboxMetrics::register);
+        log.debug("Outbox successfully initialized with schedulers {}", schedulersMap.keySet());
     }
 }

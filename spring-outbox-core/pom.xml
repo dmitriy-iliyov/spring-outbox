@@ -9,7 +9,7 @@
     <artifactId>spring-outbox-core</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <name>spring-outbox</name>
+    <name>spring-outbox-core</name>
     <description>Transactional Outbox pattern library for Spring Boot</description>
     <url>https://github.com/dmitriy-iliyov/spring-outbox</url>
 
@@ -143,6 +143,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
         </dependency>
 
     </dependencies>

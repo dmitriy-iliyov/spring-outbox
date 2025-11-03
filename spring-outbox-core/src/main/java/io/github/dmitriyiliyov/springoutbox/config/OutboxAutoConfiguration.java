@@ -12,16 +12,18 @@ import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import javax.sql.DataSource;
-import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +70,13 @@ public class OutboxAutoConfiguration {
 
     @Bean
     public ScheduledExecutorService outboxScheduledExecutorService() {
-        return Executors.newScheduledThreadPool(properties.getThreadPoolSize());
+        CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("outbox-thread-");
+        threadFactory.setDaemon(true);
+        threadFactory.setThreadPriority(Thread.NORM_PRIORITY);
+        return Executors.newScheduledThreadPool(
+                properties.getThreadPoolSize(),
+                threadFactory
+        );
     }
 
     @PreDestroy
@@ -89,30 +97,43 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public static BeanFactoryPostProcessor outboxDynamicSchedulers(OutboxProperties outboxProperties) {
-        return factory -> {
-            ScheduledExecutorService executor = factory.getBean("outboxScheduledExecutorService", ScheduledExecutorService.class);
-            OutboxProcessor processor = factory.getBean(OutboxProcessor.class);
+    public SmartInitializingSingleton outboxDynamicSchedulersInitializer(
+            OutboxProperties outboxProperties,
+            @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
+            OutboxProcessor processor,
+            OutboxManager manager,
+            ConfigurableListableBeanFactory factory
+    ) {
+        return () -> {
+            log.debug("Start initialize schedulers beans");
             for (OutboxProperties.EventProperties event : outboxProperties.getEvents().values()) {
-                String name = BeanNameUtils.toBeanName(event.getEventType(), "OutboxScheduler");
-                if (!factory.containsBean(name)) {
-                    factory.registerSingleton(name, new OutboxPublisherScheduler(event, executor, processor));
+                String beanName = BeanNameUtils.toBeanName(event.getEventType(), "OutboxPublisherScheduler");
+                if (!factory.containsBean(beanName)) {
+                    factory.registerSingleton(beanName, new OutboxPublisherScheduler(event, executor, processor));
+                    log.debug("Created bean with beanName {}", beanName);
                 }
             }
-            OutboxManager manager = factory.getBean(OutboxManager.class);
-            factory.registerSingleton("outboxRecoveryScheduler",
+
+            String recoverySchedulerBeanName = "outboxRecoveryScheduler";
+            factory.registerSingleton(
+                    recoverySchedulerBeanName,
                     new OutboxRecoveryScheduler(outboxProperties.getStuckRecovery(), executor, manager)
             );
+            log.debug("Created bean with beanName {}", recoverySchedulerBeanName);
+
             if (outboxProperties.isCleanUpEnabled()) {
                 OutboxProperties.CleanUpProperties cleanUpProperties = outboxProperties.getCleanUp();
                 if (cleanUpProperties == null) {
-                    throw new IllegalStateException("OutboxProperties.CleanUpProperties is null for some reason");
+                    throw new IllegalStateException("OutboxProperties.CleanUpProperties is null");
                 }
+                String cleanUpSchedulerBeanName = "outboxCleanUpScheduler";
                 factory.registerSingleton(
-                        "outboxCleanUpScheduler",
+                        cleanUpSchedulerBeanName,
                         new OutboxCleanUpScheduler(cleanUpProperties, executor, manager)
                 );
+                log.debug("Created bean with beanName {}", cleanUpSchedulerBeanName);
             }
+            log.debug("Schedulers beans successfully initialized");
         };
     }
 
@@ -150,7 +171,7 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public OutboxInitializer outboxInitializer(List<OutboxScheduler> schedulers, List<OutboxMetrics> metrics) {
-        return new OutboxInitializer(schedulers, metrics);
+    public OutboxInitializer outboxInitializer(ApplicationContext applicationContext) {
+        return new OutboxInitializer(applicationContext);
     }
 }

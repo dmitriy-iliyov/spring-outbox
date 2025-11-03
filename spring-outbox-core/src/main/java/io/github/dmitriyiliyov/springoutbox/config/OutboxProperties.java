@@ -167,12 +167,6 @@ public class OutboxProperties {
             if (type == null) {
                 throw new IllegalArgumentException("senderType cannot be null");
             }
-            if (beanName == null) {
-                throw new IllegalArgumentException("beanName cannot be null");
-            }
-            if (beanName.isBlank()) {
-                throw new IllegalArgumentException("beanName cannot be blank");
-            }
         }
 
         public SenderType getType() {
@@ -398,6 +392,7 @@ public class OutboxProperties {
                                 backoff.getMultiplier()
                 );
             }
+            backoff.initialize();
         }
 
         public String getEventType() {
@@ -625,26 +620,26 @@ public class OutboxProperties {
 
         private Boolean enabled;
         private Integer batchSize;
-        private Duration transferToDlqInitialDelay;
-        private Duration transferToDlqFixedDelay;
-        private Duration transferFromDlqInitialDelay;
-        private Duration transferFromDlqFixedDelay;
+        private Duration transferToInitialDelay;
+        private Duration transferToFixedDelay;
+        private Duration transferFromInitialDelay;
+        private Duration transferFromFixedDelay;
 
         public void initialize() {
             if (enabled != null && enabled) {
                 enabled = true;
                 batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
-                transferToDlqInitialDelay = transferToDlqInitialDelay == null ? DEFAULT_TO_INITIAL_DELAY : transferToDlqInitialDelay;
-                transferToDlqFixedDelay = transferToDlqFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToDlqFixedDelay;
-                transferFromDlqInitialDelay = transferFromDlqInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromDlqInitialDelay;
-                transferFromDlqFixedDelay = transferFromDlqFixedDelay == null ? DEFAULT_FROM_FIXED_DELAY : transferFromDlqFixedDelay;
+                transferToInitialDelay = transferToInitialDelay == null ? DEFAULT_TO_INITIAL_DELAY : transferToInitialDelay;
+                transferToFixedDelay = transferToFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToFixedDelay;
+                transferFromInitialDelay = transferFromInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromInitialDelay;
+                transferFromFixedDelay = transferFromFixedDelay == null ? DEFAULT_FROM_FIXED_DELAY : transferFromFixedDelay;
             } else {
                 enabled = false;
                 batchSize = 0;
-                transferToDlqInitialDelay = null;
-                transferToDlqFixedDelay = null;
-                transferFromDlqInitialDelay = null;
-                transferFromDlqFixedDelay = null;
+                transferToInitialDelay = null;
+                transferToFixedDelay = null;
+                transferFromInitialDelay = null;
+                transferFromFixedDelay = null;
             }
         }
 
@@ -664,36 +659,36 @@ public class OutboxProperties {
             this.batchSize = batchSize;
         }
 
-        public Duration getTransferToDlqInitialDelay() {
-            return transferToDlqInitialDelay;
+        public Duration getTransferToInitialDelay() {
+            return transferToInitialDelay;
         }
 
-        public void setTransferToDlqInitialDelay(Duration transferToDlqInitialDelay) {
-            this.transferToDlqInitialDelay = transferToDlqInitialDelay;
+        public void setTransferToInitialDelay(Duration transferToInitialDelay) {
+            this.transferToInitialDelay = transferToInitialDelay;
         }
 
-        public Duration getTransferToDlqFixedDelay() {
-            return transferToDlqFixedDelay;
+        public Duration getTransferToFixedDelay() {
+            return transferToFixedDelay;
         }
 
-        public void setTransferToDlqFixedDelay(Duration transferToDlqFixedDelay) {
-            this.transferToDlqFixedDelay = transferToDlqFixedDelay;
+        public void setTransferToFixedDelay(Duration transferToFixedDelay) {
+            this.transferToFixedDelay = transferToFixedDelay;
         }
 
-        public Duration getTransferFromDlqInitialDelay() {
-            return transferFromDlqInitialDelay;
+        public Duration getTransferFromInitialDelay() {
+            return transferFromInitialDelay;
         }
 
-        public void setTransferFromDlqInitialDelay(Duration transferFromDlqInitialDelay) {
-            this.transferFromDlqInitialDelay = transferFromDlqInitialDelay;
+        public void setTransferFromInitialDelay(Duration transferFromInitialDelay) {
+            this.transferFromInitialDelay = transferFromInitialDelay;
         }
 
-        public Duration getTransferFromDlqFixedDelay() {
-            return transferFromDlqFixedDelay;
+        public Duration getTransferFromFixedDelay() {
+            return transferFromFixedDelay;
         }
 
-        public void setTransferFromDlqFixedDelay(Duration transferFromDlqFixedDelay) {
-            this.transferFromDlqFixedDelay = transferFromDlqFixedDelay;
+        public void setTransferFromFixedDelay(Duration transferFromFixedDelay) {
+            this.transferFromFixedDelay = transferFromFixedDelay;
         }
     }
 
