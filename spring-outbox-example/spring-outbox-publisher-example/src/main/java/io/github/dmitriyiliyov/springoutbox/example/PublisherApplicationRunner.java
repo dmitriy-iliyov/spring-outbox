@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableKafka
 @EnableOutbox
-public class ApplicationRunner {
+public class PublisherApplicationRunner {
 
     public static void main(String ... args) {
-        SpringApplication.run(ApplicationRunner.class, args);
+        SpringApplication.run(PublisherApplicationRunner.class, args);
     }
 }

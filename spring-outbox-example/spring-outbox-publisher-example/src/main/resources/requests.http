@@ -1,5 +1,67 @@
-### GET request to example server
-GET https://examples.http-client.intellij.net/get$END$
-    ?generated-in=IntelliJ IDEA
+### POST create order
+POST http://localhost:8080/api/orders
+Content-Type: application/json
 
-###
+{
+  "userId": 1,
+  "itemIds": "[1, 2, 3, 4]"
+}
+
+### POST create batch order
+POST http://localhost:8080/api/orders/batch
+Content-Type: application/json
+
+[
+  {
+    "userId": 332,
+    "itemIds": "[2, 3]"
+  },
+  {
+    "userId": 4252,
+    "itemIds": "[10, 4]"
+  },
+  {
+    "userId": 51,
+    "itemIds": "[1, 2, 5, 6, 7]"
+  }
+]
+
+### GET all orders
+GET http://localhost:8080/api/orders
+
+### PATCH update order
+PATCH http://localhost:8080/api/orders/1
+Content-Type: application/json
+
+{
+  "itemIds": "[41, 22, 3]"
+}
+
+### PATCH update batch order
+PATCH http://localhost:8080/api/orders/batch
+Content-Type: application/json
+
+[
+  {
+    "id": 3,
+    "itemIds": "[41, 32, 3, 4]"
+  },
+  {
+    "id": 4,
+    "itemIds": "[5, 12]"
+  }
+]
+
+### DELETE delete order
+DELETE http://localhost:8080/api/orders/1
+Content-Type: application/json
+
+### DELETE delete batch order
+DELETE http://localhost:8080/api/orders/batch
+Content-Type: application/json
+
+[3, 4]
+
+### GET DLQ event by id
+GET http://localhost:8080/api/outbox-dlq/events/019a46bc-da17-7bc3-be70-e13c3a696b25
+
