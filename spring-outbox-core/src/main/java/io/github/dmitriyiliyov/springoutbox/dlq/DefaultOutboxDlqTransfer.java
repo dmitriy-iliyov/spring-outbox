@@ -30,7 +30,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
     }
 
     @Override
-    public void transferOutboxToDlq(int batchSize) {
+    public void transferToDlq(int batchSize) {
         final List<OutboxEvent> events = new ArrayList<>();
         transactionTemplate.executeWithoutResult(status -> {
             try {
@@ -59,7 +59,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
     }
 
     @Override
-    public void transferDlqToOutbox(int batchSize) {
+    public void transferFromDlq(int batchSize) {
         transactionTemplate.executeWithoutResult(status -> {
             try {
                 List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
@@ -81,7 +81,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
     private OutboxDlqEvent toDlqEvent(OutboxEvent event) {
         return new OutboxDlqEvent(
                 event.getId(),
-                event.getStatus(),
+                EventStatus.FAILED,
                 event.getEventType(),
                 event.getPayloadType(),
                 event.getPayload(),

@@ -5,6 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.utils.ResultSetMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository {
@@ -32,8 +33,9 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                         e.getPayloadType(),
                         e.getPayload(),
                         e.getRetryCount(),
-                        e.getCreatedAt(),
-                        e.getUpdatedAt()
+                        Timestamp.from(e.getNextRetryAt()),
+                        Timestamp.from(e.getCreatedAt()),
+                        Timestamp.from(e.getUpdatedAt())
                 })
                 .toList();
         jdbcTemplate.batchUpdate(sql, params);
