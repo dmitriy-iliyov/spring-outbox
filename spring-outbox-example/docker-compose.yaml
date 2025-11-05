@@ -1,6 +1,25 @@
 version: "3.8"
 name: spring-outbox-example
 services:
+
+  producer-app:
+    container_name: outbox-example-producer-app
+    build:
+      context: ..
+      dockerfile: spring-outbox-example/spring-outbox-publisher-example/Dockerfile
+    image: outbox-producer-app
+    ports:
+      - "8080:8080"
+
+  consumer-app:
+    container_name: outbox-example-consumer-app
+    build:
+      context: ..
+      dockerfile: spring-outbox-example/spring-outbox-consumer-example/Dockerfile
+    image: outbox-consumer-app
+    ports:
+      - "8081:8080"
+
   postgresql:
     container_name: outbox-example-postgresql
     image: postgres:16.1-alpine3.19
@@ -30,6 +49,7 @@ services:
       KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
       KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     volumes:
+      - ./init-topics.sh:/docker-entrypoint-initdb.d/init-topics.sh
       - kafka_data:/bitnami/kafka/data
 volumes:
   kafka_data: {}

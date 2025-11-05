@@ -6,12 +6,15 @@ spring:
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
   jpa:
-    hibernate:
-      ddl-auto: create
+    open-in-view: false
 logging:
   level:
-    root: debug
+    root: info
 outbox:
   sender:
     type: kafka
@@ -58,8 +61,3 @@ outbox:
     transfer-to-fixed-delay: 1s
     transfer-from-initial-delay: 2m
     transfer-from-fixed-delay: 1h
-
-  migration:
-    enabled: true
-    location: classpath:db/migration/outbox
-    table: outbox_migration_schema

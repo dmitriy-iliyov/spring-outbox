@@ -14,7 +14,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 @Slf4j
 public class OrderAnalyticKafkaListener {
 
-    @KafkaListener(topics = {"orders.created", "orders.updated", "orders.delete"})
+
+    @KafkaListener(topics = {"orders.created", "orders.updated", "orders.delete"}, groupId = "analytic")
     public void listenCreateOrder(OrderDto dto) {
         log.info("Analytics receive {}", dto);
     }

@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: spring-outbox-example
+  datasource:
+    url: jdbc:postgresql://postgresql:5432/outbox_example
+    username: admin
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    open-in-view: false
+server:
+  port: 8080
