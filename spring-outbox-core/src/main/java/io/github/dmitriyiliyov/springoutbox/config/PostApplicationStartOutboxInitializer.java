@@ -10,13 +10,13 @@ import org.springframework.context.event.EventListener;
 
 import java.util.Map;
 
-public class OutboxInitializer {
+public class PostApplicationStartOutboxInitializer {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxInitializer.class);
+    private static final Logger log = LoggerFactory.getLogger(PostApplicationStartOutboxInitializer.class);
 
     private final ApplicationContext applicationContext;
 
-    public OutboxInitializer(ApplicationContext applicationContext) {
+    public PostApplicationStartOutboxInitializer(ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
     }
 

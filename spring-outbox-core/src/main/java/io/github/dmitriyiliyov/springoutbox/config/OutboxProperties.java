@@ -23,7 +23,6 @@ public class OutboxProperties {
     private StuckRecoveryProperties stuckRecovery;
     private CleanUpProperties cleanUp;
     private DlqProperties dlq;
-    private MigrationProperties migration;
 
     public OutboxProperties() {}
 
@@ -56,8 +55,6 @@ public class OutboxProperties {
         } else {
             log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
         }
-        migration = migration == null ? new MigrationProperties() : migration;
-        migration.initialize();
         log.debug("OutboxProperties successfully initialized");
     }
 
@@ -148,14 +145,6 @@ public class OutboxProperties {
 
     public void setDlq(DlqProperties dlq) {
         this.dlq = dlq;
-    }
-
-    public MigrationProperties getMigration() {
-        return migration;
-    }
-
-    public void setMigration(MigrationProperties migration) {
-        this.migration = migration;
     }
 
     public static final class SenderProperties {
@@ -689,73 +678,6 @@ public class OutboxProperties {
 
         public void setTransferFromFixedDelay(Duration transferFromFixedDelay) {
             this.transferFromFixedDelay = transferFromFixedDelay;
-        }
-    }
-
-    public static final class MigrationProperties {
-
-        private static final String DEFAULT_LOCATION = "classpath:db/migration/outbox";
-        private static final String DEFAULT_TABLE = "outbox_schema_history";
-
-        private Boolean enabled;
-        private String location;
-        private String table;
-
-        public MigrationProperties() {
-            this.enabled = true;
-            this.location = DEFAULT_LOCATION;
-            this.table = DEFAULT_TABLE;
-        }
-
-        public void initialize() {
-            if (enabled == null || enabled) {
-                enabled = true;
-                location = (location == null || location.isBlank()) ? DEFAULT_LOCATION : location;
-                table = (table == null || table.isBlank()) ? DEFAULT_TABLE : table;
-            } else {
-                enabled = false;
-                location = null;
-                table = null;
-            }
-        }
-
-        public Boolean isEnabled() {
-            return enabled;
-        }
-
-        public void setEnabled(Boolean enabled) {
-            this.enabled = enabled;
-        }
-
-        public String getLocation() {
-            return location;
-        }
-
-        public void setLocation(String location) {
-            this.location = location;
-        }
-
-        public String getTable() {
-            return table;
-        }
-
-        public void setTable(String table) {
-            this.table = table;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            MigrationProperties that = (MigrationProperties) o;
-            return Objects.equals(enabled, that.enabled) &&
-                    Objects.equals(location, that.location) &&
-                    Objects.equals(table, that.table);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(enabled, location, table);
         }
     }
 }

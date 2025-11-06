@@ -34,10 +34,10 @@ outbox:
   dlq:
     enabled: true
     batch-size: 100
-    transfer-to-dlq-initial-delay: 2m
-    transfer-to-dlq-fixed-delay: 1h
-    transfer-from-dlq-initial-delay: 2m
-    transfer-from-dlq-fixed-delay: 1h
+    transfer-to-initial-delay: 2m
+    transfer-to-fixed-delay: 1h
+    transfer-from-initial-delay: 2m
+    transfer-from-fixed-delay: 1h
   migration:
     enabled: true
     location: classpath:db/migration/outbox

@@ -304,7 +304,7 @@ public class DefaultOutboxManagerUnitTests {
                 new OutboxEvent(idFailed1, EventStatus.IN_PROCESS, "type", "payloadType",
                         "payload", 1, Instant.now(), Instant.now(), Instant.now()),
                 new OutboxEvent(idFailed2, EventStatus.IN_PROCESS, "failed-event", "payloadType",
-                        "payload", 3, Instant.now(), Instant.now(), Instant.now())
+                        "payload", 2, Instant.now(), Instant.now(), Instant.now())
         );
 
         // when
@@ -345,7 +345,7 @@ public class DefaultOutboxManagerUnitTests {
                 new OutboxEvent(idFailed1, EventStatus.IN_PROCESS, "type", "payloadType",
                         "payload", 1, Instant.now(), Instant.now(), Instant.now()),
                 new OutboxEvent(idFailed2, EventStatus.IN_PROCESS, "type", "payloadType",
-                        "payload", 2, Instant.now(), Instant.now(), Instant.now())
+                        "payload", 1, Instant.now(), Instant.now(), Instant.now())
         );
 
         // when

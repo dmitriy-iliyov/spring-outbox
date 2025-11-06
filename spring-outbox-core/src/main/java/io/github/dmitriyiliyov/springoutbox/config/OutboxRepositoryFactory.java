@@ -14,8 +14,8 @@ import java.util.function.Function;
 public final class OutboxRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxRepositoryFactory.class);
-    private static final Map<String, Function<DataSource, OutboxRepository>> SUPPORTED_SUPPLIERS = Map.of(
-            "postgresql",
+    private static final Map<DatabaseType, Function<DataSource, OutboxRepository>> SUPPORTED_SUPPLIERS = Map.of(
+            DatabaseType.POSTGRESQL,
             dataSource -> new PostgreSqlOutboxRepository(JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource))
     );
 
@@ -23,12 +23,12 @@ public final class OutboxRepositoryFactory {
 
     public static OutboxRepository generate(DataSource dataSource) {
         try (Connection conn = dataSource.getConnection()) {
-            String dbName = conn.getMetaData().getDatabaseProductName().toLowerCase();
-            Function<DataSource, OutboxRepository> supplier = SUPPORTED_SUPPLIERS.get(dbName);
+            DatabaseType databaseType = DatabaseType.fromString(conn.getMetaData().getDatabaseProductName());
+            Function<DataSource, OutboxRepository> supplier = SUPPORTED_SUPPLIERS.get(databaseType);
             if (supplier != null) {
                 return supplier.apply(dataSource);
             } else {
-                throw new IllegalArgumentException("Unsupported database: " + dbName);
+                throw new IllegalArgumentException("Supplier for OutboxRepository is null for databaseType=" + databaseType);
             }
         } catch (SQLException e) {
             log.error("Error when connecting to dataSource, ", e);

@@ -155,27 +155,6 @@ public class OutboxPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT OutboxProperties.initialize() should initialize migration when null")
-    public void initialize_whenMigrationNull_thenUseDefault() {
-        // given
-        OutboxProperties properties = new OutboxProperties();
-        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
-        sender.setBeanName("beanName");
-        properties.setSender(sender);
-        properties.setEvents(new HashMap<>());
-
-        // when
-        properties.initialize();
-
-        // then
-        assertNotNull(properties.getMigration());
-        assertTrue(properties.getMigration().isEnabled());
-        assertEquals("classpath:db/migration/outbox", properties.getMigration().getLocation());
-        assertEquals("outbox_schema_history", properties.getMigration().getTable());
-    }
-
-    @Test
     @DisplayName("UT OutboxProperties.initialize() should initialize defaults when null")
     public void initialize_whenDefaultsNull_thenUseDefault() {
         // given
@@ -236,9 +215,6 @@ public class OutboxPropertiesUnitTests {
         dlq.setEnabled(true);
         properties.setDlq(dlq);
 
-        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties();
-        properties.setMigration(migration);
-
         OutboxProperties.Defaults defaults = new OutboxProperties.Defaults();
         properties.setDefaults(defaults);
 
@@ -265,7 +241,6 @@ public class OutboxPropertiesUnitTests {
         assertEquals(Duration.ofSeconds(1800), properties.getStuckRecovery().getFixedDelay());
 
         assertFalse(properties.isCleanUpEnabled());
-        assertTrue(properties.getMigration().isEnabled());
     }
 
     @Test
@@ -1074,33 +1049,6 @@ public class OutboxPropertiesUnitTests {
         assertNotNull(properties.getSender());
         assertEquals(SenderType.KAFKA, properties.getSender().getType());
         assertEquals("testBean", properties.getSender().getBeanName());
-    }
-
-    @Test
-    @DisplayName("UT getMigration() should return migration properties")
-    public void getMigration_shouldReturnMigrationProperties() {
-        // given
-        OutboxProperties properties = new OutboxProperties();
-        OutboxProperties.SenderProperties sender = new OutboxProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
-        sender.setBeanName("bean");
-        properties.setSender(sender);
-        properties.setEvents(new HashMap<>());
-
-        OutboxProperties.MigrationProperties migration = new OutboxProperties.MigrationProperties();
-        migration.setEnabled(true);
-        migration.setLocation("custom/location");
-        migration.setTable("custom_table");
-        properties.setMigration(migration);
-
-        // when
-        properties.initialize();
-
-        // then
-        assertNotNull(properties.getMigration());
-        assertTrue(properties.getMigration().isEnabled());
-        assertEquals("custom/location", properties.getMigration().getLocation());
-        assertEquals("custom_table", properties.getMigration().getTable());
     }
 
     @Test

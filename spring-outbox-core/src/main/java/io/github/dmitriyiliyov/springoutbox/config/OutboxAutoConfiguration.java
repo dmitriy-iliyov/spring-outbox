@@ -97,7 +97,7 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public SmartInitializingSingleton outboxDynamicSchedulersInitializer(
+    public SmartInitializingSingleton outboxSchedulersInitializer(
             OutboxProperties outboxProperties,
             @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
             OutboxProcessor processor,
@@ -171,7 +171,12 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public OutboxInitializer outboxInitializer(ApplicationContext applicationContext) {
-        return new OutboxInitializer(applicationContext);
+    public SmartInitializingSingleton outboxDatabaseInitializer(DataSource dataSource) {
+        return () -> OutboxDatabaseInitializer.init(properties, dataSource);
+    }
+
+    @Bean
+    public PostApplicationStartOutboxInitializer outboxInitializer(ApplicationContext applicationContext) {
+        return new PostApplicationStartOutboxInitializer(applicationContext);
     }
 }

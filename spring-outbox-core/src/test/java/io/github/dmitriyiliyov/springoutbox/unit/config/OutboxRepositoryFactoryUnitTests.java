@@ -53,7 +53,7 @@ public class OutboxRepositoryFactoryUnitTests {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> OutboxRepositoryFactory.generate(dataSource));
 
-        assertTrue(ex.getMessage().contains("Unsupported database"));
+        assertTrue(ex.getMessage().contains("Supplier for OutboxRepository is null for databaseType=ORACLE"));
         verify(connection).close();
     }
 

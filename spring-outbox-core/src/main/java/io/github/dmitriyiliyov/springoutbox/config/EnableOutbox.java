@@ -9,7 +9,6 @@ import java.lang.annotation.*;
 @Documented
 @Import({
         OutboxAutoConfiguration.class,
-        OutboxDlqAutoConfiguration.class,
-        OutboxFlywayAutoConfiguration.class
+        OutboxDlqAutoConfiguration.class
 })
 public @interface EnableOutbox { }
