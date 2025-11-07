@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.unit.core.aop;
 
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxEventAspect;
+import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublish;
+import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEvents;
 import org.aspectj.lang.JoinPoint;
@@ -22,26 +22,26 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class OutboxEventAspectUnitTests {
+public class OutboxPublishAspectUnitTests {
 
     @Mock
     ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
-    OutboxEventAspect tested;
+    OutboxPublishAspect tested;
 
     @Test
     @DisplayName("UT publishEvent(), payload = result, single object, should publish RowOutboxEvent with correct payload")
     void publishEvent_whenPayloadIsResultSingle_shouldPublishRowOutboxEvent() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
-        OutboxEvent outboxEvent = mock(OutboxEvent.class);
-        when(outboxEvent.payload()).thenReturn("#result");
-        when(outboxEvent.eventType()).thenReturn("EVENT");
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("#result");
+        when(outboxPublish.eventType()).thenReturn("EVENT");
         String result = "payload";
 
         // when
-        tested.publishEvent(joinPoint, outboxEvent, result);
+        tested.publishEvent(joinPoint, outboxPublish, result);
 
         // then
         ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
@@ -56,13 +56,13 @@ public class OutboxEventAspectUnitTests {
     void publishEvent_whenPayloadIsResultList_shouldPublishRowOutboxEvents() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
-        OutboxEvent outboxEvent = mock(OutboxEvent.class);
-        when(outboxEvent.payload()).thenReturn("#result");
-        when(outboxEvent.eventType()).thenReturn("EVENT");
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("#result");
+        when(outboxPublish.eventType()).thenReturn("EVENT");
         List<String> result = List.of("a", "b");
 
         // when
-        tested.publishEvent(joinPoint, outboxEvent, result);
+        tested.publishEvent(joinPoint, outboxPublish, result);
 
         // then
         ArgumentCaptor<RowOutboxEvents> captor = ArgumentCaptor.forClass(RowOutboxEvents.class);
@@ -77,12 +77,12 @@ public class OutboxEventAspectUnitTests {
     void publishEvent_whenPayloadViaSpELOnArg_shouldPublishRowOutboxEvent() {
         // given
         JoinPoint joinPoint = mockJoinPointWithArgs(new String[]{"param"}, new Object[]{"value"});
-        OutboxEvent outboxEvent = mock(OutboxEvent.class);
-        when(outboxEvent.payload()).thenReturn("#param");
-        when(outboxEvent.eventType()).thenReturn("EVENT");
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("#param");
+        when(outboxPublish.eventType()).thenReturn("EVENT");
 
         // when
-        tested.publishEvent(joinPoint, outboxEvent, null);
+        tested.publishEvent(joinPoint, outboxPublish, null);
 
         // then
         ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
@@ -97,12 +97,12 @@ public class OutboxEventAspectUnitTests {
     void publishEvent_whenPayloadViaSpELList_shouldPublishRowOutboxEvents() {
         // given
         JoinPoint joinPoint = mockJoinPointWithArgs(new String[]{"param"}, new Object[]{List.of("x", "y")});
-        OutboxEvent outboxEvent = mock(OutboxEvent.class);
-        when(outboxEvent.payload()).thenReturn("#param");
-        when(outboxEvent.eventType()).thenReturn("EVENT");
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("#param");
+        when(outboxPublish.eventType()).thenReturn("EVENT");
 
         // when
-        tested.publishEvent(joinPoint, outboxEvent, null);
+        tested.publishEvent(joinPoint, outboxPublish, null);
 
         // then
         ArgumentCaptor<RowOutboxEvents> captor = ArgumentCaptor.forClass(RowOutboxEvents.class);
@@ -117,10 +117,10 @@ public class OutboxEventAspectUnitTests {
     void publishEvent_whenResultIsNull_shouldThrowNPE() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
-        OutboxEvent outboxEvent = mock(OutboxEvent.class);
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
 
         // when + then
-        assertThrows(NullPointerException.class, () -> tested.publishEvent(joinPoint, outboxEvent, null));
+        assertThrows(NullPointerException.class, () -> tested.publishEvent(joinPoint, outboxPublish, null));
     }
 
     @Test
@@ -128,13 +128,13 @@ public class OutboxEventAspectUnitTests {
     void publishEvent_whenBlankSpEL_shouldUseResult() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
-        OutboxEvent outboxEvent = mock(OutboxEvent.class);
-        when(outboxEvent.payload()).thenReturn("  ");
-        when(outboxEvent.eventType()).thenReturn("EVENT");
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("  ");
+        when(outboxPublish.eventType()).thenReturn("EVENT");
         String result = "payload";
 
         // when
-        tested.publishEvent(joinPoint, outboxEvent, result);
+        tested.publishEvent(joinPoint, outboxPublish, result);
 
         // then
         ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);

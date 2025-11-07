@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.example;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisher;
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublish;
 import io.github.dmitriyiliyov.springoutbox.example.dto.OrderCreateDto;
 import io.github.dmitriyiliyov.springoutbox.example.dto.OrderUpdateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
  * <p>
  * This service showcases three ways to integrate with the Outbox pattern:
  * <ul>
- *   <li><code>@OutboxEvent</code> - declarative approach for simple cases where return value is the event payload</li>
- *   <li><code>@OutboxEvent with SpEL</code> - declarative approach with custom payload using Spring Expression Language</li>
+ *   <li><code>@OutboxPublish</code> - declarative approach for simple cases where return value is the event payload</li>
+ *   <li><code>@OutboxPublish with SpEL</code> - declarative approach with custom payload using Spring Expression Language</li>
  *   <li><code>OutboxPublisher</code> - programmatic approach for conditional publishing or custom payload construction</li>
  * </ul>
  */
@@ -34,7 +34,7 @@ public class OrderService {
     private final PriceService priceService;
 
     /**
-     * Creates a new order using <code>@OutboxEvent</code>.
+     * Creates a new order using <code>@OutboxPublish</code>.
      * <p>
      * The return value (OrderDto) is automatically used as the event payload.
      * This is the simplest approach when the method's return value is exactly what you want to publish.
@@ -51,7 +51,7 @@ public class OrderService {
      * @return order data
      */
     @Transactional
-    @OutboxEvent(eventType = "create-order")
+    @OutboxPublish(eventType = "create-order")
     public OrderDto save(OrderCreateDto dto) {
         Order order = mapper.toEntity(dto);
         order.setAmount(priceService.countAmount(order.getItemIds()));
@@ -59,7 +59,7 @@ public class OrderService {
     }
 
     /**
-     * Creates multiple orders using <code>@OutboxEvent</code> for batch processing.
+     * Creates multiple orders using <code>@OutboxPublish</code> for batch processing.
      * <p>
      * Events saved to outbox table as 'create-order' type that will be sent to specified
      * in .properties/.yaml file topic.
@@ -68,7 +68,7 @@ public class OrderService {
      * @return list of order data
      */
     @Transactional
-    @OutboxEvent(eventType = "create-order")
+    @OutboxPublish(eventType = "create-order")
     public List<OrderDto> saveBatch(List<OrderCreateDto> dtoList) {
         List<Order> orders = mapper.toEntityList(dtoList);
         orders.forEach(order -> order.setAmount(priceService.countAmount(order.getItemIds())));
@@ -141,7 +141,7 @@ public class OrderService {
     }
 
     /**
-     * Deletes an order using <code>@OutboxEvent with SpEL</code>.
+     * Deletes an order using <code>@OutboxPublish with SpEL</code>.
      * <p>
      * Uses SpEL to specify custom payload.
      * The expression "#id" references the method parameter.
@@ -157,13 +157,13 @@ public class OrderService {
      * @param id order id to delete
      */
     @Transactional
-    @OutboxEvent(eventType = "delete-order", payload = "#id")
+    @OutboxPublish(eventType = "delete-order", payload = "#id")
     public void delete(Long id) {
         repository.deleteById(id);
     }
 
     /**
-     * Deletes multiple orders using <code>@OutboxEvent with SpEL</code>.
+     * Deletes multiple orders using <code>@OutboxPublish with SpEL</code>.
      * <p>
      * The expression "#ids" publishes the entire list of ids as event payload.
      * Events saved to outbox table as 'delete-order' type
@@ -172,7 +172,7 @@ public class OrderService {
      * @param ids list of order ids to delete
      */
     @Transactional
-    @OutboxEvent(eventType = "delete-order", payload = "#ids")
+    @OutboxPublish(eventType = "delete-order", payload = "#ids")
     public void deleteBatch(List<Long> ids) {
         repository.deleteAllById(ids);
     }

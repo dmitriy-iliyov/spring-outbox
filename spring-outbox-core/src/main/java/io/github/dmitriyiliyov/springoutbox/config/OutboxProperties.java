@@ -23,6 +23,7 @@ public class OutboxProperties {
     private StuckRecoveryProperties stuckRecovery;
     private CleanUpProperties cleanUp;
     private DlqProperties dlq;
+    private TablesProperties tables;
 
     public OutboxProperties() {}
 
@@ -55,6 +56,8 @@ public class OutboxProperties {
         } else {
             log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
         }
+        tables = tables == null ? new TablesProperties() : tables;
+        tables.initialize();
         log.debug("OutboxProperties successfully initialized");
     }
 
@@ -145,6 +148,14 @@ public class OutboxProperties {
 
     public void setDlq(DlqProperties dlq) {
         this.dlq = dlq;
+    }
+
+    public TablesProperties getTables() {
+        return tables;
+    }
+
+    public void setTables(TablesProperties tables) {
+        this.tables = tables;
     }
 
     public static final class SenderProperties {
@@ -678,6 +689,40 @@ public class OutboxProperties {
 
         public void setTransferFromFixedDelay(Duration transferFromFixedDelay) {
             this.transferFromFixedDelay = transferFromFixedDelay;
+        }
+    }
+
+    public static final class TablesProperties {
+
+        private Boolean autoCreate;
+
+        public TablesProperties() {
+            this.autoCreate = true;
+        }
+
+        public void initialize() {
+            autoCreate = autoCreate == null || autoCreate;
+        }
+
+        public Boolean isAutoCreate() {
+            return autoCreate;
+        }
+
+        public void setAutoCreate(Boolean autoCreate) {
+            this.autoCreate = autoCreate;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TablesProperties that = (TablesProperties) o;
+            return Objects.equals(autoCreate, that.autoCreate);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(autoCreate);
         }
     }
 }

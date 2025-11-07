@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.*;
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxEventAspect;
+import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.metrics.DefaultOutboxMetrics;
@@ -16,11 +16,13 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import javax.sql.DataSource;
@@ -155,8 +157,8 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public OutboxEventAspect outboxEventAspect(ApplicationEventPublisher eventPublisher) {
-        return new OutboxEventAspect(eventPublisher);
+    public OutboxPublishAspect outboxEventAspect(ApplicationEventPublisher eventPublisher) {
+        return new OutboxPublishAspect(eventPublisher);
     }
 
     @Bean
@@ -171,8 +173,14 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public SmartInitializingSingleton outboxDatabaseInitializer(DataSource dataSource) {
-        return () -> OutboxDatabaseInitializer.init(properties, dataSource);
+    @ConditionalOnProperty(prefix = "outbox.tables", name = "auto-create", havingValue = "true", matchIfMissing = true)
+    public DataSourceInitializer outboxDataSourceInitializer(DataSource dataSource) {
+        log.info("Creating DataSourceInitializer for outbox tables");
+        DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
+        dataSourceInitializer.setEnabled(true);
+        dataSourceInitializer.setDataSource(dataSource);
+        dataSourceInitializer.setDatabasePopulator(OutboxDatabasePopulatorFactory.generate(properties, dataSource));
+        return dataSourceInitializer;
     }
 
     @Bean

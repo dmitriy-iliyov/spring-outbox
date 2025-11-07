@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Documented
-public @interface OutboxEvent {
+public @interface OutboxPublish {
     String eventType();
     @Language("SpEL")
     String payload() default "#result";

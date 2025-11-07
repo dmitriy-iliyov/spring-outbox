@@ -14,38 +14,38 @@ import java.util.List;
 import java.util.Objects;
 
 @Aspect
-public class OutboxEventAspect {
+public class OutboxPublishAspect {
 
     private final ExpressionParser expressionParser;
     private final ApplicationEventPublisher eventPublisher;
 
-    public OutboxEventAspect(ApplicationEventPublisher eventPublisher) {
+    public OutboxPublishAspect(ApplicationEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
         this.expressionParser = new SpelExpressionParser();
     }
 
-    @Pointcut("@annotation(outboxEvent) && execution(public * *(..))")
-    public void publishEventPointcut(OutboxEvent outboxEvent) {}
+    @Pointcut("@annotation(outboxPublish) && execution(public * *(..))")
+    public void publishEventPointcut(OutboxPublish outboxPublish) {}
 
     @AfterReturning(
-            pointcut = "publishEventPointcut(outboxEvent)",
+            pointcut = "publishEventPointcut(outboxPublish)",
             returning = "result",
-            argNames = "joinPoint,outboxEvent,result"
+            argNames = "joinPoint,outboxPublish,result"
     )
-    public void publishEvent(JoinPoint joinPoint, OutboxEvent outboxEvent, Object result) {
+    public void publishEvent(JoinPoint joinPoint, OutboxPublish outboxPublish, Object result) {
         StandardEvaluationContext context = getContext(joinPoint);
         context.setVariable("result", result);
         Object payload = result;
-        String spelPayload = outboxEvent.payload();
+        String spelPayload = outboxPublish.payload();
         if (spelPayload != null && !spelPayload.isBlank() && !spelPayload.equals("#result")) {
             payload = expressionParser.parseExpression(spelPayload).getValue(context);
         }
         Objects.requireNonNull(payload, "payload cannot be null");
         if (payload instanceof List<?>) {
-            eventPublisher.publishEvent(new RowOutboxEvents(outboxEvent.eventType(), (List<?>) payload));
+            eventPublisher.publishEvent(new RowOutboxEvents(outboxPublish.eventType(), (List<?>) payload));
             return;
         }
-        eventPublisher.publishEvent(new RowOutboxEvent(outboxEvent.eventType(), payload));
+        eventPublisher.publishEvent(new RowOutboxEvent(outboxPublish.eventType(), payload));
     }
 
     private StandardEvaluationContext getContext(JoinPoint joinPoint) {
