@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.unit.core;
 
-import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.core.DefaultOutboxPublisher;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSerializer;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.DefaultOutboxPublisher;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxSerializer;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ import static org.mockito.Mockito.*;
 class DefaultOutboxPublisherUnitTests {
 
     @Mock
-    OutboxProperties properties;
+    OutboxPublisherProperties properties;
 
     @Mock
     OutboxSerializer serializer;

@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.unit.core;
 
-import io.github.dmitriyiliyov.springoutbox.core.DefaultOutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.DefaultOutboxManager;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

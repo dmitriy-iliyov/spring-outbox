@@ -1,11 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.unit.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.config.OutboxSenderFactory;
-import io.github.dmitriyiliyov.springoutbox.config.SenderType;
-import io.github.dmitriyiliyov.springoutbox.core.KafkaOutboxSender;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSender;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxSenderFactory;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.SenderType;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.KafkaOutboxSender;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxSender;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
@@ -24,7 +24,7 @@ public class OutboxSenderFactoryUnitTests {
     @DisplayName("UT generate() with null sender type should throw IllegalArgumentException")
     public void generate_nullType_shouldThrow() {
         // given
-        OutboxProperties.SenderProperties props = new OutboxProperties.SenderProperties();
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(null);
 
         ApplicationContext context = mock(ApplicationContext.class);
@@ -41,7 +41,7 @@ public class OutboxSenderFactoryUnitTests {
     @DisplayName("UT generate() with unsupported sender type should throw IllegalArgumentException")
     public void generate_unsupportedType_shouldThrow() {
         // given
-        OutboxProperties.SenderProperties props = new OutboxProperties.SenderProperties();
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBIT_MQ);
         ApplicationContext context = mock(ApplicationContext.class);
         ObjectMapper mapper = new ObjectMapper();
@@ -57,7 +57,7 @@ public class OutboxSenderFactoryUnitTests {
     @DisplayName("UT generate() with Kafka sender and valid bean should return KafkaOutboxSender")
     public void generate_kafkaValidBean_shouldReturnKafkaSender() {
         // given
-        OutboxProperties.SenderProperties props = new OutboxProperties.SenderProperties();
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
         props.setBeanName("kafkaTemplateBean");
 
@@ -87,7 +87,7 @@ public class OutboxSenderFactoryUnitTests {
     @DisplayName("UT generate() with Kafka sender and missing bean should throw IllegalStateException")
     public void generate_kafkaMissingBean_shouldThrow() {
         // given
-        OutboxProperties.SenderProperties props = new OutboxProperties.SenderProperties();
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
         props.setBeanName("missingBean");
 

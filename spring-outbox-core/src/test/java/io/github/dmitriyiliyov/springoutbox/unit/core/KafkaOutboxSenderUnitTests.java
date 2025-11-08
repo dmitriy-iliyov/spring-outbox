@@ -2,10 +2,10 @@ package io.github.dmitriyiliyov.springoutbox.unit.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.core.KafkaOutboxSender;
-import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.domain.SenderResult;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.KafkaOutboxSender;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.SenderResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.Message;
 
 import java.time.Instant;
 import java.util.List;
@@ -95,7 +96,7 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertEquals(Set.of(event.getId()), result.processedIds());
         assertEquals(Set.of(), result.failedIds());
-        verify(kafkaTemplate, times(events.size())).send(eq(topic), any());
+        verify(kafkaTemplate, times(events.size())).send(any(Message.class));
         verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
         verifyNoMoreInteractions(kafkaTemplate, mapper);
     }
@@ -126,7 +127,7 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertEquals(Set.of(event.getId()), result.failedIds());
         assertEquals(Set.of(), result.processedIds());
-        verify(kafkaTemplate, times(events.size())).send(eq(topic), any());
+        verify(kafkaTemplate, times(events.size())).send(any(Message.class));
         verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
         verifyNoMoreInteractions(kafkaTemplate, mapper);
     }
@@ -159,7 +160,7 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertEquals(Set.of(event.getId()), result.failedIds());
         assertEquals(Set.of(), result.processedIds());
-        verify(kafkaTemplate, times(events.size())).send(eq(topic), any());
+        verify(kafkaTemplate, times(events.size())).send(any(Message.class));
         verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
         verifyNoMoreInteractions(kafkaTemplate, mapper);
     }

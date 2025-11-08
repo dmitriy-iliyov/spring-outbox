@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.unit.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.dlq.AbstractOutboxDlqRepository;
-import io.github.dmitriyiliyov.springoutbox.dlq.DlqStatus;
-import io.github.dmitriyiliyov.springoutbox.dlq.OutboxDlqEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.AbstractOutboxDlqRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

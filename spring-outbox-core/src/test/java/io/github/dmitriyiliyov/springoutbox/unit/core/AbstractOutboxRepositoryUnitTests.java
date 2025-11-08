@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.unit.core;
 
-import io.github.dmitriyiliyov.springoutbox.core.AbstractOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.AbstractOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

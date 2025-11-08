@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.unit.utils;
 
-import io.github.dmitriyiliyov.springoutbox.utils.CacheHelper;
-import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.CacheHelper;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

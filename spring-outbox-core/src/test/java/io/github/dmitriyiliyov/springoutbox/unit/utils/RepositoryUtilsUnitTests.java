@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.unit.utils;
 
-import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

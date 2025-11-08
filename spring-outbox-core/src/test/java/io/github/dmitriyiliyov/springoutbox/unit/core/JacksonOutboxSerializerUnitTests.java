@@ -2,9 +2,9 @@ package io.github.dmitriyiliyov.springoutbox.unit.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.core.JacksonOutboxSerializer;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.utils.UuidGenerator;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.JacksonOutboxSerializer;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.UuidGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

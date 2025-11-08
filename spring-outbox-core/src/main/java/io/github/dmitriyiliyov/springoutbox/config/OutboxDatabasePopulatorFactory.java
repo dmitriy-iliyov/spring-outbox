@@ -14,34 +14,49 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public final class OutboxDatabasePopulatorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDatabasePopulatorFactory.class);
-    private static final Map<DatabaseType, OutboxTableSqlResourceSupplier> OUTBOX_TABLE_SUPPLIERS = Map.of(
-            DatabaseType.POSTGRESQL, new PostgreSqlOutboxTableSqlResourceSupplier()
-    );
-    private static final Map<DatabaseType, OutboxDlqTableSqlResourceSupplier> OUTBOX_DLQ_TABLE_SUPPLIERS = Map.of(
-            DatabaseType.POSTGRESQL, new PostgreSqlOutboxDlqTableSqlResourceSupplier()
+    private static final Map<DatabaseType, Map<SupplierType, Supplier<Resource>>> OUTBOX_TABLE_SUPPLIERS = Map.of(
+            DatabaseType.POSTGRESQL, Map.of(
+                    SupplierType.DEFAULT, new PostgreSqlOutboxTableSqlResourceSupplier(),
+                    SupplierType.DLQ, new PostgreSqlOutboxDlqTableSqlResourceSupplier(),
+                    SupplierType.CONSUMED, new PostgreSqlOutboxConsumedTableSqlResourceSupplier()
+            )
     );
 
     public static DatabasePopulator generate(OutboxProperties properties, DataSource dataSource) {
         List<Resource> scripts = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());
-            OutboxTableSqlResourceSupplier outboxSupplier = OUTBOX_TABLE_SUPPLIERS.get(databaseType);
-            if (outboxSupplier == null) {
+            Map<SupplierType, Supplier<Resource>> suppliers = OUTBOX_TABLE_SUPPLIERS.get(databaseType);
+            if (suppliers == null) {
                 log.error("Unsupported database type: {}", databaseType);
-                throw new IllegalStateException("OutboxTableSqlSupplier not found for database: " + databaseType);
+                throw new IllegalStateException("Suppliers not found for database: " + databaseType);
             }
-            scripts.add(outboxSupplier.supply());
-            if (properties.getDlq() != null && properties.getDlq().isEnabled()) {
-                OutboxDlqTableSqlResourceSupplier dlqSupplier = OUTBOX_DLQ_TABLE_SUPPLIERS.get(databaseType);
+            Supplier<Resource> outboxSupplier = suppliers.get(SupplierType.DEFAULT);
+            if (outboxSupplier == null) {
+                log.error("Unsupported database: {}", databaseType);
+                throw new IllegalStateException("Supplier for outbox_events not found, database: " + databaseType);
+            }
+            scripts.add(outboxSupplier.get());
+            if (properties.getPublisher().getDlq() != null && properties.getPublisher().getDlq().isEnabled()) {
+                Supplier<Resource> dlqSupplier = suppliers.get(SupplierType.DLQ);
                 if (dlqSupplier == null) {
-                    log.error("OutboxDlqTableSqlSupplier not found for database: {}", databaseType);
-                    throw new IllegalStateException("OutboxDlqTableSqlSupplier not found for database: " + databaseType);
+                    log.error("Supplier for outbox_dlq_events not found, database: {}", databaseType);
+                    throw new IllegalStateException("Supplier for outbox_dlq_events not found, database: " + databaseType);
                 }
-                scripts.add(dlqSupplier.supply());
+                scripts.add(dlqSupplier.get());
+            }
+            if (properties.getConsumer() != null && properties.getConsumer().isEnabled()) {
+                Supplier<Resource> consumedSupplier = suppliers.get(SupplierType.CONSUMED);
+                if (consumedSupplier == null) {
+                    log.error("Supplier for outbox_consumed_events not found, database: {}", databaseType);
+                    throw new IllegalStateException("Supplier for outbox_consumed_events not found, database: " + databaseType);
+                }
+                scripts.add(consumedSupplier.get());
             }
         } catch (SQLException e) {
             log.error("Failed to get database connection", e);
@@ -55,28 +70,27 @@ public final class OutboxDatabasePopulatorFactory {
         );
     }
 
-    @FunctionalInterface
-    private interface SqlResourceSupplier {
-        Resource supply();
-    }
-
-    private interface OutboxTableSqlResourceSupplier extends SqlResourceSupplier {}
-
-    private interface OutboxDlqTableSqlResourceSupplier extends SqlResourceSupplier {}
-
-    private static final class PostgreSqlOutboxTableSqlResourceSupplier implements OutboxTableSqlResourceSupplier {
+    private static final class PostgreSqlOutboxTableSqlResourceSupplier implements Supplier<Resource> {
 
         @Override
-        public ClassPathResource supply() {
+        public ClassPathResource get() {
             return new ClassPathResource("psql_outbox_table.sql");
         }
     }
 
-    private static final class PostgreSqlOutboxDlqTableSqlResourceSupplier implements OutboxDlqTableSqlResourceSupplier {
+    private static final class PostgreSqlOutboxDlqTableSqlResourceSupplier implements Supplier<Resource> {
 
         @Override
-        public ClassPathResource supply() {
+        public ClassPathResource get() {
             return new ClassPathResource("psql_outbox_dlq_table.sql");
+        }
+    }
+
+    private static final class PostgreSqlOutboxConsumedTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("psql_outbox_consumed_table.sql");
         }
     }
 }

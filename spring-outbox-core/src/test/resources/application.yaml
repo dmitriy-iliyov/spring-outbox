@@ -1,42 +1,58 @@
 outbox:
-  sender:
-    type: kafka
   thread-pool-size: 7
-  defaults:
-    batch-size: 100
-    initial-delay: 5s
-    fixed-delay: 30s
-    max-retries: 3
-    backoff:
-      delay: 10s
-      multiplier: 30
-  events:
-    account-delete:
-      topic: account-delete
-      batch-size: 10
-      fixed-delay: 10s
+
+  publisher:
+    sender:
+      type: kafka
+    defaults:
+      batch-size: 100
+      initial-delay: 5s
+      fixed-delay: 30s
+      max-retries: 3
       backoff:
-        enabled: false
-    rating-update:
-      topic: rating-update
-      batch-size: 50
-      fixed-delay: 20s
-  clean-up:
+        delay: 10s
+        multiplier: 30
+
+    events:
+      account-delete:
+        topic: account-delete
+        batch-size: 10
+        fixed-delay: 10s
+        backoff:
+          enabled: false
+      rating-update:
+        topic: rating-update
+        batch-size: 50
+        fixed-delay: 20s
+
+    clean-up:
+      enabled: true
+      batch-size: 60
+      ttl: 1h
+      initial-delay: 10s
+      fixed-delay: 1h
+
+    stuck-recovery:
+      batch-size: 100
+      initial-delay: 2m
+      fixed-delay: 30m
+
+    dlq:
+      enabled: true
+      batch-size: 100
+      transfer-to-initial-delay: 2m
+      transfer-to-fixed-delay: 1h
+      transfer-from-initial-delay: 2m
+      transfer-from-fixed-delay: 1h
+
+  consumer:
     enabled: true
-    batch-size: 60
-    threshold: 1h
-    initial-delay: 10s
-    fixed-delay: 1h
-  stuck-recovery:
-    batch-size: 100
-    initial-delay: 2m
-    fixed-delay: 30m
-  dlq:
-    enabled: true
-    batch-size: 100
-    transfer-to-initial-delay: 2m
-    transfer-to-fixed-delay: 1h
-    transfer-from-initial-delay: 2m
-    transfer-from-fixed-delay: 1h
+    clean-up:
+      enabled: true
+      batch-size: 100
+      ttl: 24h
+      initial-delay: 2m
+      fixed-delay: 2m
+
   tables:
     auto-create: true

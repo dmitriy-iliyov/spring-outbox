@@ -1,11 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.unit.core;
 
-import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.core.DefaultOutboxProcessor;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxSender;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.domain.SenderResult;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.DefaultOutboxProcessor;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxSender;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.SenderResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class DefaultOutboxProcessorUnitTests {
     @InjectMocks
     DefaultOutboxProcessor tested;
 
-    OutboxProperties.EventProperties properties;
+    OutboxPublisherProperties.EventProperties properties;
     String eventType;
     String topic;
     int batchSize;
@@ -44,7 +44,7 @@ class DefaultOutboxProcessorUnitTests {
 
     @BeforeEach
     void setUpProperties() {
-        properties = mock(OutboxProperties.EventProperties.class);
+        properties = mock(OutboxPublisherProperties.EventProperties.class);
         eventType = "test-event-type";
         topic = "test-topic";
         batchSize = 10;

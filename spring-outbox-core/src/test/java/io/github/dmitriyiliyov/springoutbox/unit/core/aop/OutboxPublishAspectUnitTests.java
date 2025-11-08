@@ -1,9 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.unit.core.aop;
 
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublish;
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublishAspect;
-import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.aop.RowOutboxEvents;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.aop.OutboxPublish;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.aop.OutboxPublishAspect;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.aop.RowOutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.aop.RowOutboxEvents;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.DisplayName;
@@ -32,7 +32,7 @@ public class OutboxPublishAspectUnitTests {
 
     @Test
     @DisplayName("UT publishEvent(), payload = result, single object, should publish RowOutboxEvent with correct payload")
-    void publishEvent_whenPayloadIsResultSingle_shouldPublishRowOutboxEvent() {
+    void publishEvent_whenPayloadIsResultSingle_shouldAdvice() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
@@ -41,7 +41,7 @@ public class OutboxPublishAspectUnitTests {
         String result = "payload";
 
         // when
-        tested.publishEvent(joinPoint, outboxPublish, result);
+        tested.advice(joinPoint, outboxPublish, result);
 
         // then
         ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
@@ -62,7 +62,7 @@ public class OutboxPublishAspectUnitTests {
         List<String> result = List.of("a", "b");
 
         // when
-        tested.publishEvent(joinPoint, outboxPublish, result);
+        tested.advice(joinPoint, outboxPublish, result);
 
         // then
         ArgumentCaptor<RowOutboxEvents> captor = ArgumentCaptor.forClass(RowOutboxEvents.class);
@@ -74,7 +74,7 @@ public class OutboxPublishAspectUnitTests {
 
     @Test
     @DisplayName("UT publishEvent(), payload via SpEL on method arg, should publish RowOutboxEvent with correct payload")
-    void publishEvent_whenPayloadViaSpELOnArg_shouldPublishRowOutboxEvent() {
+    void publishEvent_whenPayloadViaSpELOnArg_shouldAdvice() {
         // given
         JoinPoint joinPoint = mockJoinPointWithArgs(new String[]{"param"}, new Object[]{"value"});
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
@@ -82,7 +82,7 @@ public class OutboxPublishAspectUnitTests {
         when(outboxPublish.eventType()).thenReturn("EVENT");
 
         // when
-        tested.publishEvent(joinPoint, outboxPublish, null);
+        tested.advice(joinPoint, outboxPublish, null);
 
         // then
         ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
@@ -102,7 +102,7 @@ public class OutboxPublishAspectUnitTests {
         when(outboxPublish.eventType()).thenReturn("EVENT");
 
         // when
-        tested.publishEvent(joinPoint, outboxPublish, null);
+        tested.advice(joinPoint, outboxPublish, null);
 
         // then
         ArgumentCaptor<RowOutboxEvents> captor = ArgumentCaptor.forClass(RowOutboxEvents.class);
@@ -114,18 +114,18 @@ public class OutboxPublishAspectUnitTests {
 
     @Test
     @DisplayName("UT publishEvent(), null result should throw NullPointerException")
-    void publishEvent_whenResultIsNull_shouldThrowNPE() {
+    void advice_whenResultIsNull_shouldThrowNPE() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
 
         // when + then
-        assertThrows(NullPointerException.class, () -> tested.publishEvent(joinPoint, outboxPublish, null));
+        assertThrows(NullPointerException.class, () -> tested.advice(joinPoint, outboxPublish, null));
     }
 
     @Test
     @DisplayName("UT publishEvent(), blank SpEL should use result directly")
-    void publishEvent_whenBlankSpEL_shouldUseResult() {
+    void advice_whenBlankSpEL_shouldUseResult() {
         // given
         JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
@@ -134,7 +134,7 @@ public class OutboxPublishAspectUnitTests {
         String result = "payload";
 
         // when
-        tested.publishEvent(joinPoint, outboxPublish, result);
+        tested.advice(joinPoint, outboxPublish, result);
 
         // then
         ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);

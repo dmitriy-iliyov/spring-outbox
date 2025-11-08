@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.unit.utils;
 
-import io.github.dmitriyiliyov.springoutbox.utils.SimpleOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.SimpleOutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

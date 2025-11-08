@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.unit.config;
 
-import io.github.dmitriyiliyov.springoutbox.config.OutboxRepositoryFactory;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.PostgreSqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxRepositoryFactory;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.PostgreSqlOutboxRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

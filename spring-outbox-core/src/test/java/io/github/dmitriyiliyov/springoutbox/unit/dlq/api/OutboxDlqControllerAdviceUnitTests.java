@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.unit.dlq.api;
 
-import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqControllerAdvice;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.OutboxDlqControllerAdvice;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

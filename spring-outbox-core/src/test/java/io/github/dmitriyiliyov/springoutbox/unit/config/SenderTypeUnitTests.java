@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.unit.config;
 
-import io.github.dmitriyiliyov.springoutbox.config.SenderType;
+import io.github.dmitriyiliyov.springoutbox.publisher.config.SenderType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

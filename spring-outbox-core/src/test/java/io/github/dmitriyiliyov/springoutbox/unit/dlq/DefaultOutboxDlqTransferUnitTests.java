@@ -1,9 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.unit.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.core.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

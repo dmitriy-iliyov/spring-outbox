@@ -1,14 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.unit.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.dlq.DefaultOutboxDlqManager;
-import io.github.dmitriyiliyov.springoutbox.dlq.DlqStatus;
-import io.github.dmitriyiliyov.springoutbox.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.dlq.OutboxDlqRepository;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventBatchNotFoundException;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventInProcessException;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventNotFoundException;
-import io.github.dmitriyiliyov.springoutbox.dlq.dto.BatchUpdateRequest;
-import io.github.dmitriyiliyov.springoutbox.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DefaultOutboxDlqManager;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.exception.OutboxDlqEventBatchNotFoundException;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.exception.OutboxDlqEventInProcessException;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.exception.OutboxDlqEventNotFoundException;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.dto.BatchUpdateRequest;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
