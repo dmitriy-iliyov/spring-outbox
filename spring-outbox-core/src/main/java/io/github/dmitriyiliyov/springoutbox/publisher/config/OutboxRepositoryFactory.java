@@ -2,8 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
 import io.github.dmitriyiliyov.springoutbox.config.DatabaseType;
 import io.github.dmitriyiliyov.springoutbox.config.JdbcTemplateFactory;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.PostgreSqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.PostgreSqlOutboxRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

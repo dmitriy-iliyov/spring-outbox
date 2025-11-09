@@ -1,5 +1,13 @@
+spring:
+  application:
+    name: spring-outbox-test
+logging:
+  level:
+    root: info
 outbox:
   thread-pool-size: 7
+  tables:
+    auto-create: true
 
   publisher:
     sender:
@@ -53,6 +61,5 @@ outbox:
       ttl: 24h
       initial-delay: 2m
       fixed-delay: 2m
-
-  tables:
-    auto-create: true
+    cache:
+      enabled: false

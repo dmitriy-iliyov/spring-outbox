@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 
 import java.time.Instant;
 import java.util.UUID;

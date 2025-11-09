@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.metrics;
 
+import io.github.dmitriyiliyov.springoutbox.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqManager;

@@ -1,9 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.utils;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

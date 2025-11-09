@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionTemplate;

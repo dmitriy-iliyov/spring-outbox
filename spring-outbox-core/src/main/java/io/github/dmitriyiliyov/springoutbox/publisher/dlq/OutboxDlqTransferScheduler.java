@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
+import io.github.dmitriyiliyov.springoutbox.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -24,6 +24,11 @@ public final class OutboxDatabasePopulatorFactory {
                     SupplierType.DEFAULT, new PostgreSqlOutboxTableSqlResourceSupplier(),
                     SupplierType.DLQ, new PostgreSqlOutboxDlqTableSqlResourceSupplier(),
                     SupplierType.CONSUMED, new PostgreSqlOutboxConsumedTableSqlResourceSupplier()
+            ),
+            DatabaseType.MYSQL, Map.of(
+                    SupplierType.DEFAULT, new MySqlOutboxTableSqlResourceSupplier(),
+                    SupplierType.DLQ, new MySqlOutboxDlqTableSqlResourceSupplier(),
+                    SupplierType.CONSUMED, new MySqlOutboxConsumedTableSqlResourceSupplier()
             )
     );
 
@@ -74,7 +79,7 @@ public final class OutboxDatabasePopulatorFactory {
 
         @Override
         public ClassPathResource get() {
-            return new ClassPathResource("psql_outbox_table.sql");
+            return new ClassPathResource("psql/psql_outbox_table.sql");
         }
     }
 
@@ -82,7 +87,7 @@ public final class OutboxDatabasePopulatorFactory {
 
         @Override
         public ClassPathResource get() {
-            return new ClassPathResource("psql_outbox_dlq_table.sql");
+            return new ClassPathResource("psql/psql_outbox_dlq_table.sql");
         }
     }
 
@@ -90,7 +95,31 @@ public final class OutboxDatabasePopulatorFactory {
 
         @Override
         public ClassPathResource get() {
-            return new ClassPathResource("psql_outbox_consumed_table.sql");
+            return new ClassPathResource("psql/psql_outbox_consumed_table.sql");
+        }
+    }
+
+    private static final class MySqlOutboxTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("mysql/mysql_outbox_table.sql");
+        }
+    }
+
+    private static final class MySqlOutboxDlqTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("mysql/mysql_outbox_dlq_table.sql");
+        }
+    }
+
+    private static final class MySqlOutboxConsumedTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("mysql/mysql_outbox_consumed_table.sql");
         }
     }
 }

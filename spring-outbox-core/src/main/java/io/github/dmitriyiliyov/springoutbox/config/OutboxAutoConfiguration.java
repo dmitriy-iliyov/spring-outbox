@@ -69,7 +69,7 @@ public class OutboxAutoConfiguration {
             if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
                 if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-                    log.error("ExecutorService shutdown incorrectly");
+                    log.error("ScheduledExecutorService shutdown incorrectly");
                 }
             }
         } catch (InterruptedException ie) {

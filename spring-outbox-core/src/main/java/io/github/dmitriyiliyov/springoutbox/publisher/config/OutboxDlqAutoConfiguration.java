@@ -1,13 +1,13 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.DlqStatusQueryConverter;
-import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.OutboxDlqController;
-import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.OutboxDlqControllerAdvice;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.DlqStatusQueryConverter;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqController;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqControllerAdvice;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqMetrics;
-import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.SimpleOutboxCache;
 import io.micrometer.core.instrument.MeterRegistry;

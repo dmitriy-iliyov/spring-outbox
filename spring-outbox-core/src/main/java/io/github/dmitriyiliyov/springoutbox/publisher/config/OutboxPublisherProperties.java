@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
-import io.github.dmitriyiliyov.springoutbox.config.CleanUpProperties;
+import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -14,44 +14,54 @@ public class OutboxPublisherProperties {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherProperties.class);
 
+    private Boolean enabled;
     private SenderProperties sender;
     private Defaults defaults;
     private Map<String, EventProperties> events;
     private StuckRecoveryProperties stuckRecovery;
     @NestedConfigurationProperty
-    private CleanUpProperties cleanUp;
+    private OutboxProperties.CleanUpProperties cleanUp;
     private DlqProperties dlq;
 
     public OutboxPublisherProperties() {}
 
     public void initialize() {
-        if (sender == null) {
-            throw new IllegalArgumentException("sender cannot be null");
-        }
-        sender.initialize();
-        defaults = defaults == null ? new Defaults() : defaults;
-        defaults.initialize();
-        if (events == null) {
-            throw new IllegalArgumentException("events cannot be null");
-        }
-        if (events.isEmpty()) {
-            log.warn("Outbox is configured without events");
-        }
-        events = applyDefaults(events);
-        stuckRecovery = stuckRecovery == null ?
-                new StuckRecoveryProperties() : stuckRecovery;
-        stuckRecovery.initialize();
-        if (cleanUp != null) {
+        if (enabled == null || enabled) {
+            if (sender == null) {
+                throw new IllegalArgumentException("sender cannot be null");
+            }
+            sender.initialize();
+            defaults = defaults == null ? new Defaults() : defaults;
+            defaults.initialize();
+            if (events == null) {
+                throw new IllegalArgumentException("events cannot be null");
+            }
+            if (events.isEmpty()) {
+                log.warn("Outbox is configured without events");
+            }
+            events = applyDefaults(events);
+            stuckRecovery = stuckRecovery == null ? new StuckRecoveryProperties() : stuckRecovery;
+            stuckRecovery.initialize();
+            if (cleanUp == null) {
+                cleanUp = new OutboxProperties.CleanUpProperties();
+                cleanUp.setEnabled(true);
+            }
             cleanUp.initialize();
-        } else {
-            log.warn("Outbox is configured with disabled clean-up, outbox storage will not be cleaned automatically.");
-        }
-        if (dlq != null) {
+            if (!cleanUp.isEnabled()) {
+                log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
+            }
+            if (dlq == null) {
+                dlq = new DlqProperties();
+                dlq.setEnabled(false);
+            }
             dlq.initialize();
+            if (!dlq.isEnabled()) {
+                log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
+            }
+            log.debug("OutboxProperties successfully initialized");
         } else {
-            log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
+            enabled = false;
         }
-        log.debug("OutboxProperties successfully initialized");
     }
 
     private Map<String, EventProperties> applyDefaults(Map<String, EventProperties> eventPropertiesMap) {
@@ -74,6 +84,14 @@ public class OutboxPublisherProperties {
                             return event;
                         }
                 ));
+    }
+
+    public Boolean getEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public SenderProperties getSender() {
@@ -113,17 +131,14 @@ public class OutboxPublisherProperties {
     }
 
     public boolean isCleanUpEnabled() {
-        if (cleanUp == null) {
-            return false;
-        }
         return cleanUp.isEnabled();
     }
 
-    public CleanUpProperties getCleanUp() {
+    public OutboxProperties.CleanUpProperties getCleanUp() {
         return cleanUp;
     }
 
-    public void setCleanUp(CleanUpProperties cleanUp) {
+    public void setCleanUp(OutboxProperties.CleanUpProperties cleanUp) {
         this.cleanUp = cleanUp;
     }
 
@@ -474,7 +489,7 @@ public class OutboxPublisherProperties {
         }
 
         public void initialize() {
-            batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+            batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
             fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
         }
@@ -537,7 +552,7 @@ public class OutboxPublisherProperties {
         public void initialize() {
             if (enabled != null && enabled) {
                 enabled = true;
-                batchSize = batchSize == null || batchSize < 0 ? DEFAULT_BATCH_SIZE : batchSize;
+                batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
                 transferToInitialDelay = transferToInitialDelay == null ? DEFAULT_TO_INITIAL_DELAY : transferToInitialDelay;
                 transferToFixedDelay = transferToFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToFixedDelay;
                 transferFromInitialDelay = transferFromInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromInitialDelay;

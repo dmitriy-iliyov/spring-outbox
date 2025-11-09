@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

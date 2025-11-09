@@ -1,13 +1,13 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.config.CleanUpProperties;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.*;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.aop.OutboxPublishAspect;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.aop.RowOutboxEventListener;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.publisher.*;
+import io.github.dmitriyiliyov.springoutbox.publisher.aop.OutboxPublishAspect;
+import io.github.dmitriyiliyov.springoutbox.publisher.aop.RowOutboxEventListener;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.DefaultOutboxMetrics;
-import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,7 @@ import javax.sql.DataSource;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
+@ConditionalOnProperty(prefix = "outbox.publisher", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class OutboxPublisherAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherAutoConfiguration.class);
@@ -89,7 +91,7 @@ public class OutboxPublisherAutoConfiguration {
             log.debug("Created bean with beanName {}", recoverySchedulerBeanName);
 
             if (outboxPublisherProperties.isCleanUpEnabled()) {
-                CleanUpProperties cleanUpProperties = outboxPublisherProperties.getCleanUp();
+                OutboxProperties.CleanUpProperties cleanUpProperties = outboxPublisherProperties.getCleanUp();
                 if (cleanUpProperties == null) {
                     throw new IllegalStateException("OutboxProperties.CleanUpProperties is null");
                 }

@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.exception.OutboxDlqEventBatchNotFoundException;
-import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.exception.OutboxDlqEventInProcessException;
-import io.github.dmitriyiliyov.springoutbox.publisher.dlq.api.exception.OutboxDlqEventNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.dto.BatchRequest;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.dto.BatchUpdateRequest;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.exception.OutboxDlqEventBatchNotFoundException;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.exception.OutboxDlqEventInProcessException;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.exception.OutboxDlqEventNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.CacheHelper;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
 import org.springframework.transaction.annotation.Isolation;

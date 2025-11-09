@@ -1,8 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.metrics;
 
+import io.github.dmitriyiliyov.springoutbox.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.publisher.core.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
