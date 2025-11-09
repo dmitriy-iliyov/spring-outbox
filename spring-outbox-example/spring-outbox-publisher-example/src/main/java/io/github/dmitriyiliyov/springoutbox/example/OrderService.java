@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.example;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisher;
-import io.github.dmitriyiliyov.springoutbox.core.aop.OutboxPublish;
+import io.github.dmitriyiliyov.springoutbox.publisher.OutboxPublisher;
+import io.github.dmitriyiliyov.springoutbox.publisher.aop.OutboxPublish;
 import io.github.dmitriyiliyov.springoutbox.example.dto.OrderCreateDto;
 import io.github.dmitriyiliyov.springoutbox.example.dto.OrderUpdateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;

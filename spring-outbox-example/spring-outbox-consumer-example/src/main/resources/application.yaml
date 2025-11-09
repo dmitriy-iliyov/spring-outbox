@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-outbox-example
   datasource:
-    url: jdbc:postgresql://postgresql:5432/outbox_example
+    url: jdbc:postgresql://localhost:5432/outbox_example
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver
@@ -10,3 +10,12 @@ spring:
     open-in-view: false
 server:
   port: 8080
+outbox:
+  thread-pool-size: 2
+  publisher:
+    enabled: false
+  consumer:
+    enabled: true
+    clean-up:
+      enabled: true
+      ttl: 24h
