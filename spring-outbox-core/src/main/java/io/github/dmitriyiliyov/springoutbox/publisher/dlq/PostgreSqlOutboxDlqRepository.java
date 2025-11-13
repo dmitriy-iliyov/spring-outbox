@@ -4,7 +4,10 @@ import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
@@ -72,5 +75,10 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                 },
                 (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
         );
+    }
+
+    @Override
+    protected void setId(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException {
+        ps.setObject(parameterIndex, id);
     }
 }

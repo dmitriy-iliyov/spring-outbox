@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +47,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         jdbcTemplate.update(
                 sql,
                 ps -> {
-                    ps.setObject(1, event.getId());
+                    setId(ps, 1, event.getId());
                     ps.setString(2, event.getStatus().name());
                     ps.setString(3, event.getEventType());
                     ps.setString(4, event.getPayloadType());
@@ -66,21 +68,22 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
             (id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
-        List<Object[]> params = eventBatch.stream()
-                .map(e ->
-                        new Object[]{
-                                e.getId(),
-                                e.getStatus().name(),
-                                e.getEventType(),
-                                e.getPayloadType(),
-                                e.getPayload(),
-                                e.getRetryCount(),
-                                Timestamp.from(e.getNextRetryAt()),
-                                Timestamp.from(e.getCreatedAt()),
-                                Timestamp.from(e.getUpdatedAt())
-                })
-                .toList();
-        jdbcTemplate.batchUpdate(sql, params);
+        jdbcTemplate.batchUpdate(
+                sql,
+                eventBatch,
+                eventBatch.size(),
+                (ps, event) -> {
+                    setId(ps, 1, event.getId());
+                    ps.setString(2, event.getStatus().name());
+                    ps.setString(3, event.getEventType());
+                    ps.setString(4, event.getPayloadType());
+                    ps.setObject(5, event.getPayload());
+                    ps.setInt(6, event.getRetryCount());
+                    ps.setTimestamp(7, Timestamp.from(event.getNextRetryAt()));
+                    ps.setTimestamp(8, Timestamp.from(event.getCreatedAt()));
+                    ps.setTimestamp(9, Timestamp.from(event.getUpdatedAt()));
+                }
+        );
     }
 
     @Transactional(readOnly = true)
@@ -153,7 +156,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setString(2, event.getStatus().name());
                     ps.setTimestamp(3, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(4, Timestamp.from(updatedAt));
-                    ps.setObject(5, event.getId());
+                    setId(ps, 5, event.getId());
                 });
     }
 
@@ -164,4 +167,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generatePlaceholders(ids));
         jdbcTemplate.update(sql, ids.toArray());
     }
+
+    protected abstract void setId(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException;
 }

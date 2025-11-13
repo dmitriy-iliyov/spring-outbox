@@ -6,9 +6,12 @@ import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxRepository}.
@@ -137,5 +140,10 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     ps.setInt(3, batchSize);
                 }
         );
+    }
+
+    @Override
+    protected void setId(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException {
+        ps.setObject(parameterIndex, id);
     }
 }
