@@ -9,9 +9,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public final class ResultSetMapper {
+public final class PostgreSqlResultSetMapper implements ResultSetMapper {
 
-    public static OutboxEvent toEvent(ResultSet rs) throws SQLException {
+    @Override
+    public OutboxEvent toEvent(ResultSet rs) throws SQLException {
         return new OutboxEvent(
                 rs.getObject("id", UUID.class),
                 EventStatus.fromString(rs.getString("status")),
@@ -25,7 +26,8 @@ public final class ResultSetMapper {
         );
     }
 
-    public static OutboxDlqEvent toDlqEvent(ResultSet rs) throws SQLException {
+    @Override
+    public OutboxDlqEvent toDlqEvent(ResultSet rs) throws SQLException {
         return new OutboxDlqEvent(
                 rs.getObject("id", UUID.class),
                 EventStatus.fromString(rs.getString("status")),
@@ -36,7 +38,8 @@ public final class ResultSetMapper {
                 rs.getTimestamp("next_retry_at").toInstant(),
                 rs.getTimestamp("created_at").toInstant(),
                 rs.getTimestamp("updated_at").toInstant(),
-                DlqStatus.fromString(rs.getString("dlq_status"))
+                DlqStatus.fromString(rs.getString("dlq_status")),
+                rs.getTimestamp("moved_at").toInstant()
         );
     }
 }

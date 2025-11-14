@@ -89,7 +89,8 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 event.getNextRetryAt(),
                 event.getCreatedAt(),
                 event.getUpdatedAt(),
-                DlqStatus.NEW
+                DlqStatus.NEW,
+                Instant.now()
         );
     }
 

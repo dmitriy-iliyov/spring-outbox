@@ -111,7 +111,6 @@ public class DefaultOutboxManager implements OutboxManager {
                                 newStatus = EventStatus.FAILED;
                                 nextRetryAt = event.getNextRetryAt();
                             }
-                            System.out.println(Math.min(newRetryCount, maxRetryCount));
                             return new OutboxEvent(
                                     event.getId(),
                                     newStatus,

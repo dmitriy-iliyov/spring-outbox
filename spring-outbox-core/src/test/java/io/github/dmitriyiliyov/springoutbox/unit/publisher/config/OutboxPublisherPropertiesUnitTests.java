@@ -202,7 +202,11 @@ public class OutboxPublisherPropertiesUnitTests {
         assertEquals(Duration.ofSeconds(300), properties.getStuckRecovery().getInitialDelay());
         assertEquals(Duration.ofSeconds(1800), properties.getStuckRecovery().getFixedDelay());
 
-        assertFalse(properties.isCleanUpEnabled());
+        assertTrue(properties.isCleanUpEnabled());
+        assertEquals(100, properties.getCleanUp().getBatchSize());
+        assertEquals(Duration.ofHours(1), properties.getCleanUp().getTtl());
+        assertEquals(Duration.ofSeconds(120), properties.getCleanUp().getInitialDelay());
+        assertEquals(Duration.ofSeconds(5), properties.getCleanUp().getFixedDelay());
     }
 
     @Test
@@ -796,7 +800,7 @@ public class OutboxPublisherPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT isCleanUpEnabled() should return false when cleanUp is null")
+    @DisplayName("UT isCleanUpEnabled() should return true when cleanUp is null")
     public void isCleanUpEnabled_whenCleanUpNull_thenReturnFalse() {
         // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
@@ -810,7 +814,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.initialize();
 
         // then
-        assertFalse(properties.isCleanUpEnabled());
+        assertTrue(properties.isCleanUpEnabled());
     }
 
     @Test

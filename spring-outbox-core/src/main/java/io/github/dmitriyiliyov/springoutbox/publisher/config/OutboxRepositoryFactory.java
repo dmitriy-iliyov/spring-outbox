@@ -2,8 +2,13 @@ package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
 import io.github.dmitriyiliyov.springoutbox.config.DatabaseType;
 import io.github.dmitriyiliyov.springoutbox.config.JdbcTemplateFactory;
+import io.github.dmitriyiliyov.springoutbox.publisher.MySqlOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.PostgreSqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.MySqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.PostgreSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.MySqlIdHelper;
+import io.github.dmitriyiliyov.springoutbox.utils.PostgreSqlIdHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +23,17 @@ public final class OutboxRepositoryFactory {
     private static final Logger log = LoggerFactory.getLogger(OutboxRepositoryFactory.class);
     private static final Map<DatabaseType, Function<DataSource, OutboxRepository>> SUPPORTED_SUPPLIERS = Map.of(
             DatabaseType.POSTGRESQL,
-            dataSource -> new PostgreSqlOutboxRepository(JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource))
+            dataSource -> new PostgreSqlOutboxRepository(
+                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
+                    new PostgreSqlIdHelper(),
+                    new PostgreSqlResultSetMapper()
+            ),
+            DatabaseType.MYSQL,
+            dataSource -> new MySqlOutboxRepository(
+                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
+                    new MySqlIdHelper(),
+                    new MySqlResultSetMapper()
+            )
     );
 
     private OutboxRepositoryFactory() {}

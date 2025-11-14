@@ -3,7 +3,9 @@ package io.github.dmitriyiliyov.springoutbox.consumer.config;
 import io.github.dmitriyiliyov.springoutbox.config.DatabaseType;
 import io.github.dmitriyiliyov.springoutbox.config.JdbcTemplateFactory;
 import io.github.dmitriyiliyov.springoutbox.consumer.ConsumedOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.consumer.MySqlConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.consumer.PostgreSqlConsumedOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.utils.MySqlIdHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +19,11 @@ public final class ConsumedOutboxRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumedOutboxRepositoryFactory.class);
     private static final Map<DatabaseType, Function<DataSource, ConsumedOutboxRepository>> SUPPORTED_DB = Map.of(
-            DatabaseType.POSTGRESQL, dataSource -> new PostgreSqlConsumedOutboxRepository(JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource))
+            DatabaseType.POSTGRESQL, dataSource -> new PostgreSqlConsumedOutboxRepository(JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource)),
+            DatabaseType.MYSQL, dataSource -> new MySqlConsumedOutboxRepository(
+                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
+                    new MySqlIdHelper()
+            )
     );
 
     public static ConsumedOutboxRepository generate(DataSource dataSource) {

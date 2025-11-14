@@ -3,12 +3,11 @@ package io.github.dmitriyiliyov.springoutbox.publisher;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,9 +30,11 @@ import java.util.UUID;
 public abstract class AbstractOutboxRepository implements OutboxRepository {
 
     protected final JdbcTemplate jdbcTemplate;
+    protected final SqlIdHelper idHelper;
 
-    public AbstractOutboxRepository(JdbcTemplate jdbcTemplate) {
+    public AbstractOutboxRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.idHelper = idHelper;
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -47,7 +48,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         jdbcTemplate.update(
                 sql,
                 ps -> {
-                    setId(ps, 1, event.getId());
+                    idHelper.setIdToPs(ps, 1, event.getId());
                     ps.setString(2, event.getStatus().name());
                     ps.setString(3, event.getEventType());
                     ps.setString(4, event.getPayloadType());
@@ -73,7 +74,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                 eventBatch,
                 eventBatch.size(),
                 (ps, event) -> {
-                    setId(ps, 1, event.getId());
+                    idHelper.setIdToPs(ps, 1, event.getId());
                     ps.setString(2, event.getStatus().name());
                     ps.setString(3, event.getEventType());
                     ps.setString(4, event.getPayloadType());
@@ -124,11 +125,11 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
             params.add(newStatus.name());
             params.add(Timestamp.from(Instant.now()));
-            params.addAll(ids);
+            params.addAll(idHelper.convertIdsToDbFormat(ids));
         } else {
             sql = "UPDATE outbox_events SET status = ? WHERE id IN (" + placeholders + ")";
             params.add(newStatus.name());
-            params.addAll(ids);
+            params.addAll(idHelper.convertIdsToDbFormat(ids));
         }
         jdbcTemplate.update(sql, params.toArray());
     }
@@ -156,7 +157,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setString(2, event.getStatus().name());
                     ps.setTimestamp(3, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(4, Timestamp.from(updatedAt));
-                    setId(ps, 5, event.getId());
+                    idHelper.setIdToPs(ps, 5, event.getId());
                 });
     }
 
@@ -165,8 +166,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     public void deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return;
         String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generatePlaceholders(ids));
-        jdbcTemplate.update(sql, ids.toArray());
+        jdbcTemplate.update(sql, idHelper.convertIdsToDbFormat(ids).toArray());
     }
-
-    protected abstract void setId(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException;
 }

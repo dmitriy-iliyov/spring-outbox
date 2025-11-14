@@ -6,15 +6,15 @@ import java.util.UUID;
 
 public class OutboxEvent {
 
-    protected final UUID id;
-    protected final EventStatus status;
-    protected final String eventType;
-    protected final String payloadType;
-    protected final String payload;
-    protected final int retryCount;
-    protected final Instant nextRetryAt;
-    protected final Instant createdAt;
-    protected final Instant updatedAt;
+    protected UUID id;
+    protected EventStatus status;
+    protected String eventType;
+    protected String payloadType;
+    protected String payload;
+    protected int retryCount;
+    protected Instant nextRetryAt;
+    protected Instant createdAt;
+    protected Instant updatedAt;
 
     public OutboxEvent(UUID id, String eventType, String payloadType, String payload) {
         this.id = id;
@@ -60,6 +60,10 @@ public class OutboxEvent {
 
     public EventStatus getStatus() {
         return status;
+    }
+
+    public void setStatus(EventStatus status) {
+        this.status = status;
     }
 
     public String getEventType() {

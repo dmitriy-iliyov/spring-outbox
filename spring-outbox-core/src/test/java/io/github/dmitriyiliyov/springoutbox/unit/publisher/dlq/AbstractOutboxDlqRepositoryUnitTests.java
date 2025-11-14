@@ -3,6 +3,8 @@ package io.github.dmitriyiliyov.springoutbox.unit.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.AbstractOutboxDlqRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,12 +29,18 @@ public class AbstractOutboxDlqRepositoryUnitTests {
     @Mock
     JdbcTemplate jdbcTemplate;
 
+    @Mock
+    SqlIdHelper idHelper;
+
+    @Mock
+    ResultSetMapper mapper;
+
     AbstractOutboxDlqRepository tested;
 
     @BeforeEach
     public void init() {
         tested = Mockito.spy(
-                new AbstractOutboxDlqRepository(jdbcTemplate) {
+                new AbstractOutboxDlqRepository(jdbcTemplate, idHelper, mapper) {
                     @Override
                     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
                         return List.of();

@@ -19,7 +19,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
     @Override
     public int saveIfAbsent(UUID id) {
         String sql = """
-            INSERT INTO outbox_consumed_events(id, consumed_at)
+            INSERT INTO outbox_consumed_events (id, consumed_at)
             VALUES(?, ?)
             ON CONFLICT DO NOTHING
         """;
@@ -36,7 +36,8 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
     @Override
     public void deleteBatchByThreshold(Instant threshold, int batchSize) {
         String sql = """
-            WITH to_delete AS(
+            DELETE FROM outbox_consumed_events
+            WHERE id IN (
                 SELECT id 
                 FROM outbox_consumed_events 
                 WHERE consumed_at < ?
@@ -44,8 +45,6 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
-            DELETE FROM to_delete
-            WHERE id IN (SELECT id FROM to_delete)
         """;
         jdbcTemplate.update(
                 sql,

@@ -1,13 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
@@ -24,27 +22,24 @@ import java.util.UUID;
  */
 public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
-    public PostgreSqlOutboxDlqRepository(JdbcTemplate jdbcTemplate) {
-        super(jdbcTemplate);
+    public PostgreSqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
+        super(jdbcTemplate, idHelper, mapper);
     }
 
     @Transactional
     @Override
     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
         String sql = """
-            WITH to_lock AS(
-                UPDATE outbox_dlq_events
-                    SET status = ?
-                WHERE id IN(
-                    SELECT id FROM outbox_dlq_events
-                    WHERE dlq_status = ?
-                    ORDER BY updated_at
-                    LIMIT ?
-                    FOR UPDATE SKIP LOCKED
-                )
-                RETURNING id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
+            UPDATE outbox_dlq_events
+                SET status = ?
+            WHERE id IN(
+                SELECT id FROM outbox_dlq_events
+                WHERE dlq_status = ?
+                ORDER BY moved_at
+                LIMIT ?
+                FOR UPDATE SKIP LOCKED
             )
-            SELECT * FROM to_lock
+            RETURNING id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
         """;
         return jdbcTemplate.query(
                 sql,
@@ -53,7 +48,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                     ps.setString(2, status.name());
                     ps.setInt(3, batchSize);
                 },
-                (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
     }
 
@@ -61,7 +56,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize) {
         String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE dlq_status = ?
             LIMIT ?
@@ -73,12 +68,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                     ps.setString(1, status.name());
                     ps.setInt(2, batchSize);
                 },
-                (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
-    }
-
-    @Override
-    protected void setId(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException {
-        ps.setObject(parameterIndex, id);
     }
 }

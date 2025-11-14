@@ -274,7 +274,8 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now(),
                 now.minusSeconds(3600),
                 now,
-                DlqStatus.TO_RETRY
+                DlqStatus.TO_RETRY,
+                Instant.now()
         );
 
         OutboxDlqEvent dlqEvent2 = new OutboxDlqEvent(
@@ -287,7 +288,8 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now(),
                 now.minusSeconds(7200),
                 now,
-                DlqStatus.TO_RETRY
+                DlqStatus.TO_RETRY,
+                Instant.now()
         );
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent1, dlqEvent2);
@@ -343,7 +345,8 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now(),
                 Instant.now(),
                 Instant.now(),
-                DlqStatus.TO_RETRY
+                DlqStatus.TO_RETRY,
+                Instant.now()
         );
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
@@ -382,7 +385,8 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now(),
                 Instant.now(),
                 Instant.now(),
-                DlqStatus.TO_RETRY
+                DlqStatus.TO_RETRY,
+                Instant.now()
         );
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
@@ -424,7 +428,8 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now(),
                 originalCreatedAt,
                 Instant.now(),
-                DlqStatus.TO_RETRY
+                DlqStatus.TO_RETRY,
+                Instant.now()
         );
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);

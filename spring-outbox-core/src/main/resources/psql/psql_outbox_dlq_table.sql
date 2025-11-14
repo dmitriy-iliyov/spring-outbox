@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS outbox_dlq_events (
     retry_count INTEGER DEFAULT 0,
     next_retry_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
+    updated_at TIMESTAMP NOT NULL,
+    moved_at TIMESTAMP NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_outbox_dlq_status ON outbox_dlq_events(dlq_status);

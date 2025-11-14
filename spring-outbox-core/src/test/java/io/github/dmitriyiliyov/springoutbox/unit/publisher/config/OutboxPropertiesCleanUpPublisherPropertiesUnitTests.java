@@ -25,7 +25,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
         assertTrue(cleanup.isEnabled());
         assertEquals(100, cleanup.getBatchSize());
         assertEquals(Duration.ofHours(1), cleanup.getTtl());
-        assertEquals(Duration.ofSeconds(300), cleanup.getInitialDelay());
+        assertEquals(Duration.ofSeconds(120), cleanup.getInitialDelay());
         assertEquals(Duration.ofSeconds(5), cleanup.getFixedDelay());
     }
 
@@ -96,7 +96,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT initialize() with enabled = null should treat as false and disable fields")
+    @DisplayName("UT initialize() with enabled = null should be true and initialize fields with defaults")
     public void initialize_enabledNull_shouldDisable() {
         // given
         OutboxProperties.CleanUpProperties cleanup = new OutboxProperties.CleanUpProperties();
@@ -106,10 +106,10 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
         cleanup.initialize();
 
         // then
-        assertFalse(cleanup.isEnabled());
-        assertEquals(0, cleanup.getBatchSize());
-        assertNull(cleanup.getTtl());
-        assertNull(cleanup.getInitialDelay());
-        assertNull(cleanup.getFixedDelay());
+        assertTrue(cleanup.isEnabled());
+        assertEquals(100, cleanup.getBatchSize());
+        assertEquals(Duration.ofHours(1), cleanup.getTtl());
+        assertEquals(Duration.ofSeconds(120), cleanup.getInitialDelay());
+        assertEquals(Duration.ofSeconds(5), cleanup.getFixedDelay());
     }
 }

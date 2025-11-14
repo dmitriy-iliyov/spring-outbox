@@ -2,20 +2,23 @@ package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 
 public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository {
 
     protected final JdbcTemplate jdbcTemplate;
+    protected final SqlIdHelper idHelper;
+    protected final ResultSetMapper mapper;
 
-    public AbstractOutboxDlqRepository(JdbcTemplate jdbcTemplate) {
+    public AbstractOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.idHelper = idHelper;
+        this.mapper = mapper;
     }
 
     @Transactional
@@ -23,7 +26,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public void saveBatch(List<OutboxDlqEvent> eventBatch) {
         String sql = """
             INSERT INTO outbox_dlq_events
-            (id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at)
+            (id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         jdbcTemplate.batchUpdate(
@@ -31,7 +34,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                 eventBatch,
                 eventBatch.size(),
                 (ps, event) -> {
-                    setId(ps, 1, event.getId());
+                    idHelper.setIdToPs(ps, 1, event.getId());
                     ps.setString(2, event.getStatus().name());
                     ps.setString(3, event.getDlqStatus().name());
                     ps.setString(4, event.getEventType());
@@ -41,6 +44,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                     ps.setTimestamp(8, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(9, Timestamp.from(event.getCreatedAt()));
                     ps.setTimestamp(10, Timestamp.from(event.getUpdatedAt()));
+                    ps.setTimestamp(11, Timestamp.from(event.getMovedAt()));
                 });
     }
 
@@ -72,14 +76,14 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Override
     public Optional<OutboxDlqEvent> findById(UUID id) {
         String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE id = ?
         """;
         List<OutboxDlqEvent> results = jdbcTemplate.query(
                 sql,
-                ps -> setId(ps, 1, id),
-                (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
+                ps -> idHelper.setIdToPs(ps, 1, id),
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
         return results.stream().findFirst();
     }
@@ -89,7 +93,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public List<OutboxDlqEvent> findBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return List.of();
         String sql = """
-            SELECT id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
+            SELECT id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
@@ -98,10 +102,10 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                 ps -> {
                     int i = 1;
                     for (UUID id: ids) {
-                        setId(ps, i++, id);
+                        idHelper.setIdToPs(ps, i++, id);
                     }
                 },
-                (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
     }
 
@@ -109,7 +113,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
         String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE dlq_status = ?
             OFFSET ?
@@ -122,7 +126,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                     ps.setInt(2, (batchNumber - 1) * batchSize);
                     ps.setInt(3, batchSize);
                 },
-                (rs, rowNum) -> ResultSetMapper.toDlqEvent(rs)
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
     }
 
@@ -134,7 +138,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                 sql,
                 ps -> {
                     ps.setString(1, status.name());
-                    setId(ps, 2, id);
+                    idHelper.setIdToPs(ps, 2, id);
                 }
         );
     }
@@ -146,7 +150,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
         List<Object> params = new ArrayList<>();
         params.add(status.name());
-        params.addAll(ids);
+        params.addAll(idHelper.convertIdsToDbFormat(ids));
         jdbcTemplate.update(sql, params.toArray());
     }
 
@@ -154,7 +158,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Override
     public void deleteById(UUID id) {
         String sql = "DELETE FROM outbox_dlq_events WHERE id = ?";
-        jdbcTemplate.update(sql, ps -> setId(ps, 1, id));
+        jdbcTemplate.update(sql, ps -> idHelper.setIdToPs(ps, 1, id));
     }
 
     @Transactional
@@ -162,10 +166,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public void deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return;
         String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
-        List<Object> params = new ArrayList<>();
-        params.addAll(ids);
-        jdbcTemplate.update(sql, params.toArray());
+        jdbcTemplate.update(sql, idHelper.convertIdsToDbFormat(ids).toArray());
     }
-
-    protected abstract void setId(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException;
 }
