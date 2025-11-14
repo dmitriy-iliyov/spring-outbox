@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MySqlOutboxDlqRepository extends PostgreSqlOutboxDlqRepository {
+public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
     public MySqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
         super(jdbcTemplate, idHelper, mapper);

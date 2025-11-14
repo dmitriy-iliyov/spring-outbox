@@ -77,9 +77,14 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         if (!RepositoryUtils.validateIds(ids)) {
             return Collections.emptyList();
         }
-        String lockSql = "UPDATE outbox_events SET status = ? WHERE id IN(" + RepositoryUtils.generatePlaceholders(ids) + ")";
+        String lockSql = """
+            UPDATE outbox_events
+                SET status = ?, updated_at = ?
+            WHERE id IN(%s)
+        """.formatted(RepositoryUtils.generatePlaceholders(ids));
         List<Object> params = new ArrayList<>();
         params.add(lockStatus.name());
+        params.add(Timestamp.from(Instant.now()));
         params.addAll(idHelper.convertIdsToDbFormat(ids));
         jdbcTemplate.update(lockSql, params.toArray());
         events.forEach(event -> event.setStatus(lockStatus));
@@ -91,7 +96,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
     public int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus) {
         String sql = """
             UPDATE outbox_events
-                SET status = ?
+                SET status = ?, updated_at = ?
             WHERE id IN (
                 SELECT id FROM(
                     SELECT id FROM outbox_events
@@ -106,8 +111,9 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                 sql,
                 ps -> {
                     ps.setString(1, newStatus.name());
-                    ps.setString(2, status.name());
-                    ps.setInt(3, batchSize);
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setString(3, status.name());
+                    ps.setInt(4, batchSize);
                 }
         );
     }

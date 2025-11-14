@@ -116,15 +116,15 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
             SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE dlq_status = ?
-            OFFSET ?
-            LIMIT ?
+            ORDER BY moved_at
+            LIMIT ? OFFSET ?
         """;
         return jdbcTemplate.query(
                 sql,
                 ps -> {
                     ps.setString(1, status.name());
-                    ps.setInt(2, (batchNumber - 1) * batchSize);
-                    ps.setInt(3, batchSize);
+                    ps.setInt(2, batchSize);
+                    ps.setInt(3, (batchNumber - 1) * batchSize);
                 },
                 (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
