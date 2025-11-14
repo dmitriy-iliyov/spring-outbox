@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -39,7 +40,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                                                                   EventStatus lockStatus) {
         String sql = """
             UPDATE outbox_events
-                SET status = ?
+                SET status = ?, updated_at = ?
             WHERE id IN(
                 SELECT id FROM outbox_events
                 WHERE event_type = ? AND status = ? AND next_retry_at <= ?
@@ -53,10 +54,11 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                 sql,
                 ps -> {
                     ps.setString(1, lockStatus.name());
-                    ps.setString(2, eventType);
-                    ps.setString(3, status.name());
-                    ps.setTimestamp(4, Timestamp.from(Instant.now()));
-                    ps.setInt(5, batchSize);
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setString(3, eventType);
+                    ps.setString(4, status.name());
+                    ps.setTimestamp(5, Timestamp.from(Instant.now()));
+                    ps.setInt(6, batchSize);
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
         );
@@ -67,7 +69,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
     public List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus) {
         String sql = """
             UPDATE outbox_events
-                SET status = ?
+                SET status = ?, updated_at = ?
             WHERE id IN(
                 SELECT id FROM outbox_events
                 WHERE status = ?
@@ -81,8 +83,9 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                 sql,
                 ps -> {
                     ps.setString(1, lockStatus.name());
-                    ps.setString(2, status.name());
-                    ps.setInt(3, batchSize);
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setString(3, status.name());
+                    ps.setInt(4, batchSize);
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
         );
@@ -93,7 +96,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
     public int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus) {
         String sql = """
             UPDATE outbox_events
-                SET status = ?
+                SET status = ?, updated_at = ?
             WHERE id IN (
                 SELECT id FROM outbox_events
                 WHERE status = ?
@@ -106,8 +109,9 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                 sql,
                 ps -> {
                     ps.setString(1, newStatus.name());
-                    ps.setString(2, status.name());
-                    ps.setInt(3, batchSize);
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setString(3, status.name());
+                    ps.setInt(4, batchSize);
                 }
         );
     }

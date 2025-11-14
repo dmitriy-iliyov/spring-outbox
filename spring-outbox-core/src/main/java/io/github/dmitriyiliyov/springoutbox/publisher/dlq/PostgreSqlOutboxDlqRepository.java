@@ -9,16 +9,6 @@ import java.util.List;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
- * <ul>
- *
- *     <li>uses the PostgreSQL-specific clause
- *     <code>FOR UPDATE SKIP LOCKED</code> (available since PostgreSQL 9.5) in {@link #findBatchByStatus(DlqStatus, int)}
- *     to allow multiple service instances to process outbox DLQ batches in parallel without conflicting on the same rows</li>
- *
- *     <li>performs batched deletion of processed events using a CTE
- *     (<code>WITH ... AS</code>), ensuring predictable load on the database.</li>
- *
- * </ul>
  */
 public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
@@ -47,26 +37,6 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                     ps.setString(1, lockStatus.name());
                     ps.setString(2, status.name());
                     ps.setInt(3, batchSize);
-                },
-                (rs, rowNum) -> mapper.toDlqEvent(rs)
-        );
-    }
-
-    @Transactional
-    @Override
-    public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize) {
-        String sql = """
-            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
-            FROM outbox_dlq_events
-            WHERE dlq_status = ?
-            LIMIT ?
-            FOR UPDATE SKIP LOCKED
-        """;
-        return jdbcTemplate.query(
-                sql,
-                ps -> {
-                    ps.setString(1, status.name());
-                    ps.setInt(2, batchSize);
                 },
                 (rs, rowNum) -> mapper.toDlqEvent(rs)
         );

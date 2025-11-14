@@ -52,7 +52,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setString(2, event.getStatus().name());
                     ps.setString(3, event.getEventType());
                     ps.setString(4, event.getPayloadType());
-                    ps.setObject(5, event.getPayload());
+                    ps.setString(5, event.getPayload());
                     ps.setInt(6, event.getRetryCount());
                     ps.setTimestamp(7, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(8, Timestamp.from(event.getCreatedAt()));
@@ -78,7 +78,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setString(2, event.getStatus().name());
                     ps.setString(3, event.getEventType());
                     ps.setString(4, event.getPayloadType());
-                    ps.setObject(5, event.getPayload());
+                    ps.setString(5, event.getPayload());
                     ps.setInt(6, event.getRetryCount());
                     ps.setTimestamp(7, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(8, Timestamp.from(event.getCreatedAt()));
@@ -147,7 +147,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                 updated_at = ?
             WHERE id = ?
         """;
-        Instant updatedAt = Instant.now();
         jdbcTemplate.batchUpdate(
                 sql,
                 events,
@@ -156,7 +155,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setInt(1, event.getRetryCount());
                     ps.setString(2, event.getStatus().name());
                     ps.setTimestamp(3, Timestamp.from(event.getNextRetryAt()));
-                    ps.setTimestamp(4, Timestamp.from(updatedAt));
+                    ps.setTimestamp(4, Timestamp.from(Instant.now()));
                     idHelper.setIdToPs(ps, 5, event.getId());
                 });
     }

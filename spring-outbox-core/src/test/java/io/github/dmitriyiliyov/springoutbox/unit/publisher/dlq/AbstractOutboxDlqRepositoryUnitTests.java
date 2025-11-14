@@ -45,11 +45,6 @@ public class AbstractOutboxDlqRepositoryUnitTests {
                     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
                         return List.of();
                     }
-
-                    @Override
-                    public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchSize) {
-                        return List.of();
-                    }
                 }
         );
     }
