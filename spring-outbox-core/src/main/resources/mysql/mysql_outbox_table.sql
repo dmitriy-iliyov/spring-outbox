@@ -10,6 +10,6 @@ CREATE TABLE IF NOT EXISTS outbox_events(
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_outbox_status ON outbox_events(status);
-CREATE INDEX IF NOT EXISTS idx_outbox_status_event_type ON outbox_events(status, event_type);
-CREATE INDEX IF NOT EXISTS idx_outbox_status_updated ON outbox_events(status, updated_at);
+CREATE INDEX idx_outbox_status ON outbox_events(status);
+CREATE INDEX idx_outbox_status_event_type ON outbox_events(status, event_type);
+CREATE INDEX idx_outbox_status_updated ON outbox_events(status, updated_at);
