@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public final class MySqlResultSetMapper implements ResultSetMapper {
+public abstract class BytesSqlResultSetMapper implements ResultSetMapper {
 
     @Override
     public OutboxEvent toEvent(ResultSet rs) throws SQLException {
@@ -43,18 +43,5 @@ public final class MySqlResultSetMapper implements ResultSetMapper {
         );
     }
 
-    private UUID fromBytesToUuid(byte [] bytes) {
-        if (bytes.length != 16) {
-            throw new IllegalArgumentException("UUID byte array must be 16 bytes long");
-        }
-        long mostSigBits = 0;
-        long leastSigBits = 0;
-        for (int i = 0; i < 8; i++) {
-            mostSigBits = (mostSigBits << 8) | (bytes[i] & 0xFF);
-        }
-        for (int i = 8; i < 16; i++) {
-            leastSigBits = (leastSigBits << 8) | (bytes[i] & 0xFF);
-        }
-        return new UUID(mostSigBits, leastSigBits);
-    }
+    public abstract UUID fromBytesToUuid(byte [] bytes);
 }

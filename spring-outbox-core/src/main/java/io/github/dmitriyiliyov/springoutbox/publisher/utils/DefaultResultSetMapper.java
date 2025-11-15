@@ -9,7 +9,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public final class PostgreSqlResultSetMapper implements ResultSetMapper {
+public final class DefaultResultSetMapper implements ResultSetMapper {
 
     @Override
     public OutboxEvent toEvent(ResultSet rs) throws SQLException {

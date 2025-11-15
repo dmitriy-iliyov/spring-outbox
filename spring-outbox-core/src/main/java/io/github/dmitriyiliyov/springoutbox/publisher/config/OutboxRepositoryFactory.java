@@ -3,11 +3,13 @@ package io.github.dmitriyiliyov.springoutbox.publisher.config;
 import io.github.dmitriyiliyov.springoutbox.config.DatabaseType;
 import io.github.dmitriyiliyov.springoutbox.config.JdbcTemplateFactory;
 import io.github.dmitriyiliyov.springoutbox.publisher.MySqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.publisher.OracleOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.PostgreSqlOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.MySqlResultSetMapper;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.PostgreSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.DefaultResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.MySqlIdHelper;
+import io.github.dmitriyiliyov.springoutbox.utils.OracleSqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.utils.PostgreSqlIdHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +28,19 @@ public final class OutboxRepositoryFactory {
             dataSource -> new PostgreSqlOutboxRepository(
                     JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
                     new PostgreSqlIdHelper(),
-                    new PostgreSqlResultSetMapper()
+                    new DefaultResultSetMapper()
             ),
             DatabaseType.MYSQL,
             dataSource -> new MySqlOutboxRepository(
                     JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
                     new MySqlIdHelper(),
-                    new MySqlResultSetMapper()
+                    new DefaultBytesSqlResultSetMapper()
+            ),
+            DatabaseType.ORACLE,
+            dataSource -> new OracleOutboxRepository(
+                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
+                    new OracleSqlIdHelper(),
+                    new DefaultBytesSqlResultSetMapper()
             )
     );
 

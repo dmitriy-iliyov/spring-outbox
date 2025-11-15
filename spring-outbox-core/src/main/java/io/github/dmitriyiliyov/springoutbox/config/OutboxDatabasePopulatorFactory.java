@@ -29,6 +29,11 @@ public final class OutboxDatabasePopulatorFactory {
                     SupplierType.DEFAULT, new MySqlOutboxTableSqlResourceSupplier(),
                     SupplierType.DLQ, new MySqlOutboxDlqTableSqlResourceSupplier(),
                     SupplierType.CONSUMED, new MySqlOutboxConsumedTableSqlResourceSupplier()
+            ),
+            DatabaseType.ORACLE, Map.of(
+                    SupplierType.DEFAULT, new OracleOutboxTableSqlResourceSupplier(),
+                    SupplierType.DLQ, new OracleOutboxDlqTableSqlResourceSupplier(),
+                    SupplierType.CONSUMED, new OracleOutboxConsumedTableSqlResourceSupplier()
             )
     );
 
@@ -120,6 +125,30 @@ public final class OutboxDatabasePopulatorFactory {
         @Override
         public ClassPathResource get() {
             return new ClassPathResource("mysql/mysql_outbox_consumed_table.sql");
+        }
+    }
+
+    private static final class OracleOutboxTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("oracle/oracle_outbox_table.sql");
+        }
+    }
+
+    private static final class OracleOutboxDlqTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("oracle/oracle_outbox_dlq_table.sql");
+        }
+    }
+
+    private static final class OracleOutboxConsumedTableSqlResourceSupplier implements Supplier<Resource> {
+
+        @Override
+        public ClassPathResource get() {
+            return new ClassPathResource("oracle/oracle_outbox_consumed_table.sql");
         }
     }
 }

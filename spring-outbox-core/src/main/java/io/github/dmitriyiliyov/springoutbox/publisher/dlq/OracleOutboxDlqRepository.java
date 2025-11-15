@@ -1,2 +1,78 @@
-package io.github.dmitriyiliyov.springoutbox.publisher;public class OracleOutboxDlqRepository {
+package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
+
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
+
+    public OracleOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
+        super(jdbcTemplate, idHelper, mapper);
+    }
+
+    @Transactional
+    @Override
+    public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
+        String selectSql = """
+            SELECT *
+            FROM outbox_dlq_events
+            WHERE status = ?
+            ORDER BY moved_at
+            FETCH FIRST ? ROWS ONLY
+            FOR UPDATE SKIP LOCKED
+        """;
+        List<OutboxDlqEvent> events = jdbcTemplate.query(
+                selectSql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    ps.setInt(2, batchSize);
+                },
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
+        );
+        Set<UUID> ids = events.stream()
+                .map(OutboxEvent::getId)
+                .collect(Collectors.toSet());
+        if (!RepositoryUtils.validateIds(ids)) {
+            return Collections.emptyList();
+        }
+        String lockSql = """
+            UPDATE outbox_dlq_events
+                SET status = ?
+            WHERE id IN (%s)
+        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        List<Object> params = new ArrayList<>();
+        params.add(lockStatus.name());
+        params.addAll(idHelper.convertIdsToDbFormat(ids));
+        jdbcTemplate.update(lockSql, params.toArray());
+        events.forEach(event -> event.setDlqStatus(lockStatus));
+        return events;
+    }
+
+    @Transactional
+    @Override
+    public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
+        String selectSql = """
+            SELECT *
+            FROM outbox_dlq_events
+            WHERE status = ?
+            ORDER BY moved_at
+            OFFSET ? ROWS
+            FETCH NEXT ? ROWS ONLY
+        """;
+        return jdbcTemplate.query(
+                selectSql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    ps.setInt(2, (batchNumber - 1) * batchSize);
+                    ps.setInt(3, batchSize);
+                },
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
+        );
+    }
 }
