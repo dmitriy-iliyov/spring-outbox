@@ -9,8 +9,37 @@ CREATE TABLE IF NOT EXISTS outbox_dlq_events (
     next_retry_at DATETIME NOT NULL,
     created_at DATETIME NOT NULL,
     updated_at DATETIME NOT NULL,
-    moved_at DATATIME NOT NULL
+    moved_at DATETIME NOT NULL
 );
 
-CREATE INDEX idx_outbox_dlq_status ON outbox_dlq_events(dlq_status);
-CREATE INDEX idx_outbox_dlq_id_status ON outbox_dlq_events(id, dlq_status);
+SELECT COUNT(*) INTO @exists
+FROM INFORMATION_SCHEMA.STATISTICS
+WHERE table_schema = DATABASE()
+  AND table_name = 'outbox_dlq_events'
+  AND index_name = 'idx_outbox_dlq_status';
+
+SET @sql = IF(
+    @exists = 0,
+    'CREATE INDEX idx_outbox_dlq_status ON outbox_dlq_events(dlq_status);',
+    'SELECT "idx_outbox_dlq_status exists";'
+    );
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @exists
+FROM INFORMATION_SCHEMA.STATISTICS
+WHERE table_schema = DATABASE()
+  AND table_name = 'outbox_dlq_events'
+  AND index_name = 'idx_outbox_dlq_id_status';
+
+SET @sql = IF(
+    @exists = 0,
+    'CREATE INDEX idx_outbox_dlq_id_status ON outbox_dlq_events(id, dlq_status);',
+    'SELECT "idx_outbox_dlq_id_status exists";'
+    );
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

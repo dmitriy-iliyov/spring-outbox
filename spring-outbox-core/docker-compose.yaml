@@ -1,9 +1,10 @@
 version:  "3.8"
 name: spring-outbox-test
 services:
+
   postgresql:
     container_name: outbox-test-postgresql
-    image: postgres:16.1-alpine3.19
+    image: postgres:18-alpine
     networks:
       - default
     environment:
@@ -13,11 +14,37 @@ services:
     ports:
       - "1428:5432"
 
+  mysql:
+    container_name: outbox-test-mysql
+    image: mysql:8.0.1
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: outbox_test
+    ports:
+      - "1429:3306"
+
+  oracle:
+    container_name: outbox-test-oracle
+    image: gvenzl/oracle-free:23
+    networks:
+      - default
+    environment:
+      ORACLE_PASSWORD: root
+      APP_USER: admin
+      ORACLE_DATABASE: outbox_test
+      APP_USER_PASSWORD: root
+    ports:
+      - "1430:1521"
+
   kafka:
     container_name: outbox-test-kafka
     image: bitnami/kafka:latest
     ports:
-      - "1429:9092"
+      - "1431:9092"
     environment:
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: broker,controller
