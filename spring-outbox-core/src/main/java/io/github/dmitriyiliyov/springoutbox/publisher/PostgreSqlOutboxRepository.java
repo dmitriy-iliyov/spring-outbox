@@ -7,7 +7,6 @@ import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -123,7 +122,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
             DELETE FROM outbox_events 
             WHERE id IN (
                 SELECT id FROM outbox_events 
-                WHERE status = ? AND updated_at < ?
+                WHERE status = ? AND updated_at <= ?
                 ORDER BY updated_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED

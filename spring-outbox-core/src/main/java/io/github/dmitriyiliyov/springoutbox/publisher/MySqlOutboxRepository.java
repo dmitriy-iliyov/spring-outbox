@@ -84,10 +84,14 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
         List<Object> params = new ArrayList<>();
         params.add(lockStatus.name());
-        params.add(Timestamp.from(Instant.now()));
+        Instant updatedAt = Instant.now();
+        params.add(Timestamp.from(updatedAt));
         params.addAll(idHelper.convertIdsToDbFormat(ids));
         jdbcTemplate.update(lockSql, params.toArray());
-        events.forEach(event -> event.setStatus(lockStatus));
+        events.forEach(event -> {
+            event.setStatus(lockStatus);
+            event.setUpdatedAt(updatedAt);
+        });
         return events;
     }
 
@@ -126,7 +130,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
             WHERE id IN (
                 SELECT id FROM(
                     SELECT id FROM outbox_events 
-                    WHERE status = ? AND updated_at < ?
+                    WHERE status = ? AND updated_at <= ?
                     ORDER BY updated_at
                     LIMIT ?
                     FOR UPDATE SKIP LOCKED

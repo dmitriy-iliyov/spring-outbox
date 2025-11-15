@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.BytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
-    public MySqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
+    public MySqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, BytesSqlResultSetMapper mapper) {
         super(jdbcTemplate, idHelper, mapper);
     }
 
@@ -39,9 +39,13 @@ public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         if (!RepositoryUtils.validateIds(ids)) {
             return Collections.emptyList();
         }
-        String lockSql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
+        String lockSql = """
+            UPDATE outbox_dlq_events 
+                SET status = ?
+            WHERE id IN (%s)
+        """.formatted(RepositoryUtils.generatePlaceholders(ids));
         List<Object> params = new ArrayList<>();
-        params.add(lockStatus);
+        params.add(lockStatus.name());
         params.addAll(idHelper.convertIdsToDbFormat(ids));
         jdbcTemplate.update(lockSql, params.toArray());
         events.forEach(event -> event.setDlqStatus(lockStatus));
