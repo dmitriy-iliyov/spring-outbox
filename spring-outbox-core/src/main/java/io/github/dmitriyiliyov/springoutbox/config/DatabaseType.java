@@ -10,7 +10,7 @@ public enum DatabaseType {
         try {
             return valueOf(value.toUpperCase());
         } catch (Exception e) {
-            throw new IllegalArgumentException("Unsupported DatabaseType");
+            throw new IllegalArgumentException("Unsupported database '%s'".formatted(value));
         }
     }
 }

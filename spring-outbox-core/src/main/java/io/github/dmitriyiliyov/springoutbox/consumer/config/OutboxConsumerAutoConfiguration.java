@@ -10,7 +10,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
@@ -30,6 +29,7 @@ public class OutboxConsumerAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public ConsumedOutboxRepository consumedOutboxRepository(DataSource dataSource) {
         return ConsumedOutboxRepositoryFactory.generate(dataSource);
     }
@@ -44,7 +44,6 @@ public class OutboxConsumerAutoConfiguration {
         return new CacheableConsumedOutboxManager(cacheManager, cacheProperties.getCacheName(), repository);
     }
 
-    @Primary
     @Bean
     @ConditionalOnMissingBean
     public ConsumedOutboxManager consumedOutboxManager(ConsumedOutboxRepository repository) {

@@ -41,26 +41,31 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxRepository outboxRepository(DataSource dataSource) {
         return OutboxRepositoryFactory.generate(dataSource);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxCache<EventStatus> outboxCache() {
         return new SimpleOutboxCache<>(60, 30, 30);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxManager outboxManager(OutboxRepository repository, OutboxCache<EventStatus> cache) {
         return new DefaultOutboxManager(repository, cache);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxSender outboxSender(ApplicationContext context) {
         return OutboxSenderFactory.generate(properties.getSender(), context, mapper);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxProcessor outboxProcessor(OutboxManager manager, OutboxSender sender) {
         return new DefaultOutboxProcessor(manager, sender);
     }

@@ -25,16 +25,19 @@ import java.util.concurrent.ScheduledExecutorService;
 public class OutboxDlqAutoConfiguration {
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxDlqRepository outboxDlqRepository(DataSource dataSource) {
         return OutboxDlqRepositoryFactory.generate(dataSource);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxCache<DlqStatus> outboxDlqCache() {
         return new SimpleOutboxCache<>(30, 30, 30);
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository, OutboxCache<DlqStatus> cache) {
         return new DefaultOutboxDlqManager(repository, cache);
     }
@@ -46,6 +49,7 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager, OutboxDlqManager dlqManager, OutboxDlqHandler handler,
                                                TransactionTemplate transactionTemplate) {
         return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler);
@@ -77,6 +81,7 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties, MeterRegistry registry, OutboxDlqManager manager) {
         return new OutboxDlqMetrics(registry, properties, manager);
     }
