@@ -1,6 +1,8 @@
 spring:
   application:
     name: spring-outbox-test
+  profiles:
+    active: oracle
 logging:
   level:
     root: info

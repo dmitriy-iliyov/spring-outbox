@@ -47,13 +47,13 @@ public class OutboxDlqRepositoryFactoryUnitTests {
 
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("Oracle");
+        when(metaData.getDatabaseProductName()).thenReturn("casaNdra");
 
         // when + then
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                 () -> OutboxDlqRepositoryFactory.generate(dataSource));
 
-        assertTrue(ex.getMessage().contains("Supplier for OutboxDlqRepository is null for databaseType=ORACLE"));
+        assertTrue(ex.getMessage().contains("Unsupported database 'casaNdra'"));
         verify(connection).close();
     }
 

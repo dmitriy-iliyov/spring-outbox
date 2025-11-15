@@ -10,6 +10,7 @@ import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.support.SimpleCacheManager;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,13 +24,36 @@ import java.util.Map;
 @org.springframework.boot.test.context.TestConfiguration
 public class TestConfiguration {
 
+    @Profile(value = "psql")
     @Bean
-    public DataSource dataSource() {
+    public DataSource psqlDataSource() {
         return DataSourceBuilder.create()
                 .url("jdbc:postgresql://localhost:1428/outbox_test")
                 .username("admin")
                 .password("root")
                 .driverClassName("org.postgresql.Driver")
+                .build();
+    }
+
+    @Profile(value = "mysql")
+    @Bean
+    public DataSource mysqlDataSource() {
+        return DataSourceBuilder.create()
+                .url("jdbc:mysql://localhost:1429/outbox_test?useSSL=false&serverTimezone=UTC")
+                .username("admin")
+                .password("root")
+                .driverClassName("com.mysql.cj.jdbc.Driver")
+                .build();
+    }
+
+    @Profile(value = "oracle")
+    @Bean
+    public DataSource oracleDataSource() {
+        return DataSourceBuilder.create()
+                .url("jdbc:oracle:thin:@//localhost:1430/outbox_test")
+                .username("admin")
+                .password("root")
+                .driverClassName("oracle.jdbc.OracleDriver")
                 .build();
     }
 
@@ -57,8 +81,8 @@ public class TestConfiguration {
     }
 
     @Bean
-    public TransactionTemplate transactionTemplate() {
-        return new TransactionTemplate(new DataSourceTransactionManager(dataSource()));
+    public TransactionTemplate transactionTemplate(DataSource dataSource) {
+        return new TransactionTemplate(new DataSourceTransactionManager(dataSource));
     }
 
     @Bean
