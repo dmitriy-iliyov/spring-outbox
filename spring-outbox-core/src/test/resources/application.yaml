@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-outbox-test
   profiles:
-    active: oracle
+    active: psql
 logging:
   level:
     root: info

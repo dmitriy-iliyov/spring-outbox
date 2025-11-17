@@ -89,7 +89,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         UUID id = UUID.randomUUID();
         DlqStatus status = DlqStatus.RESOLVED;
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
-        when(event.getDlqStatus()).thenReturn(DlqStatus.NEW);
+        when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
 
         when(repository.findById(id)).thenReturn(Optional.of(event));
 
@@ -153,7 +153,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         Set<UUID> ids = Set.of(id);
         BatchUpdateRequest request = new BatchUpdateRequest(ids, DlqStatus.RESOLVED);
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
-        when(event.getDlqStatus()).thenReturn(DlqStatus.NEW);
+        when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
 
         when(repository.findBatch(ids)).thenReturn(List.of(event));
 
@@ -201,7 +201,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         // given
         UUID id = UUID.randomUUID();
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
-        when(event.getDlqStatus()).thenReturn(DlqStatus.NEW);
+        when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
         when(repository.findById(id)).thenReturn(Optional.of(event));
 
         // when
@@ -260,7 +260,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         UUID id = UUID.randomUUID();
         Set<UUID> ids = Set.of(id);
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
-        when(event.getDlqStatus()).thenReturn(DlqStatus.NEW);
+        when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
 
         when(repository.findBatch(ids)).thenReturn(List.of(event));
 
@@ -355,7 +355,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         Set<UUID> ids = Set.of(id1, id2);
 
         OutboxDlqEvent event1 = mock(OutboxDlqEvent.class);
-        when(event1.getDlqStatus()).thenReturn(DlqStatus.NEW);
+        when(event1.getDlqStatus()).thenReturn(DlqStatus.MOVED);
 
         OutboxDlqEvent event2 = mock(OutboxDlqEvent.class);
         when(event2.getDlqStatus()).thenReturn(DlqStatus.RESOLVED);

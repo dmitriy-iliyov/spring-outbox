@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import java.util.Objects;
 
 public enum DlqStatus {
-    NEW, IN_PROCESS, RESOLVED, TO_RETRY;
+    MOVED, IN_PROCESS, RESOLVED, TO_RETRY;
 
     @JsonCreator
     public static DlqStatus fromString(String value) {

@@ -12,32 +12,36 @@ CREATE TABLE IF NOT EXISTS outbox_dlq_events (
     moved_at DATETIME NOT NULL
 );
 
-SELECT COUNT(*) INTO @exists
-FROM INFORMATION_SCHEMA.STATISTICS
-WHERE table_schema = DATABASE()
-  AND table_name = 'outbox_dlq_events'
-  AND index_name = 'idx_outbox_dlq_status';
+SET @exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE table_schema = DATABASE()
+    AND table_name = 'outbox_dlq_events'
+    AND index_name = 'idx_outbox_dlq_count'
+    );
 
-SET @sql = IF(
-    @exists = 0,
-    'CREATE INDEX idx_outbox_dlq_status ON outbox_dlq_events(dlq_status);',
-    'SELECT "idx_outbox_dlq_status exists";'
+SET @sql := IF(@exists = 0,
+    'CREATE INDEX idx_outbox_dlq_count ON outbox_dlq_events(event_type, dlq_status);',
+    'SELECT "idx_outbox_dlq_count exists";'
     );
 
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
-SELECT COUNT(*) INTO @exists
-FROM INFORMATION_SCHEMA.STATISTICS
-WHERE table_schema = DATABASE()
-  AND table_name = 'outbox_dlq_events'
-  AND index_name = 'idx_outbox_dlq_id_status';
+SET @exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE table_schema = DATABASE()
+    AND table_name = 'outbox_dlq_events'
+    AND index_name = 'idx_outbox_dlq_move_to_main'
+    );
 
-SET @sql = IF(
-    @exists = 0,
-    'CREATE INDEX idx_outbox_dlq_id_status ON outbox_dlq_events(id, dlq_status);',
-    'SELECT "idx_outbox_dlq_id_status exists";'
+SET @sql := IF(@exists = 0,
+    'CREATE INDEX idx_outbox_dlq_move_to_main
+         ON outbox_dlq_events(moved_at, id)
+         WHERE dlq_status = ''TO_RETRY'';',
+    'SELECT "idx_outbox_dlq_move_to_main exists";'
     );
 
 PREPARE stmt FROM @sql;

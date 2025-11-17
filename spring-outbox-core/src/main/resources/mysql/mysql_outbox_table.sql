@@ -10,36 +10,68 @@ CREATE TABLE IF NOT EXISTS outbox_events(
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
-SELECT COUNT(*) INTO @exists
-FROM INFORMATION_SCHEMA.STATISTICS
-WHERE table_schema = DATABASE()
-  AND table_name = 'outbox_events'
-  AND index_name = 'idx_outbox_status';
+SET @exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE table_schema = DATABASE()
+    AND table_name = 'outbox_events'
+    AND index_name = 'idx_outbox_count'
+    );
 
-SET @sql = IF(@exists = 0,
-    'CREATE INDEX idx_outbox_status ON outbox_events(status);',
-    'SELECT "idx_outbox_status exists";');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @sql := IF(@exists = 0,
+    'CREATE INDEX idx_outbox_count ON outbox_events(status, event_type);',
+    'SELECT "idx_outbox_count exists";');
 
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-SELECT COUNT(*) INTO @exists
-FROM INFORMATION_SCHEMA.STATISTICS
-WHERE table_schema = DATABASE()
-  AND table_name = 'outbox_events'
-  AND index_name = 'idx_outbox_status_event_type';
+SET @exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE table_schema = DATABASE()
+    AND table_name = 'outbox_events'
+    AND index_name = 'idx_outbox_pool'
+    );
 
-SET @sql = IF(@exists = 0,
-    'CREATE INDEX idx_outbox_status_event_type ON outbox_events(status, event_type);',
-    'SELECT "idx_outbox_status_event_type exists";');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @sql := IF(@exists = 0,
+    'CREATE INDEX idx_outbox_pool ON outbox_events(event_type, next_retry_at, id) WHERE status = ''PENDING'';',
+    'SELECT "idx_outbox_pool exists";');
 
-SELECT COUNT(*) INTO @exists
-FROM INFORMATION_SCHEMA.STATISTICS
-WHERE table_schema = DATABASE()
-  AND table_name = 'outbox_events'
-  AND index_name = 'idx_outbox_status_updated';
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
-SET @sql = IF(@exists = 0,
-    'CREATE INDEX idx_outbox_status_updated ON outbox_events(status, updated_at);',
-    'SELECT "idx_outbox_status_updated exists";');
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+SET @exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE table_schema = DATABASE()
+    AND table_name = 'outbox_events'
+    AND index_name = 'idx_outbox_recover_and_move_to_dlq'
+    );
+
+SET @sql := IF(@exists = 0,
+    'CREATE INDEX idx_outbox_recover_and_move_to_dlq
+         ON outbox_events(updated_at, status, id)
+         WHERE status IN (''IN_PROCESS'',''FAILED'');',
+    'SELECT "idx_outbox_recover_and_move_to_dlq exists";');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @exists := (
+    SELECT COUNT(*)
+    FROM INFORMATION_SCHEMA.STATISTICS
+    WHERE table_schema = DATABASE()
+    AND table_name = 'outbox_events'
+    AND index_name = 'idx_outbox_cleanup'
+    );
+
+SET @sql := IF(@exists = 0,
+    'CREATE INDEX idx_outbox_cleanup ON outbox_events(updated_at, id) WHERE status = ''PROCESSED'';',
+    'SELECT "idx_outbox_cleanup exists";');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;

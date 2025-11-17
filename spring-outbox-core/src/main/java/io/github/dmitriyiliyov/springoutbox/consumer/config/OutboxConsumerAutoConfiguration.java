@@ -59,6 +59,17 @@ public class OutboxConsumerAutoConfiguration {
         return new DefaultOutboxIdempotentConsumer(transactionTemplate, consumedOutboxManager);
     }
 
+    //TODO initialize OutboxEventIdResolver
+
+    @Bean
+    public List<OutboxEventIdResolver<?>> outboxEventIdResolvers() {
+        return List.of(
+                new KafkaOutboxEventIdResolver<>(),
+                new RabbitMqOutboxEventIdResolver(),
+                new MessageOutboxEventIdResolver<>()
+        );
+    }
+
     @Bean
     public OutboxEventIdResolverManager<Object> outboxEventIdResolverManager(List<OutboxEventIdResolver<?>> resolvers) {
         return new OutboxEventIdResolverManager<>(resolvers);

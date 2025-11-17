@@ -119,8 +119,8 @@ public class DefaultOutboxDlqTransferUnitTests {
         assertEquals(2, savedDlqEvents.size());
         assertEquals(eventId1, savedDlqEvents.get(0).getId());
         assertEquals(eventId2, savedDlqEvents.get(1).getId());
-        Assertions.assertEquals(DlqStatus.NEW, savedDlqEvents.get(0).getDlqStatus());
-        assertEquals(DlqStatus.NEW, savedDlqEvents.get(1).getDlqStatus());
+        Assertions.assertEquals(DlqStatus.MOVED, savedDlqEvents.get(0).getDlqStatus());
+        assertEquals(DlqStatus.MOVED, savedDlqEvents.get(1).getDlqStatus());
 
         ArgumentCaptor<Set<UUID>> deleteIdsCaptor = ArgumentCaptor.forClass(Set.class);
         verify(manager).deleteBatch(deleteIdsCaptor.capture());
