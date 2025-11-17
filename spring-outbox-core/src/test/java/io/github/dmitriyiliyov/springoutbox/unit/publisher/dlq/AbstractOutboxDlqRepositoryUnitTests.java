@@ -81,7 +81,7 @@ public class AbstractOutboxDlqRepositoryUnitTests {
     public void findBatch_whenIdsIoToLarge_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 101; i++) {
+        for (int i = 0; i < 1001; i++) {
             ids.add(UUID.randomUUID());
         }
 
@@ -125,7 +125,7 @@ public class AbstractOutboxDlqRepositoryUnitTests {
     public void updateBatchStatus_whenIdsIoToLarge_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 101; i++) {
+        for (int i = 0; i < 1001; i++) {
             ids.add(UUID.randomUUID());
         }
         DlqStatus status = DlqStatus.IN_PROCESS;
@@ -166,7 +166,7 @@ public class AbstractOutboxDlqRepositoryUnitTests {
     public void deleteBatch_whenIdsIoToLarge_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 101; i++) {
+        for (int i = 0; i < 1001; i++) {
             ids.add(UUID.randomUUID());
         }
 

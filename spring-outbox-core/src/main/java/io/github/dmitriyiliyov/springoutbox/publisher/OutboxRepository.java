@@ -26,7 +26,7 @@ public interface OutboxRepository {
 
     void updateBatchStatus(Set<UUID> ids, EventStatus newStatus);
 
-    int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus);
+    int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus);
 
     void partiallyUpdateBatch(List<OutboxEvent> events);
 

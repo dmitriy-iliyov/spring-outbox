@@ -53,7 +53,7 @@ public class AbstractOutboxRepositoryUnitTests {
                     }
 
                     @Override
-                    public int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus) {
+                    public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) {
                         return 0;
                     }
                 }

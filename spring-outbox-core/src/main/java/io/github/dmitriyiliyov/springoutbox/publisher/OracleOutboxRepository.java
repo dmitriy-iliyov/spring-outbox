@@ -13,6 +13,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
+// Oracle 23+
 public class OracleOutboxRepository extends AbstractOutboxRepository {
 
     protected final BytesSqlResultSetMapper mapper;
@@ -96,11 +97,11 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
 
     @Transactional
     @Override
-    public int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus) {
+    public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) {
         String selectSql = """
             SELECT id
             FROM outbox_events
-            WHERE status = ?
+            WHERE status = ? AND updated_at <= ?
             ORDER BY updated_at
             FETCH FIRST ? ROWS ONLY
             FOR UPDATE SKIP LOCKED
@@ -109,7 +110,8 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 selectSql,
                 ps -> {
                     ps.setString(1, status.name());
-                    ps.setInt(2, batchSize);
+                    ps.setTimestamp(2, Timestamp.from(threshold));
+                    ps.setInt(3, batchSize);
                 },
                 (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id")))
         );

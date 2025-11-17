@@ -70,7 +70,8 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 dlqManager.deleteBatch(
                         dlqEvents.stream()
                                 .map(OutboxDlqEvent::getId)
-                                .collect(Collectors.toSet()));
+                                .collect(Collectors.toSet())
+                );
             } catch (Exception e) {
                 log.error("Error when transferring events from DLQ to Outbox", e);
                 throw e;

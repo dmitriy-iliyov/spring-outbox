@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.publisher;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +28,7 @@ public interface OutboxManager {
     void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
                        int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier);
 
-    void recoverStuckBatch(int batchSize);
+    void recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize);
 
     void deleteProcessedBatch(Instant threshold, int batchSize);
 

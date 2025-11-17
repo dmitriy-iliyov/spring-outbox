@@ -92,13 +92,13 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
 
     @Transactional
     @Override
-    public int updateBatchStatusByStatus(EventStatus status, int batchSize, EventStatus newStatus) {
+    public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) {
         String sql = """
             UPDATE outbox_events
                 SET status = ?, updated_at = ?
             WHERE id IN (
                 SELECT id FROM outbox_events
-                WHERE status = ?
+                WHERE status = ? AND updated_at <= ?
                 ORDER BY updated_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
@@ -110,7 +110,8 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                     ps.setString(1, newStatus.name());
                     ps.setTimestamp(2, Timestamp.from(Instant.now()));
                     ps.setString(3, status.name());
-                    ps.setInt(4, batchSize);
+                    ps.setTimestamp(4, Timestamp.from(threshold));
+                    ps.setInt(5, batchSize);
                 }
         );
     }

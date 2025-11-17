@@ -5,6 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.publisher.utils.BytesSqlResultSetMap
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         super(jdbcTemplate, idHelper, mapper);
     }
 
+    @Transactional
     @Override
     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
         String selectSql = """

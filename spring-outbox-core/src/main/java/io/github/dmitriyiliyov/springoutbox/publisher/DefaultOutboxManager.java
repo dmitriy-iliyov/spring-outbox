@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -127,8 +128,13 @@ public class DefaultOutboxManager implements OutboxManager {
     }
 
     @Override
-    public void recoverStuckBatch(int batchSize) {
-        int recoverSize = repository.updateBatchStatusByStatus(EventStatus.IN_PROCESS, batchSize, EventStatus.PENDING);
+    public void recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
+        int recoverSize = repository.updateBatchStatusByStatusAndThreshold(
+                EventStatus.IN_PROCESS,
+                Instant.now().minusSeconds(maxBatchProcessingTime.toSeconds()),
+                batchSize,
+                EventStatus.PENDING
+        );
         if (recoverSize > 0) {
             log.warn("Stuck events batch recovered, recoveredSize={}; batchSize={} ", recoverSize, batchSize);
         }

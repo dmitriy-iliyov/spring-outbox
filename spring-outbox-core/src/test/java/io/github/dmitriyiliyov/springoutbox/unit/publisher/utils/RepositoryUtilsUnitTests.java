@@ -41,7 +41,7 @@ public class RepositoryUtilsUnitTests {
     public void validateIds_whenIdsIsToLarge_shouldReturnFalse() {
         // given
         Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 101; i++) {
+        for (int i = 0; i < 1001; i++) {
             ids.add(UUID.randomUUID());
         }
 

@@ -475,21 +475,25 @@ public class OutboxPublisherProperties {
     public static final class StuckRecoveryProperties {
 
         private static final int DEFAULT_BATCH_SIZE = 100;
+        private static final Duration DEFAULT_MAX_BATCH_PROCESSING_TIME = Duration.ofSeconds(300);
         private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
         private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(1800);
 
         private Integer batchSize;
+        private Duration maxBatchProcessingTime;
         private Duration initialDelay;
         private Duration fixedDelay;
 
         public StuckRecoveryProperties() {
             this.batchSize = DEFAULT_BATCH_SIZE;
+            this.maxBatchProcessingTime = DEFAULT_MAX_BATCH_PROCESSING_TIME;
             this.initialDelay = DEFAULT_INITIAL_DELAY;
             this.fixedDelay = DEFAULT_FIXED_DELAY;
         }
 
         public void initialize() {
             batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
+            maxBatchProcessingTime = maxBatchProcessingTime == null ? DEFAULT_MAX_BATCH_PROCESSING_TIME : maxBatchProcessingTime;
             initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
             fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
         }
@@ -500,6 +504,14 @@ public class OutboxPublisherProperties {
 
         public void setBatchSize(Integer batchSize) {
             this.batchSize = batchSize;
+        }
+
+        public Duration getMaxBatchProcessingTime() {
+            return maxBatchProcessingTime;
+        }
+
+        public void setMaxBatchProcessingTime(Duration maxBatchProcessingTime) {
+            this.maxBatchProcessingTime = maxBatchProcessingTime;
         }
 
         public Duration getInitialDelay() {
