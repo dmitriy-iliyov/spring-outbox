@@ -2,14 +2,32 @@ spring:
   application:
     name: spring-outbox-example
   datasource:
-    url: jdbc:postgresql://localhost:5432/outbox_example
+    url: jdbc:postgresql://localhost:5433/outbox_example
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver
   jpa:
     open-in-view: false
+  data:
+    redis:
+      port: 6379
+      host: localhost
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: analytics
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: "io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto"
+logging:
+  level:
+    org.springframework.kafka: DEBUG
+    org.apache.kafka.clients.consumer: DEBUG
 server:
-  port: 8080
+  port: 8081
 outbox:
   thread-pool-size: 2
   publisher:
@@ -19,3 +37,6 @@ outbox:
     clean-up:
       enabled: true
       ttl: 24h
+    cache:
+      enabled: true
+      cache-name: "outbox:consumed"

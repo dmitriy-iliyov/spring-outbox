@@ -1,13 +1,12 @@
 package io.github.dmitriyiliyov.springoutbox.example;
 
-import io.github.dmitriyiliyov.springoutbox.consumer.OutboxEventIdResolver;
-import io.github.dmitriyiliyov.springoutbox.consumer.OutboxEventIdResolverManager;
 import io.github.dmitriyiliyov.springoutbox.consumer.OutboxIdempotentConsumer;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
 
 
 /**
@@ -17,17 +16,14 @@ import org.springframework.kafka.annotation.KafkaListener;
  * simulating an analytics service that needs to track all order lifecycle events.
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class OrderAnalyticKafkaListener {
 
-    private final OutboxEventIdResolver<Object> eventIdResolver;
-    private final OutboxIdempotentConsumer outboxConsumer;
+    private final OutboxIdempotentConsumer<Object> outboxConsumer;
 
-    @KafkaListener(topics = {"orders.created", "orders.updated", "orders.delete"}, groupId = "analytics")
+    @KafkaListener(topics = {"orders.created", "orders.updated", "orders.deleted"}, groupId = "analytics")
     public void listenCreateOrder(ConsumerRecord<String, OrderDto> record) {
-        outboxConsumer.consume(
-                eventIdResolver.resolve(record),
-                () -> log.info("Analytics receive {}", record.value())
-        );
+        outboxConsumer.consume(record, () -> log.info("Analytics receive {}", record.value()));
     }
 }
