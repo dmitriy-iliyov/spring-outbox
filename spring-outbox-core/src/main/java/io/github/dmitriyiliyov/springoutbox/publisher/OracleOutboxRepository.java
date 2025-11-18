@@ -82,12 +82,15 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
-        List<Object> params = new ArrayList<>();
-        params.add(lockStatus.name());
         Instant updatedAt = Instant.now();
-        params.add(Timestamp.from(updatedAt));
-        params.addAll(idHelper.convertIdsToDbFormat(ids));
-        jdbcTemplate.update(lockSql, params.toArray());
+        jdbcTemplate.update(
+                lockSql,
+                ps -> {
+                    ps.setString(1, lockStatus.name());
+                    ps.setTimestamp(2, Timestamp.from(updatedAt));
+                    idHelper.setIdsToPs(ps, 3, ids);
+                }
+        );
         events.forEach(event -> {
             event.setStatus(lockStatus);
             event.setUpdatedAt(updatedAt);
@@ -123,11 +126,14 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
-        List<Object> params = new ArrayList<>();
-        params.add(newStatus.name());
-        params.add(Timestamp.from(Instant.now()));
-        params.addAll(idHelper.convertIdsToDbFormat(ids));
-        return jdbcTemplate.update(lockSql, params.toArray());
+        return jdbcTemplate.update(
+                lockSql,
+                ps -> {
+                    ps.setString(1, newStatus.name());
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    idHelper.setIdsToPs(ps, 3, ids);
+                }
+        );
     }
 
     @Transactional
@@ -159,7 +165,7 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
         jdbcTemplate.update(
                 deleteSql,
-                idHelper.convertIdsToDbFormat(ids).toArray()
+                ps -> idHelper.setIdsToPs(ps, 1, ids)
         );
     }
 }

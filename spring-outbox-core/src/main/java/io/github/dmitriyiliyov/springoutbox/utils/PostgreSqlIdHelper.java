@@ -13,7 +13,9 @@ public final class PostgreSqlIdHelper implements SqlIdHelper {
     }
 
     @Override
-    public Set<?> convertIdsToDbFormat(Set<UUID> ids) {
-        return Set.of(ids);
+    public void setIdsToPs(PreparedStatement ps, int initialParameterIndex, Set<UUID> ids) throws SQLException {
+        for (UUID id : ids) {
+            ps.setObject(initialParameterIndex++, id);
+        }
     }
 }

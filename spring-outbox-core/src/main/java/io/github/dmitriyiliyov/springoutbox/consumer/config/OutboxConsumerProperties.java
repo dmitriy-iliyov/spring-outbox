@@ -71,7 +71,6 @@ public class OutboxConsumerProperties {
 
         public void initialize() {
             if (enabled != null && enabled) {
-                enabled = true;
                 Objects.requireNonNull(cacheName, "cacheName cannot be null");
                 if (cacheName.isBlank()) {
                     throw new IllegalArgumentException("cacheName cannot be empty or blank");

@@ -7,7 +7,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository {
 
@@ -148,10 +151,13 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
         if (!RepositoryUtils.validateIds(ids)) return;
         String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
-        List<Object> params = new ArrayList<>();
-        params.add(status.name());
-        params.addAll(idHelper.convertIdsToDbFormat(ids));
-        jdbcTemplate.update(sql, params.toArray());
+        jdbcTemplate.update(
+                sql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    idHelper.setIdsToPs(ps, 2, ids);
+                }
+        );
     }
 
     @Transactional
@@ -166,6 +172,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public void deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return;
         String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
-        jdbcTemplate.update(sql, idHelper.convertIdsToDbFormat(ids).toArray());
+        jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

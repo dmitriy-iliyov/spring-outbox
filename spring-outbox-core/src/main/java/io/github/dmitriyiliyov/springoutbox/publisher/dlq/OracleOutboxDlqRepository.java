@@ -7,7 +7,10 @@ import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
@@ -46,10 +49,13 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
                 SET status = ?
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
-        List<Object> params = new ArrayList<>();
-        params.add(lockStatus.name());
-        params.addAll(idHelper.convertIdsToDbFormat(ids));
-        jdbcTemplate.update(lockSql, params.toArray());
+        jdbcTemplate.update(
+                lockSql,
+                ps -> {
+                    ps.setString(1, lockStatus.name());
+                    idHelper.setIdsToPs(ps, 2, ids);
+                }
+        );
         events.forEach(event -> event.setDlqStatus(lockStatus));
         return events;
     }

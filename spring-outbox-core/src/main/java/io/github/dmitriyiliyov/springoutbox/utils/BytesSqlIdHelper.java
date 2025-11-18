@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public abstract class BytesSqlIdHelper implements SqlIdHelper {
 
@@ -16,9 +15,9 @@ public abstract class BytesSqlIdHelper implements SqlIdHelper {
     }
 
     @Override
-    public Set<?> convertIdsToDbFormat(Set<UUID> ids) {
-        return ids.stream()
-                .map(this::uuidToBytes)
-                .collect(Collectors.toSet());
+    public void setIdsToPs(PreparedStatement ps, int initialParameterIndex, Set<UUID> ids) throws SQLException {
+        for (UUID id : ids) {
+            ps.setBytes(initialParameterIndex++, uuidToBytes(id));
+        }
     }
 }

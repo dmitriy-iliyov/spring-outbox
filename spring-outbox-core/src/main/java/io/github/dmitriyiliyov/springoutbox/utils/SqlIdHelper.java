@@ -7,5 +7,5 @@ import java.util.UUID;
 
 public interface SqlIdHelper {
     void setIdToPs(PreparedStatement ps, int parameterIndex, UUID id) throws SQLException;
-    Set<?> convertIdsToDbFormat(Set<UUID> ids);
+    void setIdsToPs(PreparedStatement ps, int initialParameterIndex, Set<UUID> ids) throws SQLException;
 }

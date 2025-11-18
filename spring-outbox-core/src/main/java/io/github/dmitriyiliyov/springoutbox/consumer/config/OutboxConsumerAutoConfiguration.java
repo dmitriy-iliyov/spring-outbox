@@ -54,14 +54,14 @@ public class OutboxConsumerAutoConfiguration {
     }
 
     @Bean
-    public OutboxIdempotentConsumer outboxIdempotentConsumer(ConsumedOutboxManager consumedOutboxManager,
-                                                            TransactionTemplate transactionTemplate) {
-        return new DefaultOutboxIdempotentConsumer(transactionTemplate, consumedOutboxManager);
+    public OutboxIdempotentConsumer<Object> outboxIdempotentConsumer(@Qualifier("outboxEventIdResolverManager") OutboxEventIdResolver<Object> idResolver,
+                                                             TransactionTemplate transactionTemplate,
+                                                             ConsumedOutboxManager consumedOutboxManager) {
+        return new DefaultOutboxIdempotentConsumer<>(idResolver, transactionTemplate, consumedOutboxManager);
     }
 
-    //TODO initialize OutboxEventIdResolver
-
     @Bean
+    @ConditionalOnMissingBean
     public List<OutboxEventIdResolver<?>> outboxEventIdResolvers() {
         return List.of(
                 new KafkaOutboxEventIdResolver<>(),
@@ -71,6 +71,7 @@ public class OutboxConsumerAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean
     public OutboxEventIdResolverManager<Object> outboxEventIdResolverManager(List<OutboxEventIdResolver<?>> resolvers) {
         return new OutboxEventIdResolverManager<>(resolvers);
     }

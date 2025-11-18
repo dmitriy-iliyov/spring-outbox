@@ -6,20 +6,24 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.UUID;
 
-public class DefaultOutboxIdempotentConsumer implements OutboxIdempotentConsumer {
+public class DefaultOutboxIdempotentConsumer<T> implements OutboxIdempotentConsumer<T> {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxIdempotentConsumer.class);
 
+    private final OutboxEventIdResolver<T> idResolver;
     private final TransactionTemplate transactionTemplate;
     private final ConsumedOutboxManager consumedOutboxManager;
 
-    public DefaultOutboxIdempotentConsumer(TransactionTemplate transactionTemplate, ConsumedOutboxManager consumedOutboxManager) {
+    public DefaultOutboxIdempotentConsumer(OutboxEventIdResolver<T> idResolver, TransactionTemplate transactionTemplate,
+                                           ConsumedOutboxManager consumedOutboxManager) {
+        this.idResolver = idResolver;
         this.transactionTemplate = transactionTemplate;
         this.consumedOutboxManager = consumedOutboxManager;
     }
 
     @Override
-    public void consume(UUID eventId, Runnable runnable) {
+    public void consume(T message, Runnable runnable) {
+        UUID eventId = idResolver.resolve(message);
         try {
             transactionTemplate.executeWithoutResult(status -> {
                 if (!consumedOutboxManager.isConsumed(eventId)) {

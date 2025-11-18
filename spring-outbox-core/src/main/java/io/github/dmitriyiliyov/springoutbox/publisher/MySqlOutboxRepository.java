@@ -10,7 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 // only for MySql 8.0.0+
@@ -82,12 +85,15 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
         """.formatted(RepositoryUtils.generatePlaceholders(ids));
-        List<Object> params = new ArrayList<>();
-        params.add(lockStatus.name());
         Instant updatedAt = Instant.now();
-        params.add(Timestamp.from(updatedAt));
-        params.addAll(idHelper.convertIdsToDbFormat(ids));
-        jdbcTemplate.update(lockSql, params.toArray());
+        jdbcTemplate.update(
+                lockSql,
+                ps -> {
+                    ps.setString(1, lockStatus.name());
+                    ps.setTimestamp(2, Timestamp.from(updatedAt));
+                    idHelper.setIdsToPs(ps, 3, ids);
+                }
+        );
         events.forEach(event -> {
             event.setStatus(lockStatus);
             event.setUpdatedAt(updatedAt);

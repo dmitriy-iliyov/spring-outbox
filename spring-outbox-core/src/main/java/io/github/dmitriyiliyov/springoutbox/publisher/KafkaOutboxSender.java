@@ -12,10 +12,7 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -63,6 +60,6 @@ public class KafkaOutboxSender implements OutboxSender {
             }
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        return new SenderResult(processedIds, failedIds);
+        return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
     }
 }

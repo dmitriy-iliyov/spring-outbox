@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -120,18 +119,19 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         }
         String placeholders = RepositoryUtils.generatePlaceholders(ids);
         String sql;
-        List<Object> params = new ArrayList<>();
         if (newStatus.equals(EventStatus.PROCESSED)) {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
-            params.add(newStatus.name());
-            params.add(Timestamp.from(Instant.now()));
-            params.addAll(idHelper.convertIdsToDbFormat(ids));
         } else {
-            sql = "UPDATE outbox_events SET status = ? WHERE id IN (" + placeholders + ")";
-            params.add(newStatus.name());
-            params.addAll(idHelper.convertIdsToDbFormat(ids));
+            sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
         }
-        jdbcTemplate.update(sql, params.toArray());
+        jdbcTemplate.update(
+                sql,
+                ps -> {
+                    ps.setString(1, newStatus.name());
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    idHelper.setIdsToPs(ps, 3, ids);
+                }
+        );
     }
 
     @Transactional
@@ -165,6 +165,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     public void deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.validateIds(ids)) return;
         String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generatePlaceholders(ids));
-        jdbcTemplate.update(sql, idHelper.convertIdsToDbFormat(ids).toArray());
+        jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }
