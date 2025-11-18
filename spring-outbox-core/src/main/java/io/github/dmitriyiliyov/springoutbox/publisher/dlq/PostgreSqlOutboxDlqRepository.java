@@ -20,15 +20,16 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
     @Override
     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
         String sql = """
-            UPDATE outbox_dlq_events
-                SET status = ?
-            WHERE id IN(
+            WITH to_lock AS (
                 SELECT id FROM outbox_dlq_events
                 WHERE dlq_status = ?
                 ORDER BY moved_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
+            UPDATE outbox_dlq_events
+                SET status = ?
+            WHERE id IN(SELECT id FROM to_lock)
             RETURNING id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
         """;
         return jdbcTemplate.query(

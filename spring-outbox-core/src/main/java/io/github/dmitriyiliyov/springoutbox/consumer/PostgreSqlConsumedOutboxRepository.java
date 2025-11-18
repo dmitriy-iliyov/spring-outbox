@@ -36,8 +36,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
     @Override
     public void deleteBatchByThreshold(Instant threshold, int batchSize) {
         String sql = """
-            DELETE FROM outbox_consumed_events
-            WHERE id IN (
+            WITH to_delete AS (
                 SELECT id 
                 FROM outbox_consumed_events 
                 WHERE consumed_at < ?
@@ -45,6 +44,8 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
+            DELETE FROM outbox_consumed_events
+            WHERE id IN (SELECT id FROM to_delete)
         """;
         jdbcTemplate.update(
                 sql,

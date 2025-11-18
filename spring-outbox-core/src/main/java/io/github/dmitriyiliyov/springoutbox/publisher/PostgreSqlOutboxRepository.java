@@ -38,15 +38,16 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
     public List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize,
                                                                   EventStatus lockStatus) {
         String sql = """
-            UPDATE outbox_events
-                SET status = ?, updated_at = ?
-            WHERE id IN(
+            WITH to_lock AS (
                 SELECT id FROM outbox_events
                 WHERE event_type = ? AND status = ? AND next_retry_at <= ?
                 ORDER BY next_retry_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
+            UPDATE outbox_events
+                SET status = ?, updated_at = ?
+            WHERE id IN(SELECT id FROM to_lock)
             RETURNING id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
         """;
         return jdbcTemplate.query(
@@ -67,15 +68,16 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
     @Override
     public List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus) {
         String sql = """
-            UPDATE outbox_events
-                SET status = ?, updated_at = ?
-            WHERE id IN(
+            WITH to_lock AS (
                 SELECT id FROM outbox_events
                 WHERE status = ?
                 ORDER BY updated_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
+            UPDATE outbox_events
+                SET status = ?, updated_at = ?
+            WHERE id IN(SELECT id FROM to_lock)
             RETURNING id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at
         """;
         return jdbcTemplate.query(
@@ -94,15 +96,16 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
     @Override
     public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) {
         String sql = """
-            UPDATE outbox_events
-                SET status = ?, updated_at = ?
-            WHERE id IN (
+            WITH to_update AS (
                 SELECT id FROM outbox_events
                 WHERE status = ? AND updated_at <= ?
                 ORDER BY updated_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
+            UPDATE outbox_events
+                SET status = ?, updated_at = ?
+            WHERE id IN (SELECT id FROM to_update)
         """;
         return jdbcTemplate.update(
                 sql,
@@ -120,14 +123,15 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
     @Override
     public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String sql = """
-            DELETE FROM outbox_events 
-            WHERE id IN (
+            WITH to_delete AS (
                 SELECT id FROM outbox_events 
                 WHERE status = ? AND updated_at <= ?
                 ORDER BY updated_at
                 LIMIT ?
                 FOR UPDATE SKIP LOCKED
             )
+            DELETE FROM outbox_events 
+            WHERE id IN (SELECT id FROM to_delete)
         """;
         jdbcTemplate.update(
                 sql,
