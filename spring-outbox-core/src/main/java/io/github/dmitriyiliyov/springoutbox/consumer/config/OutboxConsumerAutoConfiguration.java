@@ -1,7 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.consumer.config;
 
+import io.github.dmitriyiliyov.springoutbox.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.consumer.*;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -54,9 +56,10 @@ public class OutboxConsumerAutoConfiguration {
     }
 
     @Bean
-    public OutboxIdempotentConsumer<Object> outboxIdempotentConsumer(@Qualifier("outboxEventIdResolverManager") OutboxEventIdResolver<Object> idResolver,
-                                                             TransactionTemplate transactionTemplate,
-                                                             ConsumedOutboxManager consumedOutboxManager) {
+    public OutboxIdempotentConsumer<Object> outboxIdempotentConsumer(@Qualifier("defaultOutboxEventIdResolvingManager")
+                                                                         OutboxEventIdResolvingManager<Object> idResolver,
+                                                                     TransactionTemplate transactionTemplate,
+                                                                     ConsumedOutboxManager consumedOutboxManager) {
         return new DefaultOutboxIdempotentConsumer<>(idResolver, transactionTemplate, consumedOutboxManager);
     }
 
@@ -72,14 +75,21 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxEventIdResolverManager<Object> outboxEventIdResolverManager(List<OutboxEventIdResolver<?>> resolvers) {
-        return new OutboxEventIdResolverManager<>(resolvers);
+    public OutboxEventIdResolvingManager<Object> defaultOutboxEventIdResolvingManager(List<OutboxEventIdResolver<?>> resolvers) {
+        return new DefaultOutboxEventIdResolvingManager<>(resolvers);
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "outbox.consumer.clean-up", name = "enabled", havingValue = "true")
-    public OutboxScheduler consumedOutboxCleanUpScheduler(@Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
+    public OutboxScheduler consumedOutboxCleanUpScheduler(@Qualifier("outboxScheduledExecutorService")
+                                                              ScheduledExecutorService executor,
                                                           ConsumedOutboxManager consumedOutboxManager) {
         return new ConsumedOutboxCleanUpScheduler(properties.getCleanUp(), executor, consumedOutboxManager);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public OutboxMetrics consumedOutboxMetrics(ConsumedOutboxManager manager, MeterRegistry meterRegistry) {
+        return new ConsumerOutboxMetrics(manager, meterRegistry);
     }
 }

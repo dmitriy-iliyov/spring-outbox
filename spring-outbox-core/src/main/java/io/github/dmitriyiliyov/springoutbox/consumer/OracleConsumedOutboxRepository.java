@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.BytesSqlResultSetMapper;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -66,13 +66,13 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
                         (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id"))
                 )
         );
-        if (!RepositoryUtils.validateIds(ids)) {
+        if (!RepositoryUtils.isIdsValid(ids)) {
             return;
         }
         String deleteSql = """
             DELETE FROM consumed_outbox_events
             WHERE id IN(%s)
-        """.formatted(RepositoryUtils.generatePlaceholders(ids));
-        jdbcTemplate.update(deleteSql, idHelper.convertIdsToDbFormat(ids).toArray());
+        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
+        jdbcTemplate.update(deleteSql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

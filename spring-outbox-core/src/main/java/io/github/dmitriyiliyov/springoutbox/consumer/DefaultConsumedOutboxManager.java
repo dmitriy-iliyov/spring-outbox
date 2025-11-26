@@ -2,7 +2,9 @@ package io.github.dmitriyiliyov.springoutbox.consumer;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
@@ -16,6 +18,11 @@ public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
     @Override
     public boolean isConsumed(UUID id) {
         return repository.saveIfAbsent(id) == 0;
+    }
+
+    @Override
+    public Set<UUID> filterConsumed(Set<UUID> ids) {
+        return repository.saveIfAbsent(ids);
     }
 
     @Override
