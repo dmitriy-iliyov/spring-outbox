@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.unit.publisher.utils;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -15,22 +15,22 @@ public class RepositoryUtilsUnitTests {
 
     @Test
     @DisplayName("UT validateIds() when ids is null, should throws")
-    public void validateIds_whenIdsIsNull_shouldThrows() {
+    public void isIds_whenIdsValidIsNull_shouldThrows() {
         // given
         Set<UUID> ids = null;
 
         // when + then
-        assertThrows(NullPointerException.class, () -> RepositoryUtils.validateIds(ids));
+        assertThrows(NullPointerException.class, () -> RepositoryUtils.isIdsValid(ids));
     }
 
     @Test
     @DisplayName("UT validateIds() when ids is empty, should return false")
-    public void validateIds_whenIdsIsEmpty_shouldReturnFalse() {
+    public void isIds_whenIdsValidIsEmpty_shouldReturnFalse() {
         // given
         Set<UUID> ids = Set.of();
 
         // when
-        boolean result = RepositoryUtils.validateIds(ids);
+        boolean result = RepositoryUtils.isIdsValid(ids);
 
         // then
         assertFalse(result);
@@ -38,7 +38,7 @@ public class RepositoryUtilsUnitTests {
 
     @Test
     @DisplayName("UT validateIds() when ids is to large, should return false")
-    public void validateIds_whenIdsIsToLarge_shouldReturnFalse() {
+    public void isIds_whenIdsValidIsToLarge_shouldReturnFalse() {
         // given
         Set<UUID> ids = new HashSet<>();
         for (int i = 0; i < 1001; i++) {
@@ -46,7 +46,7 @@ public class RepositoryUtilsUnitTests {
         }
 
         // when
-        boolean result = RepositoryUtils.validateIds(ids);
+        boolean result = RepositoryUtils.isIdsValid(ids);
 
         // then
         assertFalse(result);
@@ -54,12 +54,12 @@ public class RepositoryUtilsUnitTests {
 
     @Test
     @DisplayName("UT generatePlaceholders(), should return placeholder")
-    public void generatePlaceholders_shouldGeneratePlaceholders() {
+    public void generatePlaceholders_shouldGenerateIdsPlaceholders() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
 
         // when
-        String result = RepositoryUtils.generatePlaceholders(ids);
+        String result = RepositoryUtils.generateIdsPlaceholders(ids);
 
         // then
         assertFalse(result.isBlank());
