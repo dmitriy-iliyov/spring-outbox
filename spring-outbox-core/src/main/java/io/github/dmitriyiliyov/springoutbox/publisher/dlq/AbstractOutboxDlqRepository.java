@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -94,12 +94,12 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Transactional
     @Override
     public List<OutboxDlqEvent> findBatch(Set<UUID> ids) {
-        if (!RepositoryUtils.validateIds(ids)) return List.of();
+        if (!RepositoryUtils.isIdsValid(ids)) return List.of();
         String sql = """
             SELECT id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE id IN (%s)
-        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         return jdbcTemplate.query(
                 sql,
                 ps -> {
@@ -149,8 +149,8 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Transactional
     @Override
     public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
-        if (!RepositoryUtils.validateIds(ids)) return;
-        String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
+        if (!RepositoryUtils.isIdsValid(ids)) return;
+        String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generateIdsPlaceholders(ids) + ")";
         jdbcTemplate.update(
                 sql,
                 ps -> {
@@ -170,8 +170,8 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Transactional
     @Override
     public void deleteBatch(Set<UUID> ids) {
-        if (!RepositoryUtils.validateIds(ids)) return;
-        String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generatePlaceholders(ids) + ")";
+        if (!RepositoryUtils.isIdsValid(ids)) return;
+        String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generateIdsPlaceholders(ids) + ")";
         jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
@@ -113,11 +113,11 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     @Transactional
     @Override
     public void updateBatchStatus(Set<UUID> ids, EventStatus newStatus) {
-        if (!RepositoryUtils.validateIds(ids)) return;
+        if (!RepositoryUtils.isIdsValid(ids)) return;
         if (newStatus.equals(EventStatus.FAILED)) {
             throw new IllegalArgumentException("Use partiallyUpdateBatch() for update FAILED batch");
         }
-        String placeholders = RepositoryUtils.generatePlaceholders(ids);
+        String placeholders = RepositoryUtils.generateIdsPlaceholders(ids);
         String sql;
         if (newStatus.equals(EventStatus.PROCESSED)) {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
@@ -163,8 +163,8 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     @Transactional
     @Override
     public void deleteBatch(Set<UUID> ids) {
-        if (!RepositoryUtils.validateIds(ids)) return;
-        String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generatePlaceholders(ids));
+        if (!RepositoryUtils.isIdsValid(ids)) return;
+        String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

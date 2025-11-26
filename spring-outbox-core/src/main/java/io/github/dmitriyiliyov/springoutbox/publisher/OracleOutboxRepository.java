@@ -3,7 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.publisher;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.BytesSqlResultSetMapper;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,14 +74,14 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         Set<UUID> ids = events.stream()
                 .map(OutboxEvent::getId)
                 .collect(Collectors.toSet());
-        if (!RepositoryUtils.validateIds(ids)) {
+        if (!RepositoryUtils.isIdsValid(ids)) {
             return Collections.emptyList();
         }
         String lockSql = """
             UPDATE outbox_events
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
-        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         Instant updatedAt = Instant.now();
         jdbcTemplate.update(
                 lockSql,
@@ -118,14 +118,14 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 },
                 (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id")))
         );
-        if (!RepositoryUtils.validateIds(ids)) {
+        if (!RepositoryUtils.isIdsValid(ids)) {
             return 0;
         }
         String lockSql = """
             UPDATE outbox_events
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
-        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         return jdbcTemplate.update(
                 lockSql,
                 ps -> {
@@ -156,13 +156,13 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 },
                 (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id")))
         );
-        if (!RepositoryUtils.validateIds(ids)) {
+        if (!RepositoryUtils.isIdsValid(ids)) {
             return;
         }
         String deleteSql = """
             DELETE FROM outbox_events
             WHERE id IN (%s)
-        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         jdbcTemplate.update(
                 deleteSql,
                 ps -> idHelper.setIdsToPs(ps, 1, ids)

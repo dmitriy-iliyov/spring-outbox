@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,14 +41,14 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
         Set<UUID> ids = events.stream()
                 .map(OutboxEvent::getId)
                 .collect(Collectors.toSet());
-        if (!RepositoryUtils.validateIds(ids)) {
+        if (!RepositoryUtils.isIdsValid(ids)) {
             return Collections.emptyList();
         }
         String lockSql = """
             UPDATE outbox_dlq_events
                 SET status = ?
             WHERE id IN (%s)
-        """.formatted(RepositoryUtils.generatePlaceholders(ids));
+        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         jdbcTemplate.update(
                 lockSql,
                 ps -> {
