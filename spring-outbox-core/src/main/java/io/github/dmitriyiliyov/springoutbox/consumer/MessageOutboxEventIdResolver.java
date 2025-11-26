@@ -20,7 +20,7 @@ public class MessageOutboxEventIdResolver<T> implements OutboxEventIdResolver<Me
     }
 
     @Override
-    public boolean supports(Class<?> c) {
-        return Message.class.isAssignableFrom(c);
+    public Class<?> getSupports() {
+        return Message.class;
     }
 }

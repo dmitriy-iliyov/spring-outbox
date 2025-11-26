@@ -26,7 +26,7 @@ public class RabbitMqOutboxEventIdResolver implements OutboxEventIdResolver<Mess
     }
 
     @Override
-    public boolean supports(Class<?> c) {
-        return Message.class.isAssignableFrom(c);
+    public Class<?> getSupports() {
+        return Message.class;
     }
 }

@@ -23,8 +23,7 @@ public class KafkaOutboxEventIdResolver<T> implements OutboxEventIdResolver<Cons
     }
 
     @Override
-    public boolean supports(Class<?> c) {
-        return ConsumerRecord.class.isAssignableFrom(c);
+    public Class<?> getSupports() {
+        return ConsumerRecord.class;
     }
-
 }
