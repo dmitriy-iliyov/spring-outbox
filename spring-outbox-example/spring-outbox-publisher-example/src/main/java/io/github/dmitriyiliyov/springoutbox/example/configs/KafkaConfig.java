@@ -25,7 +25,7 @@ public class KafkaConfig {
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         properties.put(ProducerConfig.ACKS_CONFIG, "all");
         properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-        properties.put(ProducerConfig.LINGER_MS_CONFIG, 200);
+        properties.put(ProducerConfig.LINGER_MS_CONFIG, 1000);
         ProducerFactory<String, Object> producerFactory = new DefaultKafkaProducerFactory<>(properties);
         return new KafkaTemplate<>(producerFactory);
     }

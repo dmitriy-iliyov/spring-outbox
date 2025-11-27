@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.utils.BytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.BytesSqlIdHelper;
+import io.github.dmitriyiliyov.springoutbox.utils.BytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;

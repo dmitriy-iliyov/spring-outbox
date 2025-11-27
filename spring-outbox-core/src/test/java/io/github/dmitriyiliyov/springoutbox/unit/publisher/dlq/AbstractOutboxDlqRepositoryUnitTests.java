@@ -3,7 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.unit.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.AbstractOutboxDlqRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.ResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

@@ -2,8 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
+import io.github.dmitriyiliyov.springoutbox.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
