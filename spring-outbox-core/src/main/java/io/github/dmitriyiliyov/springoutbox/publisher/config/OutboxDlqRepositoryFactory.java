@@ -6,8 +6,8 @@ import io.github.dmitriyiliyov.springoutbox.publisher.dlq.MySqlOutboxDlqReposito
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OracleOutboxDlqRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.PostgreSqlOutboxDlqRepository;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.DefaultBytesSqlResultSetMapper;
-import io.github.dmitriyiliyov.springoutbox.publisher.utils.DefaultResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.utils.DefaultResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.utils.MySqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.utils.OracleSqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.utils.PostgreSqlIdHelper;

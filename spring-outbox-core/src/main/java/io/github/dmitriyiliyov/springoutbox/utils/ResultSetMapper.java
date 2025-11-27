@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.publisher.utils;
+package io.github.dmitriyiliyov.springoutbox.utils;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;

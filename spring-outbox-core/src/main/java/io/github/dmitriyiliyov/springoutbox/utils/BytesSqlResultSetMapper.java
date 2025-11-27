@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.publisher.utils;
+package io.github.dmitriyiliyov.springoutbox.utils;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqEvent;
@@ -9,12 +9,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public final class DefaultResultSetMapper implements ResultSetMapper {
+public abstract class BytesSqlResultSetMapper implements ResultSetMapper {
 
     @Override
     public OutboxEvent toEvent(ResultSet rs) throws SQLException {
         return new OutboxEvent(
-                rs.getObject("id", UUID.class),
+                fromBytesToUuid(rs.getBytes("id")),
                 EventStatus.fromString(rs.getString("status")),
                 rs.getString("event_type"),
                 rs.getString("payload_type"),
@@ -29,7 +29,7 @@ public final class DefaultResultSetMapper implements ResultSetMapper {
     @Override
     public OutboxDlqEvent toDlqEvent(ResultSet rs) throws SQLException {
         return new OutboxDlqEvent(
-                rs.getObject("id", UUID.class),
+                fromBytesToUuid(rs.getBytes("id")),
                 EventStatus.fromString(rs.getString("status")),
                 rs.getString("event_type"),
                 rs.getString("payload_type"),
@@ -42,4 +42,6 @@ public final class DefaultResultSetMapper implements ResultSetMapper {
                 rs.getTimestamp("moved_at").toInstant()
         );
     }
+
+    public abstract UUID fromBytesToUuid(byte [] bytes);
 }
