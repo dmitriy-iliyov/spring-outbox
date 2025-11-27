@@ -48,7 +48,9 @@ public class DefaultOutboxIdempotentConsumer<T> implements OutboxIdempotentConsu
             transactionTemplate.executeWithoutResult(status -> {
                 Set<UUID> alreadyConsumedIds = consumedOutboxManager.filterConsumed(messageMap.keySet());
                 alreadyConsumedIds.forEach(messageMap::remove);
-                operation.accept((List<T>) messageMap.values());
+                if (!messageMap.isEmpty()) {
+                    operation.accept((List<T>) messageMap.values());
+                }
             });
         } catch(Exception e) {
             log.error("Failed check batch idempotence and execute operation", e);
