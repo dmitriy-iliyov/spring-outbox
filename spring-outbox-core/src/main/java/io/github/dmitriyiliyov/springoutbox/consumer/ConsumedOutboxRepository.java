@@ -18,7 +18,7 @@ public interface ConsumedOutboxRepository {
      * Saves multiple ids into the consumed outbox events if they do not already exist.
      *
      * @param ids a set of UUIDs to save
-     * @return a set of UUIDs that already existed in the table prior to this operation
+     * @return a set of UUIDs that inserted into the consumed outbox events table
      */
     Set<UUID> saveIfAbsent(Set<UUID> ids);
 

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
@@ -42,33 +43,26 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
         if (!RepositoryUtils.isIdsValid(ids)) {
             return Collections.emptySet();
         }
-        String existedIdsSql = """
-            SELECT id 
-            FROM outbox_consumed_events 
-            WHERE id IN (%s)
-        """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
-        List<UUID> existedIds = jdbcTemplate.query(
-                existedIdsSql,
-                ps -> idHelper.setIdsToPs(ps, 1, ids),
-                (rs, rowNum) -> rs.getObject("id", UUID.class)
-        );
-        String updateSql = """
+        String sql = """
                 INSERT INTO outbox_consumed_events (id, consumed_at) 
                 VALUES %s 
                 ON CONFLICT (id) DO NOTHING
+                RETURNING id
         """.formatted(RepositoryUtils.generateValuesPlaceholders(ids, 2));
         Instant consumedAt = Instant.now();
-        jdbcTemplate.update(
-                updateSql,
-                ps -> {
-                    int paramId = 1;
-                    for (UUID id : ids) {
-                        ps.setObject(paramId++, id);
-                        ps.setTimestamp(paramId++, Timestamp.from(consumedAt));
-                    }
-                }
+        return new HashSet<>(
+                jdbcTemplate.query(
+                        sql,
+                        ps -> {
+                            int paramId = 1;
+                            for (UUID id : ids) {
+                                ps.setObject(paramId++, id);
+                                ps.setTimestamp(paramId++, Timestamp.from(consumedAt));
+                            }
+                        },
+                        (rs, rowNum) -> rs.getObject("id", UUID.class)
+                )
         );
-        return new HashSet<>(existedIds);
     }
 
     @Transactional

@@ -43,15 +43,15 @@ public class DefaultOutboxIdempotentConsumer<T> implements OutboxIdempotentConsu
 
     @Override
     public void consume(List<T> messages, Consumer<List<T>> operation) {
-        Map<UUID, T> eventIds = resolvingManager.resolve(messages);
+        Map<UUID, T> messageMap = resolvingManager.resolve(messages);
         try {
             transactionTemplate.executeWithoutResult(status -> {
-                Set<UUID> pastConsumedIds = consumedOutboxManager.filterConsumed(eventIds.keySet());
-                pastConsumedIds.forEach(eventIds::remove);
-                operation.accept((List<T>) eventIds.values());
+                Set<UUID> alreadyConsumedIds = consumedOutboxManager.filterConsumed(messageMap.keySet());
+                alreadyConsumedIds.forEach(messageMap::remove);
+                operation.accept((List<T>) messageMap.values());
             });
         } catch(Exception e) {
-            log.error("Failed check idempotence and execute operation", e);
+            log.error("Failed check batch idempotence and execute operation", e);
             throw new RuntimeException(e);
         }
     }
