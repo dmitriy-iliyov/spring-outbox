@@ -33,11 +33,11 @@ public class OutboxPublishAspect {
             argNames = "joinPoint,outboxPublish,result"
     )
     public void advice(JoinPoint joinPoint, OutboxPublish outboxPublish, Object result) {
-        StandardEvaluationContext context = getContext(joinPoint);
-        context.setVariable("result", result);
         Object payload = result;
         String spelPayload = outboxPublish.payload();
         if (spelPayload != null && !spelPayload.isBlank() && !spelPayload.equals("#result")) {
+            StandardEvaluationContext context = getContext(joinPoint);
+            context.setVariable("result", result);
             payload = expressionParser.parseExpression(spelPayload).getValue(context);
         }
         Objects.requireNonNull(payload, "payload cannot be null");
@@ -63,3 +63,4 @@ public class OutboxPublishAspect {
         return context;
     }
 }
+

@@ -34,7 +34,7 @@ public class OutboxPublishAspectUnitTests {
     @DisplayName("UT publishEvent(), payload = result, single object, should publish RowOutboxEvent with correct payload")
     void publishEvent_whenPayloadIsResultSingle_shouldAdvice() {
         // given
-        JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
+        JoinPoint joinPoint = mock(JoinPoint.class);
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
         when(outboxPublish.payload()).thenReturn("#result");
         when(outboxPublish.eventType()).thenReturn("EVENT");
@@ -55,7 +55,7 @@ public class OutboxPublishAspectUnitTests {
     @DisplayName("UT publishEvent(), payload = result, list, should publish RowOutboxEvents with correct payload")
     void publishEvent_whenPayloadIsResultList_shouldPublishRowOutboxEvents() {
         // given
-        JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
+        JoinPoint joinPoint = mock(JoinPoint.class);
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
         when(outboxPublish.payload()).thenReturn("#result");
         when(outboxPublish.eventType()).thenReturn("EVENT");
@@ -116,7 +116,7 @@ public class OutboxPublishAspectUnitTests {
     @DisplayName("UT publishEvent(), null result should throw NullPointerException")
     void advice_whenResultIsNull_shouldThrowNPE() {
         // given
-        JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
+        JoinPoint joinPoint =  mock(JoinPoint.class);
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
 
         // when + then
@@ -127,7 +127,7 @@ public class OutboxPublishAspectUnitTests {
     @DisplayName("UT publishEvent(), blank SpEL should use result directly")
     void advice_whenBlankSpEL_shouldUseResult() {
         // given
-        JoinPoint joinPoint = mockJoinPointWithEmptyArgs();
+        JoinPoint joinPoint =  mock(JoinPoint.class);
         OutboxPublish outboxPublish = mock(OutboxPublish.class);
         when(outboxPublish.payload()).thenReturn("  ");
         when(outboxPublish.eventType()).thenReturn("EVENT");
@@ -144,6 +144,39 @@ public class OutboxPublishAspectUnitTests {
         assertEquals(result, event.event());
     }
 
+    @Test
+    @DisplayName("UT getContext(), when paramNames.lengths > args.length")
+    public void getContext_whenParamNamesIsBiggerThenArgsCount() {
+        // given
+        Object result = new Object();
+        JoinPoint joinPoint = mockJoinPointWithArgs(new String[]{"id"}, new Object[]{result, new Object()});
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("#id");
+        when(outboxPublish.eventType()).thenReturn("EVENT");
+
+        // when
+        tested.advice(joinPoint, outboxPublish, result);
+
+        // then
+        ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
+        RowOutboxEvent event = captor.getValue();
+        assertEquals("EVENT", event.eventType());
+        assertEquals(result, event.event());
+    }
+
+    @Test
+    @DisplayName("UT getContext(), when paramNames is null should go to else and then throws NullPointerException in advice()")
+    public void getContext_whenParamNamesIsNull_shouldEventuallyThrows() {
+        // given
+        JoinPoint joinPoint = mockJoinPointWithArgs(null, new Object[]{new Object(), new Object()});
+        OutboxPublish outboxPublish = mock(OutboxPublish.class);
+        when(outboxPublish.payload()).thenReturn("#id");
+
+        // when + then
+        assertThrows(NullPointerException.class, () -> tested.advice(joinPoint, outboxPublish, null));
+    }
+
     private JoinPoint mockJoinPointWithArgs(String[] paramNames, Object[] args) {
         JoinPoint joinPoint = mock(JoinPoint.class);
         MethodSignature signature = mock(MethodSignature.class);
@@ -151,9 +184,5 @@ public class OutboxPublishAspectUnitTests {
         when(signature.getParameterNames()).thenReturn(paramNames);
         when(joinPoint.getArgs()).thenReturn(args);
         return joinPoint;
-    }
-
-    private JoinPoint mockJoinPointWithEmptyArgs() {
-        return mockJoinPointWithArgs(null, new Object[]{});
     }
 }
