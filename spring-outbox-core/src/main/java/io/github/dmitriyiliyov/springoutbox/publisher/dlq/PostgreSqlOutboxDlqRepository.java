@@ -35,9 +35,9 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         return jdbcTemplate.query(
                 sql,
                 ps -> {
-                    ps.setString(1, lockStatus.name());
-                    ps.setString(2, status.name());
-                    ps.setInt(3, batchSize);
+                    ps.setString(1, status.name());
+                    ps.setInt(2, batchSize);
+                    ps.setString(3, lockStatus.name());
                 },
                 (rs, rowNum) -> mapper.toDlqEvent(rs)
         );

@@ -53,12 +53,12 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
         return jdbcTemplate.query(
                 sql,
                 ps -> {
-                    ps.setString(1, lockStatus.name());
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
-                    ps.setString(3, eventType);
-                    ps.setString(4, status.name());
-                    ps.setTimestamp(5, Timestamp.from(Instant.now()));
-                    ps.setInt(6, batchSize);
+                    ps.setString(1, eventType);
+                    ps.setString(2, status.name());
+                    ps.setTimestamp(3, Timestamp.from(Instant.now()));
+                    ps.setInt(4, batchSize);
+                    ps.setString(5, lockStatus.name());
+                    ps.setTimestamp(6, Timestamp.from(Instant.now()));
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
         );
@@ -83,10 +83,10 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
         return jdbcTemplate.query(
                 sql,
                 ps -> {
-                    ps.setString(1, lockStatus.name());
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
-                    ps.setString(3, status.name());
-                    ps.setInt(4, batchSize);
+                    ps.setString(1, status.name());
+                    ps.setInt(2, batchSize);
+                    ps.setString(3, lockStatus.name());
+                    ps.setTimestamp(4, Timestamp.from(Instant.now()));
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
         );
@@ -110,11 +110,11 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
         return jdbcTemplate.update(
                 sql,
                 ps -> {
-                    ps.setString(1, newStatus.name());
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
-                    ps.setString(3, status.name());
-                    ps.setTimestamp(4, Timestamp.from(threshold));
-                    ps.setInt(5, batchSize);
+                    ps.setString(1, status.name());
+                    ps.setTimestamp(2, Timestamp.from(threshold));
+                    ps.setInt(3, batchSize);
+                    ps.setString(4, newStatus.name());
+                    ps.setTimestamp(5, Timestamp.from(Instant.now()));
                 }
         );
     }
