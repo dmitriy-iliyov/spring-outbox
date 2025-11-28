@@ -29,9 +29,9 @@ public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
     }
 
     @Override
-    public void cleanBatchByTtl(Duration ttl, int batchSize) {
+    public int cleanBatchByTtl(Duration ttl, int batchSize) {
         Objects.requireNonNull(ttl, "ttl cannot be null");
         Instant threshold = Instant.now().minusSeconds(ttl.toSeconds());
-        repository.deleteBatchByThreshold(threshold, batchSize);
+        return repository.deleteBatchByThreshold(threshold, batchSize);
     }
 }

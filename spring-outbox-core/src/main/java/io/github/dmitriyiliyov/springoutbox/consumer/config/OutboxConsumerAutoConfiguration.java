@@ -1,12 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.consumer.config;
 
-import io.github.dmitriyiliyov.springoutbox.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.consumer.*;
+import io.github.dmitriyiliyov.springoutbox.consumer.metrics.ConsumedOutboxManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.consumer.metrics.OutboxIdempotentConsumerMetricsDecorator;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -38,21 +40,20 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxManager cacheableConsumedOutboxManager(CacheManager cacheManager, ConsumedOutboxRepository repository) {
+    public ConsumedOutboxManager consumedOutboxManager(CacheManager cacheManager, ConsumedOutboxRepository repository,
+                                                                MeterRegistry registry) {
         OutboxConsumerProperties.CacheProperties cacheProperties = properties.getCache();
+        ConsumedOutboxManager manager = new DefaultConsumedOutboxManager(repository);
         if (cacheManager == null || !cacheProperties.isEnabled()) {
-            return new DefaultConsumedOutboxManager(repository);
+            if (cacheManager == null) {
+                log.error("CacheManager is null, impossible to create bean of CacheableConsumedOutboxManager");
+            }
+            return new ConsumedOutboxManagerMetricsDecorator(manager, registry);
         }
-        return new CacheableConsumedOutboxManager(cacheManager, cacheProperties.getCacheName(), repository);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ConsumedOutboxManager consumedOutboxManager(ConsumedOutboxRepository repository) {
-        if (properties.getCache().isEnabled()) {
-            log.error("CacheManager is null, impossible to create bean of CacheableConsumedOutboxManager");
-        }
-        return new DefaultConsumedOutboxManager(repository);
+        return new ConsumedOutboxManagerMetricsDecorator(
+                new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheProperties.getCacheName(), manager, registry),
+                registry
+        );
     }
 
     @Bean
@@ -60,23 +61,39 @@ public class OutboxConsumerAutoConfiguration {
     public OutboxIdempotentConsumer outboxIdempotentConsumer(@Qualifier("defaultOutboxEventIdResolveManager")
                                                                  OutboxEventIdResolveManager idResolver,
                                                              TransactionTemplate transactionTemplate,
-                                                             ConsumedOutboxManager consumedOutboxManager) {
-        return new DefaultOutboxIdempotentConsumer(idResolver, transactionTemplate, consumedOutboxManager);
+                                                             ConsumedOutboxManager consumedOutboxManager,
+                                                             MeterRegistry registry) {
+        return new OutboxIdempotentConsumerMetricsDecorator(
+                new DefaultOutboxIdempotentConsumer(idResolver, transactionTemplate, consumedOutboxManager),
+                registry
+        );
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public List<OutboxEventIdResolver<?>> outboxEventIdResolvers() {
-        return List.of(
-                new KafkaOutboxEventIdResolver(),
-                new RabbitMqOutboxEventIdResolver(),
-                new SpringMessageOutboxEventIdResolver()
-        );
+    @ConditionalOnClass(name = "org.springframework.amqp.core.Message")
+    public OutboxEventIdResolver<?> rabbitMqOutboxEventIdResolver() {
+        return new RabbitMqOutboxEventIdResolver();
+    }
+
+    @Bean
+    @ConditionalOnClass(name = "org.apache.kafka.clients.consumer.ConsumerRecord")
+    public OutboxEventIdResolver<?> kafkaOutboxEventIdResolver() {
+        return new KafkaOutboxEventIdResolver();
+    }
+
+    @Bean
+    @ConditionalOnClass(name = "org.springframework.messaging.Message")
+    public OutboxEventIdResolver<?> springMessageOutboxEventIdResolver() {
+        return new SpringMessageOutboxEventIdResolver();
     }
 
     @Bean
     @ConditionalOnMissingBean
     public OutboxEventIdResolveManager defaultOutboxEventIdResolveManager(List<OutboxEventIdResolver<?>> resolvers) {
+        if (resolvers.isEmpty()) {
+            throw new IllegalArgumentException("No common message types detected in the classpath");
+        }
+        log.info("OutboxEventIdResolveManager configured with resolvers: {}", resolvers);
         return new DefaultOutboxEventIdResolveManager(resolvers);
     }
 
@@ -86,11 +103,5 @@ public class OutboxConsumerAutoConfiguration {
                                                               ScheduledExecutorService executor,
                                                           ConsumedOutboxManager consumedOutboxManager) {
         return new ConsumedOutboxCleanUpScheduler(properties.getCleanUp(), executor, consumedOutboxManager);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public OutboxMetrics consumedOutboxMetrics(ConsumedOutboxManager manager, MeterRegistry meterRegistry) {
-        return new ConsumerOutboxMetrics(manager, meterRegistry);
     }
 }

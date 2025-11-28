@@ -4,10 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class DefaultOutboxIdempotentConsumer implements OutboxIdempotentConsumer {
@@ -37,7 +34,7 @@ public class DefaultOutboxIdempotentConsumer implements OutboxIdempotentConsumer
             });
         } catch (Exception e) {
             log.error("Failed check idempotence and execute operation", e);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 
@@ -49,12 +46,12 @@ public class DefaultOutboxIdempotentConsumer implements OutboxIdempotentConsumer
                 Set<UUID> alreadyConsumedIds = consumedOutboxManager.filterConsumed(messageMap.keySet());
                 alreadyConsumedIds.forEach(messageMap::remove);
                 if (!messageMap.isEmpty()) {
-                    operation.accept((List<T>) messageMap.values());
+                    operation.accept(new ArrayList<>(messageMap.values()));
                 }
             });
         } catch(Exception e) {
             log.error("Failed check batch idempotence and execute operation", e);
-            throw new RuntimeException(e);
+            throw e;
         }
     }
 }

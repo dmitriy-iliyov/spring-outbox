@@ -9,5 +9,5 @@ public interface ConsumedOutboxManager {
 
     Set<UUID> filterConsumed(Set<UUID> ids);
 
-    void cleanBatchByTtl(Duration ttl, int batchSize);
+    int cleanBatchByTtl(Duration ttl, int batchSize);
 }
