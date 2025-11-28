@@ -1,7 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.utils.RepositoryUtils;
-import io.github.dmitriyiliyov.springoutbox.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,11 +14,9 @@ import java.util.UUID;
 public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
     private final JdbcTemplate jdbcTemplate;
-    private final SqlIdHelper idHelper;
 
-    public PostgreSqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper) {
+    public PostgreSqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.idHelper = idHelper;
     }
 
     @Transactional
@@ -69,7 +66,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
 
     @Transactional
     @Override
-    public void deleteBatchByThreshold(Instant threshold, int batchSize) {
+    public int deleteBatchByThreshold(Instant threshold, int batchSize) {
         String sql = """
             WITH to_delete AS (
                 SELECT id 
@@ -82,7 +79,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
             DELETE FROM outbox_consumed_events
             WHERE id IN (SELECT id FROM to_delete)
         """;
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setTimestamp(1, Timestamp.from(threshold));

@@ -22,5 +22,5 @@ public interface ConsumedOutboxRepository {
      */
     Set<UUID> saveIfAbsent(Set<UUID> ids);
 
-    void deleteBatchByThreshold(Instant threshold, int batchSize);
+    int deleteBatchByThreshold(Instant threshold, int batchSize);
 }

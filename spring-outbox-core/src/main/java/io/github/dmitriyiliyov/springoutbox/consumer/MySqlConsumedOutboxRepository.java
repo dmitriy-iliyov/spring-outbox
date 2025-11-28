@@ -84,7 +84,7 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
     @Transactional
     @Override
-    public void deleteBatchByThreshold(Instant threshold, int batchSize) {
+    public int deleteBatchByThreshold(Instant threshold, int batchSize) {
         String sql = """
             DELETE FROM outbox_consumed_events
             WHERE id IN (
@@ -98,7 +98,7 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
                 ) AS to_delete
             )
         """;
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setTimestamp(1, Timestamp.from(threshold));
