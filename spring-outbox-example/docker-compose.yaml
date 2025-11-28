@@ -69,7 +69,25 @@ services:
       KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
       KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     volumes:
-      #- ./init-topics.sh:/docker-entrypoint-initdb.d/init-topics.sh
       - kafka_data:/bitnami/kafka/data
+
+  prometheus:
+    container_name: outbox-prometheus
+    image: prom/prometheus:latest
+    networks:
+      - default
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    container_name: outbox-grafana
+    image: grafana/grafana:latest
+    networks:
+      - default
+    ports:
+      - "3000:3000"
+
 volumes:
   kafka_data: {}

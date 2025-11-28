@@ -59,3 +59,11 @@ outbox:
       transfer-to-fixed-delay: 1s
       transfer-from-initial-delay: 2m
       transfer-from-fixed-delay: 1h
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    enable:
+      all: true

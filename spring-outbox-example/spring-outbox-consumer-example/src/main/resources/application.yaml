@@ -16,16 +16,11 @@ spring:
     bootstrap-servers: localhost:9092
     consumer:
       group-id: analytics
-      auto-offset-reset: e
+      auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.value.default.type: "io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto"
-logging:
-  level:
-    org.springframework.kafka: DEBUG
-    org.apache.kafka.clients.consumer: DEBUG
 server:
   port: 8081
 outbox:
@@ -40,3 +35,11 @@ outbox:
     cache:
       enabled: true
       cache-name: "outbox:consumed"
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    enable:
+      all: true

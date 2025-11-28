@@ -8,6 +8,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 
 /**
  * It is obvious that in a real-world microservices architecture, different services would typically
@@ -20,10 +22,15 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class OrderAnalyticKafkaListener {
 
-    private final OutboxIdempotentConsumer<Object> outboxConsumer;
+    private final OutboxIdempotentConsumer outboxConsumer;
 
-    @KafkaListener(topics = {"orders.created", "orders.updated", "orders.deleted"}, groupId = "analytics")
-    public void listenCreateOrder(ConsumerRecord<String, OrderDto> record) {
-        outboxConsumer.consume(record, () -> log.info("Analytics receive {}", record.value()));
+    @KafkaListener(topics = {"orders.updated", "orders.deleted"}, groupId = "analytics")
+    public void listen(ConsumerRecord<String, OrderDto> record) {
+        outboxConsumer.consume(record, () -> log.info("Analytics receive action with order {}", record.value()));
+    }
+
+    @KafkaListener(topics = "orders.created", groupId = "analytics", containerFactory = "orderBatchFactory")
+    public void listenBatch(List<ConsumerRecord<String, OrderDto>> records) {
+        outboxConsumer.consume(records, (recordList) -> recordList.forEach(record -> log.info("Analytics receive created order {}", record.value())));
     }
 }

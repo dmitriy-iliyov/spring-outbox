@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -124,6 +125,9 @@ public class OrderService {
                 .stream()
                 .collect(Collectors.toMap(OrderUpdateDto::getId, Function.identity()));
         List<Order> orders = repository.findAllById(dtoMap.keySet());
+        if (orders.isEmpty()) {
+            return Collections.emptyList();
+        }
         List<Order> ordersToUpdate = orders.stream()
                 .filter(order -> {
                     OrderUpdateDto dto = dtoMap.get(order.getId());
