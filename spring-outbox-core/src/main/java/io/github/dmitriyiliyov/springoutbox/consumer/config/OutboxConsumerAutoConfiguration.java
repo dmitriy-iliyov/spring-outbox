@@ -56,27 +56,28 @@ public class OutboxConsumerAutoConfiguration {
     }
 
     @Bean
-    public OutboxIdempotentConsumer<Object> outboxIdempotentConsumer(@Qualifier("defaultOutboxEventIdResolvingManager")
-                                                                         OutboxEventIdResolvingManager<Object> idResolver,
-                                                                     TransactionTemplate transactionTemplate,
-                                                                     ConsumedOutboxManager consumedOutboxManager) {
-        return new DefaultOutboxIdempotentConsumer<>(idResolver, transactionTemplate, consumedOutboxManager);
+    @ConditionalOnMissingBean
+    public OutboxIdempotentConsumer outboxIdempotentConsumer(@Qualifier("defaultOutboxEventIdResolveManager")
+                                                                 OutboxEventIdResolveManager idResolver,
+                                                             TransactionTemplate transactionTemplate,
+                                                             ConsumedOutboxManager consumedOutboxManager) {
+        return new DefaultOutboxIdempotentConsumer(idResolver, transactionTemplate, consumedOutboxManager);
     }
 
     @Bean
     @ConditionalOnMissingBean
     public List<OutboxEventIdResolver<?>> outboxEventIdResolvers() {
         return List.of(
-                new KafkaOutboxEventIdResolver<>(),
+                new KafkaOutboxEventIdResolver(),
                 new RabbitMqOutboxEventIdResolver(),
-                new MessageOutboxEventIdResolver<>()
+                new SpringMessageOutboxEventIdResolver()
         );
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxEventIdResolvingManager<Object> defaultOutboxEventIdResolvingManager(List<OutboxEventIdResolver<?>> resolvers) {
-        return new DefaultOutboxEventIdResolvingManager<>(resolvers);
+    public OutboxEventIdResolveManager defaultOutboxEventIdResolveManager(List<OutboxEventIdResolver<?>> resolvers) {
+        return new DefaultOutboxEventIdResolveManager(resolvers);
     }
 
     @Bean

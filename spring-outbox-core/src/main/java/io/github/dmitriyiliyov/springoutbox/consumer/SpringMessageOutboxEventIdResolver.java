@@ -6,10 +6,10 @@ import org.springframework.messaging.MessageHeaders;
 
 import java.util.UUID;
 
-public class MessageOutboxEventIdResolver<T> implements OutboxEventIdResolver<Message<T>>{
+public class SpringMessageOutboxEventIdResolver implements OutboxEventIdResolver<Message<?>>{
 
     @Override
-    public UUID resolve(Message<T> rowMessage) {
+    public UUID resolve(Message<?> rowMessage) {
         MessageHeaders headers = rowMessage.getHeaders();
         String headerName = OutboxConstants.EVENT_ID_HEADER.getValue();
         UUID eventId = headers.get(headerName, UUID.class);

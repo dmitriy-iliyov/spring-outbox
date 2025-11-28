@@ -7,11 +7,11 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class DefaultOutboxEventIdResolvingManager<T> implements OutboxEventIdResolvingManager<T> {
+public class DefaultOutboxEventIdResolveManager implements OutboxEventIdResolveManager {
 
     private final Map<Class<?>, OutboxEventIdResolver<?>> resolvers;
 
-    public DefaultOutboxEventIdResolvingManager(List<OutboxEventIdResolver<?>> resolvers) {
+    public DefaultOutboxEventIdResolveManager(List<OutboxEventIdResolver<?>> resolvers) {
         this.resolvers = Collections.unmodifiableMap(
                 resolvers.stream()
                         .collect(Collectors.toMap(OutboxEventIdResolver::getSupports, Function.identity()))
@@ -19,7 +19,7 @@ public class DefaultOutboxEventIdResolvingManager<T> implements OutboxEventIdRes
     }
 
     @Override
-    public UUID resolve(T rowMessage) {
+    public <T> UUID resolve(T rowMessage) {
         OutboxEventIdResolver<?> resolver = resolvers.get(rowMessage.getClass());
         if (resolver == null) {
             throw new IllegalArgumentException(
@@ -30,7 +30,7 @@ public class DefaultOutboxEventIdResolvingManager<T> implements OutboxEventIdRes
     }
 
     @Override
-    public Map<UUID, T> resolve(List<T> rowMessages) {
+    public <T> Map<UUID, T> resolve(List<T> rowMessages) {
         if (rowMessages.isEmpty()) {
             return Collections.emptyMap();
         }

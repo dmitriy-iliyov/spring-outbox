@@ -10,15 +10,15 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public class DefaultOutboxIdempotentConsumer<T> implements OutboxIdempotentConsumer<T> {
+public class DefaultOutboxIdempotentConsumer implements OutboxIdempotentConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxIdempotentConsumer.class);
 
-    private final OutboxEventIdResolvingManager<T> resolvingManager;
+    private final OutboxEventIdResolveManager resolvingManager;
     private final TransactionTemplate transactionTemplate;
     private final ConsumedOutboxManager consumedOutboxManager;
 
-    public DefaultOutboxIdempotentConsumer(OutboxEventIdResolvingManager<T> resolvingManager,
+    public DefaultOutboxIdempotentConsumer(OutboxEventIdResolveManager resolvingManager,
                                            TransactionTemplate transactionTemplate,
                                            ConsumedOutboxManager consumedOutboxManager) {
         this.resolvingManager = resolvingManager;
@@ -27,7 +27,7 @@ public class DefaultOutboxIdempotentConsumer<T> implements OutboxIdempotentConsu
     }
 
     @Override
-    public void consume(T message, Runnable operation) {
+    public <T> void consume(T message, Runnable operation) {
         UUID eventId = resolvingManager.resolve(message);
         try {
             transactionTemplate.executeWithoutResult(status -> {
@@ -42,7 +42,7 @@ public class DefaultOutboxIdempotentConsumer<T> implements OutboxIdempotentConsu
     }
 
     @Override
-    public void consume(List<T> messages, Consumer<List<T>> operation) {
+    public <T> void consume(List<T> messages, Consumer<List<T>> operation) {
         Map<UUID, T> messageMap = resolvingManager.resolve(messages);
         try {
             transactionTemplate.executeWithoutResult(status -> {

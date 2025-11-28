@@ -8,10 +8,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.UUID;
 
-public class KafkaOutboxEventIdResolver<T> implements OutboxEventIdResolver<ConsumerRecord<String, T>> {
+public class KafkaOutboxEventIdResolver implements OutboxEventIdResolver<ConsumerRecord<String, ?>> {
 
     @Override
-    public UUID resolve(ConsumerRecord<String, T> rowMessage) {
+    public UUID resolve(ConsumerRecord<String, ?> rowMessage) {
         Header [] headers = rowMessage.headers().toArray();
         Header eventIdHeader = Arrays.stream(headers)
                 .filter(header -> header.key().equals(OutboxConstants.EVENT_ID_HEADER.getValue()))
