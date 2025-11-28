@@ -16,7 +16,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-// only for MySql 8.0.0+
+// MySql 8.0.0+
 public class MySqlOutboxRepository extends AbstractOutboxRepository {
 
     protected final ResultSetMapper mapper;

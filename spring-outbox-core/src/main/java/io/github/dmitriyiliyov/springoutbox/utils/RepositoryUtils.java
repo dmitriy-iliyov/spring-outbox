@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public final class RepositoryUtils {
 
@@ -28,19 +29,9 @@ public final class RepositoryUtils {
         return ids.stream().map(id -> "?").collect(Collectors.joining(", "));
     }
 
-    public static String generateValuesPlaceholders(Set<UUID> ids, int valueCount) {
-        return ids.stream()
-                .map(id -> {
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < valueCount; i++) {
-                        if (i < valueCount - 1) {
-                            sb.append("?, ");
-                        } else {
-                            sb.append("?");
-                        }
-                    }
-                    return "(%s)".formatted(sb);
-                })
+    public static String generateValuesPlaceholders(int tupleCount, int valueCount) {
+        return IntStream.range(0, tupleCount)
+                .mapToObj(i -> "(" + "?,".repeat(valueCount - 1) + "?" + ")")
                 .collect(Collectors.joining(", "));
     }
 }

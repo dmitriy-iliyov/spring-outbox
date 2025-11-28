@@ -64,7 +64,7 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
         String insertSql = """
             INSERT IGNORE INTO outbox_consumed_events(id, consumed_at)
             VALUES %s
-        """.formatted(RepositoryUtils.generateValuesPlaceholders(nonExistsIds, 2));
+        """.formatted(RepositoryUtils.generateValuesPlaceholders(nonExistsIds.size(), 2));
         Instant consumedAt = Instant.now();
         int updatedRows = jdbcTemplate.update(
                 insertSql,

@@ -50,7 +50,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
                 VALUES %s 
                 ON CONFLICT (id) DO NOTHING
                 RETURNING id
-        """.formatted(RepositoryUtils.generateValuesPlaceholders(ids, 2));
+        """.formatted(RepositoryUtils.generateValuesPlaceholders(ids.size(), 2));
         Instant consumedAt = Instant.now();
         return new HashSet<>(
                 jdbcTemplate.query(

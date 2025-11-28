@@ -66,7 +66,7 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
         String insertSql = """
             INSERT INTO outbox_consumed_events(id, consumed_at)
             VALUES %s
-        """.formatted(RepositoryUtils.generateValuesPlaceholders(nonExistsIds, 2));
+        """.formatted(RepositoryUtils.generateValuesPlaceholders(nonExistsIds.size(), 2));
         Instant consumedAt = Instant.now();
         try {
             jdbcTemplate.update(
