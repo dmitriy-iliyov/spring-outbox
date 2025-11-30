@@ -50,9 +50,9 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
     @Override
     public void saveBatch(List<OutboxDlqEvent> events) {
         delegate.saveBatch(events);
-        CompletableFuture.runAsync(
-                () -> {
-                    if (!events.isEmpty()) {
+        if (events != null && !events.isEmpty()) {
+            CompletableFuture.runAsync(
+                    () -> {
                         for(OutboxDlqEvent event : events) {
                             Map<DlqStatus, Counter> countersByDlqStatus = counters.get(event.getEventType());
                             if (countersByDlqStatus != null) {
@@ -63,8 +63,8 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
                             }
                         }
                     }
-                }
-        );
+            );
+        }
     }
 
     @Override
