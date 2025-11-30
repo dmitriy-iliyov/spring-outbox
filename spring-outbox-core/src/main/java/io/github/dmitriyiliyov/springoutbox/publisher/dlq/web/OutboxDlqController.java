@@ -66,7 +66,7 @@ public class OutboxDlqController {
 
     @DeleteMapping
     public ResponseEntity<?> deleteBatch(@RequestBody @Valid DeleteBatchRequest request) {
-        manager.deleteBatch(request.ids());
+        manager.deleteBatchWithCheck(request.ids());
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();

@@ -162,16 +162,16 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
 
     @Transactional
     @Override
-    public void deleteById(UUID id) {
+    public int deleteById(UUID id) {
         String sql = "DELETE FROM outbox_dlq_events WHERE id = ?";
-        jdbcTemplate.update(sql, ps -> idHelper.setIdToPs(ps, 1, id));
+        return jdbcTemplate.update(sql, ps -> idHelper.setIdToPs(ps, 1, id));
     }
 
     @Transactional
     @Override
-    public void deleteBatch(Set<UUID> ids) {
-        if (!RepositoryUtils.isIdsValid(ids)) return;
+    public int deleteBatch(Set<UUID> ids) {
+        if (!RepositoryUtils.isIdsValid(ids)) return 0;
         String sql = "DELETE FROM outbox_dlq_events WHERE id IN (" + RepositoryUtils.generateIdsPlaceholders(ids) + ")";
-        jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
+        return jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

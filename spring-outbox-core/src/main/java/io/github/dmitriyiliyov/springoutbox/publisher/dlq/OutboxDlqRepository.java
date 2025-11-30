@@ -26,7 +26,7 @@ public interface OutboxDlqRepository {
 
     void updateBatchStatus(Set<UUID> ids, DlqStatus status);
 
-    void deleteById(UUID id);
+    int deleteById(UUID id);
 
-    void deleteBatch(Set<UUID> ids);
+    int deleteBatch(Set<UUID> ids);
 }

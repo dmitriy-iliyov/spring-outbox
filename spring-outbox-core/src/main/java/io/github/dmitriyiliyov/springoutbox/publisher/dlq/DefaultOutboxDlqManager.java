@@ -85,24 +85,32 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     @Override
-    public void deleteById(UUID id) {
+    public int deleteById(UUID id) {
         OutboxDlqEvent event = repository.findById(id).orElseThrow(
                 () -> new OutboxDlqEventNotFoundException(id)
         );
         if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
             throw new OutboxDlqEventInProcessException(event.getId());
         }
-        repository.deleteById(id);
+        return repository.deleteById(id);
+    }
+
+    @Override
+    public int deleteBatch(Set<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return 0;
+        }
+        return repository.deleteBatch(ids);
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
     @Override
-    public void deleteBatch(Set<UUID> ids) {
+    public int deleteBatchWithCheck(Set<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
-            return;
+            return 0;
         }
         checkEventsAvailability(ids);
-        repository.deleteBatch(ids);
+        return repository.deleteBatch(ids);
     }
 
     private void checkEventsAvailability(Set<UUID> ids) {

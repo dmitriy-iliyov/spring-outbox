@@ -26,7 +26,9 @@ public interface OutboxDlqManager {
 
     void updateBatchStatus(BatchUpdateRequest request);
 
-    void deleteBatch(Set<UUID> ids);
+    int deleteById(UUID id);
 
-    void deleteById(UUID id);
+    int deleteBatch(Set<UUID> ids);
+
+    int deleteBatchWithCheck(Set<UUID> ids);
 }
