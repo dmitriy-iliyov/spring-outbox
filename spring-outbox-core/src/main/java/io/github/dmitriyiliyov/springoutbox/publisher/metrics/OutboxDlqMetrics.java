@@ -14,6 +14,7 @@ public final class OutboxDlqMetrics implements OutboxMetrics {
     private final MeterRegistry registry;
     private final OutboxPublisherProperties properties;
     private final OutboxDlqManager manager;
+    private final DlqStatus [] statuses = new DlqStatus[] {DlqStatus.MOVED, DlqStatus.IN_PROCESS, DlqStatus.TO_RETRY};
 
     public OutboxDlqMetrics(MeterRegistry registry, OutboxPublisherProperties properties, OutboxDlqManager manager) {
         this.registry = registry;
@@ -23,25 +24,23 @@ public final class OutboxDlqMetrics implements OutboxMetrics {
 
     @Override
     public void register() {
-        Gauge.builder("outbox_dlq_events_count", manager, OutboxDlqManager::count)
+        Gauge.builder("outbox_dlq_events", manager, OutboxDlqManager::count)
                 .description("Total number of outbox DLQ events")
                 .register(registry);
 
-        Arrays.stream(DlqStatus.values())
-                .forEach(status ->
-                        Gauge.builder("outbox_dlq_events_count", manager, m -> manager.countByStatus(status))
+        Arrays.stream(statuses).forEach(status ->
+                        Gauge.builder("outbox_dlq_events_by_status", manager, m -> manager.countByStatus(status))
                                 .description("Number of outbox DLQ events by status")
-                                .tag("status", status.name())
+                                .tag("status", status.name().toLowerCase())
                                 .register(registry)
                 );
 
         properties.getEvents().keySet().forEach(type ->
-                Arrays.stream(DlqStatus.values())
-                        .forEach(status ->
-                                Gauge.builder("outbox_dlq_events_count", manager,
+                Arrays.stream((statuses)).forEach(status ->
+                                Gauge.builder("outbox_dlq_events_by_event_type_and_status", manager,
                                                 m -> manager.countByEventTypeAndStatus(type, status))
                                         .description("Number of outbox DLQ events by type and status")
-                                        .tags("eventType", type, "status", status.name())
+                                        .tags("event_type", type, "status", status.name().toLowerCase())
                                         .register(registry)
                         )
         );

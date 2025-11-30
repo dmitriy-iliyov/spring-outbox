@@ -14,6 +14,7 @@ public final class DefaultOutboxMetrics implements OutboxMetrics {
     private final MeterRegistry registry;
     private final OutboxPublisherProperties properties;
     private final OutboxManager manager;
+    private final EventStatus [] statuses = new EventStatus[] {EventStatus.PENDING, EventStatus.IN_PROCESS};
 
     public DefaultOutboxMetrics(MeterRegistry registry, OutboxPublisherProperties properties, OutboxManager manager) {
         this.registry = registry;
@@ -23,25 +24,24 @@ public final class DefaultOutboxMetrics implements OutboxMetrics {
 
     @Override
     public void register() {
-        Gauge.builder("outbox_events_count", manager, OutboxManager::count)
+        Gauge.builder("outbox_events", manager, OutboxManager::count)
                 .description("Total number of outbox events")
                 .register(registry);
 
-        Arrays.stream(EventStatus.values())
-                .forEach(status ->
-                        Gauge.builder("outbox_events_count", manager, m -> manager.countByStatus(status))
+        Arrays.stream(statuses).forEach(status ->
+                        Gauge.builder("outbox_events_by_status", manager, m -> manager.countByStatus(status))
                                 .description("Number of outbox events by status")
-                                .tag("status", status.name())
+                                .tag("status", status.name().toLowerCase())
                                 .register(registry)
                 );
 
         properties.getEvents().keySet().forEach(type ->
-                Arrays.stream(EventStatus.values())
+                Arrays.stream(statuses)
                         .forEach(status ->
-                                Gauge.builder("outbox_events_count", manager,
+                                Gauge.builder("outbox_events_by_event_type_and_status", manager,
                                                 m -> manager.countByEventTypeAndStatus(type, status))
                                         .description("Number of outbox events by type and status")
-                                        .tags("eventType", type, "status", status.name())
+                                        .tags("event_type", type, "status", status.name().toLowerCase())
                                         .register(registry)
                         )
         );
