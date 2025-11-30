@@ -138,7 +138,7 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
 
     @Transactional
     @Override
-    public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
+    public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String selectSql = """
             SELECT id
             FROM outbox_events
@@ -157,13 +157,13 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id")))
         );
         if (!RepositoryUtils.isIdsValid(ids)) {
-            return;
+            return 0;
         }
         String deleteSql = """
             DELETE FROM outbox_events
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 deleteSql,
                 ps -> idHelper.setIdsToPs(ps, 1, ids)
         );

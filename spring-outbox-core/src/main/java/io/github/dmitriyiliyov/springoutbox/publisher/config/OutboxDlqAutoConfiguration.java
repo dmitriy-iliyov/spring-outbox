@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqControllerAdvice;
+import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqMetrics;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.SimpleOutboxCache;
@@ -33,13 +34,20 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public OutboxCache<DlqStatus> outboxDlqCache() {
-        return new SimpleOutboxCache<>(30, 30, 30);
+        return new SimpleOutboxCache<>(60, 60, 60);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository, OutboxCache<DlqStatus> cache) {
-        return new DefaultOutboxDlqManager(repository, cache);
+    public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository,
+                                             OutboxCache<DlqStatus> cache,
+                                             OutboxPublisherProperties properties,
+                                             MeterRegistry registry) {
+        return new OutboxDlqManagerMetricsDecorator(
+                new DefaultOutboxDlqManager(repository, cache),
+                properties,
+                registry
+        );
     }
 
     @Bean
@@ -50,14 +58,17 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager, OutboxDlqManager dlqManager, OutboxDlqHandler handler,
+    public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager,
+                                               OutboxDlqManager dlqManager,
+                                               OutboxDlqHandler handler,
                                                TransactionTemplate transactionTemplate) {
         return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler);
     }
 
     @Bean
     public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService outboxScheduledExecutorService,
-                                              OutboxPublisherProperties properties, OutboxDlqTransfer transfer) {
+                                              OutboxPublisherProperties properties,
+                                              OutboxDlqTransfer transfer) {
         OutboxPublisherProperties.DlqProperties dlqProperties = properties.getDlq();
         if (dlqProperties == null) {
             throw new IllegalStateException("OutboxProperties.DlqProperties is null");
@@ -82,7 +93,9 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties, MeterRegistry registry, OutboxDlqManager manager) {
+    public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
+                                          MeterRegistry registry,
+                                          OutboxDlqManager manager) {
         return new OutboxDlqMetrics(registry, properties, manager);
     }
 }

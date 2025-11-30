@@ -74,7 +74,9 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findById(id)).thenReturn(Optional.of(event));
 
         // when
-        OutboxDlqEventInProcessException e = assertThrows(OutboxDlqEventInProcessException.class, () -> tested.updateStatus(id, status));
+        OutboxDlqEventInProcessException e = assertThrows(
+                OutboxDlqEventInProcessException.class, () -> tested.updateStatus(id, status)
+        );
 
         // then
         assertEquals("Outbox DLQ event with id=%s is IN_PROCESS, interaction impossible".formatted(id), e.getDetail());
@@ -136,7 +138,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         Set<UUID> ids = Set.of(id);
         BatchUpdateRequest request = new BatchUpdateRequest(ids, DlqStatus.RESOLVED);
 
-        when(repository.findBatch(ids)).thenReturn(List.of()); // пустой список, вызовет OutboxDlqEventBatchNotFoundException
+        when(repository.findBatch(ids)).thenReturn(List.of());
 
         // when + then
         assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.updateBatchStatus(request));
@@ -248,7 +250,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findBatch(ids)).thenReturn(List.of());
 
         // when + then
-        assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatch(ids));
+        assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatchWithCheck(ids));
         verify(repository).findBatch(ids);
         verifyNoMoreInteractions(repository);
     }
@@ -265,7 +267,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findBatch(ids)).thenReturn(List.of(event));
 
         // when
-        tested.deleteBatch(ids);
+        tested.deleteBatchWithCheck(ids);
 
         // then
         verify(repository).findBatch(ids);
@@ -283,7 +285,7 @@ public class DefaultOutboxDlqManagerUnitTests {
 
         // when + then
         assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> {
-            tested.deleteBatch(ids); // deleteBatch вызывает checkEventsAvailability
+            tested.deleteBatchWithCheck(ids);
         });
 
         verify(repository).findBatch(ids);
@@ -299,7 +301,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findBatch(ids)).thenReturn(List.of());
 
         // when + then
-        assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatch(ids));
+        assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatchWithCheck(ids));
 
         verify(repository).findBatch(ids);
         verifyNoMoreInteractions(repository);
@@ -319,7 +321,9 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findBatch(ids)).thenReturn(List.of(event));
 
         // when + then
-        OutboxDlqEventBatchNotFoundException e = assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatch(ids));
+        OutboxDlqEventBatchNotFoundException e = assertThrows(
+                OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatchWithCheck(ids)
+        );
         assertEquals(Set.of(id2), e.getNotFoundIds());
 
         verify(repository).findBatch(ids);
@@ -340,7 +344,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findBatch(ids)).thenReturn(List.of(event));
 
         // when + then
-        assertThrows(OutboxDlqEventInProcessException.class, () -> tested.deleteBatch(ids));
+        assertThrows(OutboxDlqEventInProcessException.class, () -> tested.deleteBatchWithCheck(ids));
 
         verify(repository).findBatch(ids);
         verifyNoMoreInteractions(repository);
@@ -363,7 +367,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         when(repository.findBatch(ids)).thenReturn(List.of(event1, event2));
 
         // when
-        tested.deleteBatch(ids);
+        tested.deleteBatchWithCheck(ids);
 
         // then
         verify(repository).findBatch(ids);

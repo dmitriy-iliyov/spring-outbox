@@ -24,13 +24,13 @@ public interface OutboxRepository {
 
     List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus);
 
-    void updateBatchStatus(Set<UUID> ids, EventStatus newStatus);
+    int updateBatchStatus(Set<UUID> ids, EventStatus newStatus);
 
     int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus);
 
-    void partiallyUpdateBatch(List<OutboxEvent> events);
+    int partiallyUpdateBatch(List<OutboxEvent> events);
 
-    void deleteBatch(Set<UUID> ids);
+    int deleteBatch(Set<UUID> ids);
 
-    void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize);
+    int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize);
 }

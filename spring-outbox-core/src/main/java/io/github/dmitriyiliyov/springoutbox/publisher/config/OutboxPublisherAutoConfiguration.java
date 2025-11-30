@@ -8,6 +8,7 @@ import io.github.dmitriyiliyov.springoutbox.publisher.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.springoutbox.publisher.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.DefaultOutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -54,8 +55,10 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxManager outboxManager(OutboxRepository repository, OutboxCache<EventStatus> cache) {
-        return new DefaultOutboxManager(repository, cache);
+    public OutboxManager outboxManager(OutboxRepository repository,
+                                       OutboxCache<EventStatus> cache,
+                                       MeterRegistry registry) {
+        return new OutboxManagerMetricsDecorator(new DefaultOutboxManager(repository, cache), properties, registry);
     }
 
     @Bean

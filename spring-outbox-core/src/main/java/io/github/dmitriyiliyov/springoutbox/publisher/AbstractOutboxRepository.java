@@ -112,8 +112,8 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
 
     @Transactional
     @Override
-    public void updateBatchStatus(Set<UUID> ids, EventStatus newStatus) {
-        if (!RepositoryUtils.isIdsValid(ids)) return;
+    public int updateBatchStatus(Set<UUID> ids, EventStatus newStatus) {
+        if (!RepositoryUtils.isIdsValid(ids)) return 0;
         if (newStatus.equals(EventStatus.FAILED)) {
             throw new IllegalArgumentException("Use partiallyUpdateBatch() for update FAILED batch");
         }
@@ -124,7 +124,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         } else {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
         }
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setString(1, newStatus.name());
@@ -136,8 +136,8 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
 
     @Transactional
     @Override
-    public void partiallyUpdateBatch(List<OutboxEvent> events) {
-        if (events == null || events.isEmpty()) return;
+    public int partiallyUpdateBatch(List<OutboxEvent> events) {
+        if (events == null || events.isEmpty()) return 0;
         String sql = """
             UPDATE outbox_events
             SET
@@ -147,7 +147,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                 updated_at = ?
             WHERE id = ?
         """;
-        jdbcTemplate.batchUpdate(
+        return jdbcTemplate.batchUpdate(
                 sql,
                 events,
                 events.size(),
@@ -157,14 +157,15 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setTimestamp(3, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(4, Timestamp.from(Instant.now()));
                     idHelper.setIdToPs(ps, 5, event.getId());
-                });
+                }
+        ).length;
     }
 
     @Transactional
     @Override
-    public void deleteBatch(Set<UUID> ids) {
-        if (!RepositoryUtils.isIdsValid(ids)) return;
+    public int deleteBatch(Set<UUID> ids) {
+        if (!RepositoryUtils.isIdsValid(ids)) return 0;
         String sql = "DELETE FROM outbox_events WHERE id IN (%s)".formatted(RepositoryUtils.generateIdsPlaceholders(ids));
-        jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
+        return jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

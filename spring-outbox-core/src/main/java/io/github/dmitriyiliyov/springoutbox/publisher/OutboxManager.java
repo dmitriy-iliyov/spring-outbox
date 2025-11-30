@@ -28,9 +28,9 @@ public interface OutboxManager {
     void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
                        int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier);
 
-    void recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize);
+    int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize);
 
-    void deleteProcessedBatch(Instant threshold, int batchSize);
+    int deleteProcessedBatch(Instant threshold, int batchSize);
 
-    void deleteBatch(Set<UUID> ids);
+    int deleteBatch(Set<UUID> ids);
 }

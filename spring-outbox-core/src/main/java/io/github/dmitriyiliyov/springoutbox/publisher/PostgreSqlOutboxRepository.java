@@ -121,7 +121,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
 
     @Transactional
     @Override
-    public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
+    public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String sql = """
             WITH to_delete AS (
                 SELECT id FROM outbox_events 
@@ -133,7 +133,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
             DELETE FROM outbox_events 
             WHERE id IN (SELECT id FROM to_delete)
         """;
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setString(1, status.name());

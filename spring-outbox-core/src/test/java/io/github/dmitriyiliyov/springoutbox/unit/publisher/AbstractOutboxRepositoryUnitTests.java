@@ -48,8 +48,8 @@ public class AbstractOutboxRepositoryUnitTests {
                     }
 
                     @Override
-                    public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
-
+                    public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
+                        return 0;
                     }
 
                     @Override

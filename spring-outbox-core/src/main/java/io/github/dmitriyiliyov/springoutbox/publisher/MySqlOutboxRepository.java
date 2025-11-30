@@ -131,7 +131,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
 
     @Transactional
     @Override
-    public void deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
+    public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String sql = """
             DELETE FROM outbox_events 
             WHERE id IN (
@@ -144,7 +144,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                 ) AS to_delete 
             )
         """;
-        jdbcTemplate.update(
+        return jdbcTemplate.update(
                 sql,
                 ps -> {
                     ps.setString(1, status.name());

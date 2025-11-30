@@ -128,7 +128,7 @@ public class DefaultOutboxManager implements OutboxManager {
     }
 
     @Override
-    public void recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
+    public int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
         int recoverSize = repository.updateBatchStatusByStatusAndThreshold(
                 EventStatus.IN_PROCESS,
                 Instant.now().minusSeconds(maxBatchProcessingTime.toSeconds()),
@@ -138,18 +138,19 @@ public class DefaultOutboxManager implements OutboxManager {
         if (recoverSize > 0) {
             log.warn("Stuck events batch recovered, recoveredSize={}; batchSize={} ", recoverSize, batchSize);
         }
+        return recoverSize;
     }
 
     @Override
-    public void deleteProcessedBatch(Instant threshold, int batchSize) {
-        repository.deleteBatchByStatusAndThreshold(EventStatus.PROCESSED, threshold, batchSize);
+    public int deleteProcessedBatch(Instant threshold, int batchSize) {
+        return repository.deleteBatchByStatusAndThreshold(EventStatus.PROCESSED, threshold, batchSize);
     }
 
     @Override
-    public void deleteBatch(Set<UUID> ids) {
+    public int deleteBatch(Set<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
-            return;
+            return 0;
         }
-        repository.deleteBatch(ids);
+        return repository.deleteBatch(ids);
     }
 }
