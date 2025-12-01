@@ -152,13 +152,17 @@ public class OutboxPublisherProperties {
 
     public static final class SenderProperties {
 
+        private static final Duration DEFAULT_EMERGENCY_TIMEOUT = Duration.ofSeconds(120);
+
         private SenderType type;
         private String beanName;
+        private Duration emergencyTimeout;
 
         public void initialize() {
             if (type == null) {
                 throw new IllegalArgumentException("senderType cannot be null");
             }
+            emergencyTimeout = emergencyTimeout == null ? DEFAULT_EMERGENCY_TIMEOUT : emergencyTimeout;
         }
 
         public SenderType getType() {
@@ -175,6 +179,14 @@ public class OutboxPublisherProperties {
 
         public void setBeanName(String beanName) {
             this.beanName = beanName;
+        }
+
+        public Duration getEmergencyTimeout() {
+            return emergencyTimeout;
+        }
+
+        public void setEmergencyTimeout(Duration emergencyTimeout) {
+            this.emergencyTimeout = emergencyTimeout;
         }
     }
 

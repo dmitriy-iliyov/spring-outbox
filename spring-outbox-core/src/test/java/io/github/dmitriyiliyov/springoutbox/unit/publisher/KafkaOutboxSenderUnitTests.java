@@ -6,10 +6,10 @@ import io.github.dmitriyiliyov.springoutbox.publisher.KafkaOutboxSender;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.SenderResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -35,8 +35,14 @@ public class KafkaOutboxSenderUnitTests {
     @Mock
     ObjectMapper mapper;
 
-    @InjectMocks
+    long emergencyTimeout = 120L;
+
     KafkaOutboxSender tested;
+
+    @BeforeEach
+    void setup() {
+        tested = new KafkaOutboxSender(kafkaTemplate, emergencyTimeout, mapper);
+    }
 
     @Test
     @DisplayName("UT sendEvents(), when ids is null should return empty sender result")

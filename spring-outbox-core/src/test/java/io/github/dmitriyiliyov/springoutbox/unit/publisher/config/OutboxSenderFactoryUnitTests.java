@@ -12,6 +12,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 
+import java.time.Duration;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,12 +55,13 @@ public class OutboxSenderFactoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT generate() with Kafka sender and valid bean should return KafkaOutboxSender")
+    @DisplayName("UT generate() with Kafka sender, valid bean and emergencyTimeout should return KafkaOutboxSender")
     public void generate_kafkaValidBean_shouldReturnKafkaSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
         props.setBeanName("kafkaTemplateBean");
+        props.setEmergencyTimeout(Duration.ofSeconds(120));
 
         ApplicationContext context = mock(ApplicationContext.class);
         KafkaTemplate<String, Object> kafkaTemplate = mock(KafkaTemplate.class);

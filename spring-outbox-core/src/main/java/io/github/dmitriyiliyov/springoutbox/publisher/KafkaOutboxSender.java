@@ -15,17 +15,20 @@ import org.springframework.messaging.support.MessageBuilder;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class KafkaOutboxSender implements OutboxSender {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaOutboxSender.class);
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final long emergencyTimeout;
     private final ObjectMapper mapper;
     private final CacheableClassResolver classResolver;
 
-    public KafkaOutboxSender(KafkaTemplate<String, Object> kafkaTemplate, ObjectMapper mapper) {
+    public KafkaOutboxSender(KafkaTemplate<String, Object> kafkaTemplate, long emergencyTimeout, ObjectMapper mapper) {
         this.kafkaTemplate = kafkaTemplate;
+        this.emergencyTimeout = emergencyTimeout;
         this.mapper = mapper;
         this.classResolver = new CacheableClassResolver();
     }
@@ -59,7 +62,9 @@ public class KafkaOutboxSender implements OutboxSender {
                 failedIds.add(event.getId());
             }
         }
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .orTimeout(emergencyTimeout,TimeUnit.SECONDS)
+                .join();
         return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
     }
 }

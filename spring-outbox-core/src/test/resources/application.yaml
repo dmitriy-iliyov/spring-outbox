@@ -14,6 +14,7 @@ outbox:
   publisher:
     sender:
       type: kafka
+      emergency-timeout: 60s
     defaults:
       batch-size: 100
       initial-delay: 5s
