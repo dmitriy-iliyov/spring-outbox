@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.unit.publisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.publisher.JacksonOutboxSerializer;
+import io.github.dmitriyiliyov.springoutbox.publisher.OutboxSerializationException;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.UuidGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,7 +56,7 @@ public class JacksonOutboxSerializerUnitTests {
     }
 
     @Test
-    @DisplayName("serialize() should wrap JsonProcessingException into RuntimeException")
+    @DisplayName("serialize() should wrap JsonProcessingException into OutboxSerializationException")
     void serialize_whenJsonProcessingException_shouldWrapToRuntime() throws Exception {
         // given
         TestEvent event = new TestEvent("fail");
@@ -63,7 +64,7 @@ public class JacksonOutboxSerializerUnitTests {
         when(mapper.writeValueAsString(event)).thenThrow(JsonProcessingException.class);
 
         // when + then
-        assertThrows(RuntimeException.class, () -> serializer.serialize("type", event));
+        assertThrows(OutboxSerializationException.class, () -> serializer.serialize("type", event));
     }
 
     @Test

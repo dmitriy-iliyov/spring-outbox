@@ -26,9 +26,7 @@ public class JacksonOutboxSerializer implements OutboxSerializer {
             String payload = mapper.writeValueAsString(event);
             return new OutboxEvent(id, eventType, payloadType, payload);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        } catch (Exception e) {
-            throw e;
+            throw new OutboxSerializationException("Error when serialize event", e);
         }
     }
 
