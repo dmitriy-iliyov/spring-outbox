@@ -23,18 +23,9 @@ public final class OutboxPublisherScheduler implements OutboxScheduler {
         this.processor = processor;
     }
 
-    /**
-     * Periodically loads and sends outbox events for a specific event type.
-     * Uses {@link ScheduledExecutorService#scheduleAtFixedRate} to trigger execution at a fixed rate.
-     * <p>
-     *     This is important in the Transactional Outbox pattern because messages must be sent regularly and without gaps
-     * so that the external system (e.g., Kafka) receives events at the required rate.
-     * Using {@link ScheduledExecutorService#scheduleWithFixedDelay} is also not ideal here, because the interval
-     * between starts will depend on the execution time of the previous batch, which can disrupt the regularity of publishing.
-     */
     @Override
     public void schedule() {
-        executor.scheduleAtFixedRate(
+        executor.scheduleWithFixedDelay(
                 () -> {
                     try {
                         log.debug("Start processing {} outbox events", eventProperties.getEventType());

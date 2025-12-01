@@ -24,15 +24,6 @@ public final class OutboxCleanUpScheduler implements OutboxScheduler {
         this.manager = manager;
     }
 
-    /**
-     * Schedules periodic cleanup of old outbox events.
-     * Uses {@link ScheduledExecutorService#scheduleWithFixedDelay} to ensure
-     * that the next execution starts only after the previous one has finished.
-     * <p>
-     *     This is suitable because cleanup does not need to happen at a strict interval,
-     * reduces load on the database (prevents running multiple large delete requests simultaneously),
-     * and prevents unnecessary thread usage.
-     */
     @Override
     public void schedule() {
         executor.scheduleWithFixedDelay(
