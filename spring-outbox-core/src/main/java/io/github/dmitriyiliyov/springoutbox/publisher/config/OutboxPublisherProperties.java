@@ -1,11 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
+import javafx.beans.DefaultProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -21,7 +24,10 @@ public class OutboxPublisherProperties {
     private StuckRecoveryProperties stuckRecovery;
     @NestedConfigurationProperty
     private OutboxProperties.CleanUpProperties cleanUp;
+    @NestedConfigurationProperty
     private DlqProperties dlq;
+    @NestedConfigurationProperty
+    private MetricsProperties metrics;
 
     public OutboxPublisherProperties() {}
 
@@ -59,6 +65,10 @@ public class OutboxPublisherProperties {
                 log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
             }
             log.debug("OutboxProperties successfully initialized");
+            if (metrics == null) {
+                metrics = new MetricsProperties();
+            }
+            metrics.initialize();
         } else {
             enabled = false;
         }
@@ -148,6 +158,14 @@ public class OutboxPublisherProperties {
 
     public void setDlq(DlqProperties dlq) {
         this.dlq = dlq;
+    }
+
+    public MetricsProperties getMetrics() {
+        return metrics;
+    }
+
+    public void setMetrics(MetricsProperties metrics) {
+        this.metrics = metrics;
     }
 
     public static final class SenderProperties {
@@ -572,6 +590,8 @@ public class OutboxPublisherProperties {
         private Duration transferToFixedDelay;
         private Duration transferFromInitialDelay;
         private Duration transferFromFixedDelay;
+        @NestedConfigurationProperty
+        private MetricsProperties metrics;
 
         public void initialize() {
             if (enabled != null && enabled) {
@@ -581,6 +601,10 @@ public class OutboxPublisherProperties {
                 transferToFixedDelay = transferToFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToFixedDelay;
                 transferFromInitialDelay = transferFromInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromInitialDelay;
                 transferFromFixedDelay = transferFromFixedDelay == null ? DEFAULT_FROM_FIXED_DELAY : transferFromFixedDelay;
+                if (metrics == null) {
+                    metrics = new MetricsProperties();
+                }
+                metrics.initialize();
             } else {
                 enabled = false;
                 batchSize = 0;
@@ -588,6 +612,7 @@ public class OutboxPublisherProperties {
                 transferToFixedDelay = null;
                 transferFromInitialDelay = null;
                 transferFromFixedDelay = null;
+                metrics = null;
             }
         }
 
@@ -637,6 +662,73 @@ public class OutboxPublisherProperties {
 
         public void setTransferFromFixedDelay(Duration transferFromFixedDelay) {
             this.transferFromFixedDelay = transferFromFixedDelay;
+        }
+
+        public MetricsProperties getMetrics() {
+            return metrics;
+        }
+
+        public void setMetrics(MetricsProperties metrics) {
+            this.metrics = metrics;
+        }
+    }
+
+    public static final class MetricsProperties {
+
+        @NestedConfigurationProperty
+        private GaugeCacheProperties gaugeCache;
+
+        public GaugeCacheProperties getGaugeCache() {
+            return gaugeCache;
+        }
+
+        public void setGaugeCache(GaugeCacheProperties gaugeCache) {
+            this.gaugeCache = gaugeCache;
+        }
+
+        public void initialize() {
+            if (gaugeCache == null) {
+                gaugeCache = new GaugeCacheProperties();
+            }
+            gaugeCache.initialize();
+        }
+
+        public static final class GaugeCacheProperties {
+
+            private static final List<Duration> DEFAULT_TTLS = List.of(
+                    Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofSeconds(60)
+            );
+
+            private Boolean enabled;
+            private List<Duration> ttls;
+
+            public Boolean getEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(@DefaultValue(value = "true") Boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public List<Duration> getTtls() {
+                return ttls;
+            }
+
+            public void setTtls(@DefaultValue(value = "[60s, 30s, 30s]") List<Duration> ttls) {
+                this.ttls = ttls;
+            }
+
+            public void initialize() {
+                if (enabled == null || enabled) {
+                    enabled = true;
+                    if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {
+                        ttls = DEFAULT_TTLS;
+                    }
+                } else {
+                    enabled = false;
+                    ttls = null;
+                }
+            }
         }
     }
 }
