@@ -13,10 +13,10 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with no parameters should assign default values")
-    public void initialize_noParams_shouldAssignDefaults() {
+    public void afterPropertiesSet_noParams_shouldAssignDefaults() {
         // given + when
         OutboxPublisherProperties.StuckRecoveryProperties recovery = new OutboxPublisherProperties.StuckRecoveryProperties();
-        recovery.initialize();
+        recovery.afterPropertiesSet();
 
         // then
         assertEquals(100, recovery.getBatchSize());
@@ -26,7 +26,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with null parameters should assign default values")
-    public void initialize_nullParameters_shouldAssignDefaults() {
+    public void afterPropertiesSet_nullParameters_shouldAssignDefaults() {
         // given
         OutboxPublisherProperties.StuckRecoveryProperties recovery = new OutboxPublisherProperties.StuckRecoveryProperties();
         recovery.setBatchSize(null);
@@ -34,7 +34,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery.setFixedDelay(null);
 
         // when
-        recovery.initialize();
+        recovery.afterPropertiesSet();
 
         // then
         assertEquals(100, recovery.getBatchSize());
@@ -44,7 +44,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with negative batchSize should assign default batchSize")
-    public void initialize_negativeBatchSize_shouldUseDefault() {
+    public void afterPropertiesSet_negativeBatchSize_shouldUseDefault() {
         // given
         OutboxPublisherProperties.StuckRecoveryProperties recovery = new OutboxPublisherProperties.StuckRecoveryProperties();
         recovery.setBatchSize(-10);
@@ -52,7 +52,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery.setFixedDelay(Duration.ofSeconds(200));
 
         // when
-        recovery.initialize();
+        recovery.afterPropertiesSet();
 
         // then
         assertEquals(100, recovery.getBatchSize());
@@ -62,7 +62,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with valid parameters should assign provided values")
-    public void initialize_validParameters_shouldAssignValues() {
+    public void afterPropertiesSet_validParameters_shouldAssignValues() {
         // given
         int batchSize = 50;
         Duration initialDelay = Duration.ofSeconds(60);
@@ -74,7 +74,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery.setFixedDelay(fixedDelay);
 
         // when
-        recovery.initialize();
+        recovery.afterPropertiesSet();
 
         // then
         assertEquals(batchSize, recovery.getBatchSize());
@@ -92,7 +92,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery3.setBatchSize(50);
         recovery3.setInitialDelay(Duration.ofSeconds(60));
         recovery3.setFixedDelay(Duration.ofSeconds(120));
-        recovery3.initialize();
+        recovery3.afterPropertiesSet();
 
         // then
         assertEquals(recovery1, recovery2);

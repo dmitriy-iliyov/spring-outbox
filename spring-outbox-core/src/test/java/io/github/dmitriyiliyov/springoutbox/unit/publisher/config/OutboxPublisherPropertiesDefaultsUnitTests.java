@@ -13,7 +13,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
     @Test
     @DisplayName("UT initialize() with all null parameters should assign default values")
-    public void initialize_allNull_shouldAssignDefaults() {
+    public void afterPropertiesSet_allNull_shouldAssignDefaults() {
         // given
         OutboxPublisherProperties.Defaults defaults = new OutboxPublisherProperties.Defaults();
         defaults.setBatchSize(null);
@@ -23,7 +23,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.setBackoff(null);
 
         // when
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // then
         assertEquals(50, defaults.getBatchSize());
@@ -35,7 +35,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
     @Test
     @DisplayName("UT initialize() with batchSize <= 0 should assign default batch size")
-    public void initialize_batchSizeInvalid_shouldAssignDefault() {
+    public void afterPropertiesSet_batchSizeInvalid_shouldAssignDefault() {
         // given
         OutboxPublisherProperties.Defaults defaults = new OutboxPublisherProperties.Defaults();
         defaults.setBatchSize(0);
@@ -45,7 +45,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.setBackoff(new OutboxPublisherProperties.BackoffProperties());
 
         // when
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // then
         assertEquals(50, defaults.getBatchSize());
@@ -53,7 +53,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
     @Test
     @DisplayName("UT initialize() with maxRetries < 0 should assign default maxRetries")
-    public void initialize_maxRetriesInvalid_shouldAssignDefault() {
+    public void afterPropertiesSet_maxRetriesInvalid_shouldAssignDefault() {
         // given
         OutboxPublisherProperties.Defaults defaults = new OutboxPublisherProperties.Defaults();
         defaults.setBatchSize(10);
@@ -63,7 +63,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.setBackoff(new OutboxPublisherProperties.BackoffProperties());
 
         // when
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // then
         assertEquals(3, defaults.getMaxRetries());
@@ -71,7 +71,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
     @Test
     @DisplayName("UT initialize() with valid values provided should keep provided values")
-    public void initialize_validValues_shouldKeepProvided() {
+    public void afterPropertiesSet_validValues_shouldKeepProvided() {
         // given
         OutboxPublisherProperties.BackoffProperties customBackoff = new OutboxPublisherProperties.BackoffProperties();
         OutboxPublisherProperties.Defaults defaults = new OutboxPublisherProperties.Defaults();
@@ -82,7 +82,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.setBackoff(customBackoff);
 
         // when
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // then
         assertEquals(100, defaults.getBatchSize());
@@ -94,7 +94,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
     @Test
     @DisplayName("UT initialize() with null backoff should assign default backoff")
-    public void initialize_backoffNull_shouldAssignDefault() {
+    public void afterPropertiesSet_backoffNull_shouldAssignDefault() {
         // given
         OutboxPublisherProperties.Defaults defaults = new OutboxPublisherProperties.Defaults();
         defaults.setBatchSize(10);
@@ -104,7 +104,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.setBackoff(null);
 
         // when
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // then
         assertNotNull(defaults.getBackoff());
@@ -112,7 +112,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
     @Test
     @DisplayName("UT initialize() with null initialDelay and fixedDelay should assign defaults")
-    public void initialize_delaysNull_shouldAssignDefaults() {
+    public void afterPropertiesSet_delaysNull_shouldAssignDefaults() {
         // given
         OutboxPublisherProperties.Defaults defaults = new OutboxPublisherProperties.Defaults();
         defaults.setBatchSize(10);
@@ -122,7 +122,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.setBackoff(new OutboxPublisherProperties.BackoffProperties());
 
         // when
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // then
         assertEquals(Duration.ofSeconds(300), defaults.getInitialDelay());

@@ -12,12 +12,12 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with default constructor should assign default values")
-    public void initialize_defaultConstructor_assignsDefaults() {
+    public void afterPropertiesSet_defaultConstructor_assignsDefaults() {
         // given
         BackoffProperties backoff = new BackoffProperties();
 
         // when
-        backoff.initialize();
+        backoff.afterPropertiesSet();
 
         // then
         assertTrue(backoff.isEnabled());
@@ -27,7 +27,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled=true and null fields should assign defaults")
-    public void initialize_enabledTrueWithNull_assignsDefaults() {
+    public void afterPropertiesSet_enabledTrueWithNull_assignsDefaults() {
         // given
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(true);
@@ -35,7 +35,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         backoff.setMultiplier(null);
 
         // when
-        backoff.initialize();
+        backoff.afterPropertiesSet();
 
         // then
         assertTrue(backoff.isEnabled());
@@ -45,7 +45,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled=false should disable backoff and set minimal values")
-    public void initialize_enabledFalse_disablesBackoff() {
+    public void afterPropertiesSet_enabledFalse_disablesBackoff() {
         // given
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(false);
@@ -53,7 +53,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         backoff.setMultiplier(10L);
 
         // when
-        backoff.initialize();
+        backoff.afterPropertiesSet();
 
         // then
         assertFalse(backoff.isEnabled());
@@ -63,7 +63,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled=null should treat as enabled and assign defaults")
-    public void initialize_enabledNull_assignsDefaults() {
+    public void afterPropertiesSet_enabledNull_assignsDefaults() {
         // given
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(null);
@@ -71,7 +71,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         backoff.setMultiplier(null);
 
         // when
-        backoff.initialize();
+        backoff.afterPropertiesSet();
 
         // then
         assertTrue(backoff.isEnabled());
@@ -81,7 +81,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with valid delay and multiplier should keep assigned values")
-    public void initialize_validDelayAndMultiplier_keepsValues() {
+    public void afterPropertiesSet_validDelayAndMultiplier_keepsValues() {
         // given
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(true);
@@ -89,7 +89,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         backoff.setMultiplier(5L);
 
         // when
-        backoff.initialize();
+        backoff.afterPropertiesSet();
 
         // then
         assertTrue(backoff.isEnabled());
@@ -99,7 +99,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with multiplier < 1 should assign default multiplier")
-    public void initialize_multiplierLessThanOne_usesDefaultMultiplier() {
+    public void afterPropertiesSet_multiplierLessThanOne_usesDefaultMultiplier() {
         // given
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(true);
@@ -107,7 +107,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         backoff.setMultiplier(0L);
 
         // when
-        backoff.initialize();
+        backoff.afterPropertiesSet();
 
         // then
         assertTrue(backoff.isEnabled());
@@ -123,19 +123,19 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         b1.setEnabled(true);
         b1.setDelay(Duration.ofSeconds(10));
         b1.setMultiplier(3L);
-        b1.initialize();
+        b1.afterPropertiesSet();
 
         BackoffProperties b2 = new BackoffProperties();
         b2.setEnabled(true);
         b2.setDelay(Duration.ofSeconds(10));
         b2.setMultiplier(3L);
-        b2.initialize();
+        b2.afterPropertiesSet();
 
         BackoffProperties b3 = new BackoffProperties();
         b3.setEnabled(false);
         b3.setDelay(Duration.ofSeconds(0));
         b3.setMultiplier(1L);
-        b3.initialize();
+        b3.afterPropertiesSet();
 
         // then
         assertEquals(b1, b2);

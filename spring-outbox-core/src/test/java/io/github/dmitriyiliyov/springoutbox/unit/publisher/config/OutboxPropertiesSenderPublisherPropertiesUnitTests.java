@@ -14,19 +14,19 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() should throw when type is null")
-    public void initialize_typeNull_shouldThrow() {
+    public void afterPropertiesSet_typeNull_shouldThrow() {
         // given
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(null);
         sender.setBeanName("myBean");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, sender::initialize);
+        assertThrows(IllegalArgumentException.class, sender::afterPropertiesSet);
     }
 
     @Test
     @DisplayName("UT initialize() with valid type and beanName should assign values")
-    public void initialize_withValidTypeAndBeanName_shouldAssignValues() {
+    public void afterPropertiesSet_withValidTypeAndBeanName_shouldAssignValues() {
         // given
         SenderType type = SenderType.KAFKA;
         String beanName = "myKafkaBean";
@@ -35,7 +35,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(type);
         sender.setBeanName(beanName);
-        sender.initialize();
+        sender.afterPropertiesSet();
 
         // then
         assertEquals(type, sender.getType());
@@ -45,7 +45,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with valid type, beanName and emergencyTimeout should assign values")
-    public void initialize_validParameters_shouldAssignValues() {
+    public void afterPropertiesSet_validParameters_shouldAssignValues() {
         // given
         SenderType type = SenderType.KAFKA;
         String beanName = "myKafkaBean";
@@ -56,7 +56,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
         sender.setType(type);
         sender.setBeanName(beanName);
         sender.setEmergencyTimeout(emergencyTimeout);
-        sender.initialize();
+        sender.afterPropertiesSet();
 
         // then
         assertEquals(type, sender.getType());

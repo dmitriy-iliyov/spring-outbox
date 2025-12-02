@@ -19,6 +19,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
@@ -33,8 +35,23 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxCache<DlqStatus> outboxDlqCache() {
-        return new SimpleOutboxCache<>(60, 60, 60);
+    @ConditionalOnProperty(
+            prefix = "outbox.publish.dlq.metrics.gauge.cache",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
+    )
+    public OutboxCache<DlqStatus> outboxDlqCache(OutboxPublisherProperties properties) {
+        List<Duration> ttls = properties.getDlq().getMetrics().getGauge().getCache().getTtls();
+        if (ttls == null || ttls.isEmpty()) {
+            throw new IllegalArgumentException("Dlq cache ttls cannot be null or empty");
+        }
+        if (ttls.size() != 3) {
+            throw new IllegalArgumentException("Ttls should be 3 element size");
+        }
+        return new SimpleOutboxCache<>(
+                ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
+        );
     }
 
     @Bean
@@ -93,6 +110,11 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "outbox.publish.dlq.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
     public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
                                           MeterRegistry registry,
                                           OutboxDlqManager manager) {

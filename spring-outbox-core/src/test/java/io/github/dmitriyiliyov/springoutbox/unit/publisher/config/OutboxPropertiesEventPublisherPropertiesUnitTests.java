@@ -15,67 +15,67 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() should throw when eventType is null")
-    public void initialize_eventTypeNull_shouldThrow() {
+    public void afterPropertiesSet_eventTypeNull_shouldThrow() {
         // given
         EventProperties event = new EventProperties();
         event.setEventType(null);
         event.setTopic("topic");
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when + then
         assertThrows(IllegalArgumentException.class,
-                () -> event.initialize(defaults));
+                () -> event.afterPropertiesSet(defaults));
     }
 
     @Test
     @DisplayName("UT initialize() should throw when eventType is blank")
-    public void initialize_eventTypeBlank_shouldThrow() {
+    public void afterPropertiesSet_eventTypeBlank_shouldThrow() {
         // given
         EventProperties event = new EventProperties();
         event.setEventType("   ");
         event.setTopic("topic");
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when + then
         assertThrows(IllegalArgumentException.class,
-                () -> event.initialize(defaults));
+                () -> event.afterPropertiesSet(defaults));
     }
 
     @Test
     @DisplayName("UT initialize() should throw when topic is null")
-    public void initialize_topicNull_shouldThrow() {
+    public void afterPropertiesSet_topicNull_shouldThrow() {
         // given
         EventProperties event = new EventProperties();
         event.setEventType("event");
         event.setTopic(null);
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when + then
         assertThrows(IllegalArgumentException.class,
-                () -> event.initialize(defaults));
+                () -> event.afterPropertiesSet(defaults));
     }
 
     @Test
     @DisplayName("UT initialize() should throw when topic is blank")
-    public void initialize_topicBlank_shouldThrow() {
+    public void afterPropertiesSet_topicBlank_shouldThrow() {
         // given
         EventProperties event = new EventProperties();
         event.setEventType("event");
         event.setTopic("   ");
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when + then
         assertThrows(IllegalArgumentException.class,
-                () -> event.initialize(defaults));
+                () -> event.afterPropertiesSet(defaults));
     }
 
     @Test
     @DisplayName("UT initialize() should assign default values when fields are null")
-    public void initialize_nullFields_shouldUseDefaults() {
+    public void afterPropertiesSet_nullFields_shouldUseDefaults() {
         // given
         EventProperties event = new EventProperties();
         event.setEventType("event");
@@ -86,10 +86,10 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
         event.setMaxRetries(null);
         event.setBackoff(null);
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when
-        event.initialize(defaults);
+        event.afterPropertiesSet(defaults);
 
         // then
         assertEquals(defaults.getBatchSize(), event.getBatchSize());
@@ -109,10 +109,10 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
         event.setTopic("topic");
         event.setBackoff(backoff);
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when
-        event.initialize(defaults);
+        event.afterPropertiesSet(defaults);
         long multiplier = event.backoffMultiplier();
 
         // then
@@ -129,10 +129,10 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
         event.setTopic("topic");
         event.setBackoff(backoff);
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when
-        event.initialize(defaults);
+        event.afterPropertiesSet(defaults);
         long delay = event.backoffDelay();
 
         // then
@@ -141,7 +141,7 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with valid parameters should create object")
-    public void initialize_validParameters_shouldCreateObject() {
+    public void afterPropertiesSet_validParameters_shouldCreateObject() {
         // given
         BackoffProperties backoff = new BackoffProperties(true, Duration.ofSeconds(10), 5L);
         EventProperties event = new EventProperties();
@@ -153,10 +153,10 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
         event.setMaxRetries(3);
         event.setBackoff(backoff);
         Defaults defaults = new Defaults();
-        defaults.initialize();
+        defaults.afterPropertiesSet();
 
         // when
-        event.initialize(defaults);
+        event.afterPropertiesSet(defaults);
 
         // then
         assertEquals("user-registered", event.getEventType());

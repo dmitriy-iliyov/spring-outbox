@@ -1,11 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.publisher.config;
 
 import io.github.dmitriyiliyov.springoutbox.config.OutboxProperties;
-import javafx.beans.DefaultProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
-import org.springframework.boot.context.properties.bind.DefaultValue;
 
 import java.time.Duration;
 import java.util.List;
@@ -20,25 +18,23 @@ public class OutboxPublisherProperties {
     private Boolean enabled;
     private SenderProperties sender;
     private Defaults defaults;
+    @NestedConfigurationProperty
     private Map<String, EventProperties> events;
     private StuckRecoveryProperties stuckRecovery;
-    @NestedConfigurationProperty
     private OutboxProperties.CleanUpProperties cleanUp;
-    @NestedConfigurationProperty
     private DlqProperties dlq;
-    @NestedConfigurationProperty
     private MetricsProperties metrics;
 
     public OutboxPublisherProperties() {}
 
-    public void initialize() {
+    public void afterPropertiesSet() {
         if (enabled == null || enabled) {
             if (sender == null) {
                 throw new IllegalArgumentException("sender cannot be null");
             }
-            sender.initialize();
+            sender.afterPropertiesSet();
             defaults = defaults == null ? new Defaults() : defaults;
-            defaults.initialize();
+            defaults.afterPropertiesSet();
             if (events == null) {
                 throw new IllegalArgumentException("events cannot be null");
             }
@@ -47,12 +43,12 @@ public class OutboxPublisherProperties {
             }
             events = applyDefaults(events);
             stuckRecovery = stuckRecovery == null ? new StuckRecoveryProperties() : stuckRecovery;
-            stuckRecovery.initialize();
+            stuckRecovery.afterPropertiesSet();
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
             }
-            cleanUp.initialize();
+            cleanUp.afterPropertiesSet();
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
@@ -60,7 +56,7 @@ public class OutboxPublisherProperties {
                 dlq = new DlqProperties();
                 dlq.setEnabled(false);
             }
-            dlq.initialize();
+            dlq.afterPropertiesSet();
             if (!dlq.isEnabled()) {
                 log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
             }
@@ -68,7 +64,7 @@ public class OutboxPublisherProperties {
             if (metrics == null) {
                 metrics = new MetricsProperties();
             }
-            metrics.initialize();
+            metrics.afterPropertiesSet();
         } else {
             enabled = false;
         }
@@ -90,13 +86,13 @@ public class OutboxPublisherProperties {
                         e -> {
                             EventProperties event = e.getValue();
                             event.setEventType(e.getKey());
-                            event.initialize(defaults);
+                            event.afterPropertiesSet(defaults);
                             return event;
                         }
                 ));
     }
 
-    public Boolean getEnabled() {
+    public Boolean isEnabled() {
         return enabled;
     }
 
@@ -176,7 +172,7 @@ public class OutboxPublisherProperties {
         private String beanName;
         private Duration emergencyTimeout;
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             if (type == null) {
                 throw new IllegalArgumentException("senderType cannot be null");
             }
@@ -231,13 +227,13 @@ public class OutboxPublisherProperties {
             this.backoff = DEFAULT_BACKOFF;
         }
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
             fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
             maxRetries = maxRetries == null || maxRetries < 0 ? DEFAULT_MAX_RETRY : maxRetries;
             backoff = backoff == null ? DEFAULT_BACKOFF : backoff;
-            backoff.initialize();
+            backoff.afterPropertiesSet();
         }
 
         public void setBatchSize(Integer batchSize) {
@@ -317,10 +313,10 @@ public class OutboxPublisherProperties {
             this.enabled = enabled;
             this.delay = delay;
             this.multiplier = multiplier;
-            this.initialize();
+            this.afterPropertiesSet();
         }
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             if (enabled == null || enabled) {
                 enabled = true;
                 delay = delay == null ? DEFAULT_DELAY : delay;
@@ -383,7 +379,7 @@ public class OutboxPublisherProperties {
         @NestedConfigurationProperty
         private BackoffProperties backoff;
 
-        public void initialize(Defaults defaults) {
+        public void afterPropertiesSet(Defaults defaults) {
             if (eventType == null) {
                 throw new IllegalArgumentException("eventType cannot be null");
             }
@@ -416,7 +412,7 @@ public class OutboxPublisherProperties {
                                 backoff.getMultiplier()
                 );
             }
-            backoff.initialize();
+            backoff.afterPropertiesSet();
         }
 
         public String getEventType() {
@@ -521,7 +517,7 @@ public class OutboxPublisherProperties {
             this.fixedDelay = DEFAULT_FIXED_DELAY;
         }
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             maxBatchProcessingTime = maxBatchProcessingTime == null ? DEFAULT_MAX_BATCH_PROCESSING_TIME : maxBatchProcessingTime;
             initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
@@ -593,7 +589,7 @@ public class OutboxPublisherProperties {
         @NestedConfigurationProperty
         private MetricsProperties metrics;
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             if (enabled != null && enabled) {
                 enabled = true;
                 batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
@@ -604,7 +600,7 @@ public class OutboxPublisherProperties {
                 if (metrics == null) {
                     metrics = new MetricsProperties();
                 }
-                metrics.initialize();
+                metrics.afterPropertiesSet();
             } else {
                 enabled = false;
                 batchSize = 0;
@@ -675,58 +671,90 @@ public class OutboxPublisherProperties {
 
     public static final class MetricsProperties {
 
-        @NestedConfigurationProperty
-        private GaugeCacheProperties gaugeCache;
+        private GaugeProperties gauge;
 
-        public GaugeCacheProperties getGaugeCache() {
-            return gaugeCache;
+        public GaugeProperties getGauge() {
+            return gauge;
         }
 
-        public void setGaugeCache(GaugeCacheProperties gaugeCache) {
-            this.gaugeCache = gaugeCache;
+        public void setGauge(GaugeProperties gauge) {
+            this.gauge = gauge;
         }
 
-        public void initialize() {
-            if (gaugeCache == null) {
-                gaugeCache = new GaugeCacheProperties();
+        public void afterPropertiesSet() {
+            if (gauge == null) {
+                gauge = new GaugeProperties();
             }
-            gaugeCache.initialize();
+            gauge.afterPropertiesSet();
         }
 
-        public static final class GaugeCacheProperties {
-
-            private static final List<Duration> DEFAULT_TTLS = List.of(
-                    Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofSeconds(60)
-            );
+        public static final class GaugeProperties {
 
             private Boolean enabled;
-            private List<Duration> ttls;
+            private CacheProperties cache;
 
-            public Boolean getEnabled() {
+            public Boolean isEnabled() {
                 return enabled;
             }
 
-            public void setEnabled(@DefaultValue(value = "true") Boolean enabled) {
+            public void setEnabled(Boolean enabled) {
                 this.enabled = enabled;
             }
 
-            public List<Duration> getTtls() {
-                return ttls;
+            public CacheProperties getCache() {
+                return cache;
             }
 
-            public void setTtls(@DefaultValue(value = "[60s, 30s, 30s]") List<Duration> ttls) {
-                this.ttls = ttls;
+            public void setCache(CacheProperties cache) {
+                this.cache = cache;
             }
 
-            public void initialize() {
-                if (enabled == null || enabled) {
+            public void afterPropertiesSet() {
+                if (enabled != null && enabled) {
                     enabled = true;
-                    if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {
-                        ttls = DEFAULT_TTLS;
+                    if (cache == null) {
+                        cache = new CacheProperties();
                     }
+                    cache.afterPropertiesSet();
                 } else {
                     enabled = false;
-                    ttls = null;
+                }
+            }
+
+            public static final class CacheProperties {
+
+                private static final List<Duration> DEFAULT_TTLS = List.of(
+                        Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofSeconds(60)
+                );
+
+                private Boolean enabled;
+                private List<Duration> ttls;
+
+                public Boolean isEnabled() {
+                    return enabled;
+                }
+
+                public void setEnabled(Boolean enabled) {
+                    this.enabled = enabled;
+                }
+
+                public List<Duration> getTtls() {
+                    return ttls;
+                }
+
+                public void setTtls(List<Duration> ttls) {
+                    this.ttls = ttls;
+                }
+
+                public void afterPropertiesSet() {
+                    if (enabled == null || enabled) {
+                        enabled = true;
+                        if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {
+                            ttls = DEFAULT_TTLS;
+                        }
+                    } else {
+                        enabled = false;
+                    }
                 }
             }
         }

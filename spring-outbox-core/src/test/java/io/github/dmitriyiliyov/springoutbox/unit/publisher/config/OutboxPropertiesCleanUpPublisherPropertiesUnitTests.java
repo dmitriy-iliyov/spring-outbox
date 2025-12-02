@@ -12,13 +12,13 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = true and no parameters should use defaults")
-    public void initialize_enabledTrue_noParams_shouldUseDefaults() {
+    public void afterPropertiesSet_enabledTrue_noParams_shouldUseDefaults() {
         // given
         OutboxProperties.CleanUpProperties cleanup = new OutboxProperties.CleanUpProperties();
         cleanup.setEnabled(true);
 
         // when
-        cleanup.initialize();
+        cleanup.afterPropertiesSet();
         System.out.println(cleanup);
 
         // then
@@ -31,7 +31,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = true and valid parameters should assign values")
-    public void initialize_enabledTrue_withValues_shouldAssignValues() {
+    public void afterPropertiesSet_enabledTrue_withValues_shouldAssignValues() {
         // given
         OutboxProperties.CleanUpProperties cleanup = new OutboxProperties.CleanUpProperties();
         cleanup.setEnabled(true);
@@ -41,7 +41,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
         cleanup.setFixedDelay(Duration.ofSeconds(10));
 
         // when
-        cleanup.initialize();
+        cleanup.afterPropertiesSet();
 
         // then
         assertTrue(cleanup.isEnabled());
@@ -53,7 +53,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = true and some null/invalid fields should fallback to defaults")
-    public void initialize_enabledTrue_partialNull_shouldUseDefaultsForNull() {
+    public void afterPropertiesSet_enabledTrue_partialNull_shouldUseDefaultsForNull() {
         // given
         OutboxProperties.CleanUpProperties cleanup = new OutboxProperties.CleanUpProperties();
         cleanup.setEnabled(true);
@@ -63,7 +63,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
         cleanup.setFixedDelay(null);
 
         // when
-        cleanup.initialize();
+        cleanup.afterPropertiesSet();
 
         // then
         assertTrue(cleanup.isEnabled());
@@ -75,7 +75,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = false should disable all fields")
-    public void initialize_enabledFalse_shouldDisableAndIgnoreValues() {
+    public void afterPropertiesSet_enabledFalse_shouldDisableAndIgnoreValues() {
         // given
         OutboxProperties.CleanUpProperties cleanup = new OutboxProperties.CleanUpProperties();
         cleanup.setEnabled(false);
@@ -85,7 +85,7 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
         cleanup.setFixedDelay(Duration.ofSeconds(10));
 
         // when
-        cleanup.initialize();
+        cleanup.afterPropertiesSet();
 
         // then
         assertFalse(cleanup.isEnabled());
@@ -97,13 +97,13 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = null should be true and initialize fields with defaults")
-    public void initialize_enabledNull_shouldDisable() {
+    public void afterPropertiesSet_enabledNull_shouldDisable() {
         // given
         OutboxProperties.CleanUpProperties cleanup = new OutboxProperties.CleanUpProperties();
         cleanup.setEnabled(null);
 
         // when
-        cleanup.initialize();
+        cleanup.afterPropertiesSet();
 
         // then
         assertTrue(cleanup.isEnabled());

@@ -19,15 +19,16 @@ public class OutboxProperties {
     private OutboxPublisherProperties publisher;
     @NestedConfigurationProperty
     private OutboxConsumerProperties consumer;
+    @NestedConfigurationProperty
     private OutboxProperties.TablesProperties tables;
 
     public OutboxProperties() {}
 
     @PostConstruct
-    public void initialize() {
+    public void afterPropertiesSet() {
         threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
         if (publisher != null) {
-            publisher.initialize();
+            publisher.afterPropertiesSet();
         } else {
             publisher = new OutboxPublisherProperties();
             publisher.setEnabled(false);
@@ -36,12 +37,12 @@ public class OutboxProperties {
             consumer = new OutboxConsumerProperties();
             consumer.setEnabled(false);
         }
-        consumer.initialize();
+        consumer.afterPropertiesSet();
         if (tables == null) {
             tables = new TablesProperties();
             tables.setAutoCreate(true);
         }
-        tables.initialize();
+        tables.afterPropertiesSet();
     }
 
     public Integer getThreadPoolSize() {
@@ -89,7 +90,7 @@ public class OutboxProperties {
         private Duration initialDelay;
         private Duration fixedDelay;
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             if (enabled == null || enabled) {
                 enabled = true;
                 batchSize = (batchSize == null || batchSize <= 0) ? DEFAULT_BATCH_SIZE : batchSize;
@@ -150,7 +151,7 @@ public class OutboxProperties {
 
         private Boolean autoCreate;
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             autoCreate = autoCreate == null || autoCreate;
         }
 

@@ -56,12 +56,14 @@ outbox:
       transfer-from-initial-delay: 2m
       transfer-from-fixed-delay: 1h
       metrics:
-        gauge-cache:
-          ttls: [60s, 30s, 30s]
+        gauge:
+          cache:
+            ttls: [60s, 60s, 60s]
 
     metrics:
-      gauge-cache:
-        ttls: [60s, 30s, 30s]
+      gauge:
+        cache:
+          ttls: [60s, 60s, 30s]
 
   consumer:
     enabled: true

@@ -22,7 +22,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(new HashMap<>());
 
         // when + then
-        assertThrows(IllegalArgumentException.class, properties::initialize);
+        assertThrows(IllegalArgumentException.class, properties::afterPropertiesSet);
     }
 
     @Test
@@ -36,7 +36,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, properties::initialize);
+        assertThrows(IllegalArgumentException.class, properties::afterPropertiesSet);
     }
 
     @Test
@@ -51,7 +51,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(new HashMap<>());
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertTrue(properties.getEvents().isEmpty());
@@ -74,7 +74,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, properties::initialize);
+        assertThrows(IllegalArgumentException.class, properties::afterPropertiesSet);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, properties::initialize);
+        assertThrows(IllegalArgumentException.class, properties::afterPropertiesSet);
     }
 
     @Test
@@ -109,7 +109,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(new HashMap<>());
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertNotNull(properties.getStuckRecovery());
@@ -130,7 +130,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(new HashMap<>());
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertNotNull(properties.getDefaults());
@@ -182,7 +182,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setDefaults(defaults);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertEquals(SenderType.KAFKA, properties.getSender().getType());
@@ -252,7 +252,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setDlq(dlq);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertFalse(properties.getDefaults().getBackoff().isEnabled());
@@ -294,7 +294,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -346,7 +346,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -392,7 +392,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -432,7 +432,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -472,7 +472,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -511,7 +511,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -551,7 +551,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -591,7 +591,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -631,7 +631,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -671,7 +671,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -710,7 +710,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -750,7 +750,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -790,7 +790,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
@@ -811,7 +811,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(new HashMap<>());
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertTrue(properties.isCleanUpEnabled());
@@ -833,7 +833,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setCleanUp(cleanUp);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertTrue(properties.isCleanUpEnabled());
@@ -855,7 +855,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setCleanUp(cleanUp);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertFalse(properties.isCleanUpEnabled());
@@ -881,7 +881,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setCleanUp(cleanUp);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertNotNull(properties.getCleanUp());
@@ -910,7 +910,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setDlq(dlq);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertNotNull(properties.getDlq());
@@ -940,7 +940,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertTrue(properties.existEventType("test-event"));
@@ -963,7 +963,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertFalse(properties.existEventType("non-existing-event"));
@@ -986,7 +986,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties newEvent = new OutboxPublisherProperties.EventProperties();
@@ -1008,7 +1008,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(new HashMap<>());
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         assertNotNull(properties.getSender());
@@ -1070,7 +1070,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setEvents(events);
 
         // when
-        properties.initialize();
+        properties.afterPropertiesSet();
 
         // then
         OutboxPublisherProperties.EventProperties resultEvent1 = properties.getEvents().get("event1");

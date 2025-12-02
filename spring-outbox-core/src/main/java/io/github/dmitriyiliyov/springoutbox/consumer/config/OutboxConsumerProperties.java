@@ -17,13 +17,13 @@ public class OutboxConsumerProperties {
     @NestedConfigurationProperty
     private CacheProperties cache;
 
-    public void initialize() {
+    public void afterPropertiesSet() {
         if (enabled != null && enabled) {
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
             }
-            cleanUp.initialize();
+            cleanUp.afterPropertiesSet();
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
@@ -31,7 +31,7 @@ public class OutboxConsumerProperties {
                 cache = new CacheProperties();
                 cache.setEnabled(true);
             }
-            cache.initialize();
+            cache.afterPropertiesSet();
             if (!cache.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled cache");
             }
@@ -69,7 +69,7 @@ public class OutboxConsumerProperties {
         public Boolean enabled;
         public String cacheName;
 
-        public void initialize() {
+        public void afterPropertiesSet() {
             if (enabled != null && enabled) {
                 Objects.requireNonNull(cacheName, "cacheName cannot be null");
                 if (cacheName.isBlank()) {

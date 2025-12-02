@@ -12,7 +12,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = true and null parameters should assign defaults")
-    public void initialize_enabledTrue_nullParameters_shouldAssignDefaults() {
+    public void afterPropertiesSet_enabledTrue_nullParameters_shouldAssignDefaults() {
         // given
         DlqProperties dlq = new DlqProperties();
         dlq.setEnabled(true);
@@ -23,7 +23,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
         dlq.setTransferFromFixedDelay(null);
 
         // when
-        dlq.initialize();
+        dlq.afterPropertiesSet();
 
         // then
         assertTrue(dlq.isEnabled());
@@ -36,7 +36,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = true and valid parameters should assign values")
-    public void initialize_enabledTrue_withValues_shouldAssignValues() {
+    public void afterPropertiesSet_enabledTrue_withValues_shouldAssignValues() {
         // given
         DlqProperties dlq = new DlqProperties();
         dlq.setEnabled(true);
@@ -47,7 +47,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
         dlq.setTransferFromFixedDelay(Duration.ofSeconds(300));
 
         // when
-        dlq.initialize();
+        dlq.afterPropertiesSet();
 
         // then
         assertTrue(dlq.isEnabled());
@@ -60,7 +60,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = true and partial null/invalid parameters should assign defaults for those")
-    public void initialize_enabledTrue_partialNullOrInvalid_shouldAssignDefaults() {
+    public void afterPropertiesSet_enabledTrue_partialNullOrInvalid_shouldAssignDefaults() {
         // given
         DlqProperties dlq = new DlqProperties();
         dlq.setEnabled(true);
@@ -71,7 +71,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
         dlq.setTransferFromFixedDelay(null);
 
         // when
-        dlq.initialize();
+        dlq.afterPropertiesSet();
 
         // then
         assertTrue(dlq.isEnabled());
@@ -84,7 +84,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = false should disable DLQ and set nulls")
-    public void initialize_enabledFalse_shouldDisableAndSetNulls() {
+    public void afterPropertiesSet_enabledFalse_shouldDisableAndSetNulls() {
         // given
         DlqProperties dlq = new DlqProperties();
         dlq.setEnabled(false);
@@ -95,7 +95,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
         dlq.setTransferFromFixedDelay(Duration.ofSeconds(40));
 
         // when
-        dlq.initialize();
+        dlq.afterPropertiesSet();
 
         // then
         assertFalse(dlq.isEnabled());
@@ -108,7 +108,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with enabled = null should treat as disabled and set nulls")
-    public void initialize_enabledNull_shouldDisableAndSetNulls() {
+    public void afterPropertiesSet_enabledNull_shouldDisableAndSetNulls() {
         // given
         DlqProperties dlq = new DlqProperties();
         dlq.setEnabled(null);
@@ -119,7 +119,7 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
         dlq.setTransferFromFixedDelay(null);
 
         // when
-        dlq.initialize();
+        dlq.afterPropertiesSet();
 
         // then
         assertFalse(dlq.isEnabled());
