@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example.configs;
+package io.github.dmitriyiliyov.springoutbox.example.publisher.configs;
 
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;

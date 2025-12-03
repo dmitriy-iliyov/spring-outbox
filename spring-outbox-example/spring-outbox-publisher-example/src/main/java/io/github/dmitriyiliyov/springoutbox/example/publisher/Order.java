@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.publisher;
 
 import jakarta.persistence.*;
 import lombok.Data;

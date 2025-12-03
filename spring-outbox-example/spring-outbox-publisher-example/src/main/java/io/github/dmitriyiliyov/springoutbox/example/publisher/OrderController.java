@@ -1,7 +1,7 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.example.dto.OrderCreateDto;
-import io.github.dmitriyiliyov.springoutbox.example.dto.OrderUpdateDto;
+import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
+import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

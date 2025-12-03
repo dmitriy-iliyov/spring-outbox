@@ -183,7 +183,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>io.github.dmitriyiliyov.springoutbox.example.PublisherApplicationRunner</mainClass>
+                    <mainClass>io.github.dmitriyiliyov.springoutbox.example.publisher.PublisherRunner</mainClass>
                 </configuration>
             </plugin>
         </plugins>

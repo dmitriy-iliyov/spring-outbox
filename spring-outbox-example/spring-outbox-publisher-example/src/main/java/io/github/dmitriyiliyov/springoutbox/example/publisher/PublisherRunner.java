@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.config.EnableOutbox;
 import org.springframework.boot.SpringApplication;
@@ -12,9 +12,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableKafka
 @EnableOutbox
-public class PublisherApplicationRunner {
+public class PublisherRunner {
 
     public static void main(String ... args) {
-        SpringApplication.run(PublisherApplicationRunner.class, args);
+        SpringApplication.run(PublisherRunner.class, args);
     }
 }

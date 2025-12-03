@@ -1,6 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.example.dto.OrderCreateDto;
+import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingConstants;
