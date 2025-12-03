@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.consumer.OutboxIdempotentConsumer;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;

@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.config.EnableOutbox;
 import org.springframework.boot.SpringApplication;
@@ -14,9 +14,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableKafka
 @EnableCaching
 @EnableOutbox
-public class ConsumerApplicationRunner {
+public class ConsumerRunner {
 
     public static void main(String [] args) {
-        SpringApplication.run(ConsumerApplicationRunner.class, args);
+        SpringApplication.run(ConsumerRunner.class, args);
     }
 }

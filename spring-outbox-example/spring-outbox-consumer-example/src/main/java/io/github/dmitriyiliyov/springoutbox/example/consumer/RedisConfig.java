@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example;
+package io.github.dmitriyiliyov.springoutbox.example.consumer;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
