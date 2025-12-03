@@ -7,9 +7,12 @@ import io.github.dmitriyiliyov.springoutbox.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqControllerAdvice;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqMetrics;
+import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqTransferMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.publisher.utils.PassthroughOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.SimpleOutboxCache;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -35,23 +38,26 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(
-            prefix = "outbox.publish.dlq.metrics.gauge.cache",
-            name = "enabled",
-            havingValue = "true",
-            matchIfMissing = true
-    )
     public OutboxCache<DlqStatus> outboxDlqCache(OutboxPublisherProperties properties) {
-        List<Duration> ttls = properties.getDlq().getMetrics().getGauge().getCache().getTtls();
-        if (ttls == null || ttls.isEmpty()) {
-            throw new IllegalArgumentException("Dlq cache ttls cannot be null or empty");
+        OutboxPublisherProperties.MetricsProperties metricsProperties = properties.getDlq().getMetrics();
+        if (metricsProperties != null) {
+            OutboxPublisherProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
+            if (gaugeProperties != null) {
+                if (gaugeProperties.isEnabled()) {
+                    List<Duration> ttls = gaugeProperties.getCache().getTtls();
+                    if (ttls == null || ttls.isEmpty()) {
+                        throw new IllegalArgumentException("Cache ttls cannot be null or empty");
+                    }
+                    if (ttls.size() != 3) {
+                        throw new IllegalArgumentException("Ttls should be 3 element size");
+                    }
+                    return new SimpleOutboxCache<>(
+                            ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
+                    );
+                }
+            }
         }
-        if (ttls.size() != 3) {
-            throw new IllegalArgumentException("Ttls should be 3 element size");
-        }
-        return new SimpleOutboxCache<>(
-                ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
-        );
+        return new PassthroughOutboxCache<>();
     }
 
     @Bean
@@ -78,8 +84,12 @@ public class OutboxDlqAutoConfiguration {
     public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager,
                                                OutboxDlqManager dlqManager,
                                                OutboxDlqHandler handler,
-                                               TransactionTemplate transactionTemplate) {
-        return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler);
+                                               TransactionTemplate transactionTemplate,
+                                               MeterRegistry registry) {
+        return new OutboxDlqTransferMetricsDecorator(
+                new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler),
+                registry
+        );
     }
 
     @Bean

@@ -51,24 +51,26 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(
-            prefix = "outbox.publish.metrics.gauge.cache",
-            name = "enabled",
-            havingValue = "true",
-            matchIfMissing = true
-    )
     public OutboxCache<EventStatus> outboxCache() {
-        System.out.println(properties.isEnabled());
-        List<Duration> ttls = properties.getMetrics().getGauge().getCache().getTtls();
-        if (ttls == null || ttls.isEmpty()) {
-            throw new IllegalArgumentException("Cache ttls cannot be null or empty");
+        OutboxPublisherProperties.MetricsProperties metricsProperties = properties.getMetrics();
+        if (metricsProperties != null) {
+            OutboxPublisherProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
+            if (gaugeProperties != null) {
+                if (gaugeProperties.isEnabled()) {
+                    List<Duration> ttls = gaugeProperties.getCache().getTtls();
+                    if (ttls == null || ttls.isEmpty()) {
+                        throw new IllegalArgumentException("Cache ttls cannot be null or empty");
+                    }
+                    if (ttls.size() != 3) {
+                        throw new IllegalArgumentException("Ttls should be 3 element size");
+                    }
+                    return new SimpleOutboxCache<>(
+                            ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
+                    );
+                }
+            }
         }
-        if (ttls.size() != 3) {
-            throw new IllegalArgumentException("Ttls should be 3 element size");
-        }
-        return new SimpleOutboxCache<>(
-                ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
-        );
+        return new PassthroughOutboxCache<>();
     }
 
     @Bean

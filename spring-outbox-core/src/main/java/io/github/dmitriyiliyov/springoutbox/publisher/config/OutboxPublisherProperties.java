@@ -29,6 +29,7 @@ public class OutboxPublisherProperties {
 
     public void afterPropertiesSet() {
         if (enabled == null || enabled) {
+            enabled = true;
             if (sender == null) {
                 throw new IllegalArgumentException("sender cannot be null");
             }
