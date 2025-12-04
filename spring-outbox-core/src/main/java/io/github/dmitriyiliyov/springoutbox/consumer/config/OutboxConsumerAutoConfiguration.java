@@ -93,7 +93,7 @@ public class OutboxConsumerAutoConfiguration {
         if (resolvers.isEmpty()) {
             throw new IllegalArgumentException("No common message types detected in the classpath");
         }
-        log.info("OutboxEventIdResolveManager configured with resolvers: {}", resolvers);
+        log.debug("OutboxEventIdResolveManager configured with resolvers: {}", resolvers);
         return new DefaultOutboxEventIdResolveManager(resolvers);
     }
 

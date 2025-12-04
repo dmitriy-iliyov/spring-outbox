@@ -7,7 +7,6 @@ import io.github.dmitriyiliyov.springoutbox.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqControllerAdvice;
-import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqMetrics;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxDlqTransferMetricsDecorator;

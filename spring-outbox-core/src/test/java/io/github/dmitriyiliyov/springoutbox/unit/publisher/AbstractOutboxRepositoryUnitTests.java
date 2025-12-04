@@ -12,6 +12,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 
 import java.time.Instant;
 import java.util.HashSet;
@@ -20,7 +21,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AbstractOutboxRepositoryUnitTests {
@@ -60,50 +61,50 @@ public class AbstractOutboxRepositoryUnitTests {
         );
     }
 
-//    @Test
-//    @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=PROCESSED, should update batch")
-//    public void updateBatchStatus_whenArgumentsValidAndStatusPROCESSED_shouldUpdateProcessedFailed() {
-//        // given
-//        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
-//        EventStatus status = EventStatus.PROCESSED;
-//
-//        // when
-//        tested.updateBatchStatus(ids, status);
-//
-//        // then
-//        verify(jdbcTemplate, times(1)).update(anyString(), any(), any(), any(), any(), any());
-//        verifyNoMoreInteractions(jdbcTemplate);
-//    }
-//
-//    @Test
-//    @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=IN_PROCESS, should update batch")
-//    public void updateBatchStatus_whenArgumentsValidAndStatusIN_PROCESS_shouldUpdateProcessedFailed() {
-//        // given
-//        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
-//        EventStatus status = EventStatus.IN_PROCESS;
-//
-//        // when
-//        tested.updateBatchStatus(ids, status);
-//
-//        // then
-//        verify(jdbcTemplate, times(1)).update(anyString(), any(), any(), any(), any());
-//        verifyNoMoreInteractions(jdbcTemplate);
-//    }
-//
-//    @Test
-//    @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=PENDING, should update batch")
-//    public void updateBatchStatus_whenArgumentsValidAndStatusPENDING_shouldUpdateProcessedFailed() {
-//        // given
-//        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
-//        EventStatus status = EventStatus.PENDING;
-//
-//        // when
-//        tested.updateBatchStatus(ids, status);
-//
-//        // then
-//        verify(jdbcTemplate, times(1)).update(anyString(), any(), any(), any(), any());
-//        verifyNoMoreInteractions(jdbcTemplate);
-//    }
+    @Test
+    @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=PROCESSED, should update batch")
+    public void updateBatchStatus_whenArgumentsValidAndStatusPROCESSED_shouldUpdateProcessedFailed() {
+        // given
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        EventStatus status = EventStatus.PROCESSED;
+
+        // when
+        tested.updateBatchStatus(ids, status);
+
+        // then
+        verify(jdbcTemplate, times(1)).update(anyString(), any(PreparedStatementSetter.class));
+        verifyNoMoreInteractions(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=IN_PROCESS, should update batch")
+    public void updateBatchStatus_whenArgumentsValidAndStatusIN_PROCESS_shouldUpdateProcessedFailed() {
+        // given
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        EventStatus status = EventStatus.IN_PROCESS;
+
+        // when
+        tested.updateBatchStatus(ids, status);
+
+        // then
+        verify(jdbcTemplate, times(1)).update(anyString(), any(PreparedStatementSetter.class));
+        verifyNoMoreInteractions(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=PENDING, should update batch")
+    public void updateBatchStatus_whenArgumentsValidAndStatusPENDING_shouldUpdateProcessedFailed() {
+        // given
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        EventStatus status = EventStatus.PENDING;
+
+        // when
+        tested.updateBatchStatus(ids, status);
+
+        // then
+        verify(jdbcTemplate, times(1)).update(anyString(), any(PreparedStatementSetter.class));
+        verifyNoMoreInteractions(jdbcTemplate);
+    }
 
     @Test
     @DisplayName("UT updateBatchStatus() when all args are valid and EventStatus=FAILED, should update batch")
