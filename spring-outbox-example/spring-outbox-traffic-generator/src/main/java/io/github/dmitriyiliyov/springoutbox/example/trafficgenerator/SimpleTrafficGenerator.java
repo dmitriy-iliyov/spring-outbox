@@ -15,7 +15,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URI;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -115,8 +114,8 @@ public class SimpleTrafficGenerator implements TrafficGenerator {
     }
 
     private String generateItemsIds() {
-        int count = random.nextInt(1, randomBound);
-        String ids = random.ints(count, randomOrigin, randomBound)
+        int count = random.nextInt(1, randomOrigin);
+        String ids = random.ints(count, 1, randomOrigin)
                 .mapToObj(Integer::toString)
                 .collect(Collectors.joining(", "));
         return "[%s]".formatted(ids);
