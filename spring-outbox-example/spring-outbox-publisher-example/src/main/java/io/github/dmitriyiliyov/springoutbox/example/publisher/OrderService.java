@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.example.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
-import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
+import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
 import io.github.dmitriyiliyov.springoutbox.publisher.OutboxPublisher;
 import io.github.dmitriyiliyov.springoutbox.publisher.aop.OutboxPublish;
 import lombok.RequiredArgsConstructor;

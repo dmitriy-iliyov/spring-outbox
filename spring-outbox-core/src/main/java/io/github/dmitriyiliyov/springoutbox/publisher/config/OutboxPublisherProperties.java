@@ -16,13 +16,18 @@ public class OutboxPublisherProperties {
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherProperties.class);
 
     private Boolean enabled;
-    private SenderProperties sender;
-    private Defaults defaults;
     @NestedConfigurationProperty
+    private SenderProperties sender;
+    @NestedConfigurationProperty
+    private Defaults defaults;
     private Map<String, EventProperties> events;
+    @NestedConfigurationProperty
     private StuckRecoveryProperties stuckRecovery;
+    @NestedConfigurationProperty
     private OutboxProperties.CleanUpProperties cleanUp;
+    @NestedConfigurationProperty
     private DlqProperties dlq;
+    @NestedConfigurationProperty
     private MetricsProperties metrics;
 
     public OutboxPublisherProperties() {}
@@ -672,6 +677,7 @@ public class OutboxPublisherProperties {
 
     public static final class MetricsProperties {
 
+        @NestedConfigurationProperty
         private GaugeProperties gauge;
 
         public GaugeProperties getGauge() {
@@ -692,6 +698,7 @@ public class OutboxPublisherProperties {
         public static final class GaugeProperties {
 
             private Boolean enabled;
+            @NestedConfigurationProperty
             private CacheProperties cache;
 
             public Boolean isEnabled() {
