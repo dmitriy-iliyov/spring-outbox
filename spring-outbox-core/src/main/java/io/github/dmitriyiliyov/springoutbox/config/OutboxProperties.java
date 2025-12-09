@@ -3,6 +3,8 @@ package io.github.dmitriyiliyov.springoutbox.config;
 import io.github.dmitriyiliyov.springoutbox.consumer.config.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
 import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
@@ -13,6 +15,7 @@ import java.util.Objects;
 public class OutboxProperties {
 
     private static final int DEFAULT_THREAD_POOL_SIZE = Math.min(Runtime.getRuntime().availableProcessors(), 5);
+    private static final Logger log = LoggerFactory.getLogger(OutboxProperties.class);
 
     private Integer threadPoolSize;
     @NestedConfigurationProperty
@@ -43,6 +46,7 @@ public class OutboxProperties {
             tables.setAutoCreate(true);
         }
         tables.afterPropertiesSet();
+        log.debug(this.toString());
     }
 
     public Integer getThreadPoolSize() {
@@ -75,6 +79,16 @@ public class OutboxProperties {
 
     public void setTables(TablesProperties tables) {
         this.tables = tables;
+    }
+
+    @Override
+    public String toString() {
+        return "OutboxProperties{" +
+                "\n\t threadPoolSize=" + threadPoolSize +
+                ",\n\t publisher=" + publisher +
+                ",\n\t consumer=" + consumer +
+                ",\n\t tables=" + tables +
+                '}';
     }
 
     public static final class CleanUpProperties {
@@ -145,6 +159,17 @@ public class OutboxProperties {
         public void setFixedDelay(Duration fixedDelay) {
             this.fixedDelay = fixedDelay;
         }
+
+        @Override
+        public String toString() {
+            return "CleanUpProperties{" +
+                    "enabled=" + enabled +
+                    ", batchSize=" + batchSize +
+                    ", ttl=" + ttl.toSeconds() +
+                    ", initialDelay=" + initialDelay +
+                    ", fixedDelay=" + fixedDelay +
+                    '}';
+        }
     }
 
     public static final class TablesProperties {
@@ -174,6 +199,13 @@ public class OutboxProperties {
         @Override
         public int hashCode() {
             return Objects.hash(autoCreate);
+        }
+
+        @Override
+        public String toString() {
+            return "TablesProperties{" +
+                    "autoCreate=" + autoCreate +
+                    '}';
         }
     }
 }

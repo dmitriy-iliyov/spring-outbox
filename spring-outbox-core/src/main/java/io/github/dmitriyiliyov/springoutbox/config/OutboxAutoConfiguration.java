@@ -3,8 +3,10 @@ package io.github.dmitriyiliyov.springoutbox.config;
 import io.github.dmitriyiliyov.springoutbox.consumer.config.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
 import jakarta.annotation.PreDestroy;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -15,6 +17,7 @@ import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import javax.sql.DataSource;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -64,7 +67,7 @@ public class OutboxAutoConfiguration {
 
     @PreDestroy
     public void onDestroy() {
-        ScheduledExecutorService executor = outboxScheduledExecutorService();
+        ExecutorService executor = outboxScheduledExecutorService();
         executor.shutdown();
         try {
             if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {

@@ -170,6 +170,20 @@ public class OutboxPublisherProperties {
         this.metrics = metrics;
     }
 
+    @Override
+    public String toString() {
+        return "OutboxPublisherProperties{" +
+                "\n\t\t enabled=" + enabled +
+                ",\n\t\t sender=" + sender +
+                ",\n\t\t defaults=" + defaults +
+                ",\n\t\t events=" + events +
+                ",\n\t\t stuckRecovery=" + stuckRecovery +
+                ",\n\t\t cleanUp=" + cleanUp +
+                ",\n\t\t dlq=" + dlq +
+                ",\n\t\t metrics=" + metrics +
+                "\n\t}";
+    }
+
     public static final class SenderProperties {
 
         private static final Duration DEFAULT_EMERGENCY_TIMEOUT = Duration.ofSeconds(120);
@@ -207,6 +221,15 @@ public class OutboxPublisherProperties {
 
         public void setEmergencyTimeout(Duration emergencyTimeout) {
             this.emergencyTimeout = emergencyTimeout;
+        }
+
+        @Override
+        public String toString() {
+            return "SenderProperties{" +
+                    "type=" + type +
+                    ", beanName='" + beanName + '\'' +
+                    ", emergencyTimeout=" + emergencyTimeout +
+                    "}";
         }
     }
 
@@ -298,6 +321,17 @@ public class OutboxPublisherProperties {
         public int hashCode() {
             return Objects.hash(batchSize, initialDelay, fixedDelay, maxRetries, backoff);
         }
+
+        @Override
+        public String toString() {
+            return "Defaults{" +
+                    "\n\t\t\t batchSize=" + batchSize +
+                    ",\n\t\t\t initialDelay=" + initialDelay +
+                    ",\n\t\t\t fixedDelay=" + fixedDelay +
+                    ",\n\t\t\t maxRetries=" + maxRetries +
+                    ",\n\t\t\t backoff=" + backoff +
+                    "\n\t\t }";
+        }
     }
 
     public static final class BackoffProperties {
@@ -371,6 +405,15 @@ public class OutboxPublisherProperties {
         @Override
         public int hashCode() {
             return Objects.hash(enabled, delay, multiplier);
+        }
+
+        @Override
+        public String toString() {
+            return "BackoffProperties{" +
+                    "enabled=" + enabled +
+                    ", delay=" + delay +
+                    ", multiplier=" + multiplier +
+                    "}";
         }
     }
 
@@ -502,6 +545,19 @@ public class OutboxPublisherProperties {
         public int hashCode() {
             return Objects.hash(eventType, topic, batchSize, initialDelay, fixedDelay, maxRetries, backoff);
         }
+
+        @Override
+        public String toString() {
+            return "EventProperties{" +
+                    "\n\t\t\t eventType='" + eventType + '\'' +
+                    ",\n\t\t\t topic='" + topic + '\'' +
+                    ",\n\t\t\t batchSize=" + batchSize +
+                    ",\n\t\t\t initialDelay=" + initialDelay +
+                    ",\n\t\t\t fixedDelay=" + fixedDelay +
+                    ",\n\t\t\t maxRetries=" + maxRetries +
+                    ",\n\t\t\t backoff=" + backoff +
+                    "\n\t\t }";
+        }
     }
 
     public static final class StuckRecoveryProperties {
@@ -575,6 +631,16 @@ public class OutboxPublisherProperties {
         @Override
         public int hashCode() {
             return Objects.hash(batchSize, initialDelay, fixedDelay);
+        }
+
+        @Override
+        public String toString() {
+            return "StuckRecoveryProperties{" +
+                    "batchSize=" + batchSize +
+                    ", maxBatchProcessingTime=" + maxBatchProcessingTime +
+                    ", initialDelay=" + initialDelay +
+                    ", fixedDelay=" + fixedDelay +
+                    '}';
         }
     }
 
@@ -673,6 +739,19 @@ public class OutboxPublisherProperties {
         public void setMetrics(MetricsProperties metrics) {
             this.metrics = metrics;
         }
+
+        @Override
+        public String toString() {
+            return "DlqProperties{" +
+                    "\n\t\t\t enabled=" + enabled +
+                    ",\n\t\t\t batchSize=" + batchSize +
+                    ",\n\t\t\t transferToInitialDelay=" + transferToInitialDelay +
+                    ",\n\t\t\t transferToFixedDelay=" + transferToFixedDelay +
+                    ",\n\t\t\t transferFromInitialDelay=" + transferFromInitialDelay +
+                    ",\n\t\t\t transferFromFixedDelay=" + transferFromFixedDelay +
+                    ",\n\t\t\t metrics=" + metrics +
+                    "\n\t\t }";
+        }
     }
 
     public static final class MetricsProperties {
@@ -693,6 +772,13 @@ public class OutboxPublisherProperties {
                 gauge = new GaugeProperties();
             }
             gauge.afterPropertiesSet();
+        }
+
+        @Override
+        public String toString() {
+            return "MetricsProperties{" +
+                    "gauge=" + gauge +
+                    '}';
         }
 
         public static final class GaugeProperties {
@@ -729,6 +815,14 @@ public class OutboxPublisherProperties {
                 }
             }
 
+            @Override
+            public String toString() {
+                return "GaugeProperties{" +
+                        "enabled=" + enabled +
+                        ", cache=" + cache +
+                        '}';
+            }
+
             public static final class CacheProperties {
 
                 private static final List<Duration> DEFAULT_TTLS = List.of(
@@ -763,6 +857,14 @@ public class OutboxPublisherProperties {
                     } else {
                         enabled = false;
                     }
+                }
+
+                @Override
+                public String toString() {
+                    return "CacheProperties{" +
+                            "enabled=" + enabled +
+                            ", ttls=" + ttls +
+                            '}';
                 }
             }
         }

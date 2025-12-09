@@ -64,6 +64,15 @@ public class OutboxConsumerProperties {
         this.cache = cache;
     }
 
+    @Override
+    public String toString() {
+        return "OutboxConsumerProperties{" +
+                "\n\t\t enabled=" + enabled +
+                ",\n\t\t cleanUp=" + cleanUp +
+                ",\n\t\t cache=" + cache +
+                "\n\t}";
+    }
+
     public static final class CacheProperties {
 
         public Boolean enabled;
@@ -95,6 +104,14 @@ public class OutboxConsumerProperties {
 
         public void setCacheName(String cacheName) {
             this.cacheName = cacheName;
+        }
+
+        @Override
+        public String toString() {
+            return "CacheProperties{" +
+                    "enabled=" + enabled +
+                    ", cacheName='" + cacheName + '\'' +
+                    '}';
         }
     }
 }

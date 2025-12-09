@@ -5,7 +5,7 @@ spring:
     active: psql
 logging:
   level:
-    root: info
+    root: debug
 outbox:
   thread-pool-size: 7
   tables:
