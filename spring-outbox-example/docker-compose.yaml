@@ -2,14 +2,13 @@ version: "3.8"
 name: spring-outbox-example
 services:
 
-#  producer-app:
-#    container_name: outbox-example-producer-app
-#    build:
-#      context: ..
-#      dockerfile: spring-outbox-example/spring-outbox-publisher-example/Dockerfile
-#    image: outbox-producer-app
-#    ports:
-#      - "8080:8080"
+  producer-app:
+    container_name: outbox-example-producer-app
+    build:
+      context: ./spring-outbox-publisher-example
+    image: outbox-producer-app
+    ports:
+      - "8080:8080"
 
   producer-postgresql:
     container_name: outbox-example-producer-postgresql
@@ -23,14 +22,13 @@ services:
     ports:
       - "5432:5432"
 
-#  consumer-app:
-#    container_name: outbox-example-consumer-app
-#    build:
-#      context: ..
-#      dockerfile: spring-outbox-example/spring-outbox-consumer-example/Dockerfile
-#    image: outbox-consumer-app
-#    ports:
-#      - "8081:8080"
+  consumer-app:
+    container_name: outbox-example-consumer-app
+    build:
+      context: ./spring-outbox-consumer-example
+    image: outbox-consumer-app
+    ports:
+      - "8081:8080"
 
   consumer-postgresql:
     container_name: outbox-example-consumer-postgresql
@@ -43,6 +41,14 @@ services:
       POSTGRES_DB: outbox_example
     ports:
       - "5433:5432"
+
+  traffic-generator-app:
+    container_name: outbox-example-traffic-generator-app
+    image: outbox-traffic-generator-app
+    build:
+      context: ./spring-outbox-traffic-generator
+    ports:
+      - "8082:8080"
 
   redis:
     container_name: outbox-example-redis
