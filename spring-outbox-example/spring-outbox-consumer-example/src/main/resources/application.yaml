@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-outbox-example
   datasource:
-    url: jdbc:postgresql://consumer-postgresql:5433/outbox_example
+    url: jdbc:postgresql://consumer-postgresql:5432/outbox_example
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver

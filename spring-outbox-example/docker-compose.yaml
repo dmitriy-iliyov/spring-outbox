@@ -90,6 +90,9 @@ services:
   prometheus:
     container_name: outbox-prometheus
     image: prom/prometheus:latest
+    depends_on:
+      - producer-app
+      - consumer-app
     networks:
       - default
     volumes:
@@ -100,6 +103,8 @@ services:
   grafana:
     container_name: outbox-grafana
     image: grafana/grafana:latest
+    depends_on:
+      - prometheus
     networks:
       - default
     ports:
