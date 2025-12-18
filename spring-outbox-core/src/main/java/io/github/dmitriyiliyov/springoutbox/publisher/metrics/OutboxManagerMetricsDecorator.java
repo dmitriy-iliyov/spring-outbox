@@ -42,7 +42,7 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
                         Function.identity(),
                         type -> registry.counter(
                                 "outbox_events_by_type_rate_total",
-                                "type", type.toString())
+                                "type", type.toString().toLowerCase())
                         )
                 );
     }

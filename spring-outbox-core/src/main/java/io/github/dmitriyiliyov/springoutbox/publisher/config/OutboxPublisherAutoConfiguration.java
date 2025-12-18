@@ -164,7 +164,7 @@ public class OutboxPublisherAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
-            prefix = "outbox.publish.metrics.gauge",
+            prefix = "outbox.publisher.metrics.gauge",
             name = "enabled",
             havingValue = "true"
     )

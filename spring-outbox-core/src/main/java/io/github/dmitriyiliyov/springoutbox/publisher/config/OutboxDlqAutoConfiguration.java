@@ -120,7 +120,7 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
-            prefix = "outbox.publish.dlq.metrics.gauge",
+            prefix = "outbox.publisher.dlq.metrics.gauge",
             name = "enabled",
             havingValue = "true"
     )
