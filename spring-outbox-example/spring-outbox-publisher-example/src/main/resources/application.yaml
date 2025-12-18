@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-outbox-example
   datasource:
-    url: jdbc:postgresql://localhost:5432/outbox_example
+    url: jdbc:postgresql://producer-postgresql:5432/outbox_example
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver
@@ -12,6 +12,8 @@ spring:
     baseline-on-migrate: true
   jpa:
     open-in-view: false
+  kafka:
+    bootstrap-servers: kafka:9092
 logging:
   level:
     root: info

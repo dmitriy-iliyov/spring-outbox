@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-outbox-example
   datasource:
-    url: jdbc:postgresql://localhost:5433/outbox_example
+    url: jdbc:postgresql://consumer-postgresql:5433/outbox_example
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver
@@ -11,9 +11,9 @@ spring:
   data:
     redis:
       port: 6379
-      host: localhost
+      host: consumer-redis
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: kafka:9092
     consumer:
       group-id: analytics
       auto-offset-reset: earliest
@@ -22,7 +22,7 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
 server:
-  port: 8081
+  port: 8080
 outbox:
   thread-pool-size: 2
   publisher:
