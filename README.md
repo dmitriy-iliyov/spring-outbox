@@ -51,14 +51,6 @@ Redis 7+ is required for:
 
 ## Design
 
-### Polling Mechanism
-
-The polling mechanism is based on selecting events by type, sorted by creation date (or by retry date after the first failed delivery attempt). Events of different types can be processed in parallel using threads from a dedicated library-managed thread pool.
-
-To enable parallel event processing across multiple application instances, the library uses `FOR UPDATE SKIP LOCKED`, which allows concurrent processing of event batches. This architectural decision has two drawbacks:
-- Performance degrades as the number of instances increases due to longer search times for available event batches
-- Event processing order cannot be guaranteed
-
 ### Architecture Overview
 
 The system architecture with full configuration looks as follows:
@@ -79,6 +71,18 @@ The following flow applies only when using the idempotent consumer:
         - For batch consumption: events are filtered and business operation executes only for unconsumed events
     - If event was not consumed: event is marked as consumed and business operation is executed
 
+---
+
+### Polling Mechanism
+
+The polling mechanism is based on selecting events by type, sorted by creation date (or by retry date after the first failed delivery attempt). Events of different types can be processed in parallel using threads from a dedicated library-managed thread pool.
+
+To enable parallel event processing across multiple application instances, the library uses `FOR UPDATE SKIP LOCKED`, which allows concurrent processing of event batches. This architectural decision has two drawbacks:
+- Performance degrades as the number of instances increases due to longer search times for available event batches
+- Event processing order cannot be guaranteed
+
+---
+
 ### Delivery Semantics
 
 The library expects the message queue to be configured by the developer. Therefore, achieving either delivery semantic is possible with proper configuration of message acknowledgment on the broker side.
@@ -95,6 +99,7 @@ This semantic is achievable only when using the idempotent consumer, which dedup
 
 In reality, the term "Exactly-Once" is not entirely accurate and should be understood as "Effectively-Exactly-Once", since the library cannot guarantee deduplication within the broker itself.
 
+---
 
 ### Publisher
 
@@ -149,6 +154,8 @@ backoff.enabled: Enable/disable exponential backoff
 
 #### Cleanup
 
+---
+
 ### Consumer
 The consumer side of the library provides only manual invocation through the following interface:
 ```java
@@ -191,7 +198,7 @@ Duplicate detection count
 
 
 ## Configuration
-### Global Configuration
+### Global
 
 ```yaml
 outbox:
@@ -208,7 +215,7 @@ outbox:
   - **Default**:`true`
   - **Description**: when enabled, the library creates `outbox_events`, `outbox_dlq_events`, and `outbox_consumed_events` tables with appropriate indexes if they don't exist
 
-### Publisher Configuration
+### Publisher
 
 #### Sender
 ```yaml
@@ -229,7 +236,7 @@ outbox:
   - **Description**: timeout for message broker send operations. If exceeded, operation is cancelled and event marked `FAILED`.
 
 ---
-#### Event Polling & Defaults
+#### Defaults & Events
 
 The `defaults` section defines default values that apply to all events unless overridden in individual event configuration.
 ```yaml
@@ -267,8 +274,6 @@ outbox:
 - `backoff.multiplier`: exponential backoff multiplier
     - **Default**: `3`
     - **Description**: each retry delay = previous_delay * multiplier
-
----
 
 Individual event configurations override defaults for specific event types.
 ```yaml
@@ -368,16 +373,16 @@ outbox:
 
 - `enabled`: enable DLQ functionality
     - **Default**: `false`
-    - **Warning**: when disabled, failed events are not managed automatically
+    - **Warning**: when disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`
 - `batch-size`: number of events to transfer per iteration
     - **Default**: `100`
-- `transfer-to-initial-delay`: delay before first transfer TO DLQ
+- `transfer-to-initial-delay`: delay before first transfer **to** DLQ
     - **Default**: `300s`
-- `transfer-to-fixed-delay`: interval between transfers TO DLQ
+- `transfer-to-fixed-delay`: interval between transfers **to** DLQ
     - **Default**: `900s`
-- `transfer-from-initial-delay`: delay before first transfer FROM DLQ
+- `transfer-from-initial-delay`: delay before first transfer **from** DLQ **to** `outbox_events`
     - **Default**: `300s` 
-- `transfer-from-fixed-delay`: interval between transfers FROM DLQ
+- `transfer-from-fixed-delay`: interval between transfers **from** DLQ **to** `outbox_events`
     - **Default**: `3600s`
 - `metrics.gauge.enabled`: enable DLQ metrics collection
     - **Default**: `false`
@@ -433,7 +438,7 @@ outbox:
 
 ---
 
-### Consumer Configuration
+### Consumer
 
 #### Cleanup
 ```yaml
@@ -447,8 +452,8 @@ outbox:
       fixed-delay: 5s
 ```
 
-Same as Publisher cleanup with different defaults:
-- `ttl`: 
+All parameters same as Publisher cleanup with different defaults:
+- `ttl`
   - **Default**: `1h`
   - **Description**: consumed events are typically kept longer than published events for audit purposes
 
@@ -469,12 +474,11 @@ outbox:
     - **Warning**: when disabled, idempotency check always hits database
 - `cache-name`: name of the cache in CacheManager (**required** when enabled)
     - **Description**: must match cache name configured in your `CacheManager` bean
-    - **Important**: developer must configure `CacheManager` with this cache name
 
 ---
 
 ### Complete Configuration Examples
-#### Full Configuration
+#### Full
 ```yaml
 outbox:
   thread-pool-size: 5
@@ -557,7 +561,7 @@ outbox:
         cache-name: "outbox:consumed"
 ```
 
-#### Consumer-Only Configuration
+#### Consumer-Only
 ```yaml
 outbox:
   thread-pool-size: 2
@@ -580,7 +584,7 @@ outbox:
       cache-name: "outbox:consumed"
 ```
 
-#### Minimal Configuration
+#### Minimal
 ```yaml
 outbox:
   publisher:
