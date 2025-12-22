@@ -35,19 +35,133 @@ This approach ensures reliable event publication without relying on database log
 
 ## Infrastructure
 
-### Supported Databases
+#### Supported Databases
 - PostgreSQL 16+
 - MySQL 8+
 - Oracle Database 23+
 
-### Message Brokers
+#### Message Brokers
 - Apache Kafka 3.7+
 - RabbitMQ 3.13+
 
-### Cache Storage
+#### Cache Storage
 Redis 7+ is required for:
 - Consumer-side event deduplication
 - Metrics collection
+
+## Quick Start
+
+1. Enable starter on publisher side:
+```java
+@SpringBootApplication
+@EnableJpaRepositories
+@EnableTransactionManagement
+@EnableKafka
+@EnableOutbox
+public class PublisherRunner {
+
+    public static void main(String ... args) {
+        SpringApplication.run(PublisherRunner.class, args);
+    }
+}
+```
+2. Minimal YAML config (DLQ unable by default):
+```yaml
+outbox:
+  publisher:
+    sender:
+      type: kafka
+    events:
+      example-event-type:
+        topic: "example-create-event"
+```
+3. Inject `OutboxPublisher`:
+```java 
+@Service
+@RequiredArgsConstructor
+public class ExampleService {
+
+    private final ExampleRepository repository;
+    private final ExampleMapper mapper;
+    private final OutboxPublisher outboxPublisher;
+    
+    @Transactional
+    public ExampleDto save(ExampleCreateDto dto) {
+        ExampleEntity entity = repository.save(mapper.toEntity(dto));
+        ExampleDto response = mapper.toDto(entity);
+        outboxPublisher.publish("example-event-type", response);
+        return response;
+    }
+}
+```
+
+Or use `@OutboxPublish` annotation:
+
+```java
+@Service
+@RequiredArgsConstructor
+public class ExampleService {
+
+    private final ExampleRepository repository;
+    private final ExampleMapper mapper;
+
+    @Transactional
+    @OutboxPublish(eventType = "example-event-type", payload = "#result")
+    public ExampleDto save(ExampleCreateDto dto) {
+        ExampleEntity entity = repository.save(mapper.toEntity(dto));
+        return mapper.toDto(entity);
+    }
+}
+```
+
+4. Enable starter on consumer side:
+```java
+@SpringBootApplication
+@EnableJpaRepositories
+@EnableTransactionManagement
+@EnableKafka
+@EnableCaching
+@EnableOutbox
+public class ConsumerRunner {
+
+    public static void main(String [] args) {
+        SpringApplication.run(ConsumerRunner.class, args);
+    }
+}
+```
+5. Minimal YAML config (clean-up and cache enable by default):
+```yaml
+outbox:
+  publisher:
+    enabled: false
+  consumer:
+    enabled: true
+    cache:
+      cache-name: "outbox:consumed"
+```
+
+6. Create listener (Kafka as example) with injected `OutboxIdempotentConsumer`:
+
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class ExampleKafkaListener {
+
+    private final OutboxIdempotentConsumer outboxConsumer;
+
+    @KafkaListener(topics = "example-create-event", groupId = "example-group")
+    public void listen(ConsumerRecord<String, OrderDto> record) {
+        outboxConsumer.consume(record, () -> log.info("Some business operation with payload {}", record.value()));
+    }
+}
+```
+
+## Example & Test Environment
+
+Example full configured project : https://github.com/dmitriy-iliyov/spring-outbox/tree/main/spring-outbox-example 
+
+## Recommendation
 
 ## Design
 
@@ -584,7 +698,8 @@ outbox:
       cache-name: "outbox:consumed"
 ```
 
-#### Minimal
+#### Minimal Producer
+Dead Letter Queue is unable by default. All other values will use defaults.
 ```yaml
 outbox:
   publisher:
@@ -594,7 +709,3 @@ outbox:
       my-event:
         topic: "my.topic"
 ```
-All other values will use defaults.
-
-## Getting started
-## Recommendation
