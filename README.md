@@ -299,15 +299,19 @@ The automatic cleanup strategy for consumed events is identical to the publisher
 ### Publisher
 
 **Gauges**
-- `outbox_events`
-  - **Description:** total number of outbox events
+- `outbox_events`: total number of outbox events
+
 - `outbox_events_by_status`: number of outbox events
   - **Tags:** `status={pending, in_process}`
+
 - `outbox_events_by_event_type_and_status`: number of outbox events by type
   - **Tags:** `event_type`, `status={pending, in_process}`
+
 - `outbox_dlq_events`: total number of events in DLQ
+
 - `outbox_dlq_events_by_status`: number of outbox DLQ events by status
   - **Tags:** `status={moved, in_process, to_retry}`
+
 - `outbox_dlq_events_by_event_type_and_status`: number of outbox DLQ events by type and status
   - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
 
@@ -318,7 +322,7 @@ Caching can be disabled via metrics configuration.
 
 **Counters**
 - `outbox_events_rate_total`: number of events successfully processed or failed during consumption
-  - **Tags:** `event_type`, `status={processed, failed}` 
+  - **Tags:** `event_type`, `status={processed, failed}`
 
 - `outbox_events_by_type_rate_total`: internal lifecycle counters, including
   - **Tags:** `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`
@@ -328,9 +332,8 @@ Caching can be disabled via metrics configuration.
 
 - `outbox_dlq_events_by_type_rate_total`: operational counters for DLQ management
   - **Tags:** `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}`
-  - 
-**Timers**
 
+**Timers**
 - `outbox_dlq_transfer_to_duration`: duration of batch transfers from outbox to DLQ
 
 - `outbox_dlq_transfer_from_duration`: duration of batch transfers from DLQ back to outbox
@@ -627,7 +630,7 @@ outbox:
 ---
 
 ### Examples
-#### Producer-Only:
+#### Producer-Only
 Minimal:
 
 ```yaml
