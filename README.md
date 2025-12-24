@@ -188,7 +188,9 @@ The following flow applies only when using the idempotent consumer:
 
 ### Polling Mechanism
 
-The polling mechanism is based on selecting events by type, sorted by creation date (or by retry date after the first failed delivery attempt). Events of different types can be processed in parallel using threads from a dedicated library-managed thread pool.
+The polling mechanism is based on selecting events by type, sorted by creation date (or by retry date after the first failed delivery attempt). 
+Events of different types can be processed in parallel using threads from a dedicated library-managed thread pool (you can manage this with `thread-pool-size`). 
+Detailed configuration options and recommendations for pool size are available [here](#global).
 
 To enable parallel event processing across multiple application instances, the library uses `FOR UPDATE SKIP LOCKED`, which allows concurrent processing of event batches. This architectural decision has two drawbacks:
 - Performance degrades as the number of instances increases due to longer search times for available event batches
@@ -217,8 +219,9 @@ In reality, the term "Exactly-Once" is not entirely accurate and should be under
 
 ### Publisher
 
+#### Usage
 There are two options for use:
-- ручная через `OutboxPublisher.publish()`
+- manual through `OutboxPublisher.publish()`
 ```java
 public interface OutboxPublisher {
     <T> void publish(String eventType, T event);
@@ -239,21 +242,24 @@ public @interface OutboxPublish {
 Both approaches require specifying the event type in accordance with the YAML configuration and have the ability to save events in batches.
 More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-publisher-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/publisher/OrderService.java).
 
-#### Transactional Guarantees
-The library ensures atomic storage of outbox events within the same database transaction as business entity modifications. This guarantees that either both the business change and the event are saved, or neither is saved, preventing inconsistencies between the database and message broker.
-All methods for saving simultaneously with a business event are annotated with `@Transactional(propagation = Propagation.MANDATORY)`, which means that the transaction is mandatory and is opened by the client code.
-
 #### Event State Machine
 Events transition through the following states:
 ```text
 PENDING → IN_PROCESS → PROCESSED (future cleanup)
-↓
-FAILED (after max retries exhausted)
+               ↓
+             FAILED (after max retries exhausted)
 ```
-`PENDING`: event created and waiting to be polled
-`IN_PROCESS`: event currently being processed by a publisher instance, if the publisher crashes, the event will remain in this state.
-`PROCESSED`: event successfully sent to message broker
-`FAILED`: event failed after exhausting all retry attempts
+- `PENDING`: event created and waiting to be polled
+- `IN_PROCESS`: event currently being processed by a publisher instance, if the publisher crashes, the event will remain in this state.
+Ето промежуточное состояние которое сигнализирует о том что ивент взят на обработку каким-то воркером, все воркеры за исключением [stuck event recovery](#stuck-event-recovery) не работают с этим статусом.
+Состояние присваеваеться после блокировки транзауцией строки в бд черз `FOR UPDATE`
+- `PROCESSED`: event successfully sent to message broker
+- `FAILED`: event failed after exhausting all retry attempts
+
+#### Transactional Guarantees
+The library ensures atomic storage of outbox events within the same database transaction as business entity modifications. This guarantees that either both the business change and the event are saved, or neither is saved, preventing inconsistencies between the database and message broker.
+
+All methods for saving simultaneously with a business event are annotated with `@Transactional(propagation = Propagation.MANDATORY)`, which means that the transaction is mandatory and is opened by the client code.
 
 #### Retry Policy
 An exponential backoff is supported where the delay increases exponentially with each retry, the next retry attempt is calculated using the following formula:
@@ -261,18 +267,90 @@ An exponential backoff is supported where the delay increases exponentially with
 `next_retry_at = initial_delay * (multiplier ^ retry_attempt)`
 
 Example: 10s -> 30s -> 90s -> 270s...
+Detailed configuration options are available [here](#defaults--events).
 
 #### Stuck Event Recovery
 Events that are in the `IN_PROCESS` state for more than the specified threshold (`max-batch-processing-time` in the configuration) are considered stuck, they are caught by the worker and transferred to the `PENDING` state **without increasing the number of failed attempts**.
+Detailed configuration options are available [here](#stuck-event-recovery-1).
+
 #### Dead Letter Queue
 
+The Dead Letter Queue (DLQ) is implemented using the database. As described above, events are automatically moved to the DLQ once they are marked with the `FAILED` status after the maximum number of retry attempts is exceeded.
 
+Events placed into the DLQ must be **manually reviewed**. After review, an event can be marked as either `TO_RETRY` or `RESOLVED`.  
+To support this workflow, the library provides a **REST API** for DLQ management with the following capabilities.
 
-#### Cleanup
+Each DLQ event follows a defined state machine:
+```text
+MOVED → IN_PROCESS → RESOLVED (future cleanup or manually delete)
+            ↓
+         TO_RETRY (returned to outbox_events and deleted from outbox_dlq_events)
+```
+State definitions:
+
+- `MOVED`: the event has been transferred from `outbox_events` to the DLQ and is waiting for manual review
+- `IN_PROCESS`: the event is currently being processed by a DLQ transfer worker
+- `TO_RETRY`: the event has been reviewed and approved for retry; it will be moved back to `outbox_events`
+- `RESOLVED`: the event is considered permanently failed and will not be retried
 
 ---
 
+##### DLQ Transfer Semantics
+
+Event transfers between `outbox_events` and `outbox_dlq_events` are performed **within a single database transaction** to ensure consistency:
+
+- start transaction
+  - load a batch of DLQ events and lock them by setting status to `IN_PROCESS` to prevent concurrent handling
+  - insert events into the target table
+  - delete the corresponding batch from the source table
+- commit transaction
+
+This guarantees atomicity and prevents event duplication or loss during DLQ transitions.
+
+##### DLQ REST API
+The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.  
+
+**GET** `/api/outbox-dlq/events/{id}` - get DLQ event by id
+Path params:
+- id: UUID
+
+**GET** `/api/outbox-dlq/events` - get batch of DLQ events
+Query params:
+- status: DlqStatus={MOVED, IN_PROCESS, TO_RETRY, RESOLVED}
+- batchNumber: int ≥ 0
+- batchSize: int [10;100]
+
+**PATCH** `/api/outbox-dlq/events/{id}` - update DLQ event status
+Path params:
+- id: UUID
+Request body:
+- status: DlqStatus={TO_RETRY, RESOLVED}
+
+**PATCH** `/api/outbox-dlq/events` - update batch DLQ events status
+Request body:
+- ids: set of UUID
+- status: new status for all specified events, DlqStatus={TO_RETRY, RESOLVED}
+
+**DELETE** `/api/outbox-dlq/events/{id}` - delete DLQ event
+Path params:
+- id: UUID
+
+**DELETE** `/api/outbox-dlq/events` - delete batch of DLQ events
+Request body:
+- ids: set of UUID
+
+Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
+
+---
+
+#### Cleanup
+
+Outbox events with the `PROCESSED` status are periodically cleaned up by a background worker according to the configured retention policy.
+Detailed configuration options are available [here](#cleanup-2).
+---
+
 ### Consumer
+#### Usage
 The consumer side of the library provides only manual invocation through the following interface:
 ```java
 public interface OutboxIdempotentConsumer {
@@ -280,6 +358,7 @@ public interface OutboxIdempotentConsumer {
     <T> void consume(List<T> messages, Consumer<List<T>> operation);
 }
 ```
+
 #### Idempotent Processing
 Idempotent processing is implemented through unique event identifiers that are stored in a dedicated table when consumed. Storage occurs atomically together with the business effect.
 
@@ -348,7 +427,6 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 - `consumed_outbox_events_total`: number of outbox events by type
   - **Tags:** `type={duplicated, consumed, cleaned, failed, cache-hit, cache-miss}`
 
-
 ## Configuration
 ### Global
 
@@ -361,7 +439,7 @@ outbox:
 
 - `thread-pool-size`: size of the thread pool used for parallel event processing by type
   - **Default**: `min(available_processors, 5)` 
-  - **Description**: events of different types are processed in parallel using threads from this pool. Scale based on number of event types and system resources
+  - **Description**: events of different types are processed in parallel using threads from this pool. Scale based on number of event types and system resources. The number should be calculated by the user based on the required processing frequency. You should also remember to leave at least one (and preferably two) threads for system workers such as cleanup, catching stuck workers, and transferring to the DLQ.
 
 - `auto-create`: automatically create outbox tables on application startup
   - **Default**:`true`
