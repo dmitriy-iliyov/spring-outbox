@@ -250,9 +250,7 @@ PENDING → IN_PROCESS → PROCESSED (future cleanup)
              FAILED (after max retries exhausted)
 ```
 - `PENDING`: event created and waiting to be polled
-- `IN_PROCESS`: event currently being processed by a publisher instance, if the publisher crashes, the event will remain in this state.
-Ето промежуточное состояние которое сигнализирует о том что ивент взят на обработку каким-то воркером, все воркеры за исключением [stuck event recovery](#stuck-event-recovery) не работают с этим статусом.
-Состояние присваеваеться после блокировки транзауцией строки в бд черз `FOR UPDATE`
+- `IN_PROCESS`: event currently being processed by a publisher instance, if the publisher crashes, the event will remain in this state. This is an intermediate state that signals that an event has been accepted for processing by a worker. All workers except for [stuck event recovery](#stuck-event-recovery) do not work with this status. The state is assigned after a transaction locks a row in the database via FOR UPDATE.
 - `PROCESSED`: event successfully sent to message broker
 - `FAILED`: event failed after exhausting all retry attempts
 
@@ -311,31 +309,38 @@ This guarantees atomicity and prevents event duplication or loss during DLQ tran
 The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.  
 
 **GET** `/api/outbox-dlq/events/{id}` - get DLQ event by id
+
 Path params:
 - id: UUID
 
 **GET** `/api/outbox-dlq/events` - get batch of DLQ events
+
 Query params:
 - status: DlqStatus={MOVED, IN_PROCESS, TO_RETRY, RESOLVED}
 - batchNumber: int ≥ 0
 - batchSize: int [10;100]
 
 **PATCH** `/api/outbox-dlq/events/{id}` - update DLQ event status
+
 Path params:
 - id: UUID
+
 Request body:
 - status: DlqStatus={TO_RETRY, RESOLVED}
 
 **PATCH** `/api/outbox-dlq/events` - update batch DLQ events status
+
 Request body:
 - ids: set of UUID
 - status: new status for all specified events, DlqStatus={TO_RETRY, RESOLVED}
 
 **DELETE** `/api/outbox-dlq/events/{id}` - delete DLQ event
+
 Path params:
 - id: UUID
 
 **DELETE** `/api/outbox-dlq/events` - delete batch of DLQ events
+
 Request body:
 - ids: set of UUID
 
