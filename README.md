@@ -8,7 +8,7 @@
 ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.7-231F20?logo=apachekafka)
 
 ## Overview
-This library provides an implementation of the Transactional Outbox Pattern based on polling events from a relational database and publishing them to a message broker.
+This library provides an implementation of the [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html) based on polling events from a relational database and publishing them to a message broker.
 
 The library offers flexible configuration for processing different event types.
 Each event type can be handled independently, and events are processed in parallel using a configurable thread pool, allowing predictable throughput and controlled resource usage.
@@ -160,13 +160,15 @@ public class ExampleKafkaListener {
 
 ## Example & Test Environment
 
-Example of full configured project with simple traffic generator is [here](https://github.com/dmitriy-iliyov/spring-outbox/tree/main/spring-outbox-example). Project is fully containerised with Docker. 
+Example of full configured project with simple traffic generator is [here](https://github.com/dmitriy-iliyov/spring-outbox/tree/main/spring-outbox-example). Project is fully containerised with Docker.
 
 ## Design
 
 ### Architecture Overview
 
 The system architecture with full configuration looks as follows:
+
+![a](./images/outbox-architecture.png)
 
 The event lifecycle follows these steps:
 1. Event or batch of events is created
@@ -188,9 +190,9 @@ The following flow applies only when using the idempotent consumer:
 
 ### Polling Mechanism
 
-The polling mechanism is based on selecting events by type, sorted by creation date (or by retry date after the first failed delivery attempt). 
-Events of different types can be processed in parallel using threads from a dedicated library-managed thread pool (you can manage this with `thread-pool-size`). 
-Detailed configuration options and recommendations for pool size are available [here](#global).
+The polling mechanism is based on selecting events by type, sorted by creation date (or by retry date after the first failed delivery attempt).
+Events of different types can be processed in parallel using threads from a dedicated library-managed thread pool (you can manage this with `thread-pool-size`).
+Detailed configuration options and recommendations for pool size are [here](#global).
 
 To enable parallel event processing across multiple application instances, the library uses `FOR UPDATE SKIP LOCKED`, which allows concurrent processing of event batches. This architectural decision has two drawbacks:
 - Performance degrades as the number of instances increases due to longer search times for available event batches
@@ -200,7 +202,9 @@ To enable parallel event processing across multiple application instances, the l
 
 ### Delivery Semantics
 
-The library expects the message queue to be configured by the developer. Therefore, achieving either delivery semantic is possible with proper configuration of message acknowledgment on the broker side.
+**WARNING:** The library expects the message broker to be configured by the developer.
+To ensure the delivery semantics described below, the broker must be configured with `acks` (or an equivalent mechanism).
+If the broker uses a producer-side buffer, its settings should also be tuned appropriately for the expected load.
 
 #### At-Least-Once
 
@@ -221,26 +225,29 @@ In reality, the term "Exactly-Once" is not entirely accurate and should be under
 
 #### Usage
 There are two options for use:
-- manual through `OutboxPublisher.publish()`
+- manual using `OutboxPublisher#publish()`
 ```java
 public interface OutboxPublisher {
-    <T> void publish(String eventType, T event);
-    <T> void publish(String eventType, List<T> events);
+  <T> void publish(String eventType, T event);
+  <T> void publish(String eventType, List<T> events);
 }
 ```
-- using an annotation `@OutboxPublish`
+- using an `@OutboxPublish` annotation
 ```java
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Documented
 public @interface OutboxPublish {
-    String eventType();
-    @Language("SpEL")
-    String payload() default "#result";
+  String eventType();
+  @Language("SpEL")
+  String payload() default "#result";
 }
 ```
-Both approaches require specifying the event type in accordance with the YAML configuration and have the ability to save events in batches.
+Both approaches require specifying the eventType in accordance with the YAML configuration and support saving events in batches.
+When using the annotation-based approach, the payload can be derived from method parameters or the return value and is configured via SpEL expressions (e.g. by referencing a parameter name).
 More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-publisher-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/publisher/OrderService.java).
+
+---
 
 #### Event State Machine
 Events transition through the following states:
@@ -254,10 +261,14 @@ PENDING → IN_PROCESS → PROCESSED (future cleanup)
 - `PROCESSED`: event successfully sent to message broker
 - `FAILED`: event failed after exhausting all retry attempts
 
+---
+
 #### Transactional Guarantees
 The library ensures atomic storage of outbox events within the same database transaction as business entity modifications. This guarantees that either both the business change and the event are saved, or neither is saved, preventing inconsistencies between the database and message broker.
 
 All methods for saving simultaneously with a business event are annotated with `@Transactional(propagation = Propagation.MANDATORY)`, which means that the transaction is mandatory and is opened by the client code.
+
+---
 
 #### Retry Policy
 An exponential backoff is supported where the delay increases exponentially with each retry, the next retry attempt is calculated using the following formula:
@@ -265,11 +276,17 @@ An exponential backoff is supported where the delay increases exponentially with
 `next_retry_at = initial_delay * (multiplier ^ retry_attempt)`
 
 Example: 10s -> 30s -> 90s -> 270s...
+
 Detailed configuration options are available [here](#defaults--events).
+
+---
 
 #### Stuck Event Recovery
 Events that are in the `IN_PROCESS` state for more than the specified threshold (`max-batch-processing-time` in the configuration) are considered stuck, they are caught by the worker and transferred to the `PENDING` state **without increasing the number of failed attempts**.
+
 Detailed configuration options are available [here](#stuck-event-recovery-1).
+
+---
 
 #### Dead Letter Queue
 
@@ -291,58 +308,29 @@ State definitions:
 - `TO_RETRY`: the event has been reviewed and approved for retry; it will be moved back to `outbox_events`
 - `RESOLVED`: the event is considered permanently failed and will not be retried
 
----
-
 ##### DLQ Transfer Semantics
 
 Event transfers between `outbox_events` and `outbox_dlq_events` are performed **within a single database transaction** to ensure consistency:
 
 - start transaction
-  - load a batch of DLQ events and lock them by setting status to `IN_PROCESS` to prevent concurrent handling
-  - insert events into the target table
-  - delete the corresponding batch from the source table
+    - load a batch of DLQ events and lock them by setting status to `IN_PROCESS` to prevent concurrent handling
+    - insert events into the target table
+    - delete the corresponding batch from the source table
 - commit transaction
 
 This guarantees atomicity and prevents event duplication or loss during DLQ transitions.
 
 ##### DLQ REST API
-The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.  
+The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.
 
-**GET** `/api/outbox-dlq/events/{id}` - get DLQ event by id
-
-Path params:
-- id: UUID
-
-**GET** `/api/outbox-dlq/events` - get batch of DLQ events
-
-Query params:
-- status: DlqStatus={MOVED, IN_PROCESS, TO_RETRY, RESOLVED}
-- batchNumber: int ≥ 0
-- batchSize: int [10;100]
-
-**PATCH** `/api/outbox-dlq/events/{id}` - update DLQ event status
-
-Path params:
-- id: UUID
-
-Request body:
-- status: DlqStatus={TO_RETRY, RESOLVED}
-
-**PATCH** `/api/outbox-dlq/events` - update batch DLQ events status
-
-Request body:
-- ids: set of UUID
-- status: new status for all specified events, DlqStatus={TO_RETRY, RESOLVED}
-
-**DELETE** `/api/outbox-dlq/events/{id}` - delete DLQ event
-
-Path params:
-- id: UUID
-
-**DELETE** `/api/outbox-dlq/events` - delete batch of DLQ events
-
-Request body:
-- ids: set of UUID
+| Method | Path | Params | Request Body | Description |
+|--------|------|--------|--------------|-------------|
+| ![GET](https://img.shields.io/badge/GET-4CAF50) | `/api/outbox-dlq/events/{id}` | id: UUID | — | Get DLQ event by ID |
+| ![GET](https://img.shields.io/badge/GET-4CAF50) | `/api/outbox-dlq/events` | status: DlqStatus,<br/>batchNumber: int,<br/>batchSize: int | — | Get batch of DLQ events |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0) | `/api/outbox-dlq/events/{id}` | id: UUID | status: DlqStatus | Update single DLQ event status |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0) | `/api/outbox-dlq/events` | — | ids: Set&lt;UUID&gt;,<br/>status: DlqStatus | Update batch DLQ events status |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/{id}` | id: UUID | — | Delete single DLQ event |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events` | — | ids: Set&lt;UUID&gt; | Delete batch of DLQ events |
 
 Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
 
@@ -352,9 +340,11 @@ Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
 
 Outbox events with the `PROCESSED` status are periodically cleaned up by a background worker according to the configured retention policy.
 Detailed configuration options are available [here](#cleanup-2).
+
 ---
 
 ### Consumer
+
 #### Usage
 The consumer side of the library provides only manual invocation through the following interface:
 ```java
@@ -363,7 +353,9 @@ public interface OutboxIdempotentConsumer {
     <T> void consume(List<T> messages, Consumer<List<T>> operation);
 }
 ```
+More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-consumer-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/consumer/OrderAnalyticKafkaListener.java)
 
+---
 #### Idempotent Processing
 Idempotent processing is implemented through unique event identifiers that are stored in a dedicated table when consumed. Storage occurs atomically together with the business effect.
 
@@ -376,8 +368,12 @@ As mentioned earlier, when consuming a batch of events, already-consumed events 
 For improved performance, consumed event identifiers can be cached in a distributed cache. When using this feature, ensure that cleanup of successfully processed events occurs after cache cleanup to prevent data loss.
 The library uses `CacheManager` from the application context. Cache configuration must be provided by the developer.
 
+---
+
 #### Cleanup
 The automatic cleanup strategy for consumed events is identical to the publisher cleanup strategy described [above](#cleanup).
+
+---
 
 ## Observability
 ### Publisher
@@ -386,36 +382,36 @@ The automatic cleanup strategy for consumed events is identical to the publisher
 - `outbox_events`: total number of outbox events
 
 - `outbox_events_by_status`: number of outbox events
-  - **Tags:** `status={pending, in_process}`
+    - **Tags:** `status={pending, in_process}`
 
 - `outbox_events_by_event_type_and_status`: number of outbox events by type
-  - **Tags:** `event_type`, `status={pending, in_process}`
+    - **Tags:** `event_type`, `status={pending, in_process}`
 
 - `outbox_dlq_events`: total number of events in DLQ
 
 - `outbox_dlq_events_by_status`: number of outbox DLQ events by status
-  - **Tags:** `status={moved, in_process, to_retry}`
+    - **Tags:** `status={moved, in_process, to_retry}`
 
 - `outbox_dlq_events_by_event_type_and_status`: number of outbox DLQ events by type and status
-  - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
+    - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
 
 All gauges execute `COUNT` queries against the database and therefore reflect the **exact number of events at the current moment**.
 
-To avoid excessive database load caused by Prometheus scraping, gauge values are **cached by default**. 
+To avoid excessive database load caused by Prometheus scraping, gauge values are **cached by default**.
 Caching can be disabled via metrics configuration.
 
 **Counters**
 - `outbox_events_rate_total`: number of events successfully processed or failed during consumption
-  - **Tags:** `event_type`, `status={processed, failed}`
+    - **Tags:** `event_type`, `status={processed, failed}`
 
 - `outbox_events_by_type_rate_total`: internal lifecycle counters, including
-  - **Tags:** `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`
+    - **Tags:** `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`
 
 - `outbox_dlq_events_rate_total`: rate of DLQ state transitions per event type
-  - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
+    - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
 
 - `outbox_dlq_events_by_type_rate_total`: operational counters for DLQ management
-  - **Tags:** `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}`
+    - **Tags:** `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}`
 
 **Timers**
 - `outbox_dlq_transfer_to_duration`: duration of batch transfers from outbox to DLQ
@@ -430,7 +426,7 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 
 **Counters**
 - `consumed_outbox_events_total`: number of outbox events by type
-  - **Tags:** `type={duplicated, consumed, cleaned, failed, cache-hit, cache-miss}`
+    - **Tags:** `type={duplicated, consumed, cleaned, failed, cache-hit, cache-miss}`
 
 ## Configuration
 ### Global
@@ -443,12 +439,12 @@ outbox:
 ```
 
 - `thread-pool-size`: size of the thread pool used for parallel event processing by type
-  - **Default**: `min(available_processors, 5)` 
-  - **Description**: events of different types are processed in parallel using threads from this pool. Scale based on number of event types and system resources. The number should be calculated by the user based on the required processing frequency. You should also remember to leave at least one (and preferably two) threads for system workers such as cleanup, catching stuck workers, and transferring to the DLQ.
+    - **Default**: `min(available_processors, 5)`
+    - **Description**: events of different types are processed in parallel using threads from this pool. Scale based on number of event types and system resources. The number should be calculated by the user based on the required processing frequency. You should also remember to leave at least one (and preferably two) threads for system workers such as cleanup, catching stuck workers, and transferring to the DLQ.
 
 - `auto-create`: automatically create outbox tables on application startup
-  - **Default**:`true`
-  - **Description**: when enabled, the library creates `outbox_events`, `outbox_dlq_events`, and `outbox_consumed_events` tables with appropriate indexes if they don't exist
+    - **Default**:`true`
+    - **Description**: when enabled, the library creates `outbox_events`, `outbox_dlq_events`, and `outbox_consumed_events` tables with appropriate indexes if they don't exist
 
 ### Publisher
 
@@ -463,12 +459,12 @@ outbox:
 ```
 
 - `type`: message broker type (**required**)
-  - **Values**: [`kafka`, `rabbitmq`]
-- `bean-name`: custom sender bean name (**optional**) 
-  - **Description**: use when you have multiple sender beans in the context.
+    - **Values**: [`kafka`, `rabbitmq`]
+- `bean-name`: custom sender bean name (**optional**)
+    - **Description**: use when you have multiple sender beans in the context.
 - `emergency-timeout`: maximum time to wait for send operation
-  - **Default**: `120s` 
-  - **Description**: timeout for message broker send operations. If exceeded, operation is cancelled and event marked `FAILED`.
+    - **Default**: `120s`
+    - **Description**: timeout for message broker send operations. If exceeded, operation is cancelled and event marked `FAILED`.
 
 ---
 #### Defaults & Events
@@ -537,7 +533,7 @@ outbox:
 ```
 
 - `topic`: message broker topic/queue name (**required**)
-    - **Description**: destination topic for this event type 
+    - **Description**: destination topic for this event type
 
 All other parameters same as `defaults` section, but override defaults for this specific event type
 
@@ -582,9 +578,9 @@ outbox:
     - **Default**: `300s`
     - **Description**: events in `IN_PROCESS` status longer than this are considered stuck
 - `initial-delay`: delay before first recovery run
-    - **Default**: `300s` 
+    - **Default**: `300s`
 - `fixed-delay`: interval between recovery runs
-    - **Default**: `1800s` 
+    - **Default**: `1800s`
 
 ---
 
@@ -616,7 +612,7 @@ outbox:
 - `transfer-to-fixed-delay`: interval between transfers **to** DLQ
     - **Default**: `900s`
 - `transfer-from-initial-delay`: delay before first transfer **from** DLQ **to** `outbox_events`
-    - **Default**: `300s` 
+    - **Default**: `300s`
 - `transfer-from-fixed-delay`: interval between transfers **from** DLQ **to** `outbox_events`
     - **Default**: `3600s`
 - `metrics.gauge.enabled`: enable DLQ metrics collection
@@ -689,8 +685,8 @@ outbox:
 
 All parameters same as Publisher cleanup with different defaults:
 - `ttl`
-  - **Default**: `1h`
-  - **Description**: consumed events are typically kept longer than published events for audit purposes
+    - **Default**: `1h`
+    - **Description**: consumed events are typically kept longer than published events for audit purposes
 
 ---
 
@@ -725,7 +721,7 @@ outbox:
       my-event:
         topic: "my.topic"
 ```
-Dead Letter Queue is unable by default. All other values will use defaults.
+**WARNING:** Dead Letter Queue is unable by default. All other values will use defaults.
 
 Full:
 ```yaml
