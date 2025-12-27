@@ -320,8 +320,19 @@ Event transfers between `outbox_events` and `outbox_dlq_events` are performed **
 
 This guarantees atomicity and prevents event duplication or loss during DLQ transitions.
 
+There is a handler interface that is invoked when events are transferred from the `outbox_events` table to the `outbox_dlq_events` table.
+It can be used to integrate alerting or monitoring.
+By default, it simply logs the events moved to the DLQ.
+```java
+public interface OutboxDlqHandler {
+    void handle(List<OutboxEvent> events);
+}
+```
+
 ##### DLQ REST API
 The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.
+
+**WARNING:** you should secure DLQ REST API paths.
 
 | Method | Path | Params | Request Body | Description |
 |--------|------|--------|--------------|-------------|
