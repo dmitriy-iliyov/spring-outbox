@@ -63,7 +63,7 @@ public class KafkaOutboxSender implements OutboxSender {
             }
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .orTimeout(emergencyTimeout,TimeUnit.SECONDS)
+                .orTimeout(emergencyTimeout, TimeUnit.SECONDS)
                 .join();
         return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
     }
