@@ -2,12 +2,11 @@ package io.github.dmitriyiliyov.springoutbox.example.trafficgenerator;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
-import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -16,12 +15,12 @@ import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
+@ConditionalOnProperty(value = "traffic.generator.type", havingValue = "stochastic")
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class SimpleTrafficGenerator implements TrafficGenerator {
+public class StochasticTrafficGenerator implements TrafficGenerator {
 
     @Value("${traffic.generator.target.batch-url}")
     public String batchUrl;
@@ -37,7 +36,7 @@ public class SimpleTrafficGenerator implements TrafficGenerator {
 
     private final ObjectMapper mapper;
     private final RestClient restClient;
-    private final List<Long> managedIds;
+    private final List<Long> managedIds = Collections.synchronizedList(new ArrayList<>());
     private final Random random = new Random(randomSeed);
 
     @Override
@@ -45,7 +44,11 @@ public class SimpleTrafficGenerator implements TrafficGenerator {
         try {
             if (operation.equals(Operation.CREATE)) {
                 String payload = mapper.writeValueAsString(
-                        generateCreate(random.nextInt(randomOrigin, randomBound))
+                        GeneratorUtils.generateCreateDtoList(
+                                random.nextInt(randomOrigin, randomBound),
+                                () -> random.nextLong(1),
+                                () -> GeneratorUtils.generateItemsIds(random, randomOrigin)
+                        )
                 );
                 OrderDto [] response = restClient
                         .post()
@@ -60,11 +63,16 @@ public class SimpleTrafficGenerator implements TrafficGenerator {
                     log.error("Response is null or empty");
                 }
             } else if (operation.equals(Operation.UPDATE)) {
-                List<Long> idsToUpdate = generateIds();
+                List<Long> idsToUpdate = GeneratorUtils.generateIds(randomOrigin, managedIds);
                 if (idsToUpdate.isEmpty()) {
-                    throw new IndexOutOfBoundsException();
+                    return;
                 }
-                String payload = mapper.writeValueAsString(generateUpdate(idsToUpdate));
+                String payload = mapper.writeValueAsString(
+                        GeneratorUtils.generateUpdateDtoList(
+                                idsToUpdate,
+                                () -> GeneratorUtils.generateItemsIds(random, randomOrigin)
+                        )
+                );
                 restClient
                         .patch()
                         .uri(batchUrl)
@@ -73,9 +81,9 @@ public class SimpleTrafficGenerator implements TrafficGenerator {
                         .retrieve()
                         .toBodilessEntity();
             } else if (operation.equals(Operation.DELETE)) {
-                List<Long> idsToDelete = generateIds();
+                List<Long> idsToDelete = GeneratorUtils.generateIds(randomOrigin, managedIds);
                 if (idsToDelete.isEmpty()) {
-                    throw new IndexOutOfBoundsException();
+                    return;
                 }
                 String payload = mapper.writeValueAsString(idsToDelete);
                 restClient
@@ -100,40 +108,5 @@ public class SimpleTrafficGenerator implements TrafficGenerator {
         } catch (Exception e) {
             log.error("Unexpected exception", e);
         }
-    }
-
-    private List<Long> generateIds() {
-        int size = Math.min(managedIds.size() / 2, randomBound);
-        List<Long> ids = new ArrayList<>(managedIds);
-        Collections.shuffle(ids);
-        return ids.subList(0, size);
-    }
-
-    private Long generateUserId() {
-        return random.nextLong(1);
-    }
-
-    private String generateItemsIds() {
-        int count = random.nextInt(1, randomOrigin);
-        String ids = random.ints(count, 1, randomOrigin)
-                .mapToObj(Integer::toString)
-                .collect(Collectors.joining(", "));
-        return "[%s]".formatted(ids);
-    }
-
-    private List<OrderCreateDto> generateCreate(int count) {
-        List<OrderCreateDto> toCreate = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            toCreate.add(new OrderCreateDto(generateUserId(), generateItemsIds()));
-        }
-        return toCreate;
-    }
-
-    private List<OrderUpdateDto> generateUpdate(List<Long> idsToUpdate) {
-        List<OrderUpdateDto> toUpdate = new ArrayList<>();
-        for (Long id : idsToUpdate) {
-            toUpdate.add(new OrderUpdateDto(id, generateItemsIds()));
-        }
-        return toUpdate;
     }
 }

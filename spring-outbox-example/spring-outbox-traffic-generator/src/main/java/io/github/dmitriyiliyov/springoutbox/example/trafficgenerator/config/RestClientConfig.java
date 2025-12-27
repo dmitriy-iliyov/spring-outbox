@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example.trafficgenerator;
+package io.github.dmitriyiliyov.springoutbox.example.trafficgenerator.config;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,7 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 @Slf4j
-public class RestTemplateConfig {
+public class RestClientConfig {
 
     @Value("${traffic.generator.target.protocol}")
     public String protocol;
