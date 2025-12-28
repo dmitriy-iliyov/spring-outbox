@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    services:
+      postgresql:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: admin
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: outbox_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U admin" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+      mysql:
+        image: mysql:8.0.1
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_USER: admin
+          MYSQL_PASSWORD: root
+          MYSQL_DATABASE: outbox_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -uroot -proot" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+      oracle:
+        image: gvenzl/oracle-free:23
+        env:
+          ORACLE_PASSWORD: root
+          APP_USER: admin
+          ORACLE_DATABASE: outbox_test
+          APP_USER_PASSWORD: root
+        ports:
+          - 1521:1521
+        options: >-
+          --health-cmd "echo 'SELECT 1 FROM dual;' | sqlplus -s admin/root@//localhost:1521/outbox_test" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 10
+
+      kafka:
+        image: bitnami/kafka:latest
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_CFG_NODE_ID: 1
+          KAFKA_CFG_PROCESS_ROLES: broker,controller
+          KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+          KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+          KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
+          KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+
+      - name: Build and run tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/outbox_test
+          SPRING_DATASOURCE_USERNAME: admin
+          SPRING_DATASOURCE_PASSWORD: root
+          SPRING_DATASOURCE_MYSQL_URL: jdbc:mysql://localhost:3306/outbox_test
+          SPRING_DATASOURCE_MYSQL_USERNAME: admin
+          SPRING_DATASOURCE_MYSQL_PASSWORD: root
+        run: mvn clean verify
+
+      - name: Generate JaCoCo report
+        run: mvn jacoco:report
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: target/site/jacoco/jacoco.xml
+          fail_ci_if_error: true
+

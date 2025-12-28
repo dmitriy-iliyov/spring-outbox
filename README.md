@@ -1,11 +1,15 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox)
+![Release](https://img.shields.io/github/release/dmitriy-iliyov/spring-outbox)
+![Last commit](https://img.shields.io/github/last-commit/dmitriy-iliyov/spring-outbox)
+
 
 ![Java](https://img.shields.io/badge/Java-21-007396?logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-6DB33F?logo=springboot)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791?logo=postgresql)
-![MySQL](https://img.shields.io/badge/MySQL-8.0.1-336791?logo=mysql)
-![Oracle](https://img.shields.io/badge/Oracle-23-336791)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-336791?logo=postgresql)
+![MySQL](https://img.shields.io/badge/MySQL-8.0.1+-336791?logo=mysql)
+![Oracle](https://img.shields.io/badge/Oracle-23+-336791)
 ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.7-231F20?logo=apachekafka)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12-FF6600?logo=rabbitmq&logoColor=white)
 
 ## Overview
 This library provides an implementation of the [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html) based on polling events from a relational database and publishing them to a message broker.
@@ -41,8 +45,8 @@ This approach ensures reliable event publication without relying on database log
 - Oracle Database 23+
 
 **Supported Message Brokers:**
-- Apache Kafka 3.7+
-- RabbitMQ 3.13+
+- Apache Kafka 3.7
+- RabbitMQ 3.12
 
 **Cache Storage (optional for caching):**
 - Redis 7+
