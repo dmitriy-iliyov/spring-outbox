@@ -3,11 +3,15 @@ package io.github.dmitriyiliyov.springoutbox.publisher.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.publisher.KafkaOutboxSender;
 import io.github.dmitriyiliyov.springoutbox.publisher.OutboxSender;
+import io.github.dmitriyiliyov.springoutbox.publisher.RabbitMqOutboxSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.ApplicationContext;
 import org.springframework.kafka.core.KafkaTemplate;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -103,9 +107,37 @@ public final class OutboxSenderFactory {
         public OutboxSender supply(OutboxPublisherProperties.SenderProperties properties,
                                    ApplicationContext context,
                                    ObjectMapper mapper) {
-            throw new UnsupportedOperationException(
-                    "RabbitMQ OutboxSender is not implemented yet"
-            );
+            String beanName = properties.getBeanName();
+            RabbitTemplate rabbitTemplate;
+            if (beanName == null || beanName.isEmpty()) {
+                log.warn("Sender bean-name is not specified. Will try to resolve by type");
+                String [] beanNames = context.getBeanNamesForType(RabbitTemplate.class);
+                if (beanNames.length == 0) {
+                    throw new IllegalStateException("Cannot create OutboxSender: no RabbitTemplate bean found");
+                }
+                if (beanNames.length > 1) {
+                    throw new IllegalStateException(
+                            "Cannot create OutboxSender: found more then one RabbitTemplate bean: " +
+                                    Arrays.toString(beanNames) +
+                                    "Please define a RabbitTemplate bean with this name, " +
+                                    "or configure 'outbox.sender.bean-name' property"
+                    );
+                }
+                beanName = beanNames[0];
+            }
+            if (!context.containsBean(beanName)) {
+                throw new IllegalArgumentException(
+                        "Cannot create OutboxSender: RabbitTemplate bean '" + beanName + "' not found. " +
+                                "Please define a RabbitTemplate bean with this name, " +
+                                "or configure 'outbox.sender.bean-name' property"
+                );
+            }
+            rabbitTemplate = context.getBean(beanName, RabbitTemplate.class);
+            if (!rabbitTemplate.isMandatoryFor(new Message(Boolean.FALSE.toString().getBytes(StandardCharsets.UTF_8)))) {
+                log.error("RabbitTemplate '{}' mandatory flag is false. " +
+                        "ReturnedMessage will not be received. You should set mandatory=true for at-least-once", beanName);
+            }
+            return new RabbitMqOutboxSender(rabbitTemplate, properties.getEmergencyTimeout().toSeconds());
         }
     }
 }
