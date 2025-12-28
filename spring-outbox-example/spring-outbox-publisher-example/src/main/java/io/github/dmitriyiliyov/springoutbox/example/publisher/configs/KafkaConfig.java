@@ -31,22 +31,15 @@ public class KafkaConfig {
     }
 
     @Bean
+    public NewTopic ordersEventTopic() {
+        return TopicBuilder.name("orders")
+                .partitions(3)
+                .build();
+    }
+
+    @Bean
     public NewTopic ordersCreateEventTopic() {
         return TopicBuilder.name("orders.created")
-                .partitions(3)
-                .build();
-    }
-
-    @Bean
-    public NewTopic ordersUpdateEventTopic() {
-        return TopicBuilder.name("orders.updated")
-                .partitions(3)
-                .build();
-    }
-
-    @Bean
-    public NewTopic ordersDeleteEventTopic() {
-        return TopicBuilder.name("orders.deleted")
                 .partitions(3)
                 .build();
     }

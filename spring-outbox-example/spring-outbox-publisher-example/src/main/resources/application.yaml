@@ -37,11 +37,11 @@ outbox:
         batch-size: 100
         fixed-delay: 1s
       update-order:
-        topic: orders.updated
+        topic: orders
         batch-size: 50
         fixed-delay: 1s
       delete-order:
-        topic: orders.deleted
+        topic: orders
         batch-size: 50
         fixed-delay: 10s
     clean-up:
