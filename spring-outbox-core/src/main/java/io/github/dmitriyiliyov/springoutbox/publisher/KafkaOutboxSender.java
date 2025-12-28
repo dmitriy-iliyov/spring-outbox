@@ -1,7 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.publisher;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxConstants;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.SenderResult;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.CacheableClassResolver;
@@ -46,7 +47,8 @@ public class KafkaOutboxSender implements OutboxSender {
                 Message<?> message = MessageBuilder
                         .withPayload(mapper.readValue(event.getPayload(), classResolver.resolve(event.getPayloadType())))
                         .setHeader(KafkaHeaders.TOPIC, topic)
-                        .setHeader(OutboxConstants.EVENT_ID_HEADER.getValue(), event.getId().toString())
+                        .setHeader(OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType())
+                        .setHeader(OutboxHeaders.EVENT_ID.getValue(), event.getId().toString())
                         .build();
                 CompletableFuture<Void> future = kafkaTemplate
                         .send(message)
@@ -58,8 +60,12 @@ public class KafkaOutboxSender implements OutboxSender {
                         });
                 futures.add(future);
             } catch (Exception e) {
-                log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, e);
                 failedIds.add(event.getId());
+                if (e instanceof JsonParseException) {
+                    log.error("Error when parsing event payload with id={} ", event.getId(), e);
+                } else {
+                    log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, e);
+                }
             }
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
