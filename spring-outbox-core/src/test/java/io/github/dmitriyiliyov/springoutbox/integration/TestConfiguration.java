@@ -67,6 +67,7 @@ public class TestConfiguration {
         return new SimpleMeterRegistry();
     }
 
+    @Profile("kafka")
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
         Map<String, Object> properties = new HashMap<>();

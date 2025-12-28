@@ -2,7 +2,7 @@ spring:
   application:
     name: spring-outbox-test
   profiles:
-    active: psql
+    active: psql, kafka
 logging:
   level:
     root: debug
@@ -26,13 +26,13 @@ outbox:
 
     events:
       account-delete:
-        topic: account-delete
+        topic: account
         batch-size: 10
         fixed-delay: 10s
         backoff:
           enabled: false
       rating-update:
-        topic: rating-update
+        topic: rating
         batch-size: 50
         fixed-delay: 20s
 
