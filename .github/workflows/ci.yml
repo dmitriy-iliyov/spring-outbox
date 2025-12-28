@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     services:
       postgresql:
         image: postgres:18-alpine
@@ -70,7 +71,7 @@ jobs:
           KAFKA_LOG_DIRS: /kafka/data
           KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
- steps:
+    steps:
       - uses: actions/checkout@v3
 
       - name: Set up JDK 21
@@ -105,4 +106,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: target/site/jacoco/jacoco.xml
           fail_ci_if_error: true
-
