@@ -11,7 +11,7 @@
 This library provides an implementation of the [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html) based on polling events from a relational database and publishing them to a message broker.
 
 The library offers flexible configuration for processing different event types.
-Each event type can be handled independently, and events are processed in parallel using a configurable thread pool, allowing predictable throughput and controlled resource usage.
+Each event type is handled independently, and events are processed in parallel using a configurable thread pool, allowing predictable throughput and controlled resource usage.
 
 Two delivery guarantees are supported:
 - **At-least-once delivery**
@@ -54,7 +54,7 @@ This approach ensures reliable event publication without relying on database log
 @SpringBootApplication
 @EnableJpaRepositories
 @EnableTransactionManagement
-@EnableKafka
+@EnableKafka        // or @EnableRabbit for RabbitMQ
 @EnableOutbox
 public class PublisherRunner {
 
@@ -63,15 +63,15 @@ public class PublisherRunner {
     }
 }
 ```
-2. Minimal YAML config (**DLQ unable by default**):
+2. Minimal YAML config (**DLQ disabled by default**):
 ```yaml
 outbox:
   publisher:
     sender:
-      type: kafka
+      type: kafka    # or rabbit_mq
     events:
-      example-event-type:
-        topic: "example-create-event"
+      create-example-event:
+        topic: "example-events"
 ```
 3. Inject `OutboxPublisher`:
 ```java 
@@ -87,7 +87,7 @@ public class ExampleService {
     public ExampleDto save(ExampleCreateDto dto) {
         ExampleEntity entity = repository.save(mapper.toEntity(dto));
         ExampleDto response = mapper.toDto(entity);
-        outboxPublisher.publish("example-event-type", response);
+        outboxPublisher.publish("create-example-event", response);
         return response;
     }
 }
@@ -104,7 +104,7 @@ public class ExampleService {
     private final ExampleMapper mapper;
 
     @Transactional
-    @OutboxPublish(eventType = "example-event-type")    // payload by default is "#result"
+    @OutboxPublish(eventType = "create-example-event")    // payload by default is "#result"
     public ExampleDto save(ExampleCreateDto dto) {
         ExampleEntity entity = repository.save(mapper.toEntity(dto));
         return mapper.toDto(entity);
@@ -117,7 +117,7 @@ public class ExampleService {
 @SpringBootApplication
 @EnableJpaRepositories
 @EnableTransactionManagement
-@EnableKafka
+@EnableKafka        // or @EnableRabbit for RabbitMQ
 @EnableCaching
 @EnableOutbox
 public class ConsumerRunner {
@@ -140,6 +140,7 @@ outbox:
 
 6. Create listener with injected `OutboxIdempotentConsumer`:
 
+**Apache Kafka:**
 ```java
 @Component
 @RequiredArgsConstructor
@@ -148,15 +149,40 @@ public class ExampleKafkaListener {
 
     private final OutboxIdempotentConsumer outboxConsumer;
 
-    @KafkaListener(topics = "example-create-event", groupId = "example-group")
+    @KafkaListener(topics = "example-events", groupId = "example-group")
     public void listen(ConsumerRecord<String, ExampleDto> record) {
         outboxConsumer.consume(
-                record, 
+                record,    // event metadata (type, id) is in headers
                 () -> log.info("Some business operation with payload {}", record.value())
         );
     }
 }
 ```
+
+**RabbitMQ:**
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class ExampleRabbitListener {
+
+    private final OutboxIdempotentConsumer outboxConsumer;
+    private final ObjectMapper objectMapper;
+    
+    @RabbitListener(queues = "example-queue")
+    public void handle(Message message) {
+      ExampleDto dto = objectMapper.readValue(message.getBody(), ExampleDto.class);
+      outboxConsumer.consume(
+            message,    // event metadata (type, id) is in headers
+            () -> log.info("Some business operation with payload {}", dto)
+        );
+    }
+}
+```
+
+More about event metadata [here](#event-headers)
+
+---
 
 ## Example & Test Environment
 
@@ -168,7 +194,7 @@ Example of full configured project with simple traffic generator is [here](https
 
 The system architecture with full configuration looks as follows:
 
-![a](./images/outbox-architecture.png)
+![outbox-architecture](./images/outbox-architecture.png)
 
 The event lifecycle follows these steps:
 1. Event or batch of events is created
@@ -201,7 +227,7 @@ To enable parallel event processing across multiple application instances, the l
 ---
 
 ### Delivery Semantics
-
+ 
 **WARNING:** The library expects the message broker to be configured by the developer.
 To ensure the delivery semantics described below, the broker must be configured with `acks` (or an equivalent mechanism).
 If the broker uses a producer-side buffer, its settings should also be tuned appropriately for the expected load.
@@ -213,8 +239,8 @@ This delivery semantic is ensured without consumer-side configuration. The publi
 If the publisher crashes after polling but before sending to the queue, events become stuck in `IN_PROCESS` state. They will be detected by a dedicated worker and transitioned back to `PENDING` state without counting the failed delivery attempt.
 
 More details about the state machine [here](#event-state-machine).
-#### Exactly-Once
 
+#### Exactly-Once
 This semantic is achievable only when using the idempotent consumer, which deduplicates messages based on event identifiers generated when the event is initially saved at the beginning of its lifecycle.
 
 In reality, the term "Exactly-Once" is not entirely accurate and should be understood as "Effectively-Exactly-Once", since the library cannot guarantee deduplication within the broker itself.
@@ -367,18 +393,112 @@ public interface OutboxIdempotentConsumer {
 More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-consumer-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/consumer/OrderAnalyticKafkaListener.java)
 
 ---
+
 #### Idempotent Processing
 Idempotent processing is implemented through unique event identifiers that are stored in a dedicated table when consumed. Storage occurs atomically together with the business effect.
 
-Event identifiers are passed via message headers to avoid polluting business events, for:
-- RabbitMQ - no special requirements
-- Apache Kafka - developers must accept `ConsumerRecord.class` to access headers
+Event identifiers are passed via message headers to avoid polluting business events, so you should use for:
+- Apache Kafka - `org.apache.kafka.clients.consumer.ConsumerRecord`
+- RabbitMQ - `org.springframework.amqp.core.Message`
 
 As mentioned earlier, when consuming a batch of events, already-consumed events are filtered out and only unconsumed events are passed to the lambda expression.
 
 For improved performance, consumed event identifiers can be cached in a distributed cache. When using this feature, ensure that cleanup of successfully processed events occurs after cache cleanup to prevent data loss.
 The library uses `CacheManager` from the application context. Cache configuration must be provided by the developer.
 
+---
+
+##### Event Headers
+
+**IMPORTANT:** The library uses message headers to pass event metadata for idempotency checks and routing.
+
+The event types themselves act as routing keys in both cases. For **Apache Kafka**, they are placed in event headers and are available for consumer-side routing. For **RabbitMQ**, they are used by the library itself to determine the queue to which the event will be sent and are also available in the headers.
+
+All events published through the outbox pattern include the following headers:
+
+| Header Name | Constant | Type | Description                                                                               |
+|------------|----------|------|-------------------------------------------------------------------------------------------|
+| `outbox_event_type` | `OutboxHeaders.EVENT_TYPE` | String | Enables event dispatching when multiple event types share a topic/exchange                |
+| `outbox_event_id` | `OutboxHeaders.EVENT_ID` | UUID | Unique event identifier for idempotency, used by OutboxIdempotentConsumer implementation |                                                                                               |
+
+```java
+public enum OutboxHeaders {
+  EVENT_TYPE("outbox_event_type"),
+  EVENT_ID("outbox_event_id");
+
+  private final String value;
+
+  OutboxHeaders(String value) {
+    this.value = value;
+  }
+
+  public String getValue() {
+    return value;
+  }
+}
+```
+
+**Apache Kafka:**
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class OrderKafkaListener {
+
+  private final OutboxIdempotentConsumer outboxConsumer;
+
+  // Map containing event type to handler strategy mapping
+  private final Map<String, OrderEventHandler> handlers;
+
+  @KafkaListener(topics = "orders", groupId = "order-group")
+  public void listen(ConsumerRecord<String, OrderDto> record) {
+    String eventType = new String(
+            record.headers()
+                    .lastHeader(OutboxHeaders.EVENT_TYPE.getValue())
+                    .value()
+    );
+
+    outboxConsumer.consume(record, () -> {
+      OrderEventHandler handler = handlers.get(eventType);
+      if (handler != null) {
+        handler.handle(record);
+      }
+    });
+  }
+}
+```
+
+**RabbitMQ:**
+```java
+@Component
+@RequiredArgsConstructor
+@Slf4j
+public class OrderRabbitListener {
+
+  private final OutboxIdempotentConsumer outboxConsumer;
+
+  // Map containing event type to handler strategy mapping
+  private final Map<String, OrderEventHandler> handlers;
+
+  @RabbitListener(bindings = @QueueBinding(
+          value = @Queue("order-processing-queue"),
+          exchange = @Exchange(name = "orders", type = ExchangeTypes.TOPIC),
+          key = {"order-created", "order-updated"}
+  ))
+  public void handleOrders(Message message) {
+    String eventType = (String) message.getMessageProperties()
+            .getHeaders()
+            .get(OutboxHeaders.EVENT_TYPE.getValue());
+
+    outboxConsumer.consume(message, () -> {
+      OrderEventHandler handler = handlers.get(eventType);
+      if (handler != null) {
+        handler.handle(message);
+      }
+    });
+  }
+}
+```
 ---
 
 #### Cleanup
@@ -464,13 +584,13 @@ outbox:
 outbox:
   publisher:
     sender:
-      type: kafka  # or rabbitmq
+      type: kafka  # or rabbit_mq
       bean-name: "customKafkaTemplate"  # optional
       emergency-timeout: 120s
 ```
 
 - `type`: message broker type (**required**)
-    - **Values**: [`kafka`, `rabbitmq`]
+    - **Values**: [`kafka`, `rabbit_mq`]
 - `bean-name`: custom sender bean name (**optional**)
     - **Description**: use when you have multiple sender beans in the context.
 - `emergency-timeout`: maximum time to wait for send operation
@@ -506,7 +626,7 @@ outbox:
     - **Description**: lower values reduce latency but increase database load
 - `max-retries`: maximum retry attempts before moving to DLQ
     - **Default**: `3`
-    - **Description**: total retry attempts. After exhaustion, event moves to DLQ
+    - **Description**: total retry attempts before moving to DLQ
 - `backoff.enabled`: enable exponential backoff
     - **Default**: `true`
     - **Description**: when enabled, delay between retries increases exponentially
@@ -523,7 +643,7 @@ outbox:
   publisher:
     events:
       order-created:
-        topic: "orders.created"
+        topic: "orders"
         batch-size: 100
         fixed-delay: 1s
         max-retries: 5
@@ -532,7 +652,7 @@ outbox:
           multiplier: 2
       
       order-updated:
-        topic: "orders.updated"
+        topic: "orders"
         batch-size: 50
         fixed-delay: 2s
         backoff:
@@ -543,8 +663,7 @@ outbox:
         # Other params inherited from defaults
 ```
 
-- `topic`: message broker topic/queue name (**required**)
-    - **Description**: destination topic for this event type
+- `topic`: destination topic (Kafka) or exchange (RabbitMQ) name
 
 All other parameters same as `defaults` section, but override defaults for this specific event type
 
@@ -559,12 +678,12 @@ outbox:
     
     events:
       high-priority:
-        topic: "priority.events"
+        topic: "events"
         fixed-delay: 1s  # Override: faster polling
         # Inherits: batch-size=50, max-retries=3
       
       low-priority:
-        topic: "low.priority"
+        topic: "events"
         fixed-delay: 10s  # Override: slower polling
         backoff:
           enabled: false  # Override: disable backoff
@@ -732,7 +851,7 @@ outbox:
       my-event:
         topic: "my.topic"
 ```
-**WARNING:** Dead Letter Queue is unable by default. All other values will use defaults.
+**WARNING:** Dead Letter Queue is disabled by default. All other values will use defaults.
 
 Full:
 ```yaml
@@ -758,15 +877,15 @@ outbox:
     
     events:
       order-created:
-        topic: "orders.created"
+        topic: "orders"
         batch-size: 100
         fixed-delay: 1s
       order-updated:
-        topic: "orders.updated"
+        topic: "orders"
         batch-size: 50
         fixed-delay: 1s
       order-deleted:
-        topic: "orders.deleted"
+        topic: "orders"
         batch-size: 50
         fixed-delay: 10s
         backoff:
