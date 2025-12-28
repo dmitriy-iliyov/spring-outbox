@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxConstants;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import org.springframework.amqp.core.Message;
 
 import java.util.Map;
@@ -11,7 +11,7 @@ public class RabbitMqOutboxEventIdResolver implements OutboxEventIdResolver<Mess
     @Override
     public UUID resolve(Message rowMessage) {
         Map<String, Object> headers = rowMessage.getMessageProperties().getHeaders();
-        String headerName = OutboxConstants.EVENT_ID_HEADER.getValue();
+        String headerName = OutboxHeaders.EVENT_ID.getValue();
         Object rowEventId = headers.get(headerName);
         if (rowEventId == null) {
             throw new IllegalArgumentException("Header '%s' not found; cannot resolve".formatted(headerName));

@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxConstants;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.Header;
 
@@ -14,10 +14,10 @@ public class KafkaOutboxEventIdResolver implements OutboxEventIdResolver<Consume
     public UUID resolve(ConsumerRecord<String, ?> rowMessage) {
         Header [] headers = rowMessage.headers().toArray();
         Header eventIdHeader = Arrays.stream(headers)
-                .filter(header -> header.key().equals(OutboxConstants.EVENT_ID_HEADER.getValue()))
+                .filter(header -> header.key().equals(OutboxHeaders.EVENT_ID.getValue()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Header '%s' not found; cannot resolve"
-                        .formatted(OutboxConstants.EVENT_ID_HEADER.getValue()))
+                        .formatted(OutboxHeaders.EVENT_ID.getValue()))
                 );
         return UUID.fromString(new String(eventIdHeader.value(), StandardCharsets.UTF_8));
     }

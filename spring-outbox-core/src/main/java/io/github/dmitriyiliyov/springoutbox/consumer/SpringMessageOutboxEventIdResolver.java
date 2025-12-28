@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxConstants;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
@@ -11,7 +11,7 @@ public class SpringMessageOutboxEventIdResolver implements OutboxEventIdResolver
     @Override
     public UUID resolve(Message<?> rowMessage) {
         MessageHeaders headers = rowMessage.getHeaders();
-        String headerName = OutboxConstants.EVENT_ID_HEADER.getValue();
+        String headerName = OutboxHeaders.EVENT_ID.getValue();
         UUID eventId = headers.get(headerName, UUID.class);
         if (eventId == null) {
             throw new IllegalArgumentException("Header '%s' not found, cannot resolve".formatted(headerName));
