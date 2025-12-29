@@ -62,8 +62,8 @@ jobs:
         env:
           KAFKA_NODE_ID: 1
           KAFKA_PROCESS_ROLES: broker,controller
-          KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_LISTENERS: PLAINTEXT://:1431,CONTROLLER://:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:1431
           KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
           KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
           KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
@@ -87,13 +87,8 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
       - name: Build and run tests
-        env:
-          SPRING_PROFILES_ACTIVE: psql,kafka
         run: mvn clean verify -Dspring.profiles.active=psql,kafka
         working-directory: spring-outbox-core
-
-      - name: Generate JaCoCo report
-        run: mvn jacoco:report
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
