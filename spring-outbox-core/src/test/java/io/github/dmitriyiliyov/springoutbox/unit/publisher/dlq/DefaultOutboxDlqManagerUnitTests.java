@@ -222,9 +222,10 @@ public class DefaultOutboxDlqManagerUnitTests {
         Set<UUID> ids = null;
 
         // when
-        tested.deleteBatch(ids);
+        int deleteCount = tested.deleteBatch(ids);
 
         // then
+        assertEquals(0, deleteCount);
         verifyNoInteractions(repository);
     }
 
@@ -235,24 +236,11 @@ public class DefaultOutboxDlqManagerUnitTests {
         Set<UUID> ids = Set.of();
 
         // when
-        tested.deleteBatch(ids);
+        int deleteCount = tested.deleteBatch(ids);
 
         // then
+        assertEquals(0, deleteCount);
         verifyNoInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT deleteBatch() when checkEventsAvailability throws, should propagate exception")
-    void deleteBatch_whenCheckEventsAvailabilityFails_shouldThrow() {
-        // given
-        UUID id = UUID.randomUUID();
-        Set<UUID> ids = Set.of(id);
-        when(repository.findBatch(ids)).thenReturn(List.of());
-
-        // when + then
-        assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatchWithCheck(ids));
-        verify(repository).findBatch(ids);
-        verifyNoMoreInteractions(repository);
     }
 
     @Test
@@ -261,17 +249,77 @@ public class DefaultOutboxDlqManagerUnitTests {
         // given
         UUID id = UUID.randomUUID();
         Set<UUID> ids = Set.of(id);
-        OutboxDlqEvent event = mock(OutboxDlqEvent.class);
-        when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
-
-        when(repository.findBatch(ids)).thenReturn(List.of(event));
+        when(repository.deleteBatch(ids)).thenReturn(ids.size());
 
         // when
-        tested.deleteBatchWithCheck(ids);
+        int deleteCount = tested.deleteBatch(ids);
 
         // then
-        verify(repository).findBatch(ids);
+        assertEquals(ids.size(), deleteCount);
         verify(repository).deleteBatch(ids);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT deleteBatchWithCheck() when ids null should early return")
+    void deleteBatchWithCheck_whenIdsNull_shouldEarlyReturn() {
+        // given
+        Set<UUID> ids = null;
+
+        // when
+        int deleteCount = tested.deleteBatchWithCheck(ids);
+
+        // then
+        assertEquals(0, deleteCount);
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT deleteBatchWithCheck() when ids empty should early return")
+    void deleteBatchWithCheck_whenIdsEmpty_shouldEarlyReturn() {
+        // given
+        Set<UUID> ids = Set.of();
+
+        // when
+        int deleteCount = tested.deleteBatchWithCheck(ids);
+
+        // then
+        assertEquals(0, deleteCount);
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT deleteBatchWithCheck() when all events valid, should delete batch")
+    void deleteBatchWithCheck_whenEventsValid_shouldDelete() {
+        // given
+        UUID id = UUID.randomUUID();
+        Set<UUID> ids = Set.of(id);
+        OutboxDlqEvent event = mock(OutboxDlqEvent.class);
+        when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
+        List<OutboxDlqEvent> dlqEvents = List.of(event);
+        when(repository.findBatch(ids)).thenReturn(dlqEvents);
+        when(repository.deleteBatch(ids)).thenReturn(ids.size());
+
+        // when
+        int deleteCount = tested.deleteBatchWithCheck(ids);
+
+        // then
+        assertEquals(ids.size(), deleteCount);
+        verify(repository).deleteBatch(ids);
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT deleteBatchWithCheck() when checkEventsAvailability throws, should propagate exception")
+    void deleteBatchWithCheck_whenCheckEventsAvailabilityFails_shouldThrow() {
+        // given
+        UUID id = UUID.randomUUID();
+        Set<UUID> ids = Set.of(id);
+        when(repository.findBatch(ids)).thenReturn(List.of());
+
+        // when + then
+        assertThrows(OutboxDlqEventBatchNotFoundException.class, () -> tested.deleteBatchWithCheck(ids));
+        verify(repository).findBatch(ids);
         verifyNoMoreInteractions(repository);
     }
 
