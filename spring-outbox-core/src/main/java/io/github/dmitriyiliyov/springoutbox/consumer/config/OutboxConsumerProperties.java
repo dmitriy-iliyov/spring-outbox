@@ -29,7 +29,7 @@ public class OutboxConsumerProperties {
             }
             if (cache == null) {
                 cache = new CacheProperties();
-                cache.setEnabled(true);
+                cache.setEnabled(false);
             }
             cache.afterPropertiesSet();
             if (!cache.isEnabled()) {
@@ -79,7 +79,8 @@ public class OutboxConsumerProperties {
         public String cacheName;
 
         public void afterPropertiesSet() {
-            if (enabled != null && enabled) {
+            if (enabled == null || enabled) {
+                enabled = true;
                 Objects.requireNonNull(cacheName, "cacheName cannot be null");
                 if (cacheName.isBlank()) {
                     throw new IllegalArgumentException("cacheName cannot be empty or blank");

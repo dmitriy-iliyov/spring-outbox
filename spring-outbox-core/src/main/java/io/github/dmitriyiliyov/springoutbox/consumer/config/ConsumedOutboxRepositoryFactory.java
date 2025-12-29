@@ -48,7 +48,10 @@ public final class ConsumedOutboxRepositoryFactory {
             }
             return supplier.apply(dataSource);
         } catch (Exception e) {
-            log.error("Failed connect to database");
+            log.error("Error when connecting to database");
+            if (e instanceof RuntimeException re) {
+                throw re;
+            }
             throw new RuntimeException(e);
         }
     }

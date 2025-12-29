@@ -2,8 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.publisher;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.SenderResult;
 import io.github.dmitriyiliyov.springoutbox.publisher.utils.CacheableClassResolver;
 import org.slf4j.Logger;
