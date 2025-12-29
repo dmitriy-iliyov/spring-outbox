@@ -222,7 +222,7 @@
                 </executions>
                 <configuration>
                     <includes>
-                        <include>io/github/dmitriyiliyov/springoutbox/core/**</include>
+                        <include>io/github/dmitriyiliyov/springoutbox/**</include>
                     </includes>
                 </configuration>
             </plugin>
