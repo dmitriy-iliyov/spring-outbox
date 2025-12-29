@@ -220,7 +220,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <includes>
+                        <include>io/github/dmitriyiliyov/springoutbox/core/**</include>
+                    </includes>
+                </configuration>
             </plugin>
+
         </plugins>
     </build>
 </project>
