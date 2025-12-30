@@ -2,11 +2,13 @@ package io.github.dmitriyiliyov.springoutbox.unit.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.consumer.DefaultOutboxEventIdResolveManager;
 import io.github.dmitriyiliyov.springoutbox.consumer.OutboxEventIdResolver;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.amqp.core.Message;
 
 import java.util.List;
 import java.util.Map;
@@ -20,22 +22,25 @@ import static org.mockito.Mockito.when;
 class DefaultOutboxEventIdResolveManagerUnitTests {
 
     @Mock
-    private OutboxEventIdResolver<String> stringResolver;
+    private OutboxEventIdResolver<ConsumerRecord<String, ?>> kafkaResolver;
 
     @Mock
-    private OutboxEventIdResolver<Integer> integerResolver;
+    private OutboxEventIdResolver<Message> amqpMessageResolver;
+
+    @Mock
+    private OutboxEventIdResolver<org.springframework.messaging.Message<?>> springMessageResolver;
 
     @Test
     @DisplayName("UT resolve() when resolver exists should resolve event id")
     void resolve_whenResolverExists_shouldResolveEventId() {
         // given
         UUID expectedId = UUID.randomUUID();
-        String message = "test-message";
-        when(stringResolver.getSupports()).thenAnswer(invocation -> String.class);
-        when(stringResolver.resolve(message)).thenReturn(expectedId);
+        ConsumerRecord<String, ?> message = new ConsumerRecord<>("topic", 1, 10L, "key", new Object());
+        when(kafkaResolver.getSupports()).thenAnswer(invocation -> ConsumerRecord.class);
+        when(kafkaResolver.resolve(message)).thenReturn(expectedId);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(stringResolver)
+                List.of(kafkaResolver)
         );
 
         // when
@@ -49,17 +54,16 @@ class DefaultOutboxEventIdResolveManagerUnitTests {
     @DisplayName("UT resolve() when resolver not found should throw IllegalArgumentException")
     void resolve_whenResolverNotFound_shouldThrowIllegalArgumentException() {
         // given
-        String message = "test-message";
-        when(integerResolver.getSupports()).thenAnswer(invocation -> Integer.class);
+        Message message = new Message(new byte[0]);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(integerResolver)
+                List.of(kafkaResolver)
         );
 
         // when + then
         assertThatThrownBy(() -> manager.resolve(message))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported class 'java.lang.String'; cannot resolve");
+                .hasMessageContaining("Unsupported class 'org.springframework.amqp.core.Message'; cannot resolve");
     }
 
     @Test
@@ -68,21 +72,21 @@ class DefaultOutboxEventIdResolveManagerUnitTests {
         // given
         UUID stringId = UUID.randomUUID();
         UUID integerId = UUID.randomUUID();
-        String stringMessage = "test";
-        Integer integerMessage = 42;
+        ConsumerRecord<String, ?> kafkaMessage = new ConsumerRecord<>("topic", 1, 10L, "key", new Object());
+        Message amqpMessage = new Message(new byte[0]);
 
-        when(stringResolver.getSupports()).thenAnswer(invocation -> String.class);
-        when(stringResolver.resolve(stringMessage)).thenReturn(stringId);
-        when(integerResolver.getSupports()).thenAnswer(invocation -> Integer.class);
-        when(integerResolver.resolve(integerMessage)).thenReturn(integerId);
+        when(kafkaResolver.getSupports()).thenAnswer(invocation -> ConsumerRecord.class);
+        when(kafkaResolver.resolve(kafkaMessage)).thenReturn(stringId);
+        when(amqpMessageResolver.getSupports()).thenAnswer(invocation -> Message.class);
+        when(amqpMessageResolver.resolve(amqpMessage)).thenReturn(integerId);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(stringResolver, integerResolver)
+                List.of(kafkaResolver, amqpMessageResolver)
         );
 
         // when
-        UUID stringResult = manager.resolve(stringMessage);
-        UUID integerResult = manager.resolve(integerMessage);
+        UUID stringResult = manager.resolve(kafkaMessage);
+        UUID integerResult = manager.resolve(amqpMessage);
 
         // then
         assertThat(stringResult).isEqualTo(stringId);
@@ -96,22 +100,22 @@ class DefaultOutboxEventIdResolveManagerUnitTests {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         UUID id3 = UUID.randomUUID();
-        String msg1 = "msg1";
-        String msg2 = "msg2";
-        String msg3 = "msg3";
-        List<String> messages = List.of(msg1, msg2, msg3);
+        ConsumerRecord<String, ?> msg1 = new ConsumerRecord<>("topic", 1, 10L, "key", new Object());
+        ConsumerRecord<String, ?> msg2 = new ConsumerRecord<>("topic", 1, 10L, "key", new Object());
+        ConsumerRecord<String, ?> msg3 = new ConsumerRecord<>("topic", 1, 10L, "key", new Object());
+        List<ConsumerRecord<String, ?>> messages = List.of(msg1, msg2, msg3);
 
-        when(stringResolver.getSupports()).thenAnswer(invocation -> String.class);
-        when(stringResolver.resolve(msg1)).thenReturn(id1);
-        when(stringResolver.resolve(msg2)).thenReturn(id2);
-        when(stringResolver.resolve(msg3)).thenReturn(id3);
+        when(kafkaResolver.getSupports()).thenAnswer(invocation -> ConsumerRecord.class);
+        when(kafkaResolver.resolve(msg1)).thenReturn(id1);
+        when(kafkaResolver.resolve(msg2)).thenReturn(id2);
+        when(kafkaResolver.resolve(msg3)).thenReturn(id3);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(stringResolver)
+                List.of(kafkaResolver)
         );
 
         // when
-        Map<UUID, String> result = manager.resolve(messages);
+        Map<UUID, ConsumerRecord<String, ?>> result = manager.resolve(messages);
 
         // then
         assertThat(result).hasSize(3);
@@ -125,10 +129,10 @@ class DefaultOutboxEventIdResolveManagerUnitTests {
     void resolveBatch_whenEmptyList_shouldReturnEmptyMap() {
         // given
         List<String> messages = List.of();
-        when(stringResolver.getSupports()).thenAnswer(invocation -> String.class);
+        when(kafkaResolver.getSupports()).thenAnswer(invocation -> ConsumerRecord.class);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(stringResolver)
+                List.of(kafkaResolver)
         );
 
         // when
@@ -143,10 +147,10 @@ class DefaultOutboxEventIdResolveManagerUnitTests {
     void resolveBatch_whenResolverNotFound_shouldThrowIllegalArgumentException() {
         // given
         List<String> messages = List.of("msg1", "msg2");
-        when(integerResolver.getSupports()).thenAnswer(invocation -> Integer.class);
+        when(amqpMessageResolver.getSupports()).thenAnswer(invocation -> Message.class);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(integerResolver)
+                List.of(amqpMessageResolver)
         );
 
         // when + then
@@ -160,18 +164,18 @@ class DefaultOutboxEventIdResolveManagerUnitTests {
     void resolveBatch_withSingleMessage_shouldResolveCorrectly() {
         // given
         UUID id = UUID.randomUUID();
-        String message = "single-msg";
-        List<String> messages = List.of(message);
+        Message message = new Message(new byte[0]);
+        List<Message> messages = List.of(message);
 
-        when(stringResolver.getSupports()).thenAnswer(invocation -> String.class);
-        when(stringResolver.resolve(message)).thenReturn(id);
+        when(amqpMessageResolver.getSupports()).thenAnswer(invocation -> Message.class);
+        when(amqpMessageResolver.resolve(message)).thenReturn(id);
 
         DefaultOutboxEventIdResolveManager manager = new DefaultOutboxEventIdResolveManager(
-                List.of(stringResolver)
+                List.of(amqpMessageResolver)
         );
 
         // when
-        Map<UUID, String> result = manager.resolve(messages);
+        Map<UUID, Message> result = manager.resolve(messages);
 
         // then
         assertThat(result).hasSize(1);
