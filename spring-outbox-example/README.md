@@ -40,11 +40,12 @@ The system consists of three main components:
 ## Ports 
 
 | Service           | Port |
-| ----------------- | ---- |
+|-------------------|------|
 | Producer API      | 8080 |
 | Consumer API      | 8081 |
 | Traffic Generator | 8082 |
-| Kafka             | 9092 |
+| Apache Kafka      | 9092 |
+| RabbitMQ          | 5672 |
 | Prometheus        | 9090 |
 | Grafana           | 3000 |
 
@@ -62,7 +63,12 @@ The system consists of three main components:
 ## Run
 
 From the project root:
-
+- with Apache Kafka:
 ```bash
-docker compose up --build
+docker compose --profile kafka up --build
+```
+
+- with RabbitMQ:
+```bash
+docker compose --profile rabbitmq up --build
 ```

@@ -1,6 +1,8 @@
 spring:
   application:
     name: spring-outbox-example
+  profiles:
+    active: kafka     # or rabbitmq
   datasource:
     url: jdbc:postgresql://consumer-postgresql:5432/outbox_example
     username: admin
@@ -12,15 +14,6 @@ spring:
     redis:
       port: 6379
       host: consumer-redis
-  kafka:
-    bootstrap-servers: kafka:9092
-    consumer:
-      group-id: analytics
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
 server:
   port: 8080
 outbox:

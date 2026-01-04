@@ -95,6 +95,12 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
+        <!-- rabbitmq -->
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit</artifactId>
+        </dependency>
+
         <!-- migrations -->
         <dependency>
             <groupId>org.flywaydb</groupId>

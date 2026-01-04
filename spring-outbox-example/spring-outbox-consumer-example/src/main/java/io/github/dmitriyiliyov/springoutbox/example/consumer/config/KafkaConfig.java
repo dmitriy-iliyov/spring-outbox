@@ -1,13 +1,14 @@
-package io.github.dmitriyiliyov.springoutbox.example.consumer;
+package io.github.dmitriyiliyov.springoutbox.example.consumer.config;
 
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.listener.ContainerProperties;
 
-
+@Profile("kafka")
 @Configuration
 public class KafkaConfig {
 

@@ -6,6 +6,7 @@ import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -14,6 +15,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 
+@Profile("kafka")
 @Component
 @Slf4j
 @RequiredArgsConstructor

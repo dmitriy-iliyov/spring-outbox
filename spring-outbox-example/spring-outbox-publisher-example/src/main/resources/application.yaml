@@ -12,8 +12,6 @@ spring:
     baseline-on-migrate: true
   jpa:
     open-in-view: false
-  kafka:
-    bootstrap-servers: kafka:9092
 logging:
   level:
     root: info
@@ -23,7 +21,7 @@ outbox:
     auto-create: true
   publisher:
     sender:
-      type: kafka
+      type: rabbit_mq        # or rabbit_mq
     defaults:
       batch-size: 100
       initial-delay: 30s
@@ -33,15 +31,15 @@ outbox:
         multiplier: 1
     events:
       create-order:
-        topic: orders.created
+        topic: orders-exchange
         batch-size: 100
         fixed-delay: 1s
       update-order:
-        topic: orders
+        topic: orders-exchange
         batch-size: 50
         fixed-delay: 1s
       delete-order:
-        topic: orders
+        topic: orders-exchange
         batch-size: 50
         fixed-delay: 10s
     clean-up:

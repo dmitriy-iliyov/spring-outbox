@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.example.publisher.configs;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
@@ -14,6 +15,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 
+@ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "kafka")
 @Configuration
 public class KafkaConfig {
 
