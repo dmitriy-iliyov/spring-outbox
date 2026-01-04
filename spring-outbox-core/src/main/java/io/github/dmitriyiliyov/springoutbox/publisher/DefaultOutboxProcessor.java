@@ -40,7 +40,7 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
         try {
             result = sender.sendEvents(properties.getTopic(), events);
         } catch (Exception e) {
-            log.error("Error when processing batch {} events with size={}", properties.getEventType(), properties.getBatchSize());
+            log.error("Error when processing batch {} events with size={}", properties.getEventType(), properties.getBatchSize(), e);
             result = new SenderResult(
                     null,
                     events.stream()
