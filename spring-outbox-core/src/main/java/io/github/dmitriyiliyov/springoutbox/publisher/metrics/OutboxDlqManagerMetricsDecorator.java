@@ -90,7 +90,9 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
     @Override
     public List<OutboxDlqEvent> loadAndLockBatch(DlqStatus status, int batchSize) {
         List<OutboxDlqEvent> events = delegate.loadAndLockBatch(status, batchSize);
-        additionalCounters.get(AdditionalCounterType.ATTEMPT_MOVE_TO_OUTBOX).increment(events.size());
+        if (events != null && !events.isEmpty()) {
+            additionalCounters.get(AdditionalCounterType.ATTEMPT_MOVE_TO_OUTBOX).increment(events.size());
+        }
         return events;
     }
 

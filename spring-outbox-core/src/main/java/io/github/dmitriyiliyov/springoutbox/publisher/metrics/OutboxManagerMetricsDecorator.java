@@ -92,8 +92,12 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
             String eventType = events.getFirst().getEventType();
             if (eventType != null) {
                 Map<EventStatus, Counter> eventTypeCounter = counters.get(eventType);
-                eventTypeCounter.get(EventStatus.PROCESSED).increment(processedIds.size());
-                eventTypeCounter.get(EventStatus.FAILED).increment(failedIds.size());
+                if (processedIds != null) {
+                    eventTypeCounter.get(EventStatus.PROCESSED).increment(processedIds.size());
+                }
+                if (failedIds != null) {
+                    eventTypeCounter.get(EventStatus.FAILED).increment(failedIds.size());
+                }
             }
         }
     }
