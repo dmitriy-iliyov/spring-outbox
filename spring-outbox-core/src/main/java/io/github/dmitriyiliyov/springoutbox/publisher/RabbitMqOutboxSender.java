@@ -1,19 +1,21 @@
 package io.github.dmitriyiliyov.springoutbox.publisher;
 
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.ConfirmListener;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxHeaders;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.SenderResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class RabbitMqOutboxSender implements OutboxSender {
 
@@ -29,48 +31,108 @@ public class RabbitMqOutboxSender implements OutboxSender {
 
     @Override
     public SenderResult sendEvents(String exchange, List<OutboxEvent> events) {
+        if (events == null || events.isEmpty()) {
+            return SenderResult.empty();
+        }
         Set<UUID> processedIds = ConcurrentHashMap.newKeySet();
         Set<UUID> failedIds = ConcurrentHashMap.newKeySet();
-        List<CompletableFuture<CorrelationData.Confirm>> futures = new ArrayList<>();
-        for (OutboxEvent event: events) {
-            try {
-                MessageProperties properties = MessagePropertiesBuilder.newInstance()
-                        .setHeader(OutboxHeaders.EVENT_ID.getValue(), event.getId())
-                        .setHeader(OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType())
-                        .setDeliveryMode(MessageDeliveryMode.PERSISTENT)
-                        .build();
-                Message message = MessageBuilder.withBody(event.getPayload().getBytes(StandardCharsets.UTF_8))
-                        .andProperties(properties)
-                        .build();
-                final CorrelationData correlationData = new CorrelationData(event.getId().toString());
-                rabbitTemplate.send(exchange, event.getEventType(), message, correlationData);
-                CompletableFuture<CorrelationData.Confirm> future = correlationData.getFuture()
-                        .thenApply(success -> {
-                            if (success.isAck() && correlationData.getReturned() == null) {
-                                processedIds.add(event.getId());
+        Map<Long, UUID> deliveryTagToEventId = new ConcurrentHashMap<>();
+        CountDownLatch latch = new CountDownLatch(events.size());
+        try {
+            rabbitTemplate.execute(channel -> {
+                channel.confirmSelect();
+                channel.addConfirmListener(new OutboxConfirmListener(processedIds, failedIds, deliveryTagToEventId, latch));
+                for (OutboxEvent event : events) {
+                    try {
+                        AMQP.BasicProperties props = new AMQP.BasicProperties.Builder()
+                                .deliveryMode(2)
+                                .headers(Map.of(
+                                        OutboxHeaders.EVENT_ID.getValue(), event.getId().toString(),
+                                        OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType()
+                                ))
+                                .build();
+                        channel.basicPublish(
+                                exchange,
+                                event.getEventType(),
+                                false,
+                                props,
+                                event.getPayload().getBytes(StandardCharsets.UTF_8)
+                        );
+                        long deliveryTag = channel.getNextPublishSeqNo() - 1;
+                        deliveryTagToEventId.put(deliveryTag, event.getId());
+                    } catch (Exception e) {
+                        failedIds.add(event.getId());
+                        latch.countDown();
+                        log.error("Error when sending event with id={} to exchange={} ", event.getId(), exchange, e);
+                    }
+                }
+                return null;
+            });
+            boolean completed = latch.await(emergencyTimeout, TimeUnit.SECONDS);
+            if (!completed) {
+                events.stream()
+                        .filter(e -> !processedIds.contains(e.getId()) && !failedIds.contains(e.getId()))
+                        .forEach(e -> failedIds.add(e.getId()));
+                log.error("Sending batch of events to exchange={} was non completed before timeout ", exchange);
+            }
+        } catch (Exception e) {
+            failedIds.addAll(events.stream().map(OutboxEvent::getId).collect(Collectors.toSet()));
+            log.error("Error when sending batch of events to exchange={} ", exchange, e);
+        }
+        return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
+    }
+
+    private static class OutboxConfirmListener implements ConfirmListener {
+
+        private final Set<UUID> processedIds;
+        private final Set<UUID> failedIds;
+        private final Map<Long, UUID> deliveryTagToEventId;
+        private final CountDownLatch latch;
+        private final Set<Long> processedTags = ConcurrentHashMap.newKeySet();
+
+        private OutboxConfirmListener(Set<UUID> processedIds, Set<UUID> failedIds, Map<Long, UUID> deliveryTagToEventId, CountDownLatch latch) {
+            this.processedIds = processedIds;
+            this.failedIds = failedIds;
+            this.deliveryTagToEventId = deliveryTagToEventId;
+            this.latch = latch;
+        }
+
+        @Override
+        public void handleAck(long l, boolean b) throws IOException {
+            handle(l, b, true);
+        }
+
+        @Override
+        public void handleNack(long l, boolean b) throws IOException {
+            handle(l, b, false);
+        }
+
+        private void handle(long tag, boolean multiple, boolean ack) {
+            if (multiple) {
+                deliveryTagToEventId.entrySet().stream()
+                        .filter(e -> e.getKey() <= tag)
+                        .filter(e -> !processedTags.contains(e.getKey()))
+                        .forEach(e -> {
+                            if (ack) {
+                                processedIds.add(e.getValue());
                             } else {
-                                failedIds.add(event.getId());
-                                log.error(
-                                        "Broker didn't acknowledge receipt event with id={} exchange={}. Reason: {}. Returned message: {}",
-                                        event.getId(), exchange, success.getReason(), correlationData.getReturned()
-                                );
+                                failedIds.add(e.getValue());
                             }
-                            return success;
-                        })
-                        .exceptionally(ex -> {
-                            failedIds.add(event.getId());
-                            log.error("Error when sending event with id={} to exchange={} ", event.getId(), exchange, ex);
-                            return null;
+                            processedTags.add(e.getKey());
+                            latch.countDown();
                         });
-                futures.add(future);
-            } catch (Exception e) {
-                failedIds.add(event.getId());
-                log.error("Error when sending event with id={} to exchange={} ", event.getId(), exchange, e);
+            } else {
+                if (!processedTags.contains(tag)) {
+                    UUID id = deliveryTagToEventId.get(tag);
+                    if (ack) {
+                        processedIds.add(id);
+                    } else {
+                        failedIds.add(id);
+                    }
+                    processedTags.add(tag);
+                    latch.countDown();
+                }
             }
         }
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .orTimeout(emergencyTimeout, TimeUnit.SECONDS)
-                .join();
-        return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
     }
 }
