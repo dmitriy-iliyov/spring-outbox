@@ -15,6 +15,7 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -59,18 +60,23 @@ public class KafkaOutboxSender implements OutboxSender {
                             return null;
                         });
                 futures.add(future);
+            } catch (JsonParseException e) {
+                failedIds.add(event.getId());
+                log.error("Error when parsing event payload with id={} ", event.getId(), e);
             } catch (Exception e) {
                 failedIds.add(event.getId());
-                if (e instanceof JsonParseException) {
-                    log.error("Error when parsing event payload with id={} ", event.getId(), e);
-                } else {
-                    log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, e);
-                }
+                log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, e);
             }
         }
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .orTimeout(emergencyTimeout, TimeUnit.SECONDS)
-                .join();
+        try {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                    .orTimeout(emergencyTimeout, TimeUnit.SECONDS)
+                    .join();
+        } catch (CompletionException e) {
+            events.stream()
+                    .filter(event -> !processedIds.contains(event.getId()) && !failedIds.contains(event.getId()))
+                    .forEach(event -> failedIds.add(event.getId()));
+        }
         return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
     }
 }
