@@ -643,12 +643,13 @@ outbox:
     - **Description**: each retry delay = previous_delay * multiplier
 
 Individual event configurations override defaults for specific event types.
+Apache Kafka example:
 ```yaml
 outbox:
   publisher:
     events:
       order-created:
-        topic: "orders"
+        topic: orders
         batch-size: 100
         fixed-delay: 1s
         max-retries: 5
@@ -657,20 +658,37 @@ outbox:
           multiplier: 2
       
       order-updated:
-        topic: "orders"
+        topic: orders
         batch-size: 50
         fixed-delay: 2s
         backoff:
           enabled: false  # Use fixed delay instead
       
       notification-sent:
-        topic: "notifications"
+        topic: notifications
         # Other params inherited from defaults
 ```
 
 - `topic`: destination topic (Kafka) or exchange (RabbitMQ) name
 
 All other parameters same as `defaults` section, but override defaults for this specific event type
+
+RabbitMQ example:
+```yaml
+    events:
+      create-order:
+        topic: orders-exchange
+        batch-size: 100
+        fixed-delay: 1s
+      update-order:
+        topic: orders-exchange
+        batch-size: 50
+        fixed-delay: 1s
+      delete-order:
+        topic: orders-exchange
+        batch-size: 50
+        fixed-delay: 10s
+```
 
 **Example with inheritance from `defaults`:**
 ```yaml
@@ -683,12 +701,12 @@ outbox:
     
     events:
       high-priority:
-        topic: "events"
+        topic: events
         fixed-delay: 1s  # Override: faster polling
         # Inherits: batch-size=50, max-retries=3
       
       low-priority:
-        topic: "events"
+        topic: events
         fixed-delay: 10s  # Override: slower polling
         backoff:
           enabled: false  # Override: disable backoff
@@ -854,7 +872,7 @@ outbox:
       type: kafka
     events:
       my-event:
-        topic: "my.topic"
+        topic: my.topic
 ```
 **WARNING:** Dead Letter Queue is disabled by default. All other values will use defaults.
 
@@ -882,15 +900,15 @@ outbox:
     
     events:
       order-created:
-        topic: "orders"
+        topic: orders
         batch-size: 100
         fixed-delay: 1s
       order-updated:
-        topic: "orders"
+        topic: orders
         batch-size: 50
         fixed-delay: 1s
       order-deleted:
-        topic: "orders"
+        topic: orders
         batch-size: 50
         fixed-delay: 10s
         backoff:
