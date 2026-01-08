@@ -5,6 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
@@ -58,25 +59,19 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
         }
     }
 
+    @Transactional
     @Override
     public void transferFromDlq(int batchSize) {
-        transactionTemplate.executeWithoutResult(status -> {
-            try {
-                List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
-                if (dlqEvents == null || dlqEvents.isEmpty()) {
-                    return;
-                }
-                manager.saveBatch(toOutboxEvents(dlqEvents));
-                dlqManager.deleteBatch(
-                        dlqEvents.stream()
-                                .map(OutboxDlqEvent::getId)
-                                .collect(Collectors.toSet())
-                );
-            } catch (Exception e) {
-                log.error("Error when transferring events from DLQ to Outbox", e);
-                throw e;
-            }
-        });
+        List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
+        if (dlqEvents == null || dlqEvents.isEmpty()) {
+            return;
+        }
+        manager.saveBatch(toOutboxEvents(dlqEvents));
+        dlqManager.deleteBatch(
+                dlqEvents.stream()
+                        .map(OutboxDlqEvent::getId)
+                        .collect(Collectors.toSet())
+        );
     }
 
     private OutboxDlqEvent toDlqEvent(OutboxEvent event) {
