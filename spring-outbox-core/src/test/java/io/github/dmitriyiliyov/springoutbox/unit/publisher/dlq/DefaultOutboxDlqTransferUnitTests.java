@@ -217,12 +217,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         // given
         int batchSize = 50;
 
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(null);
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(null);
 
         // when
         tested.transferFromDlq(batchSize);
@@ -239,12 +234,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         // given
         int batchSize = 50;
 
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(List.of());
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(List.of());
 
         // when
         tested.transferFromDlq(batchSize);
@@ -293,13 +283,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         );
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent1, dlqEvent2);
-
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
 
         // when
         tested.transferFromDlq(batchSize);
@@ -351,13 +335,8 @@ public class DefaultOutboxDlqTransferUnitTests {
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
 
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
-            doThrow(new RuntimeException("Database error")).when(manager).saveBatch(anyList());
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
+        doThrow(new RuntimeException("Database error")).when(manager).saveBatch(anyList());
 
         // when
         assertThrows(RuntimeException.class, () -> tested.transferFromDlq(batchSize));
@@ -391,12 +370,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
 
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
 
         // when
         tested.transferFromDlq(batchSize);
@@ -434,12 +408,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
         List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
 
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
 
         // when
         tested.transferFromDlq(batchSize);
