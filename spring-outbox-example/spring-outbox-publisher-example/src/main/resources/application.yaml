@@ -21,7 +21,7 @@ outbox:
     auto-create: true
   publisher:
     sender:
-      type: rabbit_mq        # or rabbit_mq
+      type: kafka
     defaults:
       batch-size: 100
       initial-delay: 30s
@@ -31,15 +31,15 @@ outbox:
         multiplier: 1
     events:
       create-order:
-        topic: orders-exchange
+        topic: orders.created
         batch-size: 100
         fixed-delay: 1s
       update-order:
-        topic: orders-exchange
+        topic: orders
         batch-size: 50
         fixed-delay: 1s
       delete-order:
-        topic: orders-exchange
+        topic: orders
         batch-size: 50
         fixed-delay: 10s
     clean-up:
