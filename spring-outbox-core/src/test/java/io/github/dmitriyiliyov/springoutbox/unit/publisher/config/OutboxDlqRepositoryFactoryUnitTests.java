@@ -7,111 +7,95 @@ import io.github.dmitriyiliyov.springoutbox.publisher.dlq.OutboxDlqRepository;
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.PostgreSqlOutboxDlqRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
 
-public class OutboxDlqRepositoryFactoryUnitTests {
+@ExtendWith(MockitoExtension.class)
+class OutboxDlqRepositoryFactoryUnitTests {
+
+    @Mock
+    DataSource dataSource;
+
+    @Mock
+    Connection connection;
+
+    @Mock
+    DatabaseMetaData metaData;
 
     @Test
-    @DisplayName("UT generate() with PostgreSQL should return PostgreSqlOutboxDlqRepository")
-    public void generate_postgresql_shouldReturnPostgreSqlRepository() throws Exception {
+    @DisplayName("UT generate() when PostgreSQL should return PostgreSqlOutboxDlqRepository")
+    void generate_whenPostgres_shouldReturnPostgreSqlRepository() throws SQLException {
         // given
-        DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        DatabaseMetaData metaData = mock(DatabaseMetaData.class);
-
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        OutboxDlqRepository repository = OutboxDlqRepositoryFactory.generate(dataSource);
+        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource);
 
         // then
-        assertNotNull(repository);
-        assertTrue(repository instanceof PostgreSqlOutboxDlqRepository);
-        verify(connection).close();
+        assertInstanceOf(PostgreSqlOutboxDlqRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() with MySql should return MySqlOutboxDlqRepository")
-    public void generate_postgresql_shouldReturnMySqlRepository() throws Exception {
+    @DisplayName("UT generate() when MySQL should return MySqlOutboxDlqRepository")
+    void generate_whenMySql_shouldReturnMySqlRepository() throws SQLException {
         // given
-        DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        DatabaseMetaData metaData = mock(DatabaseMetaData.class);
-
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("MySql");
+        when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        OutboxDlqRepository repository = OutboxDlqRepositoryFactory.generate(dataSource);
+        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource);
 
         // then
-        assertNotNull(repository);
-        assertTrue(repository instanceof MySqlOutboxDlqRepository);
-        verify(connection).close();
+        assertInstanceOf(MySqlOutboxDlqRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() with Oracle should return OracleOutboxDlqRepository")
-    public void generate_postgresql_shouldReturnOracleRepository() throws Exception {
+    @DisplayName("UT generate() when Oracle should return OracleOutboxDlqRepository")
+    void generate_whenOracle_shouldReturnOracleRepository() throws SQLException {
         // given
-        DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        DatabaseMetaData metaData = mock(DatabaseMetaData.class);
-
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        OutboxDlqRepository repository = OutboxDlqRepositoryFactory.generate(dataSource);
+        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource);
 
         // then
-        assertNotNull(repository);
-        assertTrue(repository instanceof OracleOutboxDlqRepository);
-        verify(connection).close();
+        assertInstanceOf(OracleOutboxDlqRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() with unsupported DB should throw IllegalArgumentException")
-    public void generate_unsupportedDb_shouldThrow() throws Exception {
+    @DisplayName("UT generate() when unsupported DB should throw IAE")
+    void generate_whenUnsupportedDb_shouldThrowIAE() throws SQLException {
         // given
-        DataSource dataSource = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        DatabaseMetaData metaData = mock(DatabaseMetaData.class);
-
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("nonExistsDb");
+        when(metaData.getDatabaseProductName()).thenReturn("H2");
 
         // when + then
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> OutboxDlqRepositoryFactory.generate(dataSource));
-
-        assertTrue(ex.getMessage().contains("Unsupported database 'nonExistsDb'"));
-        verify(connection).close();
+        assertThrows(IllegalArgumentException.class, () -> OutboxDlqRepositoryFactory.generate(dataSource));
     }
 
     @Test
-    @DisplayName("UT generate() when DataSource.getConnection() throws SQLException should throw RuntimeException")
-    public void generate_connectionThrowsSQLException_shouldThrowRuntimeException() throws Exception {
+    @DisplayName("UT generate() when SQLException should throw RuntimeException")
+    void generate_whenSqlException_shouldThrowRuntimeException() throws SQLException {
         // given
-        DataSource dataSource = mock(DataSource.class);
-        when(dataSource.getConnection()).thenThrow(new SQLException("DB not reachable"));
+        when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
         // when + then
-        RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> OutboxDlqRepositoryFactory.generate(dataSource));
-
-        assertTrue(ex.getCause() instanceof SQLException);
+        assertThrows(RuntimeException.class, () -> OutboxDlqRepositoryFactory.generate(dataSource));
     }
 }

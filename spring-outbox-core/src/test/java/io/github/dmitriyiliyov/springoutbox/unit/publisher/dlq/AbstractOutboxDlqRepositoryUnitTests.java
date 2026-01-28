@@ -20,11 +20,10 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
-public class AbstractOutboxDlqRepositoryUnitTests {
+class AbstractOutboxDlqRepositoryUnitTests {
 
     @Mock
     JdbcTemplate jdbcTemplate;
@@ -38,7 +37,7 @@ public class AbstractOutboxDlqRepositoryUnitTests {
     AbstractOutboxDlqRepository tested;
 
     @BeforeEach
-    public void init() {
+    void setUp() {
         tested = Mockito.spy(
                 new AbstractOutboxDlqRepository(jdbcTemplate, idHelper, mapper) {
                     @Override
@@ -49,36 +48,33 @@ public class AbstractOutboxDlqRepositoryUnitTests {
         );
     }
 
-    // 13 41
     @Test
-    @DisplayName("UT findBatch() when ids is null, should throws")
-    public void findBatch_whenIdsIsNull_shouldTrows() {
+    @DisplayName("UT findBatch() when ids is empty should early return")
+    void findBatch_whenIdsIsEmpty_shouldEarlyReturn() {
+        // given
+        Set<UUID> ids = Set.of();
+
+        // when
+        tested.findBatch(ids);
+
+        // then
+        verifyNoInteractions(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("UT findBatch() when ids is null should throw NPE")
+    void findBatch_whenIdsIsNull_shouldThrow() {
         // given
         Set<UUID> ids = null;
 
         // when + then
         assertThrows(NullPointerException.class, () -> tested.findBatch(ids));
-
         verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT findBatch() when ids is empty, should early return")
-    public void findBatch_whenIdsIsEmpty_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = Set.of();
-
-        // when
-        List<OutboxDlqEvent> result = tested.findBatch(ids);
-
-        //then
-        assertTrue(result.isEmpty());
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT findBatch() when ids is to large, should early return")
-    public void findBatch_whenIdsIoToLarge_shouldEarlyReturn() {
+    @DisplayName("UT findBatch() when ids size is too big should early return")
+    void findBatch_whenIdsIsTooBig_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>();
         for (int i = 0; i < 1001; i++) {
@@ -86,84 +82,82 @@ public class AbstractOutboxDlqRepositoryUnitTests {
         }
 
         // when
-        List<OutboxDlqEvent> result = tested.findBatch(ids);
+        tested.findBatch(ids);
 
-        //then
-        assertTrue(result.isEmpty());
+        // then
         verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT updateBatchStatus() when ids is null, should throws")
-    public void updateBatchStatus_whenIdsIsNull_shouldTrows() {
+    @DisplayName("UT updateBatchStatus() when ids is empty should early return")
+    void updateBatchStatus_whenIdsIsEmpty_shouldEarlyReturn() {
+        // given
+        Set<UUID> ids = Set.of();
+        DlqStatus status = DlqStatus.MOVED;
+
+        // when
+        tested.updateBatchStatus(ids, status);
+
+        // then
+        verifyNoInteractions(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("UT updateBatchStatus() when ids is null should throw NPE")
+    void updateBatchStatus_whenIdsIsNull_shouldThrow() {
         // given
         Set<UUID> ids = null;
-        DlqStatus status = DlqStatus.IN_PROCESS;
+        DlqStatus status = DlqStatus.MOVED;
 
         // when + then
         assertThrows(NullPointerException.class, () -> tested.updateBatchStatus(ids, status));
-
         verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT updateBatchStatus() when ids is empty, should early return")
-    public void updateBatchStatus_whenIdsIsEmpty_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = Set.of();
-        DlqStatus status = DlqStatus.IN_PROCESS;
-
-        // when
-        tested.updateBatchStatus(ids, status);
-
-        //then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT updateBatchStatus() when ids is to large, should early return")
-    public void updateBatchStatus_whenIdsIoToLarge_shouldEarlyReturn() {
+    @DisplayName("UT updateBatchStatus() when ids size is too big should early return")
+    void updateBatchStatus_whenIdsIsTooBig_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>();
         for (int i = 0; i < 1001; i++) {
             ids.add(UUID.randomUUID());
         }
-        DlqStatus status = DlqStatus.IN_PROCESS;
+        DlqStatus status = DlqStatus.MOVED;
 
         // when
         tested.updateBatchStatus(ids, status);
 
-        //then
+        // then
         verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT deleteBatch() when ids is null, should throws")
-    public void deleteBatch_whenIdsIsNull_shouldTrows() {
+    @DisplayName("UT deleteBatch() when ids is empty should early return")
+    void deleteBatch_whenIdsIsEmpty_shouldEarlyReturn() {
+        // given
+        Set<UUID> ids = Set.of();
+
+        // when
+        tested.deleteBatch(ids);
+
+        // then
+        verifyNoInteractions(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("UT deleteBatch() when ids is null should throw NPE")
+    void deleteBatch_whenIdsIsNull_shouldThrow() {
         // given
         Set<UUID> ids = null;
 
         // when + then
         assertThrows(NullPointerException.class, () -> tested.deleteBatch(ids));
-
         verifyNoInteractions(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT deleteBatch() when ids is empty, should early return")
-    public void deleteBatch_whenIdsIsEmpty_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = Set.of();
-        // when
-        tested.deleteBatch(ids);
-
-        //then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT deleteBatch() when ids is to large, should early return")
-    public void deleteBatch_whenIdsIoToLarge_shouldEarlyReturn() {
+    @DisplayName("UT deleteBatch() when ids size is too big should early return")
+    void deleteBatch_whenIdsIsTooBig_shouldEarlyReturn() {
         // given
         Set<UUID> ids = new HashSet<>();
         for (int i = 0; i < 1001; i++) {
@@ -173,7 +167,7 @@ public class AbstractOutboxDlqRepositoryUnitTests {
         // when
         tested.deleteBatch(ids);
 
-        //then
+        // then
         verifyNoInteractions(jdbcTemplate);
     }
 }

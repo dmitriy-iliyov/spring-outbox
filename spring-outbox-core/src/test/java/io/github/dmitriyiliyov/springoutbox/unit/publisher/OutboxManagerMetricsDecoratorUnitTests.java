@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.unit.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.publisher.config.OutboxPublisherProperties;
+import io.github.dmitriyiliyov.springoutbox.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.publisher.metrics.OutboxManagerMetricsDecorator;
 import io.micrometer.core.instrument.Counter;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -100,5 +102,77 @@ public class OutboxManagerMetricsDecoratorUnitTests {
         verify(outboxManager).finalizeBatch(eq(events), eq(processedIds), eq(failedIds), eq(5), any());
         assertEquals(0, processedCounter.count(), "Processed counter should not be incremented");
         assertEquals(0, failedCounter.count(), "Failed counter should be not incremented");
+    }
+
+    @Test
+    @DisplayName("UT loadBatch(status, batchSize) should delegate and increment attempt counter")
+    void loadBatch_shouldDelegateAndIncrementAttemptCounter() {
+        // given
+        List<OutboxEvent> events = List.of(mock(OutboxEvent.class), mock(OutboxEvent.class));
+        when(outboxManager.loadBatch(EventStatus.FAILED, 10)).thenReturn(events);
+
+        // when
+        tested.loadBatch(EventStatus.FAILED, 10);
+
+        // then
+        verify(outboxManager).loadBatch(EventStatus.FAILED, 10);
+        Counter attemptCounter = registry.get("outbox_events_by_type_rate_total")
+                .tag("type", "attempt_move_to_dlq")
+                .counter();
+        assertEquals(2.0, attemptCounter.count());
+    }
+
+    @Test
+    @DisplayName("UT recoverStuckBatch() should delegate and increment recovered counter")
+    void recoverStuckBatch_shouldDelegateAndIncrementRecoveredCounter() {
+        // given
+        Duration duration = Duration.ofMinutes(1);
+        when(outboxManager.recoverStuckBatch(duration, 10)).thenReturn(5);
+
+        // when
+        tested.recoverStuckBatch(duration, 10);
+
+        // then
+        verify(outboxManager).recoverStuckBatch(duration, 10);
+        Counter recoveredCounter = registry.get("outbox_events_by_type_rate_total")
+                .tag("type", "recovered")
+                .counter();
+        assertEquals(5.0, recoveredCounter.count());
+    }
+
+    @Test
+    @DisplayName("UT deleteProcessedBatch() should delegate and increment cleaned counter")
+    void deleteProcessedBatch_shouldDelegateAndIncrementCleanedCounter() {
+        // given
+        Instant threshold = Instant.now();
+        when(outboxManager.deleteProcessedBatch(threshold, 20)).thenReturn(15);
+
+        // when
+        tested.deleteProcessedBatch(threshold, 20);
+
+        // then
+        verify(outboxManager).deleteProcessedBatch(threshold, 20);
+        Counter cleanedCounter = registry.get("outbox_events_by_type_rate_total")
+                .tag("type", "cleaned")
+                .counter();
+        assertEquals(15.0, cleanedCounter.count());
+    }
+
+    @Test
+    @DisplayName("UT deleteBatch() should delegate and increment success moved counter")
+    void deleteBatch_shouldDelegateAndIncrementSuccessMovedCounter() {
+        // given
+        Set<UUID> ids = Set.of(UUID.randomUUID());
+        when(outboxManager.deleteBatch(ids)).thenReturn(1);
+
+        // when
+        tested.deleteBatch(ids);
+
+        // then
+        verify(outboxManager).deleteBatch(ids);
+        Counter successMovedCounter = registry.get("outbox_events_by_type_rate_total")
+                .tag("type", "success_moved_to_dlq")
+                .counter();
+        assertEquals(1.0, successMovedCounter.count());
     }
 }

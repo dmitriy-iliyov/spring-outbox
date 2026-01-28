@@ -19,7 +19,34 @@ public class SimpleOutboxCacheUnitTests {
     @Test
     @DisplayName("UT SimpleOutboxCache() when ttls count more then 3, should throws")
     public void getCountByStatus_whenTtlCountMoreThen3_shouldThrows() {
-        assertThrows(IllegalArgumentException.class, () -> new SimpleOutboxCache<>(1, 2));
+        assertThrows(IllegalArgumentException.class, () -> new SimpleOutboxCache<>(1, 2, 3, 4));
+    }
+
+    @Test
+    @DisplayName("UT getCount() when not set, should return null")
+    public void getCount_whenNotSet_shouldReturnNull() {
+        // given
+        SimpleOutboxCache<TestStatus> cache = new SimpleOutboxCache<>(1, 2, 2);
+
+        // when
+        Long result = cache.getCount();
+
+        // then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("UT getCount() when set, should return value")
+    public void getCount_whenSet_shouldReturnValue() {
+        // given
+        SimpleOutboxCache<TestStatus> cache = new SimpleOutboxCache<>(1, 2, 2);
+        cache.putCount(10L);
+
+        // when
+        Long result = cache.getCount();
+
+        // then
+        assertEquals(10L, result);
     }
 
     @Test

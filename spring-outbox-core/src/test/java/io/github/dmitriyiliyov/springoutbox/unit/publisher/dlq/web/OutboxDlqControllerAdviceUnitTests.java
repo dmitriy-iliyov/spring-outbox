@@ -1,113 +1,196 @@
 package io.github.dmitriyiliyov.springoutbox.unit.publisher.dlq.web;
 
 import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.OutboxDlqControllerAdvice;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.exception.BadRequestException;
+import io.github.dmitriyiliyov.springoutbox.publisher.dlq.web.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockitoAnnotations;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class OutboxDlqControllerAdviceUnitTests {
+@ExtendWith(MockitoExtension.class)
+class OutboxDlqControllerAdviceUnitTests {
 
+    @Mock
     HttpServletRequest request;
 
     OutboxDlqControllerAdvice tested;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
         tested = new OutboxDlqControllerAdvice();
-        request = new MockHttpServletRequest("GET", "/test/uri");
+        when(request.getRequestURI()).thenReturn("/test/uri");
     }
 
     @Test
-    @DisplayName("UT handleValidationExceptions() with MethodArgumentNotValidException, should return ProblemDetail with field errors")
-    void handleValidationExceptions_whenMethodArgumentNotValid_shouldReturnProblemDetail() {
+    @DisplayName("UT handleException() should return 500 and ProblemDetail")
+    void handleException_shouldReturn500() {
         // given
-        BindingResult bindingResult = mock(BindingResult.class);
-        FieldError fieldError1 = new FieldError("obj", "field1", "must not be null");
-        FieldError fieldError2 = new FieldError("obj", "field2", "must be positive");
-        when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError1, fieldError2));
-
-        MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
-        when(ex.getBindingResult()).thenReturn(bindingResult);
+        Exception ex = new Exception("Unexpected error");
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleValidationExceptions(ex, request);
+        ResponseEntity<ProblemDetail> response = tested.handleException(ex, request);
+
+        // then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/unexpected"), body.getType());
+        assertEquals("Internal Server Error", body.getTitle());
+        assertEquals("Unexpected error", body.getDetail());
+        assertEquals("/test/uri", body.getProperties().get("path"));
+    }
+
+    @Test
+    @DisplayName("UT handleNotFoundException() should return 404 and ProblemDetail")
+    void handleNotFoundException_shouldReturn404() {
+        // given
+        NotFoundException ex = mock(NotFoundException.class);
+        when(ex.getDetail()).thenReturn("Resource not found");
+
+        // when
+        ResponseEntity<ProblemDetail> response = tested.handleNotFoundException(ex, request);
+
+        // then
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/not-found"), body.getType());
+        assertEquals("Not Found", body.getTitle());
+        assertEquals("Resource not found", body.getDetail());
+    }
+
+    @Test
+    @DisplayName("UT handleBadRequestException() should return 400 and ProblemDetail")
+    void handleBadRequestException_shouldReturn400() {
+        // given
+        BadRequestException ex = mock(BadRequestException.class);
+        when(ex.getDetail()).thenReturn("Bad request detail");
+
+        // when
+        ResponseEntity<ProblemDetail> response = tested.handleNotFoundException(ex, request);
 
         // then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail pd = response.getBody();
-        assertNotNull(pd);
-        assertEquals("/errors/outbox/validation", pd.getType().toString());
-        assertEquals("Validation Failed", pd.getTitle());
-        assertEquals("Request validation failed", pd.getDetail());
-        assertEquals("/test/uri", pd.getInstance().toString());
-        assertEquals("/test/uri", pd.getProperties().get("path"));
-
-        List<Map<String, String>> errors = (List<Map<String, String>>) pd.getProperties().get("errors");
-        assertEquals(2, errors.size());
-        assertEquals("field1", errors.get(0).get("field"));
-        assertEquals("must not be null", errors.get(0).get("message"));
-        assertEquals("field2", errors.get(1).get("field"));
-        assertEquals("must be positive", errors.get(1).get("message"));
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/bad-request"), body.getType());
+        assertEquals("Bad Request", body.getTitle());
+        assertEquals("Bad request detail", body.getDetail());
     }
 
     @Test
-    @DisplayName("UT handleValidationExceptions() with BindException, should return ProblemDetail with field errors")
-    void handleValidationExceptions_whenBindException_shouldReturnProblemDetail() {
+    @DisplayName("UT handleValidationExceptions() with MethodArgumentNotValidException should return 400 and errors")
+    void handleValidationExceptions_withMethodArgumentNotValid_shouldReturn400() {
         // given
         BindingResult bindingResult = mock(BindingResult.class);
-        FieldError fieldError = new FieldError("obj", "name", "cannot be empty");
+        FieldError fieldError = new FieldError("object", "field", "defaultMessage");
         when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
-
-        BindException ex = mock(BindException.class);
-        when(ex.getBindingResult()).thenReturn(bindingResult);
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
         // when
         ResponseEntity<ProblemDetail> response = tested.handleValidationExceptions(ex, request);
 
         // then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail pd = response.getBody();
-        assertNotNull(pd);
-
-        List<Map<String, String>> errors = (List<Map<String, String>>) pd.getProperties().get("errors");
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/validation"), body.getType());
+        List<Map<String, String>> errors = (List<Map<String, String>>) body.getProperties().get("errors");
         assertEquals(1, errors.size());
-        assertEquals("name", errors.get(0).get("field"));
-        assertEquals("cannot be empty", errors.get(0).get("message"));
+        assertEquals("field", errors.get(0).get("field"));
+        assertEquals("defaultMessage", errors.get(0).get("message"));
     }
 
     @Test
-    @DisplayName("UT handleValidationExceptions() with unknown exception, should return ProblemDetail with empty errors")
-    void handleValidationExceptions_whenUnknownException_shouldReturnEmptyErrors() {
+    @DisplayName("UT handleValidationExceptions() with BindException should return 400 and errors")
+    void handleValidationExceptions_withBindException_shouldReturn400() {
         // given
-        Exception ex = new Exception("some exception");
+        BindingResult bindingResult = mock(BindingResult.class);
+        FieldError fieldError = new FieldError("object", "field", "defaultMessage");
+        when(bindingResult.getFieldErrors()).thenReturn(List.of(fieldError));
+        BindException ex = new BindException(bindingResult);
 
         // when
         ResponseEntity<ProblemDetail> response = tested.handleValidationExceptions(ex, request);
 
         // then
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail pd = response.getBody();
-        assertNotNull(pd);
-        List<?> errors = (List<?>) pd.getProperties().get("errors");
-        assertNotNull(errors);
-        assertTrue(errors.isEmpty());
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/validation"), body.getType());
+        List<Map<String, String>> errors = (List<Map<String, String>>) body.getProperties().get("errors");
+        assertEquals(1, errors.size());
+        assertEquals("field", errors.get(0).get("field"));
+        assertEquals("defaultMessage", errors.get(0).get("message"));
+    }
+
+    @Test
+    @DisplayName("UT handleConstraintViolation() should return 400 and errors")
+    void handleConstraintViolation_shouldReturn400() {
+        // given
+        ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+        Path path = mock(Path.class);
+        when(path.toString()).thenReturn("prop");
+        when(violation.getPropertyPath()).thenReturn(path);
+        when(violation.getMessage()).thenReturn("violation message");
+        ConstraintViolationException ex = new ConstraintViolationException(Set.of(violation));
+
+        // when
+        ResponseEntity<ProblemDetail> response = tested.handleConstraintViolation(ex, request);
+
+        // then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/validation/constraint-violation"), body.getType());
+        List<Map<String, String>> errors = (List<Map<String, String>>) body.getProperties().get("errors");
+        assertEquals(1, errors.size());
+        assertEquals("prop", errors.get(0).get("property"));
+        assertEquals("violation message", errors.get(0).get("message"));
+    }
+
+    @Test
+    @DisplayName("UT handleDatabaseError() should return 500 and ProblemDetail")
+    void handleDatabaseError_shouldReturn500() {
+        // given
+        DataAccessException ex = mock(DataAccessException.class);
+        Throwable cause = new RuntimeException("Connection refused");
+        when(ex.getMostSpecificCause()).thenReturn(cause);
+
+        // when
+        ResponseEntity<ProblemDetail> response = tested.handleDatabaseError(ex, request);
+
+        // then
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        ProblemDetail body = response.getBody();
+        assertNotNull(body);
+        assertEquals(URI.create("/errors/outbox/database"), body.getType());
+        assertEquals("Database Access Error", body.getTitle());
+        assertEquals("A database operation failed: Connection refused", body.getDetail());
     }
 }

@@ -1096,4 +1096,72 @@ public class OutboxPublisherPropertiesUnitTests {
         assertEquals(Duration.ofSeconds(20), resultEvent3.getBackoff().getDelay());
         assertEquals(3, resultEvent3.getBackoff().getMultiplier());
     }
+
+    @Test
+    @DisplayName("UT setEnabled() should update enabled flag")
+    public void setEnabled_shouldUpdateEnabledFlag() {
+        // given
+        OutboxPublisherProperties properties = new OutboxPublisherProperties();
+
+        // when
+        properties.setEnabled(true);
+
+        // then
+        assertTrue(properties.isEnabled());
+
+        // when
+        properties.setEnabled(false);
+
+        // then
+        assertFalse(properties.isEnabled());
+    }
+
+    @Test
+    @DisplayName("UT setMetrics() should update metrics properties")
+    public void setMetrics_shouldUpdateMetricsProperties() {
+        // given
+        OutboxPublisherProperties properties = new OutboxPublisherProperties();
+        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
+
+        // when
+        properties.setMetrics(metrics);
+
+        // then
+        assertEquals(metrics, properties.getMetrics());
+    }
+
+    @Test
+    @DisplayName("UT afterPropertiesSet() when metrics is null should create default metrics")
+    public void afterPropertiesSet_whenMetricsNull_shouldCreateDefaultMetrics() {
+        // given
+        OutboxPublisherProperties properties = new OutboxPublisherProperties();
+        OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
+        sender.setType(SenderType.KAFKA);
+        sender.setBeanName("bean");
+        properties.setSender(sender);
+        properties.setEvents(new HashMap<>());
+
+        // when
+        properties.afterPropertiesSet();
+
+        // then
+        assertNotNull(properties.getMetrics());
+        assertNotNull(properties.getMetrics().getGauge());
+        // По умолчанию gauge.enabled = null -> false в afterPropertiesSet
+        assertFalse(properties.getMetrics().getGauge().isEnabled());
+    }
+
+    @Test
+    @DisplayName("UT afterPropertiesSet() when enabled is false should set enabled to false")
+    public void afterPropertiesSet_whenEnabledFalse_shouldSetEnabledFalse() {
+        // given
+        OutboxPublisherProperties properties = new OutboxPublisherProperties();
+        properties.setEnabled(false);
+
+        // when
+        properties.afterPropertiesSet();
+
+        // then
+        assertFalse(properties.isEnabled());
+    }
 }

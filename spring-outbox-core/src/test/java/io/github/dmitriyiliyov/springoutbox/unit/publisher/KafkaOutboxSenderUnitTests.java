@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.unit.publisher;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.publisher.KafkaOutboxSender;
@@ -124,7 +125,7 @@ public class KafkaOutboxSenderUnitTests {
                 Instant.now()
         );
         List<OutboxEvent> events = List.of(event);
-        when(kafkaTemplate.send(eq(topic), any())).thenThrow(new RuntimeException());
+        when(kafkaTemplate.send(any(Message.class))).thenThrow(new RuntimeException());
         when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
 
         // when
@@ -139,7 +140,7 @@ public class KafkaOutboxSenderUnitTests {
     }
 
     @Test
-    @DisplayName("UT sendEvents() when Kafka throws, should return correct SenderResult")
+    @DisplayName("UT sendEvents() when CompletableFuture throws, should return correct SenderResult")
     public void sendEvents_whenCompletableFutureThrows_shouldReturnSenderResult() throws JsonProcessingException {
         // given
         String topic = "test-topic";
@@ -157,7 +158,7 @@ public class KafkaOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event);
         CompletableFuture<SendResult<String, Object>> future = new CompletableFuture<>();
         future.completeExceptionally(new RuntimeException("Kafka send failed"));
-        when(kafkaTemplate.send(eq(topic), any())).thenReturn(future);
+        when(kafkaTemplate.send(any(Message.class))).thenReturn((CompletableFuture) future);
         when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
 
         // when
@@ -169,5 +170,64 @@ public class KafkaOutboxSenderUnitTests {
         verify(kafkaTemplate, times(events.size())).send(any(Message.class));
         verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
         verifyNoMoreInteractions(kafkaTemplate, mapper);
+    }
+
+    @Test
+    @DisplayName("UT sendEvents() when JsonParseException occurs should add to failedIds")
+    public void sendEvents_whenJsonParseException_shouldAddToFailedIds() throws JsonProcessingException {
+        // given
+        String topic = "test-topic";
+        OutboxEvent event = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "invalid-json",
+                0,
+                Instant.now(),
+                Instant.now(),
+                Instant.now()
+        );
+        List<OutboxEvent> events = List.of(event);
+        when(mapper.readValue(anyString(), any(Class.class))).thenThrow(new JsonParseException(null, "parse error"));
+
+        // when
+        SenderResult result = tested.sendEvents(topic, events);
+
+        // then
+        assertEquals(Set.of(event.getId()), result.failedIds());
+        assertEquals(Set.of(), result.processedIds());
+        verify(mapper).readValue(anyString(), any(Class.class));
+        verifyNoInteractions(kafkaTemplate);
+    }
+
+    @Test
+    @DisplayName("UT sendEvents() when emergency timeout occurs should add unprocessed to failedIds")
+    public void sendEvents_whenEmergencyTimeout_shouldAddUnprocessedToFailedIds() throws JsonProcessingException {
+        // given
+        tested = new KafkaOutboxSender(kafkaTemplate, 0, mapper);
+        String topic = "test-topic";
+        OutboxEvent event = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "{}",
+                0,
+                Instant.now(),
+                Instant.now(),
+                Instant.now()
+        );
+        List<OutboxEvent> events = List.of(event);
+        
+        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
+        when(kafkaTemplate.send(any(Message.class))).thenReturn(new CompletableFuture<>());
+
+        // when
+        SenderResult result = tested.sendEvents(topic, events);
+
+        // then
+        assertEquals(Set.of(event.getId()), result.failedIds());
+        assertEquals(Set.of(), result.processedIds());
     }
 }
