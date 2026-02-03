@@ -11,7 +11,7 @@
     </parent>
 
     <artifactId>spring-outbox-aop</artifactId>
-
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -48,6 +48,12 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-expression</artifactId>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.1</version>
         </dependency>
 
         <dependency>

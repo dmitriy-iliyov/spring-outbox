@@ -11,6 +11,7 @@
     </parent>
 
     <artifactId>spring-outbox-kafka</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>

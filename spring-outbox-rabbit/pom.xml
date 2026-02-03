@@ -11,6 +11,7 @@
     </parent>
 
     <artifactId>spring-outbox-rabbit</artifactId>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
