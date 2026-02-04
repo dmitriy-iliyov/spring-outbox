@@ -12,6 +12,7 @@
 
     <artifactId>spring-outbox-kafka</artifactId>
     <packaging>jar</packaging>
+    <name>spring-outbox-kafka</name>
 
     <dependencies>
         <dependency>

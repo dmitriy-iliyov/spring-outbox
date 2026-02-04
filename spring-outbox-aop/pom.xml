@@ -12,6 +12,7 @@
 
     <artifactId>spring-outbox-aop</artifactId>
     <packaging>jar</packaging>
+    <name>spring-outbox-aop</name>
 
     <dependencies>
         <dependency>

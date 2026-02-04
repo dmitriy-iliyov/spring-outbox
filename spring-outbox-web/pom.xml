@@ -12,6 +12,7 @@
 
     <artifactId>spring-outbox-web</artifactId>
     <packaging>jar</packaging>
+    <name>spring-outbox-web</name>
 
     <dependencies>
         <dependency>

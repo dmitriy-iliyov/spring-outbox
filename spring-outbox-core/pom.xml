@@ -13,6 +13,7 @@
 
     <artifactId>spring-outbox-core</artifactId>
     <packaging>jar</packaging>
+    <name>spring-outbox-core</name>
 
     <dependencies>
         <dependency>

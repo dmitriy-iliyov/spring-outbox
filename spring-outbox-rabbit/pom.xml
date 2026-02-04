@@ -12,6 +12,7 @@
 
     <artifactId>spring-outbox-rabbit</artifactId>
     <packaging>jar</packaging>
+    <name>spring-outbox-rabbit</name>
 
     <dependencies>
         <dependency>
