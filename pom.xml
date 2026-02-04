@@ -84,6 +84,16 @@
 
     <build>
         <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>${java.version}</release>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -115,6 +125,7 @@
                     <source>21</source>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 
@@ -123,6 +134,7 @@
             <id>release</id>
             <build>
                 <plugins>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
@@ -140,6 +152,7 @@
                             <source>21</source>
                         </configuration>
                     </plugin>
+
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
@@ -164,9 +177,9 @@
                             </includes>
                         </configuration>
                     </plugin>
+
                 </plugins>
             </build>
         </profile>
     </profiles>
-
 </project>
