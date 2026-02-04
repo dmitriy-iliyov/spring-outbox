@@ -54,6 +54,11 @@ public class OrderAnalyticKafkaListener {
      */
     @KafkaListener(topics = "orders.created", groupId = "analytics", containerFactory = "orderBatchFactory")
     public void listenBatch(List<ConsumerRecord<String, OrderDto>> records) {
-        outboxConsumer.consume(records, (recordList) -> recordList.forEach(record -> log.info("Analytics receive 'created-order' {}", record.value())));
+        outboxConsumer.consume(
+                records,
+                (recordList) -> recordList.forEach(
+                        record -> log.info("Analytics receive 'created-order' {}", record.value())
+                )
+        );
     }
 }
