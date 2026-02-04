@@ -31,15 +31,15 @@ outbox:
         multiplier: 1
     events:
       create-order:
-        topic: orders.created
+        topic: orders.created    # or orders-exchange for rabbit mq
         batch-size: 100
         fixed-delay: 1s
       update-order:
-        topic: orders
+        topic: orders            # or orders-exchange for rabbit mq
         batch-size: 50
         fixed-delay: 1s
       delete-order:
-        topic: orders
+        topic: orders            # or orders-exchange for rabbit mq
         batch-size: 50
         fixed-delay: 10s
     clean-up:
