@@ -1,6 +1,6 @@
 spring:
   kafka:
-    bootstrap-servers: kafka:9092
+    bootstrap-servers: outbox-kafka:9092
     consumer:
       group-id: analytics
       auto-offset-reset: earliest

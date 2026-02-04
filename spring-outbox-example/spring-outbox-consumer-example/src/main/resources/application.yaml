@@ -13,7 +13,7 @@ spring:
   data:
     redis:
       port: 6379
-      host: consumer-redis
+      host: outbox-consumer-redis
 server:
   port: 8080
 outbox:
