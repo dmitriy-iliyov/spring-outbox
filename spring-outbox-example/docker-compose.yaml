@@ -9,7 +9,7 @@ services:
     depends_on:
       - outbox-producer-postgresql
     environment:
-      OUTBOX_PUBLISHER_SENDER_TYPE: rabbit_mq    # or kafka
+      OUTBOX_PUBLISHER_SENDER_TYPE: kafka     # or rabbit_mq
     ports:
       - "8080:8080"
 
@@ -35,7 +35,7 @@ services:
       - outbox-consumer-postgresql
       - outbox-consumer-redis
     environment:
-      SPRING_PROFILES_ACTIVE: rabbitmq    # or kafka
+      SPRING_PROFILES_ACTIVE: kafka     # or rabbitmq
     ports:
       - "8081:8080"
 
@@ -80,10 +80,10 @@ services:
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: broker,controller
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://outbox-kafka:9092
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@outbox-kafka:9093
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CFG_LOG_DIRS: /bitnami/kafka/data
       KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
