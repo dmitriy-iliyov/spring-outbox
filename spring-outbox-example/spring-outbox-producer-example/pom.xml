@@ -9,7 +9,7 @@
         <version>3.5.6</version>
     </parent>
 
-    <artifactId>spring-outbox-publisher-example</artifactId>
+    <artifactId>spring-outbox-producer-example</artifactId>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,13 +30,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <version>42.7.3</version>
-        </dependency>
-
-        <!--uuid-->
-        <dependency>
-            <groupId>com.github.f4b6a3</groupId>
-            <artifactId>uuid-creator</artifactId>
-            <version>6.0.0</version>
         </dependency>
 
         <!-- validation -->
@@ -117,13 +110,13 @@
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-shared-contract</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>spring-outbox-starter</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
@@ -189,7 +182,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>io.github.dmitriyiliyov.springoutbox.example.publisher.PublisherRunner</mainClass>
+                    <mainClass>io.github.dmitriyiliyov.springoutbox.example.producer.PublisherRunner</mainClass>
                 </configuration>
             </plugin>
         </plugins>

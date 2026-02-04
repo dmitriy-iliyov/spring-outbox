@@ -83,13 +83,13 @@
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-shared-contract</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-core</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <artifactId>spring-outbox-starter</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>

@@ -1,20 +1,20 @@
 name: spring-outbox-example
 services:
-  producer-app:
-    container_name: outbox-example-producer-app
+  outbox-producer-app:
+    container_name: outbox-producer-app
     build:
       context: ..
-      dockerfile: ./spring-outbox-example/spring-outbox-publisher-example/Dockerfile
+      dockerfile: ./spring-outbox-example/spring-outbox-producer-example/Dockerfile
     image: outbox-producer-app
     depends_on:
-      - producer-postgresql
+      - outbox-producer-postgresql
     environment:
-      OUTBOX_PUBLISHER_SENDER_TYPE: rabbit_mq
+      OUTBOX_PUBLISHER_SENDER_TYPE: rabbit_mq    # or kafka
     ports:
       - "8080:8080"
 
-  producer-postgresql:
-    container_name: outbox-example-producer-postgresql
+  outbox-producer-postgresql:
+    container_name: outbox-producer-postgresql
     image: postgres:18-alpine
     networks:
       - default
@@ -25,22 +25,22 @@ services:
     ports:
       - "5432:5432"
 
-  consumer-app:
-    container_name: outbox-example-consumer-app
+  outbox-consumer-app:
+    container_name: outbox-consumer-app
     build:
       context: ..
       dockerfile: ./spring-outbox-example/spring-outbox-consumer-example/Dockerfile
     image: outbox-consumer-app
     depends_on:
-      - consumer-postgresql
-      - consumer-redis
+      - outbox-consumer-postgresql
+      - outbox-consumer-redis
     environment:
-      SPRING_PROFILES_ACTIVE: rabbitmq
+      SPRING_PROFILES_ACTIVE: rabbitmq    # or kafka
     ports:
       - "8081:8080"
 
-  consumer-postgresql:
-    container_name: outbox-example-consumer-postgresql
+  outbox-consumer-postgresql:
+    container_name: outbox-consumer-postgresql
     image: postgres:18-alpine
     networks:
       - default
@@ -51,27 +51,27 @@ services:
     ports:
       - "5433:5432"
 
-  consumer-redis:
-    container_name: outbox-example-redis
+  outbox-consumer-redis:
+    container_name: outbox-consumer-redis
     image: redis
     networks:
       - default
     ports:
       - "6379:6379"
 
-  traffic-generator-app:
-    container_name: outbox-example-traffic-generator-app
+  outbox-traffic-generator-app:
+    container_name: outbox-traffic-generator-app
     build:
       context: ..
       dockerfile: ./spring-outbox-example/spring-outbox-traffic-generator/Dockerfile
     image: outbox-traffic-generator-app
     depends_on:
-      - producer-app
+      - outbox-producer-app
     ports:
       - "8082:8080"
 
-  kafka:
-    container_name: outbox-example-kafka
+  outbox-kafka:
+    container_name: outbox-kafka
     image: bitnami/kafka:latest
     profiles: [ "kafka" ]
     ports:
@@ -90,20 +90,20 @@ services:
     volumes:
       - kafka_data:/bitnami/kafka/data
 
-  rabbitmq:
-    container_name: outbox-example-rabbitmq
+  outbox-rabbitmq:
+    container_name: outbox-rabbitmq
     image: rabbitmq:3-management
     profiles: [ "rabbitmq" ]
     ports:
       - "5672:5672"
       - "15672:15672"
 
-  prometheus:
+  outbox-prometheus:
     container_name: outbox-prometheus
     image: prom/prometheus:latest
     depends_on:
-      - producer-app
-      - consumer-app
+      - outbox-producer-app
+      - outbox-consumer-app
     networks:
       - default
     volumes:
@@ -111,11 +111,11 @@ services:
     ports:
       - "9090:9090"
 
-  grafana:
+  outbox-grafana:
     container_name: outbox-grafana
     image: grafana/grafana:latest
     depends_on:
-      - prometheus
+      - outbox-prometheus
     networks:
       - default
     ports:

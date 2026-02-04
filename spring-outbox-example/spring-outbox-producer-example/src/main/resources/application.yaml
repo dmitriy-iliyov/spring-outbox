@@ -1,8 +1,8 @@
 spring:
   application:
-    name: spring-outbox-example
+    name: spring-outbox-producer-example
   datasource:
-    url: jdbc:postgresql://producer-postgresql:5432/outbox_example
+    url: jdbc:postgresql://outbox-producer-postgresql:5432/outbox_example
     username: admin
     password: root
     driver-class-name: org.postgresql.Driver

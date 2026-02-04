@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example.publisher.configs;
+package io.github.dmitriyiliyov.springoutbox.example.producer.configs;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;

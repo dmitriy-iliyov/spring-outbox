@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.example.publisher;
+package io.github.dmitriyiliyov.springoutbox.example.producer;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

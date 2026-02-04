@@ -10,6 +10,6 @@ RUN mvn -f spring-outbox-traffic-generator/pom.xml clean package -DskipTests
 FROM eclipse-temurin:21-jre AS final
 WORKDIR /app
 COPY --from=build /app/spring-outbox-traffic-generator/target/*.jar app.jar
-EXPOSE 8080
+EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]
 CMD []

@@ -1,6 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.example.publisher;
+package io.github.dmitriyiliyov.springoutbox.example.producer;
 
-import io.github.dmitriyiliyov.springoutbox.config.EnableOutbox;
+import io.github.dmitriyiliyov.springoutbox.starter.EnableOutbox;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;

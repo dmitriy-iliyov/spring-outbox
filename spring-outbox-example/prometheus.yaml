@@ -1,5 +1,5 @@
 scrape_configs:
-  - job_name: 'outbox-publisher'
+  - job_name: 'outbox-producer'
     scheme: http
     metrics_path: '/actuator/prometheus'
     static_configs:
