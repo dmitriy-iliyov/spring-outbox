@@ -54,7 +54,16 @@ This approach ensures reliable event publication without relying on database log
 
 ## Quick Start
 
-1. Enable starter on publisher side:
+1. Add dependency
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>spring-outbox-starter</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+```
+
+2. Enable starter on publisher side:
 ```java
 @SpringBootApplication
 @EnableJpaRepositories
@@ -68,7 +77,8 @@ public class PublisherRunner {
     }
 }
 ```
-2. Minimal YAML config (**DLQ disabled by default**):
+
+3. Minimal YAML config (**DLQ disabled by default**):
 ```yaml
 outbox:
   publisher:
@@ -78,7 +88,8 @@ outbox:
       create-example-event:
         topic: "example-events"
 ```
-3. Inject `OutboxPublisher`:
+
+4. Inject `OutboxPublisher`:
 ```java 
 @Service
 @RequiredArgsConstructor
@@ -117,7 +128,7 @@ public class ExampleService {
 }
 ```
 
-4. Enable starter on consumer side:
+5. Enable starter on consumer side:
 ```java
 @SpringBootApplication
 @EnableJpaRepositories
@@ -132,7 +143,8 @@ public class ConsumerRunner {
     }
 }
 ```
-5. Minimal YAML config (clean-up and cache enable by default):
+
+6. Minimal YAML config (clean-up and cache enable by default):
 ```yaml
 outbox:
   publisher:
@@ -143,7 +155,7 @@ outbox:
       cache-name: "outbox:consumed"
 ```
 
-6. Create listener with injected `OutboxIdempotentConsumer`:
+7. Create listener with injected `OutboxIdempotentConsumer`:
 
 **Apache Kafka:**
 ```java
