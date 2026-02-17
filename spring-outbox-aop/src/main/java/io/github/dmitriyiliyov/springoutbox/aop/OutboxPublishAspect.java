@@ -48,7 +48,7 @@ public class OutboxPublishAspect {
         eventPublisher.publishEvent(new RowOutboxEvent(outboxPublish.eventType(), payload));
     }
 
-    private StandardEvaluationContext getContext(JoinPoint joinPoint) {
+    StandardEvaluationContext getContext(JoinPoint joinPoint) {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         String[] paramNames = signature.getParameterNames();
         Object[] args = joinPoint.getArgs();
@@ -63,4 +63,3 @@ public class OutboxPublishAspect {
         return context;
     }
 }
-
