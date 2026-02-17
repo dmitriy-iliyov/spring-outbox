@@ -5,7 +5,6 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -24,7 +23,6 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
         this.mapper = mapper;
     }
 
-    @Transactional
     @Override
     public int saveIfAbsent(UUID id) {
         String sql = """
@@ -41,7 +39,6 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
         }
     }
 
-    @Transactional
     @Override
     public Set<UUID> saveIfAbsent(Set<UUID> ids) {
         if (!RepositoryUtils.isIdsValid(ids)) {
@@ -85,7 +82,6 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
         }
     }
 
-    @Transactional
     @Override
     public int deleteBatchByThreshold(Instant threshold, int batchSize) {
         String selectSql = """

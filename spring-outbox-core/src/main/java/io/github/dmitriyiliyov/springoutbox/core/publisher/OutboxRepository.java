@@ -13,12 +13,6 @@ public interface OutboxRepository {
 
     void saveBatch(List<OutboxEvent> eventBatch);
 
-    long count();
-
-    long countByStatus(EventStatus status);
-
-    long countByEventTypeAndStatus(String eventType, EventStatus status);
-
     List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize,
                                                            EventStatus lockStatus);
 

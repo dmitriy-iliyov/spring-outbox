@@ -8,12 +8,6 @@ import java.util.UUID;
 public interface OutboxDlqRepository {
     void saveBatch(List<OutboxDlqEvent> dlqEvents);
 
-    long count();
-
-    long countByStatus(DlqStatus status);
-
-    long countByEventTypeAndStatus(String eventType, DlqStatus status);
-
     Optional<OutboxDlqEvent> findById(UUID id);
 
     List<OutboxDlqEvent> findBatch(Set<UUID> ids);

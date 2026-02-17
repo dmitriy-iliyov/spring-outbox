@@ -3,7 +3,6 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.core.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,7 +15,6 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         super(jdbcTemplate, idHelper, mapper);
     }
 
-    @Transactional
     @Override
     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
         String sql = """

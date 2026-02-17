@@ -2,10 +2,9 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.CacheHelper;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.OutboxCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -21,38 +20,24 @@ public class DefaultOutboxManager implements OutboxManager {
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxManager.class);
 
     protected final OutboxRepository repository;
-    protected final OutboxCache<EventStatus> cache;
 
-    public DefaultOutboxManager(OutboxRepository repository, OutboxCache<EventStatus> cache) {
+    public DefaultOutboxManager(OutboxRepository repository) {
         this.repository = repository;
-        this.cache = cache;
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
     @Override
     public void save(OutboxEvent event) {
         repository.save(event);
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
     @Override
     public void saveBatch(List<OutboxEvent> eventBatch) {
         repository.saveBatch(eventBatch);
     }
 
-    @Override
-    public long count() {
-        return CacheHelper.count(cache, repository::count);
-    }
-
-    @Override
-    public long countByStatus(EventStatus status) {
-        return CacheHelper.countByStatus(cache, status, repository::countByStatus);
-    }
-
-    @Override
-    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
-        return CacheHelper.countByEventTypeAndStatus(cache, eventType, status, repository::countByEventTypeAndStatus);
-    }
-
+    @Transactional
     @Override
     public List<OutboxEvent> loadBatch(String eventType, int batchSize) {
         return repository.findAndLockBatchByEventTypeAndStatus(
@@ -63,6 +48,7 @@ public class DefaultOutboxManager implements OutboxManager {
         );
     }
 
+    @Transactional
     @Override
     public List<OutboxEvent> loadBatch(EventStatus status, int batchSize) {
         return repository.findAndLockBatchByStatus(status, batchSize, EventStatus.IN_PROCESS);
@@ -127,6 +113,7 @@ public class DefaultOutboxManager implements OutboxManager {
                 .toList();
     }
 
+    @Transactional
     @Override
     public int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
         int recoverSize = repository.updateBatchStatusByStatusAndThreshold(
@@ -141,11 +128,13 @@ public class DefaultOutboxManager implements OutboxManager {
         return recoverSize;
     }
 
+    @Transactional
     @Override
     public int deleteProcessedBatch(Instant threshold, int batchSize) {
         return repository.deleteBatchByStatusAndThreshold(EventStatus.PROCESSED, threshold, batchSize);
     }
 
+    @Transactional
     @Override
     public int deleteBatch(Set<UUID> ids) {
         if (ids == null || ids.isEmpty()) {

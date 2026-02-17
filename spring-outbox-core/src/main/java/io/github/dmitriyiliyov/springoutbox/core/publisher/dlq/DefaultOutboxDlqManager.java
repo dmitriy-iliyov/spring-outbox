@@ -5,8 +5,6 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxD
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchRequestProjection;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchUpdateRequestProjection;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.CacheHelper;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.OutboxCache;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +16,12 @@ import java.util.stream.Collectors;
 public class DefaultOutboxDlqManager implements OutboxDlqManager {
 
     private final OutboxDlqRepository repository;
-    private final OutboxCache<DlqStatus> cache;
 
-    public DefaultOutboxDlqManager(OutboxDlqRepository repository, OutboxCache<DlqStatus> cache) {
+    public DefaultOutboxDlqManager(OutboxDlqRepository repository) {
         this.repository = repository;
-        this.cache = cache;
     }
 
+    @Transactional
     @Override
     public void saveBatch(List<OutboxDlqEvent> events) {
         if (events.isEmpty()) {
@@ -33,31 +30,19 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
         repository.saveBatch(events);
     }
 
-    @Override
-    public long count() {
-        return CacheHelper.count(cache, repository::count);
-    }
-
-    @Override
-    public long countByStatus(DlqStatus status) {
-        return CacheHelper.countByStatus(cache, status, repository::countByStatus);
-    }
-
-    @Override
-    public long countByEventTypeAndStatus(String eventType, DlqStatus status) {
-        return CacheHelper.countByEventTypeAndStatus(cache, eventType, status, repository::countByEventTypeAndStatus);
-    }
-
+    @Transactional(readOnly = true)
     @Override
     public OutboxDlqEvent loadById(UUID id) {
         return repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
     }
 
+    @Transactional
     @Override
     public List<OutboxDlqEvent> loadAndLockBatch(DlqStatus status, int batchSize) {
         return repository.findAndLockBatchByStatus(status, batchSize, DlqStatus.IN_PROCESS);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<OutboxDlqEvent> loadBatch(BatchRequestProjection request) {
         return repository.findBatchByStatus(request.status(), request.batchNumber(), request.batchSize());
@@ -95,6 +80,7 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
         return repository.deleteById(id);
     }
 
+    @Transactional
     @Override
     public int deleteBatch(Set<UUID> ids) {
         if (ids == null || ids.isEmpty()) {

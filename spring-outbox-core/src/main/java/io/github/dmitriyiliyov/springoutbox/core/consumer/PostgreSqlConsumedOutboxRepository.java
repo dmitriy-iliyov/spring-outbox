@@ -2,7 +2,6 @@ package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -19,7 +18,6 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    @Transactional
     @Override
     public int saveIfAbsent(UUID id) {
         String sql = """
@@ -36,7 +34,6 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
         );
     }
 
-    @Transactional
     @Override
     public Set<UUID> saveIfAbsent(Set<UUID> ids) {
         if (!RepositoryUtils.isIdsValid(ids)) {
@@ -64,7 +61,6 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
         );
     }
 
-    @Transactional
     @Override
     public int deleteBatchByThreshold(Instant threshold, int batchSize) {
         String sql = """

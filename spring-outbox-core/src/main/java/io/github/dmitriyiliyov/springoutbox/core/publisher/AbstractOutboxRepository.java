@@ -36,7 +36,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         this.idHelper = idHelper;
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
     @Override
     public void save(OutboxEvent event) {
         String sql = """
@@ -60,7 +59,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         );
     }
 
-    @Transactional(propagation = Propagation.MANDATORY)
     @Override
     public void saveBatch(List<OutboxEvent> eventBatch) {
         String sql = """
@@ -86,31 +84,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         );
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public long count() {
-        String sql = "SELECT COUNT(*) FROM outbox_events";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class);
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long countByStatus(EventStatus status) {
-        String sql = "SELECT COUNT(*) FROM outbox_events WHERE status = ?";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long countByEventTypeAndStatus(String eventType, EventStatus status) {
-        String sql = "SELECT COUNT(*) FROM outbox_events WHERE event_type = ? AND status = ?";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, eventType, status.name());
-        return count == null ? 0 : count;
-    }
-
-    @Transactional
     @Override
     public int updateBatchStatus(Set<UUID> ids, EventStatus newStatus) {
         if (!RepositoryUtils.isIdsValid(ids)) return 0;
@@ -134,7 +107,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         );
     }
 
-    @Transactional
     @Override
     public int partiallyUpdateBatch(List<OutboxEvent> events) {
         if (events == null || events.isEmpty()) return 0;
@@ -161,7 +133,6 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
         ).length;
     }
 
-    @Transactional
     @Override
     public int deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.isIdsValid(ids)) return 0;

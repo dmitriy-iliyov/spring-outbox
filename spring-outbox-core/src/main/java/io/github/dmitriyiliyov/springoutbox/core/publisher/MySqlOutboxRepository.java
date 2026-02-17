@@ -6,7 +6,6 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.core.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -26,7 +25,6 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         this.mapper = mapper;
     }
 
-    @Transactional
     @Override
     public List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize,
                                                                   EventStatus lockStatus) {
@@ -51,7 +49,6 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         return lock(events, lockStatus);
     }
 
-    @Transactional
     @Override
     public List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus) {
         String selectSql = """
@@ -101,7 +98,6 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         return events;
     }
 
-    @Transactional
     @Override
     public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) {
         String sql = """
@@ -129,7 +125,6 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         );
     }
 
-    @Transactional
     @Override
     public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String sql = """

@@ -4,7 +4,6 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.core.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -24,7 +23,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         this.mapper = mapper;
     }
 
-    @Transactional
     @Override
     public void saveBatch(List<OutboxDlqEvent> eventBatch) {
         String sql = """
@@ -51,31 +49,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                 });
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public long count() {
-        String sql = "SELECT COUNT(*) FROM outbox_dlq_events";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class);
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long countByStatus(DlqStatus status) {
-        String sql = "SELECT COUNT(*) FROM outbox_dlq_events WHERE dlq_status = ?";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, status.name());
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public long countByEventTypeAndStatus(String eventType, DlqStatus status) {
-        String sql = "SELECT COUNT(*) FROM outbox_dlq_events WHERE event_type = ? AND dlq_status = ?";
-        Long count = jdbcTemplate.queryForObject(sql, Long.class, eventType, status.name());
-        return count == null ? 0 : count;
-    }
-
-    @Transactional(readOnly = true)
     @Override
     public Optional<OutboxDlqEvent> findById(UUID id) {
         String sql = """
@@ -91,7 +64,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         return results.stream().findFirst();
     }
 
-    @Transactional
     @Override
     public List<OutboxDlqEvent> findBatch(Set<UUID> ids) {
         if (!RepositoryUtils.isIdsValid(ids)) return List.of();
@@ -112,7 +84,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         );
     }
 
-    @Transactional(readOnly = true)
     @Override
     public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
         String sql = """
@@ -133,7 +104,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         );
     }
 
-    @Transactional
     @Override
     public void updateStatus(UUID id, DlqStatus status) {
         String sql = "UPDATE outbox_dlq_events SET dlq_status = ? WHERE id = ?";
@@ -146,7 +116,6 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         );
     }
 
-    @Transactional
     @Override
     public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
         if (!RepositoryUtils.isIdsValid(ids)) return;
@@ -160,14 +129,12 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         );
     }
 
-    @Transactional
     @Override
     public int deleteById(UUID id) {
         String sql = "DELETE FROM outbox_dlq_events WHERE id = ?";
         return jdbcTemplate.update(sql, ps -> idHelper.setIdToPs(ps, 1, id));
     }
 
-    @Transactional
     @Override
     public int deleteBatch(Set<UUID> ids) {
         if (!RepositoryUtils.isIdsValid(ids)) return 0;
