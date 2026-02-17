@@ -172,6 +172,9 @@
                     <includes>
                         <include>io/github/dmitriyiliyov/springoutbox/**</include>
                     </includes>
+                    <excludes>
+                        <include>io/github/dmitriyiliyov/springoutbox/example/**</include>
+                    </excludes>
                 </configuration>
             </plugin>
 
