@@ -6,9 +6,9 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqReposito
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.PostgreSqlOutboxDlqRepository;
 import io.github.dmitriyiliyov.springoutbox.core.utils.*;
 import io.github.dmitriyiliyov.springoutbox.starter.DatabaseType;
-import io.github.dmitriyiliyov.springoutbox.starter.JdbcTemplateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -19,35 +19,32 @@ import java.util.function.Function;
 public final class OutboxDlqRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqRepositoryFactory.class);
-    private static final Map<DatabaseType, Function<DataSource, OutboxDlqRepository>> SUPPORTED_SUPPLIERS = Map.of(
+    private static final Map<DatabaseType, Function<JdbcTemplate, OutboxDlqRepository>> SUPPORTED_SUPPLIERS = Map.of(
             DatabaseType.POSTGRESQL,
-            dataSource -> new PostgreSqlOutboxDlqRepository(
-                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
-                    new PostgreSqlIdHelper(),
-                    new DefaultResultSetMapper()
+            jdbcTemplate -> new PostgreSqlOutboxDlqRepository(
+                    jdbcTemplate, new PostgreSqlIdHelper(), new DefaultResultSetMapper()
             ),
             DatabaseType.MYSQL,
-            dataSource -> new MySqlOutboxDlqRepository(
-                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
-                    new MySqlIdHelper(),
-                    new DefaultBytesSqlResultSetMapper()
+            jdbcTemplate -> new MySqlOutboxDlqRepository(
+                    jdbcTemplate, new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper()
             ),
             DatabaseType.ORACLE,
-            dataSource -> new OracleOutboxDlqRepository(
-                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
-                    new OracleSqlIdHelper(),
-                    new DefaultBytesSqlResultSetMapper()
+            jdbcTemplate -> new OracleOutboxDlqRepository(
+                    jdbcTemplate, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper()
             )
     );
 
     private OutboxDlqRepositoryFactory() {}
 
-    public static OutboxDlqRepository generate(DataSource dataSource) {
+    public static OutboxDlqRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         try (Connection conn = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(conn.getMetaData().getDatabaseProductName());
-            Function<DataSource, OutboxDlqRepository> supplier = SUPPORTED_SUPPLIERS.get(databaseType);
+            Function<JdbcTemplate, OutboxDlqRepository> supplier = SUPPORTED_SUPPLIERS.get(databaseType);
             if (supplier != null) {
-                return supplier.apply(dataSource);
+                if (jdbcTemplate == null) {
+                    throw new IllegalStateException("JdbcTemplate is null");
+                }
+                return supplier.apply(jdbcTemplate);
             } else {
                 throw new IllegalArgumentException("Supplier for OutboxDlqRepository is null for databaseType=" + databaseType);
             }

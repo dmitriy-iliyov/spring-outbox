@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,6 +28,9 @@ class OutboxRepositoryFactoryUnitTests {
     DataSource dataSource;
 
     @Mock
+    JdbcTemplate jdbcTemplate;
+
+    @Mock
     Connection connection;
 
     @Mock
@@ -41,7 +45,7 @@ class OutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource);
+        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(PostgreSqlOutboxRepository.class, result);
@@ -56,7 +60,7 @@ class OutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource);
+        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(MySqlOutboxRepository.class, result);
@@ -71,7 +75,7 @@ class OutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource);
+        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(OracleOutboxRepository.class, result);
@@ -86,7 +90,7 @@ class OutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("H2");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxRepositoryFactory.generate(dataSource));
+        assertThrows(IllegalArgumentException.class, () -> OutboxRepositoryFactory.generate(dataSource, jdbcTemplate));
     }
 
     @Test
@@ -96,6 +100,6 @@ class OutboxRepositoryFactoryUnitTests {
         when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
         // when + then
-        assertThrows(RuntimeException.class, () -> OutboxRepositoryFactory.generate(dataSource));
+        assertThrows(RuntimeException.class, () -> OutboxRepositoryFactory.generate(dataSource, jdbcTemplate));
     }
 }

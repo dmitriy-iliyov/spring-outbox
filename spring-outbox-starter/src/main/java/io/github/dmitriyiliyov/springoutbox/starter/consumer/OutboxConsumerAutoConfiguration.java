@@ -2,9 +2,10 @@ package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.metrics.ConsumedOutboxManagerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.metrics.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxEventIdResolver;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.DefaultConsumedOutboxCacheObserver;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.rabbit.SpringMessageOutboxEventIdResolver;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,6 +18,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
@@ -37,39 +39,51 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxRepository consumedOutboxRepository(DataSource dataSource) {
-        return ConsumedOutboxRepositoryFactory.generate(dataSource);
+    public ConsumedOutboxRepository consumedOutboxRepository(DataSource dataSource,
+                                                             @Qualifier("outboxTransactionAwareJdbcTemplate")
+                                                             JdbcTemplate jdbcTemplate) {
+        return ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxManager consumedOutboxManager(CacheManager cacheManager, ConsumedOutboxRepository repository,
+    public ConsumedOutboxManager consumedOutboxManager(CacheManager cacheManager,
+                                                       ConsumedOutboxRepository repository,
                                                        MeterRegistry registry) {
         OutboxConsumerProperties.CacheProperties cacheProperties = properties.getCache();
         ConsumedOutboxManager manager = new DefaultConsumedOutboxManager(repository);
         if (cacheManager == null || !cacheProperties.isEnabled()) {
             if (cacheManager == null) {
-                log.error("CacheManager is null, impossible to create bean of CacheableConsumedOutboxManager");
+                log.error("CacheManager is null, impossible to create bean of ConsumedOutboxManagerCacheDecorator");
             }
-            return new ConsumedOutboxManagerMetricsDecorator(manager, registry);
+            return new ConsumedOutboxManagerMetricsDecorator(registry, manager);
+        }
+        ConsumedOutboxCacheObserver cacheObserver;
+        if (properties.getMetrics() != null && properties.getMetrics().isEnabled()) {
+            cacheObserver = new DefaultConsumedOutboxCacheObserver(registry);
+        } else {
+            cacheObserver = NoopConsumedOutboxCacheObserver.INSTANCE;
         }
         return new ConsumedOutboxManagerMetricsDecorator(
-                new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheProperties.getCacheName(), manager, registry),
-                registry
+                registry,
+                new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheProperties.getCacheName(), manager, cacheObserver)
         );
     }
 
     @Bean
     @ConditionalOnMissingBean
     public OutboxIdempotentConsumer outboxIdempotentConsumer(@Qualifier("defaultOutboxEventIdResolveManager")
-                                                                 OutboxEventIdResolveManager idResolver,
+                                                             OutboxEventIdResolveManager idResolver,
                                                              TransactionTemplate transactionTemplate,
-                                                             ConsumedOutboxManager consumedOutboxManager,
+                                                             ConsumedOutboxManager manager,
                                                              MeterRegistry registry) {
-        return new OutboxIdempotentConsumerMetricsDecorator(
-                new DefaultOutboxIdempotentConsumer(idResolver, transactionTemplate, consumedOutboxManager),
-                registry
+        OutboxIdempotentConsumer consumer = new DefaultOutboxIdempotentConsumer(
+                idResolver, transactionTemplate, manager
         );
+        if (!properties.getMetrics().isEnabled()) {
+            return consumer;
+        }
+        return new OutboxIdempotentConsumerMetricsDecorator(registry, consumer);
     }
 
     @Bean
@@ -103,8 +117,8 @@ public class OutboxConsumerAutoConfiguration {
     @Bean
     @ConditionalOnProperty(prefix = "outbox.consumer.clean-up", name = "enabled", havingValue = "true")
     public OutboxScheduler consumedOutboxCleanUpScheduler(@Qualifier("outboxScheduledExecutorService")
-                                                              ScheduledExecutorService executor,
-                                                          ConsumedOutboxManager consumedOutboxManager) {
-        return new ConsumedOutboxCleanUpScheduler(properties.getCleanUp(), executor, consumedOutboxManager);
+                                                          ScheduledExecutorService executor,
+                                                          ConsumedOutboxManager manager) {
+        return new ConsumedOutboxCleanUpScheduler(properties.getCleanUp(), executor, manager);
     }
 }

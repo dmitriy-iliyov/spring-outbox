@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,6 +28,9 @@ class OutboxDlqRepositoryFactoryUnitTests {
     DataSource dataSource;
 
     @Mock
+    JdbcTemplate jdbcTemplate;
+
+    @Mock
     Connection connection;
 
     @Mock
@@ -41,7 +45,7 @@ class OutboxDlqRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource);
+        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(PostgreSqlOutboxDlqRepository.class, result);
@@ -56,7 +60,7 @@ class OutboxDlqRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource);
+        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(MySqlOutboxDlqRepository.class, result);
@@ -71,7 +75,7 @@ class OutboxDlqRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource);
+        OutboxDlqRepository result = OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(OracleOutboxDlqRepository.class, result);
@@ -86,7 +90,7 @@ class OutboxDlqRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("H2");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxDlqRepositoryFactory.generate(dataSource));
+        assertThrows(IllegalArgumentException.class, () -> OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate));
     }
 
     @Test
@@ -96,6 +100,6 @@ class OutboxDlqRepositoryFactoryUnitTests {
         when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
         // when + then
-        assertThrows(RuntimeException.class, () -> OutboxDlqRepositoryFactory.generate(dataSource));
+        assertThrows(RuntimeException.class, () -> OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate));
     }
 }

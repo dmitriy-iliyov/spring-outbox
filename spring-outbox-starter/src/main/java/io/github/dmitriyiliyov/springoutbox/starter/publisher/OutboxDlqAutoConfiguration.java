@@ -1,23 +1,24 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.metrics.OutboxDlqManagerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.metrics.OutboxDlqMetrics;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.metrics.OutboxDlqTransferMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.OutboxCache;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.PassthroughOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.SimpleOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqControllerAdvice;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
@@ -31,19 +32,23 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxDlqRepository outboxDlqRepository(DataSource dataSource) {
-        return OutboxDlqRepositoryFactory.generate(dataSource);
+    public OutboxDlqRepository outboxDlqRepository(DataSource dataSource,
+                                                   @Qualifier("outboxTransactionAwareJdbcTemplate")
+                                                   JdbcTemplate jdbcTemplate) {
+        return OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate);
     }
 
     @Bean
     @ConditionalOnMissingBean
     public OutboxCache<DlqStatus> outboxDlqCache(OutboxPublisherProperties properties) {
-        OutboxPublisherProperties.MetricsProperties metricsProperties = properties.getDlq().getMetrics();
-        if (metricsProperties != null) {
-            OutboxPublisherProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
-            if (gaugeProperties != null) {
-                if (gaugeProperties.isEnabled()) {
-                    List<Duration> ttls = gaugeProperties.getCache().getTtls();
+        OutboxProperties.MetricsProperties metricsProperties = properties.getDlq().getMetrics();
+        if (metricsProperties != null && metricsProperties.isEnabled()) {
+            OutboxProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
+            if (gaugeProperties != null && gaugeProperties.isEnabled()) {
+                OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProperties =
+                        gaugeProperties.getCache();
+                if (cacheProperties != null && cacheProperties.isEnabled()) {
+                    List<Duration> ttls = cacheProperties.getTtls();
                     if (ttls == null || ttls.isEmpty()) {
                         throw new IllegalArgumentException("Cache ttls cannot be null or empty");
                     }
@@ -56,20 +61,19 @@ public class OutboxDlqAutoConfiguration {
                 }
             }
         }
-        return new PassthroughOutboxCache<>();
+        return new NoopOutboxCache<>();
     }
 
     @Bean
     @ConditionalOnMissingBean
     public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository,
-                                             OutboxCache<DlqStatus> cache,
                                              OutboxPublisherProperties properties,
                                              MeterRegistry registry) {
-        return new OutboxDlqManagerMetricsDecorator(
-                new DefaultOutboxDlqManager(repository, cache),
-                properties,
-                registry
-        );
+        OutboxDlqManager manager = new DefaultOutboxDlqManager(repository);
+        if (properties.getDlq().getMetrics() == null || !properties.getDlq().getMetrics().isEnabled()) {
+            return manager;
+        }
+        return new OutboxDlqManagerMetricsDecorator(properties, registry, manager);
     }
 
     @Bean
@@ -84,22 +88,22 @@ public class OutboxDlqAutoConfiguration {
                                                OutboxDlqManager dlqManager,
                                                OutboxDlqHandler handler,
                                                TransactionTemplate transactionTemplate,
+                                               OutboxPublisherProperties properties,
                                                MeterRegistry registry) {
-        return new OutboxDlqTransferMetricsDecorator(
-                new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler),
-                registry
+        OutboxDlqTransfer outboxDlqTransfer = new DefaultOutboxDlqTransfer(
+                transactionTemplate, manager, dlqManager, handler
         );
+        if (properties.getDlq().getMetrics() == null || !properties.getDlq().getMetrics().isEnabled()) {
+            return outboxDlqTransfer;
+        }
+        return new OutboxDlqTransferMetricsDecorator(registry, outboxDlqTransfer);
     }
 
     @Bean
-    public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService outboxScheduledExecutorService,
+    public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService executorService,
                                               OutboxPublisherProperties properties,
                                               OutboxDlqTransfer transfer) {
-        OutboxPublisherProperties.DlqProperties dlqProperties = properties.getDlq();
-        if (dlqProperties == null) {
-            throw new IllegalStateException("OutboxProperties.DlqProperties is null");
-        }
-        return new OutboxDlqTransferScheduler(dlqProperties, outboxScheduledExecutorService, transfer);
+        return new OutboxDlqTransferScheduler(properties.getDlq(), executorService, transfer);
     }
 
     @Bean
@@ -124,9 +128,33 @@ public class OutboxDlqAutoConfiguration {
             name = "enabled",
             havingValue = "true"
     )
+    public OutboxDlqMetricsRepository outboxDlqMetricsRepository(@Qualifier("outboxTransactionAwareJdbcTemplate")
+                                                                 JdbcTemplate jdbcTemplate) {
+        return new MultiSqlDialectOutboxDlqMetricsRepository(jdbcTemplate);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxDlqMetricsService outboxDlqMetricsService(OutboxDlqMetricsRepository repository,
+                                                           OutboxCache<DlqStatus> cache) {
+        return new DefaultOutboxDlqMetricsService(repository, cache);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
     public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
                                           MeterRegistry registry,
-                                          OutboxDlqManager manager) {
-        return new OutboxDlqMetrics(registry, properties, manager);
+                                          OutboxDlqMetricsService metricsService) {
+        return new OutboxDlqMetrics(properties, registry, metricsService);
     }
 }

@@ -10,6 +10,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 @ConfigurationProperties(prefix = "outbox")
@@ -211,6 +213,141 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             return "TablesProperties{" +
                     "autoCreate=" + autoCreate +
                     '}';
+        }
+    }
+
+    public static final class MetricsProperties {
+
+        private Boolean enabled;
+        @NestedConfigurationProperty
+        private GaugeProperties gauge;
+
+        public Boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(Boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public GaugeProperties getGauge() {
+            return gauge;
+        }
+
+        public void setGauge(GaugeProperties gauge) {
+            this.gauge = gauge;
+        }
+
+        public void afterPropertiesSet() {
+            if (enabled == null && gauge == null) {
+                enabled = false;
+            }
+            if (enabled == null) {
+                enabled = true;
+            }
+            if (gauge == null) {
+                gauge = new GaugeProperties();
+                gauge.setEnabled(false);
+            }
+            gauge.afterPropertiesSet();
+        }
+
+        @Override
+        public String toString() {
+            return "MetricsProperties{" +
+                    "enabled=" + enabled +
+                    "gauge=" + gauge +
+                    '}';
+        }
+
+        public static final class GaugeProperties {
+
+            private Boolean enabled;
+            @NestedConfigurationProperty
+            private CacheProperties cache;
+
+            public Boolean isEnabled() {
+                return enabled;
+            }
+
+            public void setEnabled(Boolean enabled) {
+                this.enabled = enabled;
+            }
+
+            public CacheProperties getCache() {
+                return cache;
+            }
+
+            public void setCache(CacheProperties cache) {
+                this.cache = cache;
+            }
+
+            public void afterPropertiesSet() {
+                if (enabled != null && enabled) {
+                    enabled = true;
+                } else {
+                    enabled = false;
+                }
+                if (cache == null) {
+                    cache = new CacheProperties();
+                    cache.setEnabled(false);
+                }
+                cache.afterPropertiesSet();
+            }
+
+            @Override
+            public String toString() {
+                return "GaugeProperties{" +
+                        "enabled=" + enabled +
+                        ", cache=" + cache +
+                        '}';
+            }
+
+            public static final class CacheProperties {
+
+                private static final List<Duration> DEFAULT_TTLS = List.of(
+                        Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofSeconds(60)
+                );
+
+                private Boolean enabled;
+                private List<Duration> ttls;
+
+                public Boolean isEnabled() {
+                    return enabled;
+                }
+
+                public void setEnabled(Boolean enabled) {
+                    this.enabled = enabled;
+                }
+
+                public List<Duration> getTtls() {
+                    return ttls;
+                }
+
+                public void setTtls(List<Duration> ttls) {
+                    this.ttls = ttls;
+                }
+
+                public void afterPropertiesSet() {
+                    if (enabled == null || enabled) {
+                        enabled = true;
+                        if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {
+                            ttls = DEFAULT_TTLS;
+                        }
+                    } else {
+                        enabled = false;
+                        ttls = Collections.emptyList();
+                    }
+                }
+
+                @Override
+                public String toString() {
+                    return "CacheProperties{" +
+                            "enabled=" + enabled +
+                            ", ttls=" + ttls +
+                            '}';
+                }
+            }
         }
     }
 }

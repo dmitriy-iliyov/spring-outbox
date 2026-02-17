@@ -4,7 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolveManager;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolver;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.metrics.ConsumedOutboxManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerAutoConfiguration;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.micrometer.core.instrument.MeterRegistry;

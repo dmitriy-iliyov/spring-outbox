@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -27,6 +28,9 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     DataSource dataSource;
 
     @Mock
+    JdbcTemplate jdbcTemplate;
+
+    @Mock
     Connection connection;
 
     @Mock
@@ -41,7 +45,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource);
+        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertThat(repository).isInstanceOf(PostgreSqlConsumedOutboxRepository.class);
@@ -61,7 +65,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource);
+        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertThat(repository).isInstanceOf(MySqlConsumedOutboxRepository.class);
@@ -81,7 +85,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource);
+        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
 
         // then
         assertThat(repository).isInstanceOf(OracleConsumedOutboxRepository.class);
@@ -102,7 +106,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
 
         // when + then
         assertThrows(IllegalArgumentException.class, () ->
-                ConsumedOutboxRepositoryFactory.generate(dataSource)
+                ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate)
         );
 
         verify(dataSource, times(1)).getConnection();
@@ -115,7 +119,19 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     @Test
     @DisplayName("UT generate() when dataSource is null should throw NPE")
     void generate_whenDataSourceIsNull_shouldThrowNPE() {
-        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(null));
+        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(null, jdbcTemplate));
+    }
+
+    @Test
+    @DisplayName("UT generate() when jdbcTemplate is null should throw NPE")
+    void generate_whenJdbcTemplateIsNull_shouldThrowNPE() {
+        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, null));
+    }
+
+    @Test
+    @DisplayName("UT generate() when dataSource and jdbcTemplate is null should throw NPE")
+    void generate_whenDataSourceAndJdbcTemplateIsNull_shouldThrowNPE() {
+        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(null, null));
     }
 
     @Test
@@ -125,7 +141,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
         when(dataSource.getConnection()).thenThrow(new SQLException());
 
         // when + then
-        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource));
+        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate));
         verify(dataSource, times(1)).getConnection();
         verifyNoMoreInteractions(dataSource);
     }
@@ -137,7 +153,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
         when(dataSource.getConnection()).thenThrow(new RuntimeException());
 
         // when + then
-        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource));
+        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate));
         verify(dataSource, times(1)).getConnection();
         verifyNoMoreInteractions(dataSource);
     }

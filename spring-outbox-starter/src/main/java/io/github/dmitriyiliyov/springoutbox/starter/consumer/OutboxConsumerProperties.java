@@ -16,6 +16,8 @@ public class OutboxConsumerProperties {
     private OutboxProperties.CleanUpProperties cleanUp;
     @NestedConfigurationProperty
     private CacheProperties cache;
+    @NestedConfigurationProperty
+    private OutboxProperties.MetricsProperties metrics;
 
     public void afterPropertiesSet() {
         if (enabled != null && enabled) {
@@ -35,6 +37,12 @@ public class OutboxConsumerProperties {
             if (!cache.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled cache");
             }
+            if (metrics == null) {
+                metrics = new OutboxProperties.MetricsProperties();
+                metrics.setEnabled(false);
+            }
+            metrics.afterPropertiesSet();
+            log.debug("OutboxConsumerProperties successfully initialized");
         } else {
             enabled = false;
         }
@@ -62,6 +70,14 @@ public class OutboxConsumerProperties {
 
     public void setCache(CacheProperties cache) {
         this.cache = cache;
+    }
+
+    public OutboxProperties.MetricsProperties getMetrics() {
+        return metrics;
+    }
+
+    public void setMetrics(OutboxProperties.MetricsProperties metrics) {
+        this.metrics = metrics;
     }
 
     @Override

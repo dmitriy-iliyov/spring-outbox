@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.OutboxCache;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.PassthroughOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.SimpleOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherAutoConfiguration;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import org.junit.jupiter.api.DisplayName;
@@ -27,42 +27,42 @@ class OutboxPublisherAutoConfigurationUnitTests {
 
         OutboxCache<?> cache = config.outboxCache();
 
-        assertThat(cache).isInstanceOf(PassthroughOutboxCache.class);
+        assertThat(cache).isInstanceOf(NoopOutboxCache.class);
     }
 
     @Test
     @DisplayName("UT outboxCache returns Passthrough when gauge null")
     void outboxCache_gaugeNull_returnsPassthrough() {
-        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
         metrics.setGauge(null);
         props.setMetrics(metrics);
 
         OutboxCache<?> cache = config.outboxCache();
 
-        assertThat(cache).isInstanceOf(PassthroughOutboxCache.class);
+        assertThat(cache).isInstanceOf(NoopOutboxCache.class);
     }
 
     @Test
     @DisplayName("UT outboxCache returns Passthrough when gauge disabled")
     void outboxCache_gaugeDisabled_returnsPassthrough() {
-        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
-        OutboxPublisherProperties.MetricsProperties.GaugeProperties gauge = new OutboxPublisherProperties.MetricsProperties.GaugeProperties();
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(false);
         metrics.setGauge(gauge);
         props.setMetrics(metrics);
 
         OutboxCache<?> cache = config.outboxCache();
 
-        assertThat(cache).isInstanceOf(PassthroughOutboxCache.class);
+        assertThat(cache).isInstanceOf(NoopOutboxCache.class);
     }
 
     @Test
     @DisplayName("UT outboxCache throws when ttls null or empty")
     void outboxCache_ttlsNullOrEmpty_throws() {
-        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
-        OutboxPublisherProperties.MetricsProperties.GaugeProperties gauge = new OutboxPublisherProperties.MetricsProperties.GaugeProperties();
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(true);
-        gauge.setCache(new OutboxPublisherProperties.MetricsProperties.GaugeProperties.CacheProperties());
+        gauge.setCache(new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties());
         metrics.setGauge(gauge);
         props.setMetrics(metrics);
 
@@ -74,11 +74,11 @@ class OutboxPublisherAutoConfigurationUnitTests {
     @Test
     @DisplayName("UT outboxCache throws when ttls size != 3")
     void outboxCache_ttlsSizeIncorrect_throws() {
-        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
-        OutboxPublisherProperties.MetricsProperties.GaugeProperties gauge = new OutboxPublisherProperties.MetricsProperties.GaugeProperties();
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(true);
-        OutboxPublisherProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProps =
-                new OutboxPublisherProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProps =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
         cacheProps.setTtls(List.of(Duration.ofSeconds(1)));
         gauge.setCache(cacheProps);
         metrics.setGauge(gauge);
@@ -92,11 +92,11 @@ class OutboxPublisherAutoConfigurationUnitTests {
     @Test
     @DisplayName("UT outboxCache returns SimpleOutboxCache when valid ttls")
     void outboxCache_validTtls_returnsSimpleCache() {
-        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
-        OutboxPublisherProperties.MetricsProperties.GaugeProperties gauge = new OutboxPublisherProperties.MetricsProperties.GaugeProperties();
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(true);
-        OutboxPublisherProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProps =
-                new OutboxPublisherProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProps =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
         cacheProps.setTtls(List.of(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(3)));
         gauge.setCache(cacheProps);
         metrics.setGauge(gauge);

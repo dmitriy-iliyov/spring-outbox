@@ -8,9 +8,9 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetM
 import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.starter.DatabaseType;
-import io.github.dmitriyiliyov.springoutbox.starter.JdbcTemplateFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -21,32 +21,29 @@ import java.util.function.Function;
 public final class ConsumedOutboxRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumedOutboxRepositoryFactory.class);
-    private static final Map<DatabaseType, Function<DataSource, ConsumedOutboxRepository>> SUPPORTED_DB = Map.of(
-            DatabaseType.POSTGRESQL, dataSource -> new PostgreSqlConsumedOutboxRepository(
-                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource)
+    private static final Map<DatabaseType, Function<JdbcTemplate, ConsumedOutboxRepository>> SUPPORTED_DB = Map.of(
+            DatabaseType.POSTGRESQL, PostgreSqlConsumedOutboxRepository::new,
+            DatabaseType.MYSQL, jdbcTemplate -> new MySqlConsumedOutboxRepository(
+                    jdbcTemplate, new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper()
             ),
-            DatabaseType.MYSQL, dataSource -> new MySqlConsumedOutboxRepository(
-                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
-                    new MySqlIdHelper(),
-                    new DefaultBytesSqlResultSetMapper()
-            ),
-            DatabaseType.ORACLE, dataSource -> new OracleConsumedOutboxRepository(
-                    JdbcTemplateFactory.getSynchronizedJdbcTemplate(dataSource),
-                    new OracleSqlIdHelper(),
-                    new DefaultBytesSqlResultSetMapper()
+            DatabaseType.ORACLE, jdbcTemplate -> new OracleConsumedOutboxRepository(
+                    jdbcTemplate, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper()
             )
     );
 
-    public static ConsumedOutboxRepository generate(DataSource dataSource) {
+    public static ConsumedOutboxRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         Objects.requireNonNull(dataSource, "dataSource cannot be null");
         try (Connection connection = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());
-            Function<DataSource, ConsumedOutboxRepository> supplier = SUPPORTED_DB.get(databaseType);
+            Function<JdbcTemplate, ConsumedOutboxRepository> supplier = SUPPORTED_DB.get(databaseType);
             if (supplier == null) {
                 log.error("Supplier is null because database is unsupported");
                 throw new IllegalArgumentException("Unsupported database " + databaseType);
             }
-            return supplier.apply(dataSource);
+            if (jdbcTemplate == null) {
+                throw new IllegalStateException("JdbcTemplate is null");
+            }
+            return supplier.apply(jdbcTemplate);
         } catch (Exception e) {
             log.error("Error when connecting to database");
             if (e instanceof RuntimeException re) {

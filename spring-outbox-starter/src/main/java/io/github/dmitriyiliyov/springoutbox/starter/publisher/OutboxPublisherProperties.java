@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -29,7 +28,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
     @NestedConfigurationProperty
     private DlqProperties dlq;
     @NestedConfigurationProperty
-    private MetricsProperties metrics;
+    private OutboxProperties.MetricsProperties metrics;
 
     public OutboxPublisherProperties() {}
 
@@ -67,11 +66,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             if (!dlq.isEnabled()) {
                 log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
             }
-            log.debug("OutboxProperties successfully initialized");
             if (metrics == null) {
-                metrics = new MetricsProperties();
+                metrics = new OutboxProperties.MetricsProperties();
+                metrics.setEnabled(false);
             }
             metrics.afterPropertiesSet();
+            log.debug("OutboxPublisherProperties successfully initialized");
         } else {
             enabled = false;
         }
@@ -171,11 +171,11 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         this.dlq = dlq;
     }
 
-    public MetricsProperties getMetrics() {
+    public OutboxProperties.MetricsProperties getMetrics() {
         return metrics;
     }
 
-    public void setMetrics(MetricsProperties metrics) {
+    public void setMetrics(OutboxProperties.MetricsProperties metrics) {
         this.metrics = metrics;
     }
 
@@ -680,7 +680,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         private Duration transferFromInitialDelay;
         private Duration transferFromFixedDelay;
         @NestedConfigurationProperty
-        private MetricsProperties metrics;
+        private OutboxProperties.MetricsProperties metrics;
 
         public void afterPropertiesSet() {
             if (enabled != null && enabled) {
@@ -690,10 +690,6 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 transferToFixedDelay = transferToFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToFixedDelay;
                 transferFromInitialDelay = transferFromInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromInitialDelay;
                 transferFromFixedDelay = transferFromFixedDelay == null ? DEFAULT_FROM_FIXED_DELAY : transferFromFixedDelay;
-                if (metrics == null) {
-                    metrics = new MetricsProperties();
-                }
-                metrics.afterPropertiesSet();
             } else {
                 enabled = false;
                 batchSize = 0;
@@ -701,8 +697,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 transferToFixedDelay = null;
                 transferFromInitialDelay = null;
                 transferFromFixedDelay = null;
-                metrics = null;
             }
+            if (metrics == null) {
+                metrics = new OutboxProperties.MetricsProperties();
+                metrics.setEnabled(false);
+            }
+            metrics.afterPropertiesSet();
         }
 
         public Boolean isEnabled() {
@@ -758,11 +758,11 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.transferFromFixedDelay = transferFromFixedDelay;
         }
 
-        public MetricsProperties getMetrics() {
+        public OutboxProperties.MetricsProperties getMetrics() {
             return metrics;
         }
 
-        public void setMetrics(MetricsProperties metrics) {
+        public void setMetrics(OutboxProperties.MetricsProperties metrics) {
             this.metrics = metrics;
         }
 
@@ -780,119 +780,4 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         }
     }
 
-    public static final class MetricsProperties {
-
-        @NestedConfigurationProperty
-        private GaugeProperties gauge;
-
-        public GaugeProperties getGauge() {
-            return gauge;
-        }
-
-        public void setGauge(GaugeProperties gauge) {
-            this.gauge = gauge;
-        }
-
-        public void afterPropertiesSet() {
-            if (gauge == null) {
-                gauge = new GaugeProperties();
-            }
-            gauge.afterPropertiesSet();
-        }
-
-        @Override
-        public String toString() {
-            return "MetricsProperties{" +
-                    "gauge=" + gauge +
-                    '}';
-        }
-
-        public static final class GaugeProperties {
-
-            private Boolean enabled;
-            @NestedConfigurationProperty
-            private CacheProperties cache;
-
-            public Boolean isEnabled() {
-                return enabled;
-            }
-
-            public void setEnabled(Boolean enabled) {
-                this.enabled = enabled;
-            }
-
-            public CacheProperties getCache() {
-                return cache;
-            }
-
-            public void setCache(CacheProperties cache) {
-                this.cache = cache;
-            }
-
-            public void afterPropertiesSet() {
-                if (enabled != null && enabled) {
-                    enabled = true;
-                    if (cache == null) {
-                        cache = new CacheProperties();
-                    }
-                    cache.afterPropertiesSet();
-                } else {
-                    enabled = false;
-                }
-            }
-
-            @Override
-            public String toString() {
-                return "GaugeProperties{" +
-                        "enabled=" + enabled +
-                        ", cache=" + cache +
-                        '}';
-            }
-
-            public static final class CacheProperties {
-
-                private static final List<Duration> DEFAULT_TTLS = List.of(
-                        Duration.ofSeconds(60), Duration.ofSeconds(60), Duration.ofSeconds(60)
-                );
-
-                private Boolean enabled;
-                private List<Duration> ttls;
-
-                public Boolean isEnabled() {
-                    return enabled;
-                }
-
-                public void setEnabled(Boolean enabled) {
-                    this.enabled = enabled;
-                }
-
-                public List<Duration> getTtls() {
-                    return ttls;
-                }
-
-                public void setTtls(List<Duration> ttls) {
-                    this.ttls = ttls;
-                }
-
-                public void afterPropertiesSet() {
-                    if (enabled == null || enabled) {
-                        enabled = true;
-                        if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {
-                            ttls = DEFAULT_TTLS;
-                        }
-                    } else {
-                        enabled = false;
-                    }
-                }
-
-                @Override
-                public String toString() {
-                    return "CacheProperties{" +
-                            "enabled=" + enabled +
-                            ", ttls=" + ttls +
-                            '}';
-                }
-            }
-        }
-    }
 }

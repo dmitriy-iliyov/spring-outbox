@@ -1120,7 +1120,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void setMetrics_shouldUpdateMetricsProperties() {
         // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
-        OutboxPublisherProperties.MetricsProperties metrics = new OutboxPublisherProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
 
         // when
         properties.setMetrics(metrics);
@@ -1130,7 +1130,7 @@ public class OutboxPublisherPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when metrics is null should create default metrics")
+    @DisplayName("UT afterPropertiesSet() when metrics is null should create enabled metrics")
     public void afterPropertiesSet_whenMetricsNull_shouldCreateDefaultMetrics() {
         // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
@@ -1145,8 +1145,8 @@ public class OutboxPublisherPropertiesUnitTests {
 
         // then
         assertNotNull(properties.getMetrics());
+        assertFalse(properties.getMetrics().isEnabled());
         assertNotNull(properties.getMetrics().getGauge());
-        // По умолчанию gauge.enabled = null -> false в afterPropertiesSet
         assertFalse(properties.getMetrics().getGauge().isEnabled());
     }
 
