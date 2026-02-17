@@ -2,7 +2,6 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.OutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,9 +22,6 @@ public class DefaultConsumedOutboxManagerUnitTests {
 
     @Mock
     OutboxRepository repository;
-
-    @Mock
-    OutboxCache<EventStatus> cache;
 
     @InjectMocks
     DefaultOutboxManager tested;

@@ -4,7 +4,6 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxD
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventInProcessException;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchUpdateRequestProjection;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.OutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,9 +24,6 @@ public class DefaultOutboxDlqManagerUnitTests {
     @Mock
     OutboxDlqRepository repository;
 
-    @Mock
-    OutboxCache<DlqStatus> cache;
-
     @InjectMocks
     DefaultOutboxDlqManager tested;
 
@@ -41,7 +37,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         tested.saveBatch(events);
 
         // then
-        verifyNoInteractions(repository, cache);
+        verifyNoInteractions(repository);
     }
 
     @Test
@@ -77,7 +73,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         // then
         assertEquals("Outbox DLQ event with id=%s is IN_PROCESS, interaction impossible".formatted(id), e.getDetail());
         verify(repository, times(1)).findById(id);
-        verifyNoMoreInteractions(repository, cache);
+        verifyNoMoreInteractions(repository);
     }
 
     @Test
@@ -97,7 +93,7 @@ public class DefaultOutboxDlqManagerUnitTests {
         // then
         verify(repository, times(1)).findById(id);
         verify(repository, times(1)).updateStatus(id, status);
-        verifyNoMoreInteractions(repository, cache);
+        verifyNoMoreInteractions(repository);
     }
 
     @Test
