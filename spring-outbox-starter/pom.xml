@@ -27,24 +27,28 @@
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-aop</artifactId>
             <version>1.0.0</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-web</artifactId>
             <version>1.0.0</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-kafka</artifactId>
             <version>1.0.0</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-rabbit</artifactId>
             <version>1.0.0</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -60,11 +64,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -75,11 +81,13 @@
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -126,5 +134,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>
