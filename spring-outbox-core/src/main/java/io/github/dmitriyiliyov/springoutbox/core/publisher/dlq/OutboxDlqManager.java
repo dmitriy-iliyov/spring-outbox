@@ -10,12 +10,6 @@ import java.util.UUID;
 public interface OutboxDlqManager {
     void saveBatch(List<OutboxDlqEvent> events);
 
-    long count();
-
-    long countByStatus(DlqStatus status);
-
-    long countByEventTypeAndStatus(String eventType, DlqStatus status);
-
     OutboxDlqEvent loadById(UUID id);
 
     List<OutboxDlqEvent> loadAndLockBatch(DlqStatus status, int batchSize);
