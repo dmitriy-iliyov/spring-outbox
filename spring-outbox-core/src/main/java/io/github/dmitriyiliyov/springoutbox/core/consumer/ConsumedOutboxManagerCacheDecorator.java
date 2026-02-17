@@ -1,7 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
@@ -19,11 +17,10 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
     private final String cacheName;
     private final CacheManager cacheManager;
     private final ConsumedOutboxManager delegate;
-    private final Counter hits;
-    private final Counter misses;
+    private final ConsumedOutboxCacheObserver cacheObserver;
 
     public ConsumedOutboxManagerCacheDecorator(CacheManager cacheManager, String cacheName, ConsumedOutboxManager delegate,
-                                               MeterRegistry registry) {
+                                               ConsumedOutboxCacheObserver cacheObserver) {
         Objects.requireNonNull(cacheName, "cacheName cannot be null");
         if (cacheName.isBlank()) {
             throw new IllegalArgumentException("cacheName cannot be empty or blank");
@@ -35,8 +32,7 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
             throw new IllegalStateException("Cache for outbox with name %s not found".formatted(cacheName));
         }
         this.delegate = delegate;
-        this.hits = registry.counter("consumed_outbox_events_total", "type", "cache-hit");
-        this.misses = registry.counter("consumed_outbox_events_total", "type", "cache-miss");
+        this.cacheObserver = cacheObserver;
     }
 
     @Override
@@ -46,14 +42,14 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
         if (cache != null) {
             isConsumed = cache.get(id.toString(), String.class) != null;
             if (isConsumed) {
-                hits.increment();
+                cacheObserver.onHit();
                 return isConsumed;
             }
         } else {
-            log.error("Cache for outbox with name %s not found".formatted(cacheName));
+            log.warn("Cache for outbox with name %s not found".formatted(cacheName));
         }
         isConsumed = delegate.isConsumed(id);
-        misses.increment();
+        cacheObserver.onMiss();
         if (cache != null) {
             cache.put(id.toString(), "");
         }
