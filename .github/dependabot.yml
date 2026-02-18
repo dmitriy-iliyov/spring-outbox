@@ -1,0 +1,24 @@
+version: 2
+updates:
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    target-branch: "main"
+
+groups:
+  spring:
+    patterns:
+      - "org.springframework*"
+  test-dependencies:
+    dependency-type: "development"
+
+ignore:
+  - dependency-name: "org.springframework.boot:*"
+    update-types: ["version-update:semver-major"]
+
+commit-message:
+  prefix: "chore"
+  prefix-development: "chore"
+  include: "scope"
