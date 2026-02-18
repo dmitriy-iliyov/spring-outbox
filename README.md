@@ -1,7 +1,6 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox)
 [![codecov](https://codecov.io/github/dmitriy-iliyov/spring-outbox/branch/main/graph/badge.svg?token=8X6B9K3AOK)](https://codecov.io/github/dmitriy-iliyov/spring-outbox)
 [![CI](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml)
-![License](https://img.shields.io/github/license/dmitriy-iliyov/spring-outbox?color=blue)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dmitriy-iliyov/spring-outbox-starter.svg?label=maven-central&color=blue)](https://central.sonatype.com/artifact/io.github.dmitriy-iliyov/spring-outbox-starter)
 ![Release](https://img.shields.io/github/release/dmitriy-iliyov/spring-outbox)
 [![GitHub Release Date](https://img.shields.io/github/release-date/dmitriy-iliyov/spring-outbox)](https://github.com/dmitriy-iliyov/spring-outbox/releases/latest)
