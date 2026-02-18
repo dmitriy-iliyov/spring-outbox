@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+        <groupId>io.github.dmitriy-iliyov</groupId>
         <artifactId>spring-outbox-parent</artifactId>
         <version>1.0.0</version>
     </parent>
@@ -18,44 +18,42 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+            <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-core</artifactId>
             <version>1.0.0</version>
         </dependency>
 
         <dependency>
-            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+            <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-aop</artifactId>
             <version>1.0.0</version>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+            <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-web</artifactId>
             <version>1.0.0</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+            <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-kafka</artifactId>
             <version>1.0.0</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+            <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-rabbit</artifactId>
             <version>1.0.0</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
-            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
+            <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-metrics</artifactId>
             <version>1.0.0</version>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
