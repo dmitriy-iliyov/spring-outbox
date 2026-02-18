@@ -36,7 +36,7 @@ class RowOutboxEventListenerTest {
     }
 
     @Test
-    @DisplayName("UT publishEvent() should call publisher with list of events")
+    @DisplayName("UT publishEvents() should call publisher with list of events")
     void publishEvents_shouldCallPublisherWithListOfEvents() {
         // given
         List<Object> eventPayloads = List.of(new Object(), new Object());
