@@ -4,7 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.metrics.consumer.DefaultConsumedOutboxCacheObserver;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheObserver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.rabbit.SpringMessageOutboxEventIdResolver;
@@ -60,7 +60,7 @@ public class OutboxConsumerAutoConfiguration {
         }
         ConsumedOutboxCacheObserver cacheObserver;
         if (properties.getMetrics() != null && properties.getMetrics().isEnabled()) {
-            cacheObserver = new DefaultConsumedOutboxCacheObserver(registry);
+            cacheObserver = new MetricsConsumedOutboxCacheObserver(registry);
         } else {
             cacheObserver = NoopConsumedOutboxCacheObserver.INSTANCE;
         }

@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultConsumedOutboxCacheObserverUnitTests {
+class MetricsConsumedOutboxCacheObserverUnitTests {
 
     @Mock
     MeterRegistry registry;
@@ -26,13 +26,13 @@ class DefaultConsumedOutboxCacheObserverUnitTests {
     @Mock
     Counter missesCounter;
 
-    DefaultConsumedOutboxCacheObserver observer;
+    MetricsConsumedOutboxCacheObserver observer;
 
     @BeforeEach
     void setUp() {
         when(registry.counter(anyString(), eq("type"), eq("cache-hit"))).thenReturn(hitsCounter);
         when(registry.counter(anyString(), eq("type"), eq("cache-miss"))).thenReturn(missesCounter);
-        observer = new DefaultConsumedOutboxCacheObserver(registry);
+        observer = new MetricsConsumedOutboxCacheObserver(registry);
     }
 
     @Test
