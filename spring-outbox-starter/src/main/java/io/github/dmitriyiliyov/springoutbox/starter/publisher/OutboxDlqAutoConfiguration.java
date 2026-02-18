@@ -179,7 +179,6 @@ public class OutboxDlqAutoConfiguration {
     public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
                                           MeterRegistry registry,
                                           OutboxDlqMetricsService metricsService) {
-        log.error("OutboxMetrics created");
         return new OutboxDlqMetrics(properties, registry, metricsService);
     }
 }
