@@ -86,6 +86,7 @@ public class OutboxConsumerProperties {
                 "\n\t\t enabled=" + enabled +
                 ",\n\t\t cleanUp=" + cleanUp +
                 ",\n\t\t cache=" + cache +
+                ",\n\t\t metrics=" + metrics +
                 "\n\t}";
     }
 
