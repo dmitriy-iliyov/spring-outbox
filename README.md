@@ -1,16 +1,11 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox)
 [![codecov](https://codecov.io/github/dmitriy-iliyov/spring-outbox/branch/main/graph/badge.svg?token=8X6B9K3AOK)](https://codecov.io/github/dmitriy-iliyov/spring-outbox)
 [![CI](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml)
+![License](https://img.shields.io/github/license/dmitriy-iliyov/spring-outbox?color=blue)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dmitriy-iliyov/spring-outbox-starter.svg?label=maven-central&color=blue)](https://central.sonatype.com/artifact/io.github.dmitriy-iliyov/spring-outbox-starter)
 ![Release](https://img.shields.io/github/release/dmitriy-iliyov/spring-outbox)
-![Last commit](https://img.shields.io/github/last-commit/dmitriy-iliyov/spring-outbox)
-
-![Java](https://img.shields.io/badge/Java-21-007396?logo=openjdk)
-![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.x-6DB33F?logo=springboot)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16+-336791?logo=postgresql)
-![MySQL](https://img.shields.io/badge/MySQL-8.0.1+-336791?logo=mysql)
-![Oracle](https://img.shields.io/badge/Oracle-23+-336791)
-![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.7+-231F20?logo=apachekafka)
-![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12+-FF6600?logo=rabbitmq&logoColor=white)
+[![GitHub Release Date](https://img.shields.io/github/release-date/dmitriy-iliyov/spring-outbox)](https://github.com/dmitriy-iliyov/spring-outbox/releases/latest)
+![GitHub last commit](https://img.shields.io/github/last-commit/dmitriy-iliyov/spring-outbox)
 
 ## Overview
 This library provides an implementation of the [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html) based on polling events from a relational database and publishing them to a message broker.
@@ -46,8 +41,8 @@ This approach ensures reliable event publication without relying on database log
 - Oracle Database 23+
 
 **Supported Message Brokers:**
-- Apache Kafka 3.7
-- RabbitMQ 3.12
+- Apache Kafka 3.7+
+- RabbitMQ 3.12+
 
 **Cache Storage (optional for caching):**
 - Redis 7+
@@ -55,10 +50,40 @@ This approach ensures reliable event publication without relying on database log
 ## Quick Start
 
 1. Add dependency
+
+For Apache Kafka:
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-starter</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>spring-outbox-kafka</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+```
+For Rabbit MQ:
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>spring-outbox-starter</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>spring-outbox-rabbit</artifactId>
+      <version>1.0.0</version>
+  </dependency>
+```
+You can also add `spring-outbox-web` for enable REST API for manual DQL managing, read more [here](#dlq-rest-api).
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>spring-outbox-web</artifactId>
       <version>1.0.0</version>
   </dependency>
 ```
@@ -761,10 +786,7 @@ outbox:
       transfer-from-initial-delay: 300s
       transfer-from-fixed-delay: 3600s
       metrics:
-        gauge:
-          enabled: true
-          cache:
-            ttls: [60s, 60s, 60s]
+        enabled: true
 ```
 
 - `enabled`: enable DLQ functionality
@@ -780,10 +802,8 @@ outbox:
     - **Default**: `300s`
 - `transfer-from-fixed-delay`: interval between transfers **from** DLQ **to** `outbox_events`
     - **Default**: `3600s`
-- `metrics.gauge.enabled`: enable DLQ metrics collection
+- `metrics.enabled`: enable metrics collection, more [here](#metrics)
     - **Default**: `false`
-- `metrics.gauge.cache.ttls`: cache TTL for gauge metrics
-    - **Default**: `[60s, 60s, 60s]`
 
 ---
 
@@ -815,23 +835,35 @@ outbox:
 
 ---
 
-#### Publisher Metrics
+#### Metrics
 ```yaml
 outbox:
   publisher:
     metrics:
+      enabled: true
       gauge:
         enabled: true
         cache:
+          enabled: true
           ttls: [60s, 60s, 30s]
 ```
-
+- `metrics.enabled`: enable metrics collection
+  - **Default**: `false`
 - `gauge.enabled`: enable gauge metrics collection
-    - **Default**: `false`
+    - **Default**: `true`
+- `gauge.cache.enabled`: enable cache
+  - **Default**: `true`
 - `gauge.cache.ttls`: cache TTL for different gauge metrics (3 values)
     - **Default**: `[60s, 60s, 60s]`
     - **Description**: TTL for caching metric values.
 
+This enable metrics collecting and gauges with cache default ttls
+```yaml
+outbox:
+  publisher:
+    metrics:
+      enabled: true
+```
 ---
 
 ### Consumer
@@ -848,7 +880,7 @@ outbox:
       fixed-delay: 5s
 ```
 
-All parameters same as Publisher cleanup with different defaults:
+All parameters same as [Publisher Cleanup](#cleanup-2) with different defaults:
 - `ttl`
     - **Default**: `1h`
     - **Description**: consumed events are typically kept longer than published events for audit purposes
@@ -873,6 +905,16 @@ outbox:
 
 ---
 
+#### Metrics
+```yaml
+outbox:
+  consumer:
+    metrics:
+      enabled: true
+```
+- `metrics.enabled`: enable metrics collection
+  - **Default**: `false`
+
 ### Examples
 #### Producer-Only
 Minimal:
@@ -886,7 +928,7 @@ outbox:
       my-event:
         topic: my.topic
 ```
-**WARNING:** Dead Letter Queue is disabled by default. All other values will use defaults.
+**WARNING:** Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
 
 Full:
 ```yaml
@@ -947,16 +989,10 @@ outbox:
       transfer-from-initial-delay: 120s
       transfer-from-fixed-delay: 3600s
       metrics:
-        gauge:
-          enabled: true
-          cache:
-            ttls: [60s, 60s, 60s]
-    
-    metrics:
-      gauge:
         enabled: true
-        cache:
-          ttls: [60s, 60s, 30s]
+
+    metrics:
+      enabled: true
 ```
 
 ---
@@ -993,4 +1029,6 @@ outbox:
     cache:
       enabled: true
       cache-name: "outbox:consumed"
+    metrics:
+      enabled: true
 ```
