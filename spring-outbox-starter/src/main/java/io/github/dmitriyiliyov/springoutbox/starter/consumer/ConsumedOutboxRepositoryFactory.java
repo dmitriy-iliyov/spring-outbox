@@ -31,6 +31,8 @@ public final class ConsumedOutboxRepositoryFactory {
             )
     );
 
+    private ConsumedOutboxRepositoryFactory() {}
+
     public static ConsumedOutboxRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         Objects.requireNonNull(dataSource, "dataSource cannot be null");
         try (Connection connection = dataSource.getConnection()) {
