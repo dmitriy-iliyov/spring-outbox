@@ -80,7 +80,7 @@ public class OutboxConsumerAutoConfiguration {
         OutboxIdempotentConsumer consumer = new DefaultOutboxIdempotentConsumer(
                 idResolver, transactionTemplate, manager
         );
-        if (!properties.getMetrics().isEnabled()) {
+        if (properties.getMetrics() == null || !properties.getMetrics().isEnabled()) {
             return consumer;
         }
         return new OutboxIdempotentConsumerMetricsDecorator(registry, consumer);
