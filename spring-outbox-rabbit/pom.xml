@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.dmitriy-iliyov</groupId>
+        <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
         <artifactId>spring-outbox-parent</artifactId>
         <version>1.0.0</version>
     </parent>
@@ -16,7 +16,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>io.github.dmitriy-iliyov</groupId>
+            <groupId>io.github.dmitriy-iliyov.spring-outbox</groupId>
             <artifactId>spring-outbox-core</artifactId>
             <version>1.0.0</version>
         </dependency>
