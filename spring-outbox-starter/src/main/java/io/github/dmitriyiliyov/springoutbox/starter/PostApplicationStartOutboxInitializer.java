@@ -27,5 +27,7 @@ public class PostApplicationStartOutboxInitializer {
         Map<String, OutboxMetrics> metricsMap = applicationContext.getBeansOfType(OutboxMetrics.class);
         metricsMap.values().forEach(OutboxMetrics::register);
         log.debug("Outbox successfully initialized with schedulers {}", schedulersMap.keySet());
+        Map<String, OutboxProperties> properties = applicationContext.getBeansOfType(OutboxProperties.class);
+        log.debug(properties.values().stream().findFirst().get().toString());
     }
 }

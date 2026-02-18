@@ -81,6 +81,7 @@ public final class OutboxSenderFactory {
                                 "or configure 'outbox.sender.bean-name' property"
                 );
             }
+            properties.setBeanName(beanName);
             kafkaTemplate = context.getBean(beanName, KafkaTemplate.class);
             Map<String, Object> configs = kafkaTemplate.getProducerFactory().getConfigurationProperties();
             String acks = (String) configs.get("acks");
@@ -132,6 +133,7 @@ public final class OutboxSenderFactory {
                                 "or configure 'outbox.sender.bean-name' property"
                 );
             }
+            properties.setBeanName(beanName);
             rabbitTemplate = context.getBean(beanName, RabbitTemplate.class);
             if (!rabbitTemplate.isMandatoryFor(new Message(Boolean.FALSE.toString().getBytes(StandardCharsets.UTF_8)))) {
                 log.error("RabbitTemplate '{}' mandatory flag is false. " +

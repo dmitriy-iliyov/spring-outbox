@@ -49,7 +49,6 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             tables.setAutoCreate(true);
         }
         tables.afterPropertiesSet();
-        log.debug(this.toString());
     }
 
     public Integer getThreadPoolSize() {
@@ -239,11 +238,11 @@ public class OutboxProperties implements OutboxPropertiesHolder {
         }
 
         public void afterPropertiesSet() {
-            if (enabled == null || enabled) {
+            if (enabled != null && enabled) {
                 enabled = true;
                 if (gauge == null) {
                     gauge = new GaugeProperties();
-                    gauge.setEnabled(true);
+                    gauge.setEnabled(false);
                 }
             } else {
                 enabled = false;
@@ -284,7 +283,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             }
 
             public void afterPropertiesSet() {
-                if (enabled == null || enabled) {
+                if (enabled != null && enabled) {
                     enabled = true;
                     if (cache == null) {
                         cache = new CacheProperties();

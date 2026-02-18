@@ -122,6 +122,27 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(cacheProperties.getCacheName()).thenReturn(cacheName);
         when(cacheManager.getCache(cacheName)).thenReturn(mock(Cache.class));
 
+        OutboxProperties.MetricsProperties metrics = mock(OutboxProperties.MetricsProperties.class);
+        when(properties.getMetrics()).thenReturn(metrics);
+        when(metrics.isEnabled()).thenReturn(false);
+
+        // when
+        ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
+
+        // then
+        assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
+    }
+
+    @Test
+    @DisplayName("UT consumedOutboxManager() when metrics null should use NoopConsumedOutboxCacheObserver")
+    void consumedOutboxManager_whenMetricsNull_shouldUseNoopObserver() {
+        // given
+        String cacheName = "myCache";
+        when(properties.getCache()).thenReturn(cacheProperties);
+        when(cacheProperties.isEnabled()).thenReturn(true);
+        when(cacheProperties.getCacheName()).thenReturn(cacheName);
+        when(cacheManager.getCache(cacheName)).thenReturn(mock(Cache.class));
+
         when(properties.getMetrics()).thenReturn(null);
 
         // when
@@ -138,6 +159,23 @@ class OutboxConsumerAutoConfigurationUnitTests {
         OutboxProperties.MetricsProperties metrics = mock(OutboxProperties.MetricsProperties.class);
         when(properties.getMetrics()).thenReturn(metrics);
         when(metrics.isEnabled()).thenReturn(false);
+
+        OutboxEventIdResolveManager idResolver = mock(OutboxEventIdResolveManager.class);
+        TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
+        ConsumedOutboxManager manager = mock(ConsumedOutboxManager.class);
+
+        // when
+        var consumer = config.outboxIdempotentConsumer(idResolver, transactionTemplate, manager, registry);
+
+        // then
+        assertThat(consumer).isNotInstanceOf(OutboxIdempotentConsumerMetricsDecorator.class);
+    }
+
+    @Test
+    @DisplayName("UT outboxIdempotentConsumer() when metrics null should return default consumer")
+    void outboxIdempotentConsumer_whenMetricsNull_shouldReturnDefault() {
+        // given
+        when(properties.getMetrics()).thenReturn(null);
 
         OutboxEventIdResolveManager idResolver = mock(OutboxEventIdResolveManager.class);
         TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);

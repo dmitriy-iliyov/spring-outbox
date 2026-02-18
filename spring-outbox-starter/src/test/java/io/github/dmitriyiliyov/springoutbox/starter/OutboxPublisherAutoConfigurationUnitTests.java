@@ -30,8 +30,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
     private final OutboxPublisherAutoConfiguration config = new OutboxPublisherAutoConfiguration(props, Mockito.mock(com.fasterxml.jackson.databind.ObjectMapper.class));
 
     @Test
-    @DisplayName("UT outboxCache returns Passthrough when metrics null")
-    void outboxCache_metricsNull_returnsPassthrough() {
+    @DisplayName("UT outboxCache returns noop when metrics null")
+    void outboxCache_metricsNull_returnsNoop() {
         props.setMetrics(null);
 
         OutboxCache<?> cache = config.outboxCache();
@@ -40,8 +40,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
     }
 
     @Test
-    @DisplayName("UT outboxCache returns Passthrough when gauge null")
-    void outboxCache_gaugeNull_returnsPassthrough() {
+    @DisplayName("UT outboxCache returns noop when gauge null")
+    void outboxCache_gaugeNull_returnsNoop() {
         OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
         metrics.setGauge(null);
         props.setMetrics(metrics);
@@ -52,8 +52,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
     }
 
     @Test
-    @DisplayName("UT outboxCache returns Passthrough when gauge disabled")
-    void outboxCache_gaugeDisabled_returnsPassthrough() {
+    @DisplayName("UT outboxCache returns noop when gauge disabled")
+    void outboxCache_gaugeDisabled_returnsNoop() {
         OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
         OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(false);
@@ -135,6 +135,22 @@ class OutboxPublisherAutoConfigurationUnitTests {
     }
 
     @Test
+    @DisplayName("UT outboxManager returns default manager when metrics null")
+    void outboxManager_metricsNull_returnsDefault() {
+        // given
+        props.setMetrics(null);
+
+        OutboxRepository repository = Mockito.mock(OutboxRepository.class);
+        MeterRegistry registry = Mockito.mock(MeterRegistry.class);
+
+        // when
+        OutboxManager manager = config.outboxManager(repository, registry);
+
+        // then
+        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
+    }
+
+    @Test
     @DisplayName("UT outboxManager returns metrics decorator when metrics enabled")
     void outboxManager_metricsEnabled_returnsDecorator() {
         // given
@@ -145,7 +161,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
 
         OutboxRepository repository = Mockito.mock(OutboxRepository.class);
         MeterRegistry registry = Mockito.mock(MeterRegistry.class);
-        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(Mockito.mock(Counter.class)); // FIX: Mock counter
+        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(Mockito.mock(Counter.class));
 
         // when
         OutboxManager manager = config.outboxManager(repository, registry);

@@ -179,6 +179,25 @@ class OutboxDlqAutoConfigurationUnitTests {
     }
 
     @Test
+    @DisplayName("UT outboxDlqManager returns default manager when metrics null")
+    void outboxDlqManager_metricsNull_returnsDefault() {
+        // given
+        OutboxPublisherProperties props = new OutboxPublisherProperties();
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        dlq.setMetrics(null);
+        props.setDlq(dlq);
+
+        OutboxDlqRepository repository = mock(OutboxDlqRepository.class);
+        MeterRegistry registry = mock(MeterRegistry.class);
+
+        // when
+        OutboxDlqManager manager = config.outboxDlqManager(repository, props, registry);
+
+        // then
+        assertThat(manager).isInstanceOf(DefaultOutboxDlqManager.class);
+    }
+
+    @Test
     @DisplayName("UT outboxDlqManager returns metrics decorator when metrics enabled")
     void outboxDlqManager_metricsEnabled_returnsDecorator() {
         // given
@@ -193,7 +212,7 @@ class OutboxDlqAutoConfigurationUnitTests {
 
         OutboxDlqRepository repository = mock(OutboxDlqRepository.class);
         MeterRegistry registry = mock(MeterRegistry.class);
-        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(mock(Counter.class)); // FIX
+        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(mock(Counter.class));
 
         // when
         OutboxDlqManager manager = config.outboxDlqManager(repository, props, registry);
@@ -227,6 +246,28 @@ class OutboxDlqAutoConfigurationUnitTests {
     }
 
     @Test
+    @DisplayName("UT outboxDlqTransfer returns default transfer when metrics null")
+    void outboxDlqTransfer_metricsNull_returnsDefault() {
+        // given
+        OutboxPublisherProperties props = new OutboxPublisherProperties();
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        dlq.setMetrics(null);
+        props.setDlq(dlq);
+
+        OutboxManager manager = mock(OutboxManager.class);
+        OutboxDlqManager dlqManager = mock(OutboxDlqManager.class);
+        OutboxDlqHandler handler = mock(OutboxDlqHandler.class);
+        TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
+        MeterRegistry registry = mock(MeterRegistry.class);
+
+        // when
+        OutboxDlqTransfer transfer = config.outboxDlqTransfer(manager, dlqManager, handler, transactionTemplate, props, registry);
+
+        // then
+        assertThat(transfer).isInstanceOf(DefaultOutboxDlqTransfer.class);
+    }
+
+    @Test
     @DisplayName("UT outboxDlqTransfer returns metrics decorator when metrics enabled")
     void outboxDlqTransfer_metricsEnabled_returnsDecorator() {
         // given
@@ -243,7 +284,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         OutboxDlqHandler handler = mock(OutboxDlqHandler.class);
         TransactionTemplate transactionTemplate = mock(TransactionTemplate.class);
         MeterRegistry registry = mock(MeterRegistry.class);
-        when(registry.timer(anyString())).thenReturn(mock(Timer.class)); // FIX
+        when(registry.timer(anyString())).thenReturn(mock(Timer.class));
 
         // when
         OutboxDlqTransfer transfer = config.outboxDlqTransfer(manager, dlqManager, handler, transactionTemplate, props, registry);

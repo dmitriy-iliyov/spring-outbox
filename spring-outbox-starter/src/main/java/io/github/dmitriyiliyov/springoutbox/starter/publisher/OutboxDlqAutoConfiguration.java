@@ -13,6 +13,8 @@ import io.github.dmitriyiliyov.springoutbox.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqControllerAdvice;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -30,6 +32,9 @@ import java.util.concurrent.ScheduledExecutorService;
 @Configuration
 @ConditionalOnProperty(prefix = "outbox.publisher.dlq", name = "enabled", havingValue = "true")
 public class OutboxDlqAutoConfiguration {
+
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxDlqAutoConfiguration.class);
 
     @Bean
     @ConditionalOnMissingBean
@@ -128,6 +133,11 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
+    @ConditionalOnProperty(
             prefix = "outbox.publisher.dlq.metrics.gauge",
             name = "enabled",
             havingValue = "true"
@@ -139,6 +149,11 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
     @ConditionalOnProperty(
             prefix = "outbox.publisher.dlq.metrics.gauge",
             name = "enabled",
@@ -152,6 +167,11 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
+    @ConditionalOnProperty(
             prefix = "outbox.publisher.dlq.metrics.gauge",
             name = "enabled",
             havingValue = "true"
@@ -159,6 +179,7 @@ public class OutboxDlqAutoConfiguration {
     public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
                                           MeterRegistry registry,
                                           OutboxDlqMetricsService metricsService) {
+        log.error("OutboxMetrics created");
         return new OutboxDlqMetrics(properties, registry, metricsService);
     }
 }
