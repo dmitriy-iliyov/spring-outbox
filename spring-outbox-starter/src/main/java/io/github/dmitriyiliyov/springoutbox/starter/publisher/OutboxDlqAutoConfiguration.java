@@ -14,6 +14,7 @@ import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqControllerAdvice;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -107,16 +108,19 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnClass(OutboxDlqController.class)
     public OutboxDlqController outboxDlqController(OutboxDlqManager dlqManager) {
         return new OutboxDlqController(dlqManager);
     }
 
     @Bean
+    @ConditionalOnClass(DlqStatusQueryConverter.class)
     public DlqStatusQueryConverter dlqStatusQueryConverter() {
         return new DlqStatusQueryConverter();
     }
 
     @Bean
+    @ConditionalOnClass(OutboxDlqControllerAdvice.class)
     public OutboxDlqControllerAdvice outboxDlqControllerAdvice() {
         return new OutboxDlqControllerAdvice();
     }

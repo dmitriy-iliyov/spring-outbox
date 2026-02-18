@@ -123,9 +123,15 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT generate() when jdbcTemplate is null should throw NPE")
-    void generate_whenJdbcTemplateIsNull_shouldThrowNPE() {
-        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, null));
+    @DisplayName("UT generate() when jdbcTemplate is null should throw IllegalStateException")
+    void generate_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
+        // given
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metaData);
+        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+
+        // when + then
+        assertThrows(IllegalStateException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, null));
     }
 
     @Test

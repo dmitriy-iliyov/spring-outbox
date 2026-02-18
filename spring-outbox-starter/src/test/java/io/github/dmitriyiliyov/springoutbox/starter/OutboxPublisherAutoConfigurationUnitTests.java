@@ -1,19 +1,28 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
+import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherAutoConfiguration;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 class OutboxPublisherAutoConfigurationUnitTests {
 
@@ -105,5 +114,43 @@ class OutboxPublisherAutoConfigurationUnitTests {
         OutboxCache<?> cache = config.outboxCache();
 
         assertThat(cache).isInstanceOf(SimpleOutboxCache.class);
+    }
+
+    @Test
+    @DisplayName("UT outboxManager returns default manager when metrics disabled")
+    void outboxManager_metricsDisabled_returnsDefault() {
+        // given
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(false);
+        props.setMetrics(metrics);
+
+        OutboxRepository repository = Mockito.mock(OutboxRepository.class);
+        MeterRegistry registry = Mockito.mock(MeterRegistry.class);
+
+        // when
+        OutboxManager manager = config.outboxManager(repository, registry);
+
+        // then
+        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
+    }
+
+    @Test
+    @DisplayName("UT outboxManager returns metrics decorator when metrics enabled")
+    void outboxManager_metricsEnabled_returnsDecorator() {
+        // given
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(true);
+        props.setMetrics(metrics);
+        props.setEvents(Map.of());
+
+        OutboxRepository repository = Mockito.mock(OutboxRepository.class);
+        MeterRegistry registry = Mockito.mock(MeterRegistry.class);
+        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(Mockito.mock(Counter.class)); // FIX: Mock counter
+
+        // when
+        OutboxManager manager = config.outboxManager(repository, registry);
+
+        // then
+        assertThat(manager).isInstanceOf(OutboxManagerMetricsDecorator.class);
     }
 }

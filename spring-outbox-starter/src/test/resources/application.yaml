@@ -56,6 +56,7 @@ outbox:
       transfer-from-initial-delay: 2m
       transfer-from-fixed-delay: 1h
       metrics:
+        enabled: false
         gauge:
           cache:
             ttls: [60s, 60s, 60s]
@@ -75,3 +76,5 @@ outbox:
       fixed-delay: 2m
     cache:
       enabled: false
+    metrics:
+      enabled: true

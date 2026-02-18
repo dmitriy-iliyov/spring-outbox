@@ -102,4 +102,16 @@ class OutboxRepositoryFactoryUnitTests {
         // when + then
         assertThrows(RuntimeException.class, () -> OutboxRepositoryFactory.generate(dataSource, jdbcTemplate));
     }
+
+    @Test
+    @DisplayName("UT generate() when JdbcTemplate is null should throw IllegalStateException")
+    void generate_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
+        // given
+        when(dataSource.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metaData);
+        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+
+        // when + then
+        assertThrows(IllegalStateException.class, () -> OutboxRepositoryFactory.generate(dataSource, null));
+    }
 }

@@ -239,13 +239,14 @@ public class OutboxProperties implements OutboxPropertiesHolder {
         }
 
         public void afterPropertiesSet() {
-            if (enabled == null && gauge == null) {
-                enabled = false;
-            }
-            if (enabled == null) {
+            if (enabled == null || enabled) {
                 enabled = true;
-            }
-            if (gauge == null) {
+                if (gauge == null) {
+                    gauge = new GaugeProperties();
+                    gauge.setEnabled(true);
+                }
+            } else {
+                enabled = false;
                 gauge = new GaugeProperties();
                 gauge.setEnabled(false);
             }
@@ -256,7 +257,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
         public String toString() {
             return "MetricsProperties{" +
                     "enabled=" + enabled +
-                    "gauge=" + gauge +
+                    ", gauge=" + gauge +
                     '}';
         }
 
@@ -283,12 +284,14 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             }
 
             public void afterPropertiesSet() {
-                if (enabled != null && enabled) {
+                if (enabled == null || enabled) {
                     enabled = true;
+                    if (cache == null) {
+                        cache = new CacheProperties();
+                        cache.setEnabled(true);
+                    }
                 } else {
                     enabled = false;
-                }
-                if (cache == null) {
                     cache = new CacheProperties();
                     cache.setEnabled(false);
                 }
