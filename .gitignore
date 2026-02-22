@@ -24,9 +24,6 @@ target/
 kafka-data/
 *.DS_Store
 *.iml
-.mvn
-mvnw
-mvnw.cmd
 
 *.env
 *.docker-env
