@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.example.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
-import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxHeaders;
+import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
