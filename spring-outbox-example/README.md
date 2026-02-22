@@ -1,10 +1,10 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox)
-
 ![Java](https://img.shields.io/badge/Java-21-007396?logo=openjdk)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-6DB33F?logo=springboot)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-336791?logo=postgresql)
 ![Redis](https://img.shields.io/badge/Redis-7+-DC382D?logo=redis)
 ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.7-231F20?logo=apachekafka)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-3.12-FF6600?logo=rabbitmq&logoColor=white)
 ![Prometheus](https://img.shields.io/badge/Prometheus-Metrics-E6522C?logo=prometheus)
 ![Grafana](https://img.shields.io/badge/Grafana-Dashboards-F46800?logo=grafana)
 
