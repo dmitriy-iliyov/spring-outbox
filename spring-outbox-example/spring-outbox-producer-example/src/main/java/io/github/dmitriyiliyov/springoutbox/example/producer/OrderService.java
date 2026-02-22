@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.example.producer;
 
+import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublish;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisher;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisher;
-import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublish;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

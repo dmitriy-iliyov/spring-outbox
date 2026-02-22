@@ -65,6 +65,7 @@ outbox:
           cache:
             ttls: [60s, 60s, 60s]
     metrics:
+      enabled: true
       gauge:
         enabled: true
         cache:
