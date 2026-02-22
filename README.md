@@ -843,15 +843,14 @@ outbox:
       gauge:
         enabled: true
         cache:
-          enabled: true
           ttls: [60s, 60s, 30s]
 ```
 - `metrics.enabled`: enable metrics collection
   - **Default**: `false`
 - `gauge.enabled`: enable gauge metrics collection
-    - **Default**: `true`
+    - **Default**: `false`
 - `gauge.cache.enabled`: enable cache
-  - **Default**: `true`
+  - **Default**: normally `true`, but transitive from default `gauge.enabled: false` - `false`
 - `gauge.cache.ttls`: cache TTL for different gauge metrics (3 values)
     - **Default**: `[60s, 60s, 60s]`
     - **Description**: TTL for caching metric values.
@@ -929,6 +928,28 @@ outbox:
 ```
 **WARNING:** Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
 
+Minimal with all features:
+
+```yaml
+outbox:
+  publisher:
+    sender:
+      type: kafka
+    events:
+      my-event:
+        topic: my.topic
+    dlq:
+      enabled: true
+      metrics:
+        enabled: true
+        gauge:
+          enabled: true
+    metrics:
+      enabled: true
+      gauge:
+        enabled: true
+```
+
 Full:
 ```yaml
 outbox:
@@ -989,15 +1010,22 @@ outbox:
       transfer-from-fixed-delay: 3600s
       metrics:
         enabled: true
-
+        gauge:
+          enabled: true
+          cache:
+            ttls: [60s, 60s, 60s]
     metrics:
       enabled: true
+      gauge:          
+        enabled: true
+        cache:
+          ttls: [60s, 60s, 60s]
 ```
 
 ---
 
 #### Consumer-Only
-Minimal (clean-up and cache enable by default):
+Minimal (clean-up and cache enable by default, metrics disable):
 ```yaml
 outbox:
   publisher:
@@ -1007,6 +1035,20 @@ outbox:
     cache:
       cache-name: "outbox:consumed"
 ```
+
+Minimal with all features:
+```yaml
+outbox:
+  publisher:
+    enabled: false
+  consumer:
+    enabled: true
+    cache:
+      cache-name: "outbox:consumed"
+    metrics:
+      enabled: true
+```
+
 Full:
 ```yaml
 outbox:
