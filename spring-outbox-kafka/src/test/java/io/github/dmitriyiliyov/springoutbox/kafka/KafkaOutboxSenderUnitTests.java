@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
@@ -55,8 +56,8 @@ public class KafkaOutboxSenderUnitTests {
         SenderResult result = tested.sendEvents(topic, events);
 
         // then
-        assertNull(result.failedIds());
-        assertNull(result.processedIds());
+        assertThat(result.failedIds()).isEmpty();
+        assertThat(result.processedIds()).isEmpty();
         verifyNoInteractions(kafkaTemplate, mapper);
     }
 
@@ -71,8 +72,8 @@ public class KafkaOutboxSenderUnitTests {
         SenderResult result = tested.sendEvents(topic, events);
 
         // then
-        assertNull(result.failedIds());
-        assertNull(result.processedIds());
+        assertThat(result.failedIds()).isEmpty();
+        assertThat(result.processedIds()).isEmpty();
         verifyNoInteractions(kafkaTemplate, mapper);
     }
 

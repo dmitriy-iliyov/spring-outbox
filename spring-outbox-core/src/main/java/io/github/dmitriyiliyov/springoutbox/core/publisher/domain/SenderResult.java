@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.domain;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -8,6 +9,6 @@ public record SenderResult(
         Set<UUID> failedIds
 ) {
     public static SenderResult empty() {
-        return new SenderResult(null, null);
+        return new SenderResult(Collections.emptySet(), Collections.emptySet());
     }
 }
