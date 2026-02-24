@@ -16,6 +16,11 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * A factory for creating {@link OutboxRepository} instances based on the detected database type.
+ * <p>
+ * It supports PostgreSQL, MySQL, and Oracle.
+ */
 public final class OutboxRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxRepositoryFactory.class);
@@ -36,6 +41,16 @@ public final class OutboxRepositoryFactory {
 
     private OutboxRepositoryFactory() {}
 
+    /**
+     * Generates an {@link OutboxRepository} instance based on the database product name.
+     *
+     * @param dataSource                The data source to get database metadata.
+     * @param jdbcTemplate              The JDBC template for database operations.
+     * @return                          A configured {@link OutboxRepository} instance for the detected database.
+     * @throws IllegalArgumentException if the database type is not supported.
+     * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
+     * @throws RuntimeException         if a database connection cannot be established.
+     */
     public static OutboxRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         try (Connection conn = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(conn.getMetaData().getDatabaseProductName());

@@ -15,6 +15,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
+/**
+ * A factory for creating {@link OutboxSender} instances based on the configured message broker type.
+ * <p>
+ * It supports Apache Kafka and RabbitMQ and validates the configuration of their respective templates.
+ */
 public final class OutboxSenderFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxSenderFactory.class);
@@ -25,6 +30,16 @@ public final class OutboxSenderFactory {
 
     private OutboxSenderFactory() {}
 
+    /**
+     * Generates an {@link OutboxSender} instance based on the provided properties.
+     *
+     * @param properties                The sender configuration properties.
+     * @param context                   The Spring application context to resolve broker templates.
+     * @param mapper                    The ObjectMapper for serialization.
+     * @return                          A configured {@link OutboxSender} instance.
+     * @throws IllegalArgumentException if the sender type is not specified or unsupported, or if the required bean is not found.
+     * @throws IllegalStateException    if multiple beans of the required template type are found without a specific bean name.
+     */
     public static OutboxSender generate(OutboxPublisherProperties.SenderProperties properties,
                                         ApplicationContext context,
                                         ObjectMapper mapper) {

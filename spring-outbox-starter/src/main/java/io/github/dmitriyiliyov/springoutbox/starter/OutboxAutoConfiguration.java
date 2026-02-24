@@ -23,8 +23,6 @@ import java.util.concurrent.ScheduledExecutorService;
 @EnableConfigurationProperties(OutboxProperties.class)
 public class OutboxAutoConfiguration {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxAutoConfiguration.class);
-
     private final OutboxProperties properties;
 
     public OutboxAutoConfiguration(OutboxProperties properties) {
@@ -66,22 +64,6 @@ public class OutboxAutoConfiguration {
                 threadFactory
         );
     }
-
-//    @PreDestroy
-//    public void onDestroy(@Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor) {
-//        executor.shutdown();
-//        try {
-//            if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-//                executor.shutdownNow();
-//                if (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-//                    log.error("ScheduledExecutorService shutdown incorrectly");
-//                }
-//            }
-//        } catch (InterruptedException ie) {
-//            executor.shutdownNow();
-//            Thread.currentThread().interrupt();
-//        }
-//    }
 
     @Bean
     @ConditionalOnMissingBean

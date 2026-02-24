@@ -16,6 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * A factory for creating a {@link DatabasePopulator} that initializes the required outbox tables.
+ * <p>
+ * It detects the database type and selects the appropriate SQL scripts based on the configuration.
+ */
 public final class OutboxDatabasePopulatorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDatabasePopulatorFactory.class);
@@ -37,6 +42,15 @@ public final class OutboxDatabasePopulatorFactory {
             )
     );
 
+    /**
+     * Generates a {@link DatabasePopulator} based on the provided properties and data source.
+     *
+     * @param properties             The outbox configuration properties.
+     * @param dataSource             The data source to connect to the database.
+     * @return                       A configured {@link DatabasePopulator} with the necessary SQL scripts.
+     * @throws IllegalStateException if the database type is not supported or a required script supplier is not found.
+     * @throws RuntimeException      if a database connection cannot be established.
+     */
     public static DatabasePopulator generate(OutboxProperties properties, DataSource dataSource) {
         List<Resource> scripts = new ArrayList<>();
         try (Connection connection = dataSource.getConnection()) {
