@@ -52,6 +52,8 @@ public class RabbitMqOutboxSender implements OutboxSender {
                                         OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType()
                                 ))
                                 .build();
+                        long deliveryTag = channel.getNextPublishSeqNo();
+                        deliveryTagToEventId.put(deliveryTag, event.getId());
                         channel.basicPublish(
                                 exchange,
                                 event.getEventType(),
@@ -59,8 +61,8 @@ public class RabbitMqOutboxSender implements OutboxSender {
                                 props,
                                 event.getPayload().getBytes(StandardCharsets.UTF_8)
                         );
-                        long deliveryTag = channel.getNextPublishSeqNo() - 1;
-                        deliveryTagToEventId.put(deliveryTag, event.getId());
+//                        long deliveryTag = channel.getNextPublishSeqNo() - 1;
+//                        deliveryTagToEventId.put(deliveryTag, event.getId());
                     } catch (Exception e) {
                         failedIds.add(event.getId());
                         latch.countDown();
@@ -123,15 +125,27 @@ public class RabbitMqOutboxSender implements OutboxSender {
                             latch.countDown();
                         });
             } else {
+//                if (!processedTags.contains(tag)) {
+//                    UUID id = deliveryTagToEventId.get(tag);
+//                    if (ack) {
+//                        processedIds.add(id);
+//                    } else {
+//                        failedIds.add(id);
+//                    }
+//                    processedTags.add(tag);
+//                    latch.countDown();
+//                }
                 if (!processedTags.contains(tag)) {
                     UUID id = deliveryTagToEventId.get(tag);
-                    if (ack) {
-                        processedIds.add(id);
-                    } else {
-                        failedIds.add(id);
+                    if (id != null) {
+                        if (ack) {
+                            processedIds.add(id);
+                        } else {
+                            failedIds.add(id);
+                        }
+                        processedTags.add(tag);
+                        latch.countDown();
                     }
-                    processedTags.add(tag);
-                    latch.countDown();
                 }
             }
         }
