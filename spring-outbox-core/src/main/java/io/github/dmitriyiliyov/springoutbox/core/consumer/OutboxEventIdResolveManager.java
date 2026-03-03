@@ -5,8 +5,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Manages and delegates the resolution of outbox event IDs from various raw message types.
- * It uses registered {@link OutboxEventIdResolver} implementations to find the correct ID.
+ * Manages the resolution of outbox event IDs from various raw message types.
+ * <p>
+ * This component acts as a registry and dispatcher for {@link OutboxEventIdResolver} implementations.
+ * It automatically selects the appropriate resolver based on the runtime type of the message.
  */
 public interface OutboxEventIdResolveManager {
 
@@ -21,12 +23,14 @@ public interface OutboxEventIdResolveManager {
     <T> UUID resolve(T rowMessage);
 
     /**
-     * Resolves the UUIDs for a list of raw messages, returning a map of UUIDs to their corresponding messages.
+     * Resolves the UUIDs for a list of raw messages.
+     * <p>
+     * This is useful for batch processing where we need to correlate IDs with messages.
      *
      * @param rowMessages The list of raw messages.
      * @param <T>         The type of the raw messages.
      * @return            A map where keys are the resolved UUIDs and values are the original raw messages.
-     * @throws            IllegalArgumentException if no suitable resolver is found for any message type.
+     * @throws            IllegalArgumentException if no suitable resolver is found.
      */
     <T> Map<UUID, T> resolve(List<T> rowMessages);
 }

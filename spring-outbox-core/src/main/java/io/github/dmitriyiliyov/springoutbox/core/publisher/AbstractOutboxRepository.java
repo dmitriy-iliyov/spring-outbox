@@ -5,8 +5,6 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -16,15 +14,7 @@ import java.util.UUID;
 
 /**
  *  Abstract Multi SQL dialect implementation of {@link OutboxRepository}.
- *  <ul>
- *
- *     <li> uses {@link Transactional @Transactional} with
- *     {@link Propagation#MANDATORY}, ensuring that all outbox entries are persisted atomically
- *     as part of the business transaction.</li>
- *
- *     <li> provides a mechanism for incrementing retry counters and marking permanently failed events.</li>
- *
- *  </ul>
+ *  Provides a mechanism for incrementing retry counters and marking permanently failed events.
  */
 public abstract class AbstractOutboxRepository implements OutboxRepository {
 

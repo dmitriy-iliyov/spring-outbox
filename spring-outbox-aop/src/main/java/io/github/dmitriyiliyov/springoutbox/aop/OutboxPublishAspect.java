@@ -13,6 +13,12 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Aspect that intercepts methods annotated with {@link OutboxPublish} and publishes an outbox event.
+ * <p>
+ * This aspect extracts the event payload from the method's return value or arguments using SpEL,
+ * and then publishes a {@link RowOutboxEvent} or {@link RowOutboxEvents} via the {@link ApplicationEventPublisher}.
+ */
 @Aspect
 public class OutboxPublishAspect {
 
@@ -27,6 +33,15 @@ public class OutboxPublishAspect {
     @Pointcut("@annotation(outboxPublish) && execution(public * *(..))")
     public void pointcut(OutboxPublish outboxPublish) {}
 
+    /**
+     * Advice that runs after the method returns successfully.
+     * <p>
+     * It evaluates the SpEL expression to determine the payload and publishes the event.
+     *
+     * @param joinPoint     The join point representing the method execution.
+     * @param outboxPublish The annotation instance.
+     * @param result        The return value of the method.
+     */
     @AfterReturning(
             pointcut = "pointcut(outboxPublish)",
             returning = "result",

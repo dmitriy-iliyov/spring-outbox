@@ -13,6 +13,7 @@ import java.util.UUID;
  * This includes saving, loading, and updating the status of events that have failed processing.
  */
 public interface OutboxDlqManager {
+
     /**
      * Saves a batch of DLQ events.
      *

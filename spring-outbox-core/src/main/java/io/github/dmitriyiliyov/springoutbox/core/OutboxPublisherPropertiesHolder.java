@@ -5,6 +5,7 @@ import java.util.Map;
 
 /**
  * Holds outbox publisher configuration properties.
+ * <p>
  * This interface provides access to various settings for event processing, recovery, and DLQ management.
  */
 public interface OutboxPublisherPropertiesHolder {
@@ -26,11 +27,15 @@ public interface OutboxPublisherPropertiesHolder {
 
     /**
      * Holds properties for recovering stuck outbox events.
+     * <p>
+     * Stuck events are those that remain in the {@code IN_PROCESS} state for too long, usually due to a crash.
      */
     interface StuckRecoveryPropertiesHolder {
 
         /**
          * The maximum time a batch can be in processing before being considered stuck.
+         * <p>
+         * Events in {@code IN_PROCESS} state longer than this duration will be recovered (moved back to {@code PENDING}).
          *
          * @return The maximum batch processing time.
          */

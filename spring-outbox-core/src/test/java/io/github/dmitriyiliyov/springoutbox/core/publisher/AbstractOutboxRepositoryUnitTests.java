@@ -204,7 +204,6 @@ public class AbstractOutboxRepositoryUnitTests {
     public void deleteBatch_whenIdsIsNull_shouldThrows() {
         // given
         Set<UUID> ids = null;
-        EventStatus status = EventStatus.PENDING;
 
         // when
         assertThrows(NullPointerException.class, () -> tested.deleteBatch(ids));

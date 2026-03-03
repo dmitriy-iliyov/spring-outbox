@@ -31,6 +31,9 @@ public interface OutboxRepository {
 
     /**
      * Finds and locks a batch of events by their type and status.
+     * <p>
+     * This method must atomically select and update the status of the events to {@code lockStatus}.
+     * It should use a mechanism like {@code FOR UPDATE SKIP LOCKED} to allow concurrent processing.
      *
      * @param eventType  The type of events to find.
      * @param status     The current status of events to find.
@@ -43,6 +46,8 @@ public interface OutboxRepository {
 
     /**
      * Finds and locks a batch of events by their status.
+     * <p>
+     * Similar to {@link #findAndLockBatchByEventTypeAndStatus(String, EventStatus, int, EventStatus)}, but without filtering by event type.
      *
      * @param status     The current status of events to find.
      * @param batchSize  The maximum number of events to retrieve.
@@ -62,9 +67,11 @@ public interface OutboxRepository {
 
     /**
      * Updates the status for a batch of events that match a status and are older than a threshold.
+     * <p>
+     * Typically used for recovering stuck events.
      *
      * @param status     The current status of events to update.
-     * @param threshold  The time threshold.
+     * @param threshold  The time threshold (events older than this will be updated).
      * @param batchSize  The maximum number of events to update.
      * @param newStatus  The new status to set.
      * @return           The number of updated events.
@@ -73,6 +80,8 @@ public interface OutboxRepository {
 
     /**
      * Partially updates a batch of events (increments retry count, sets next retry time).
+     * <p>
+     * Used when finalizing a batch where some events failed processing.
      *
      * @param events The list of events to update.
      * @return       The number of updated events.
@@ -91,7 +100,7 @@ public interface OutboxRepository {
      * Deletes a batch of events that match a status and are older than a threshold.
      *
      * @param status    The status of events to delete.
-     * @param threshold The time threshold.
+     * @param threshold The time threshold (events older than this will be deleted).
      * @param batchSize The maximum number of events to delete.
      * @return          The number of deleted events.
      */

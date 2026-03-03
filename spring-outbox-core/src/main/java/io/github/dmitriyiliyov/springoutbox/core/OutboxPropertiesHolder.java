@@ -5,7 +5,7 @@ import java.time.Duration;
 /**
  * Holds common outbox system configuration properties.
  * <p>
- * This interface provides access to general settings, such as cleanup properties.
+ * This interface provides access to general settings that apply across the entire outbox system.
  */
 public interface OutboxPropertiesHolder {
 
@@ -16,6 +16,8 @@ public interface OutboxPropertiesHolder {
 
         /**
          * The TTL for data before it is eligible for cleanup.
+         * <p>
+         * Events older than this duration will be deleted by the cleanup job.
          *
          * @return The duration representing the TTL.
          */
@@ -23,13 +25,15 @@ public interface OutboxPropertiesHolder {
 
         /**
          * The number of records to clean up in a single batch operation.
+         * <p>
+         * This controls the transaction size during cleanup to avoid locking the database for too long.
          *
          * @return The batch size for cleanup.
          */
         Integer getBatchSize();
 
         /**
-         * The initial delay before the first cleanup operation.
+         * The initial delay before the first cleanup operation starts after application startup.
          *
          * @return The initial delay.
          */
