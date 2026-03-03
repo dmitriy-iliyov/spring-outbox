@@ -90,6 +90,7 @@ jobs:
         run: mvn clean verify -Dspring.profiles.active=psql,kafka -Dgpg.skip=true
 
       - name: Upload coverage to Codecov
+        if: github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
