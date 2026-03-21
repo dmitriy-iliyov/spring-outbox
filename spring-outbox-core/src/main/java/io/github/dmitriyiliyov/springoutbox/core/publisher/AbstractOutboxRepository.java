@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -109,7 +110,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                 updated_at = ?
             WHERE id = ?
         """;
-        return jdbcTemplate.batchUpdate(
+        int [][] result = jdbcTemplate.batchUpdate(
                 sql,
                 events,
                 events.size(),
@@ -120,7 +121,10 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setTimestamp(4, Timestamp.from(Instant.now()));
                     idHelper.setIdToPs(ps, 5, event.getId());
                 }
-        ).length;
+        );
+        return Arrays.stream(result)
+                .flatMapToInt(Arrays::stream)
+                .sum();
     }
 
     @Override
