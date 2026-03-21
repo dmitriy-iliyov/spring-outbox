@@ -791,10 +791,10 @@ outbox:
         enabled: true
 ```
 
+> [!WARNING]
+> when disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`
 - `enabled`: enable DLQ functionality
     - **Default**: `false`
-  > [!WARNING]
-  > when disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`
 - `batch-size`: number of events to transfer per iteration
     - **Default**: `100`
 - `transfer-to-initial-delay`: delay before first transfer **to** DLQ
@@ -822,10 +822,10 @@ outbox:
       fixed-delay: 5s
 ```
 
+> [!WARNING]
+> when disabled, processed events will accumulate indefinitely
 - `enabled`: enable automatic cleanup of processed events
     - **Default**: `true`
-  > [!WARNING]
-  > when disabled, processed events will accumulate indefinitely
 - `batch-size`: number of events to delete per iteration
     - **Default**: `100`
     - **Description**: controls transaction size.
@@ -900,10 +900,10 @@ outbox:
       cache-name: "outbox:consumed"
 ```
 
+> [!WARNING]
+> when disabled, idempotency check always hits database
 - `enabled`: enable distributed caching of consumed event ids
     - **Default**: `false`
-  > [!WARNING]
-  > when disabled, idempotency check always hits database
 - `cache-name`: name of the cache in CacheManager (**required** when enabled)
     - **Description**: must match cache name configured in your `CacheManager` bean
 
