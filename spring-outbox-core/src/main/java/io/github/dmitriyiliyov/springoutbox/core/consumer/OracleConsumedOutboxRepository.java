@@ -86,10 +86,10 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
     public int deleteBatchByThreshold(Instant threshold, int batchSize) {
         String selectSql = """
             SELECT id
-            FROM consumed_outbox_events
+            FROM outbox_consumed_events
             WHERE id IN(
                 SELECT id
-                FROM consumed_outbox_events
+                FROM outbox_consumed_events
                 WHERE consumed_at <= ?
                 FETCH FIRST ? ROWS ONLY
             )
@@ -109,7 +109,7 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
             return 0;
         }
         String deleteSql = """
-            DELETE FROM consumed_outbox_events
+            DELETE FROM outbox_consumed_events
             WHERE id IN(%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         return jdbcTemplate.update(deleteSql, ps -> idHelper.setIdsToPs(ps, 1, ids));

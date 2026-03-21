@@ -28,9 +28,13 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         String selectSql = """
             SELECT *
             FROM outbox_events
-            WHERE event_type = ? AND status = ? AND next_retry_at <= ?
-            ORDER BY next_retry_at
-            FETCH FIRST ? ROWS ONLY
+            WHERE id IN (
+                SELECT id 
+                FROM outbox_events
+                WHERE event_type = ? AND status = ? AND next_retry_at <= ?
+                ORDER BY next_retry_at
+                FETCH FIRST ? ROWS ONLY
+            )
             FOR UPDATE SKIP LOCKED
         """;
         List<OutboxEvent> events = jdbcTemplate.query(
@@ -51,9 +55,13 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         String selectSql = """
             SELECT *
             FROM outbox_events
-            WHERE status = ?
-            ORDER BY updated_at
-            FETCH FIRST ? ROWS ONLY
+            WHERE id IN(
+                SELECT id 
+                FROM outbox_events
+                WHERE status = ?
+                ORDER BY updated_at
+                FETCH FIRST ? ROWS ONLY
+            )
             FOR UPDATE SKIP LOCKED
         """;
         List<OutboxEvent> events = jdbcTemplate.query(
@@ -100,9 +108,13 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         String selectSql = """
             SELECT id
             FROM outbox_events
-            WHERE status = ? AND updated_at <= ?
-            ORDER BY updated_at
-            FETCH FIRST ? ROWS ONLY
+            WHERE id IN (
+                SELECT id
+                FROM outbox_events
+                WHERE status = ? AND updated_at <= ?
+                ORDER BY updated_at
+                FETCH FIRST ? ROWS ONLY
+            )
             FOR UPDATE SKIP LOCKED
         """;
         Set<UUID> ids = new HashSet<>(jdbcTemplate.query(
@@ -137,9 +149,13 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         String selectSql = """
             SELECT id
             FROM outbox_events
-            WHERE status = ? AND updated_at <= ?
-            ORDER BY updated_at
-            FETCH FIRST ? ROWS ONLY
+            WHERE id IN(
+                SELECT id 
+                FROM outbox_events
+                WHERE status = ? AND updated_at <= ?
+                ORDER BY updated_at
+                FETCH FIRST ? ROWS ONLY
+            )
             FOR UPDATE SKIP LOCKED
         """;
         Set<UUID> ids = new HashSet<>(jdbcTemplate.query(

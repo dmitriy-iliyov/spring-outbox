@@ -21,11 +21,16 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
     @Override
     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
         String selectSql = """
-            SELECT *
+            SELECT id, status, dlq_status, event_type, payload_type, payload,
+                   retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
-            WHERE status = ?
-            ORDER BY moved_at
-            FETCH FIRST ? ROWS ONLY
+            WHERE id IN (
+                SELECT id
+                FROM outbox_dlq_events
+                WHERE dlq_status = ?
+                ORDER BY moved_at
+                FETCH FIRST ? ROWS ONLY
+            )
             FOR UPDATE SKIP LOCKED
         """;
         List<OutboxDlqEvent> events = jdbcTemplate.query(
@@ -44,7 +49,7 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
         }
         String lockSql = """
             UPDATE outbox_dlq_events
-                SET status = ?
+                SET dlq_status = ?
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         jdbcTemplate.update(
@@ -63,7 +68,7 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
         String selectSql = """
             SELECT *
             FROM outbox_dlq_events
-            WHERE status = ?
+            WHERE dlq_status = ?
             ORDER BY moved_at
             OFFSET ? ROWS
             FETCH NEXT ? ROWS ONLY
