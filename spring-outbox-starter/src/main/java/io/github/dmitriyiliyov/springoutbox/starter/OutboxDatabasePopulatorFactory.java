@@ -53,15 +53,16 @@ public final class OutboxDatabasePopulatorFactory {
      */
     public static DatabasePopulator generate(OutboxProperties properties, DataSource dataSource) {
         List<Resource> scripts = new ArrayList<>();
+        DatabaseType databaseType;
         try (Connection connection = dataSource.getConnection()) {
-            DatabaseType databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());
+            databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());
             Map<SupplierType, Supplier<Resource>> suppliers = OUTBOX_TABLE_SUPPLIERS.get(databaseType);
             if (suppliers == null) {
                 log.error("Unsupported database type: {}", databaseType);
                 throw new IllegalStateException("Suppliers not found for database: " + databaseType);
             }
             Supplier<Resource> outboxSupplier = suppliers.get(SupplierType.OUTBOX_TABLE);
-            if (outboxSupplier == null) {
+            if (outboxSupplier == null || databaseType == null) {
                 log.error("Unsupported database: {}", databaseType);
                 throw new IllegalStateException("Supplier for outbox_events not found, database: " + databaseType);
             }
@@ -86,12 +87,16 @@ public final class OutboxDatabasePopulatorFactory {
             log.error("Failed to get database connection", e);
             throw new RuntimeException("Failed to get database connection", e);
         }
-        return new ResourceDatabasePopulator(
+        ResourceDatabasePopulator populator = new ResourceDatabasePopulator(
                 false,
                 false,
                 StandardCharsets.UTF_8.name(),
                 scripts.toArray(new Resource[0])
         );
+        if (DatabaseType.ORACLE.equals(databaseType)) {
+            populator.setSeparator("/");
+        }
+        return populator;
     }
 
     private static final class PostgreSqlOutboxTableSqlResourceSupplier implements Supplier<Resource> {

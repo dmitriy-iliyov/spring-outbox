@@ -33,9 +33,6 @@ import java.util.concurrent.ScheduledExecutorService;
 @ConditionalOnProperty(prefix = "outbox.publisher.dlq", name = "enabled", havingValue = "true")
 public class OutboxDlqAutoConfiguration {
 
-
-    private static final Logger log = LoggerFactory.getLogger(OutboxDlqAutoConfiguration.class);
-
     @Bean
     @ConditionalOnMissingBean
     public OutboxDlqRepository outboxDlqRepository(DataSource dataSource,
