@@ -78,7 +78,7 @@ For Rabbit MQ:
       <version>1.0.0</version>
   </dependency>
 ```
-You can also add `spring-outbox-web` for enable REST API for manual DQL managing, read more [here](#dlq-rest-api).
+You can also add `spring-outbox-web` for enable REST API for manual DLQ managing, read more [here](#dlq-rest-api).
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
@@ -268,10 +268,11 @@ To enable parallel event processing across multiple application instances, the l
 ---
 
 ### Delivery Semantics
- 
-**WARNING:** The library expects the message broker to be configured by the developer.
-To ensure the delivery semantics described below, the broker must be configured with `acks` (or an equivalent mechanism).
-If the broker uses a producer-side buffer, its settings should also be tuned appropriately for the expected load.
+
+> [!WARNING]
+> The library expects the message broker to be configured by the developer. 
+> To ensure the delivery semantics described below, the broker must be configured with `acks` (or an equivalent mechanism). 
+> If the broker uses a producer-side buffer, its settings should also be tuned appropriately for the expected load.
 
 #### At-Least-Once
 
@@ -399,7 +400,8 @@ public interface OutboxDlqHandler {
 ##### DLQ REST API
 The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.
 
-**WARNING:** you should secure DLQ REST API paths.
+> [!WARNING]
+> you should secure DLQ REST API paths.
 
 | Method | Path | Params | Request Body | Description |
 |--------|------|--------|--------------|-------------|
@@ -451,7 +453,8 @@ The library uses `CacheManager` from the application context. Cache configuratio
 
 ##### Event Headers
 
-**IMPORTANT:** The library uses message headers to pass event metadata for idempotency checks and routing.
+> [!IMPORTANT]
+> The library uses message headers to pass event metadata for idempotency checks and routing.
 
 The event types themselves act as routing keys in both cases. For **Apache Kafka**, they are placed in event headers and are available for consumer-side routing. For **RabbitMQ**, they are used by the library itself to determine the queue to which the event will be sent and are also available in the headers.
 
@@ -790,7 +793,8 @@ outbox:
 
 - `enabled`: enable DLQ functionality
     - **Default**: `false`
-    - **Warning**: when disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`
+  > [!WARNING]
+  > when disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`
 - `batch-size`: number of events to transfer per iteration
     - **Default**: `100`
 - `transfer-to-initial-delay`: delay before first transfer **to** DLQ
@@ -820,7 +824,8 @@ outbox:
 
 - `enabled`: enable automatic cleanup of processed events
     - **Default**: `true`
-    - **Warning**: when disabled, processed events will accumulate indefinitely
+  > [!WARNING]
+  > when disabled, processed events will accumulate indefinitely
 - `batch-size`: number of events to delete per iteration
     - **Default**: `100`
     - **Description**: controls transaction size.
@@ -848,12 +853,12 @@ outbox:
 - `metrics.enabled`: enable metrics collection
   - **Default**: `false`
 - `gauge.enabled`: enable gauge metrics collection
-    - **Default**: `false`
+  - **Default**: `false`
 - `gauge.cache.enabled`: enable cache
   - **Default**: normally `true`, but transitive from default `gauge.enabled: false` - `false`
 - `gauge.cache.ttls`: cache TTL for different gauge metrics (3 values)
-    - **Default**: `[60s, 60s, 60s]`
-    - **Description**: TTL for caching metric values.
+  - **Default**: `[60s, 60s, 60s]`
+  - **Description**: TTL for caching metric values.
 
 This enable metrics collecting and gauges with cache default ttls
 ```yaml
@@ -897,7 +902,8 @@ outbox:
 
 - `enabled`: enable distributed caching of consumed event ids
     - **Default**: `false`
-    - **Warning**: when disabled, idempotency check always hits database
+  > [!WARNING]
+  > when disabled, idempotency check always hits database
 - `cache-name`: name of the cache in CacheManager (**required** when enabled)
     - **Description**: must match cache name configured in your `CacheManager` bean
 
@@ -926,7 +932,8 @@ outbox:
       my-event:
         topic: my.topic
 ```
-**WARNING:** Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
+> [!WARNING]
+> Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
 
 Minimal with all features:
 
