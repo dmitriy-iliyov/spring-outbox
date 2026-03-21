@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:1428/outbox_test
+    username: admin
+    password: root
+    driver-class-name: org.postgresql.Driver

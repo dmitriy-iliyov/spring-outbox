@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:1429/outbox_test
+    username: admin
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
