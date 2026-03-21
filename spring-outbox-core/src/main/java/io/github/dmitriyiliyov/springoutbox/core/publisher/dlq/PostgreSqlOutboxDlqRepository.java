@@ -26,7 +26,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
                 FOR UPDATE SKIP LOCKED
             )
             UPDATE outbox_dlq_events
-                SET status = ?
+                SET dlq_status = ?
             WHERE id IN(SELECT id FROM to_lock)
             RETURNING id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
         """;

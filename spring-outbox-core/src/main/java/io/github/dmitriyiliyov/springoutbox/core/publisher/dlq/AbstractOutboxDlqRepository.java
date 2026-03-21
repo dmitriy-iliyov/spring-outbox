@@ -28,7 +28,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
         String sql = """
             INSERT INTO outbox_dlq_events
             (id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
         jdbcTemplate.batchUpdate(
                 sql,
@@ -68,7 +68,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     public List<OutboxDlqEvent> findBatch(Set<UUID> ids) {
         if (!RepositoryUtils.isIdsValid(ids)) return List.of();
         String sql = """
-            SELECT id, status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
@@ -119,7 +119,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     @Override
     public void updateBatchStatus(Set<UUID> ids, DlqStatus status) {
         if (!RepositoryUtils.isIdsValid(ids)) return;
-        String sql = "UPDATE outbox_dlq_events SET status = ? WHERE id IN (" + RepositoryUtils.generateIdsPlaceholders(ids) + ")";
+        String sql = "UPDATE outbox_dlq_events SET dlq_status = ? WHERE id IN (" + RepositoryUtils.generateIdsPlaceholders(ids) + ")";
         jdbcTemplate.update(
                 sql,
                 ps -> {

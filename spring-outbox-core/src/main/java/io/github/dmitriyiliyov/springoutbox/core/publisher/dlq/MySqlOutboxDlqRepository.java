@@ -23,7 +23,7 @@ public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         String selectSql = """
             SELECT *
             FROM outbox_dlq_events
-            WHERE status = ?
+            WHERE dlq_status = ?
             ORDER BY moved_at
             LIMIT ?
             FOR UPDATE SKIP LOCKED
@@ -44,7 +44,7 @@ public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         }
         String lockSql = """
             UPDATE outbox_dlq_events 
-                SET status = ?
+                SET dlq_status = ?
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         jdbcTemplate.update(
