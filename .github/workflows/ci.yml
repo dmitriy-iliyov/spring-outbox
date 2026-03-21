@@ -87,7 +87,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
       - name: Build and run tests
-        run: mvn clean verify -Dspring.profiles.active=psql,kafka -Dgpg.skip=true
+        run: mvn clean verify test -X-Dgpg.skip=true
 
       - name: Upload coverage to Codecov
         if: github.actor != 'dependabot[bot]'
