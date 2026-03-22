@@ -5,22 +5,25 @@ import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder
 /**
  * Processes outbox events for a specific event type.
  * <p>
- * This interface defines the contract for the core processing loop:
+ * Defines the contract for the core processing loop:
  * <ol>
- *     <li>Load a batch of events from the database.</li>
+ *     <li>Load a batch of pending events from the database.</li>
  *     <li>Send them to the message broker via {@link OutboxSender}.</li>
- *     <li>Update their status in the database based on the result.</li>
+ *     <li>Finalize their status based on the send result.</li>
  * </ol>
+ * If sending fails entirely, all events in the batch are marked as failed
+ * and will be retried according to the configured backoff strategy.
  */
 public interface OutboxProcessor {
 
     /**
-     * Processes a batch of outbox events based on the provided properties.
+     * Processes a batch of outbox events based on the provided configuration.
      * <p>
-     * This method is typically called by a scheduler or a background worker.
-     * It encapsulates the entire lifecycle of a batch of events from loading to finalization.
+     * Used by {@link io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler}
      *
-     * @param properties Configuration properties for the event type being processed.
+     * @param properties configuration for the event type being processed,
+     *                   including batch size, retry limits, and backoff settings.
+     * @throws NullPointerException if {@code properties} is null.
      */
     void process(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties);
 }

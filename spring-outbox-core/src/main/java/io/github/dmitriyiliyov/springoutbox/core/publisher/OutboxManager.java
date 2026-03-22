@@ -13,94 +13,109 @@ import java.util.function.Function;
 /**
  * Manages the lifecycle of outbox events, including saving, loading, and updating their state.
  * <p>
- * This interface acts as a service layer between the application/publisher and the persistence layer.
- * It handles business logic related to event state transitions (e.g., retry calculation, stuck event recovery).
+ * Acts as a service layer between the application and the persistence layer,
+ * handling state transitions, retry calculation, and stuck event recovery.
  */
 public interface OutboxManager {
 
     /**
-     * Saves a single outbox event.
+     * Saves a single outbox event within an existing transaction.
      * <p>
-     * This method should be called within an existing transaction (MANDATORY propagation)
-     * to ensure atomicity with the business operation.
+     * Must be called within an active transaction - uses MANDATORY propagation.
+     * Throws an exception if no transaction is active at the time of the call.
      *
-     * @param event The event to save.
+     * @param event the event to save.
      */
     void save(OutboxEvent event);
 
     /**
-     * Saves a batch of outbox events.
+     * Saves a batch of outbox events within an existing transaction.
      * <p>
-     * This method should be called within an existing transaction (MANDATORY propagation).
+     * Must be called within an active transaction - uses MANDATORY propagation.
+     * Throws an exception if no transaction is active at the time of the call.
+     * Does nothing if the list is null or empty.
      *
-     * @param eventBatch The list of events to save.
+     * @param eventBatch the list of events to save.
      */
     void saveBatch(List<OutboxEvent> eventBatch);
 
     /**
      * Loads and locks a batch of events of a specific type for processing.
      * <p>
-     * Events are locked (status changed to IN_PROCESS) to prevent concurrent processing by other instances.
+     * Locked events have their status changed to {@link EventStatus#IN_PROCESS}
+     * to prevent concurrent processing by other instances.
+     * Only events with status {@link EventStatus#PENDING} are returned.
      *
-     * @param eventType The type of events to load.
-     * @param batchSize The maximum number of events to load.
-     * @return          A list of locked outbox events ready for processing.
+     * @param eventType the type of events to load.
+     * @param batchSize the maximum number of events to load and lock.
+     * @return          a list of locked outbox events ready for processing; empty list if none available.
      */
     List<OutboxEvent> loadBatch(String eventType, int batchSize);
 
     /**
      * Loads and locks a batch of events with a specific status.
      * <p>
-     * Typically used for maintenance tasks like DLQ processing or cleanup.
+     * Locked events have their status changed to {@link EventStatus#IN_PROCESS}.
+     * Typically used for maintenance tasks such as DLQ transfer or cleanup.
      *
-     * @param status    The status of events to load.
-     * @param batchSize The maximum number of events to load.
-     * @return          A list of locked outbox events.
+     * @param status    the status of events to load.
+     * @param batchSize the maximum number of events to load and lock.
+     * @return          a list of locked outbox events; empty list if none available.
      */
     List<OutboxEvent> loadBatch(EventStatus status, int batchSize);
 
     /**
-     * Finalizes a batch of events after processing, marking them as processed or failed.
+     * Finalizes a batch of events after processing, marking them as processed or updating retry state.
      * <p>
-     * This method updates the status of events based on the processing result.
-     * Failed events will have their retry count incremented and next retry time calculated.
-     * If max retries are exhausted, the event is marked as FAILED.
+     * Successfully processed events are marked as {@link EventStatus#PROCESSED}.
+     * Failed events have their retry count incremented and next retry time recalculated.
+     * Once the retry count reaches {@code maxRetryCount}, the event is marked as {@link EventStatus#FAILED}.
+     * <p>
+     * If an ID appears in both {@code processedIds} and {@code failedIds}, it is treated as failed.
+     * If both sets are null or empty, the method is a no-op.
      *
-     * @param events              The original list of events in the batch.
-     * @param processedIds        The IDs of successfully processed events.
-     * @param failedIds           The IDs of failed events.
-     * @param maxRetryCount       The maximum number of retries for failed events.
-     * @param nextRetryAtSupplier A function to calculate the next retry time (e.g., exponential backoff).
+     * @param events              the original list of events in the batch.
+     * @param processedIds        the IDs of successfully processed events.
+     * @param failedIds           the IDs of failed events.
+     * @param maxRetryCount       the maximum number of retries allowed; must be non-negative.
+     * @param nextRetryAtSupplier a function that calculates the next retry time given the current retry count.
+     * @throws IllegalArgumentException if {@code maxRetryCount} is negative.
      */
     void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
                        int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier);
 
     /**
-     * Recovers events that are stuck in the {@code IN_PROCESS} state for too long.
+     * Recovers events stuck in {@link EventStatus#IN_PROCESS} state for longer than the given duration.
      * <p>
-     * These events are moved back to {@code PENDING} state to be picked up again.
-     * This handles cases where a processing node crashes.
+     * Stuck events are moved back to {@link EventStatus#PENDING} to be retried.
+     * This handles cases where a processing node crashed without completing the batch.
      *
-     * @param maxBatchProcessingTime The maximum time a batch can be in processing before being considered stuck.
-     * @param batchSize              The number of events to recover in one go.
-     * @return                       The number of recovered events.
+     * @param maxBatchProcessingTime the maximum allowed duration in {@link EventStatus#IN_PROCESS}
+     *                               before an event is considered stuck.
+     * @param batchSize              the maximum number of events to recover in one call.
+     * @return                       the number of recovered events.
      */
     int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize);
 
     /**
-     * Deletes processed events that are older than a given threshold.
+     * Deletes processed events with {@code updated_at} strictly before the given threshold.
+     * <p>
+     * At most {@code batchSize} records are deleted per call.
      *
-     * @param threshold The time threshold for deletion (events older than this will be deleted).
-     * @param batchSize The number of events to delete in one go.
-     * @return          The number of deleted events.
+     * @param threshold events updated strictly before this timestamp will be deleted.
+     * @param batchSize the maximum number of events to delete in one call.
+     * @return          the number of deleted events.
      */
     int deleteProcessedBatch(Instant threshold, int batchSize);
 
     /**
-     * Deletes a batch of events by their IDs.
+     * Deletes a batch of events by their IDs without any additional status checks.
+     * <p>
+     * Does nothing and returns 0 if the set is null or empty.
+     * IDs that do not correspond to existing events are silently ignored.
      *
-     * @param ids The set of event IDs to delete.
-     * @return    The number of deleted events.
+     * @param ids the set of event IDs to delete.
+     * @return    the number of actually deleted events.
      */
     int deleteBatch(Set<UUID> ids);
 }

@@ -33,7 +33,7 @@ public interface OutboxDlqRepository {
      * Finds a batch of DLQ events by their IDs.
      * <p>
      * Returns an empty list if the set is null or empty.
-     * Only events that actually exist are returned — no exception is thrown for missing IDs.
+     * Only events that actually exist are returned - no exception is thrown for missing IDs.
      *
      * @param ids the set of event IDs to find.
      * @return    a list of found DLQ events; may be smaller than {@code ids} if some do not exist.
