@@ -89,7 +89,8 @@ public class OutboxDlqControllerAdvice {
             ex.getBindingResult().getFieldErrors().forEach(error ->
                     errors.add(Map.of("field", error.getField(), "message", error.getDefaultMessage()))
             );
-        } else if (e instanceof BindException ex) {
+        } else {
+            BindException ex = (BindException) e;
             ex.getBindingResult().getFieldErrors().forEach(error ->
                     errors.add(Map.of("field", error.getField(), "message", error.getDefaultMessage()))
             );
