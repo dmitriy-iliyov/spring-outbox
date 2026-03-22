@@ -33,15 +33,6 @@ public class OutboxPublishAspect {
     @Pointcut("@annotation(outboxPublish) && execution(public * *(..))")
     public void pointcut(OutboxPublish outboxPublish) {}
 
-    /**
-     * Advice that runs after the method returns successfully.
-     * <p>
-     * It evaluates the SpEL expression to determine the payload and publishes the event.
-     *
-     * @param joinPoint     The join point representing the method execution.
-     * @param outboxPublish The annotation instance.
-     * @param result        The return value of the method.
-     */
     @AfterReturning(
             pointcut = "pointcut(outboxPublish)",
             returning = "result",
