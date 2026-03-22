@@ -10,21 +10,21 @@ public interface BatchRequestProjection {
     /**
      * The status of the DLQ events to request.
      *
-     * @return The {@link DlqStatus}.
+     * @return the {@link DlqStatus}.
      */
     DlqStatus status();
 
     /**
      * The page number of the batch to request (0-based).
      *
-     * @return The batch number.
+     * @return the batch number.
      */
     int batchNumber();
 
     /**
      * The size of the batch to request.
      *
-     * @return The batch size.
+     * @return the batch size.
      */
     int batchSize();
 }

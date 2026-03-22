@@ -13,14 +13,14 @@ public interface BatchUpdateRequestProjection {
     /**
      * The set of IDs of the DLQ events to update.
      *
-     * @return A set of event UUIDs.
+     * @return a set of event UUIDs.
      */
     Set<UUID> ids();
 
     /**
      * The new status to set for the specified DLQ events.
      *
-     * @return The new {@link DlqStatus}.
+     * @return the new {@link DlqStatus}.
      */
     DlqStatus status();
 }
