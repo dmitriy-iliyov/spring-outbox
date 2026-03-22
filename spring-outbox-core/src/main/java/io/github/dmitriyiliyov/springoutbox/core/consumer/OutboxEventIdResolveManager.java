@@ -7,30 +7,32 @@ import java.util.UUID;
 /**
  * Manages the resolution of outbox event IDs from various raw message types.
  * <p>
- * This component acts as a registry and dispatcher for {@link OutboxEventIdResolver} implementations.
- * It automatically selects the appropriate resolver based on the runtime type of the message.
+ * Acts as a registry and dispatcher for {@link OutboxEventIdResolver} implementations,
+ * automatically selecting the appropriate resolver based on the runtime type of the message.
  */
 public interface OutboxEventIdResolveManager {
 
     /**
      * Resolves the UUID of an outbox event from a single raw message.
      *
-     * @param rowMessage The raw message from which to resolve the ID.
-     * @param <T>        The type of the raw message.
-     * @return           The UUID of the outbox event.
-     * @throws           IllegalArgumentException if no suitable resolver is found for the message type.
+     * @param rawMessage the raw message from which to resolve the event ID.
+     * @param <T>        the type of the raw message.
+     * @return           the UUID of the outbox event.
+     * @throws IllegalArgumentException if no resolver is registered for the message type,
+     *                                  or if the required header is missing or malformed.
      */
-    <T> UUID resolve(T rowMessage);
+    <T> UUID resolve(T rawMessage);
 
     /**
-     * Resolves the UUIDs for a list of raw messages.
+     * Resolves the UUIDs for a list of raw messages of the same type.
      * <p>
-     * This is useful for batch processing where we need to correlate IDs with messages.
+     * Returns an empty map if the list is null or empty.
      *
-     * @param rowMessages The list of raw messages.
-     * @param <T>         The type of the raw messages.
-     * @return            A map where keys are the resolved UUIDs and values are the original raw messages.
-     * @throws            IllegalArgumentException if no suitable resolver is found.
+     * @param rawMessages the list of raw messages.
+     * @param <T>         the type of the raw messages.
+     * @return            a map where keys are resolved UUIDs and values are the corresponding raw messages.
+     * @throws IllegalArgumentException if no resolver is registered for the message type,
+     *                                  or if any required header is missing or malformed.
      */
-    <T> Map<UUID, T> resolve(List<T> rowMessages);
+    <T> Map<UUID, T> resolve(List<T> rawMessages);
 }

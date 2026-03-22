@@ -4,34 +4,35 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * Provides idempotent consumption of messages by tracking processed event IDs.
+ * Ensures idempotent message consumption by tracking processed event IDs.
  * <p>
- * This interface ensures that a given operation is executed only once for each unique event ID.
- * It relies on an {@link OutboxEventIdResolver} to extract the unique ID from the message (e.g., from headers).
+ * The event ID is extracted from each message using a registered {@link OutboxEventIdResolver}.
  */
 public interface OutboxIdempotentConsumer {
 
     /**
-     * Consumes a single message idempotently.
+     * Executes the operation only if the message has not been processed before.
      * <p>
-     * The provided operation will be executed only if the message's ID has not been consumed before.
-     * If the message has already been processed, the operation is skipped.
+     * If the message has already been consumed, the operation is skipped.
      *
-     * @param message   The message to consume. Its ID will be resolved by an {@link OutboxEventIdResolver}.
-     * @param operation The operation to execute if the message is new.
-     * @param <T>       The type of the message.
+     * @param message   the message to consume (e.g., a Kafka or AMQP message).
+     * @param operation the business logic to execute if the message is new.
+     * @param <T>       the type of the message.
+     * @throws IllegalArgumentException if no resolver is registered for the message type.
      */
     <T> void consume(T message, Runnable operation);
 
     /**
-     * Consumes a list of messages idempotently.
+     * Executes the operation for the subset of messages that have not been processed before.
      * <p>
-     * The provided operation will be executed only for the subset of messages whose IDs have not been consumed before.
-     * Already processed messages are filtered out before the operation is called.
+     * Already consumed messages are filtered out before the operation is called.
+     * If all messages have already been consumed, the operation is not called at all.
+     * Does nothing if the list is null or empty.
      *
-     * @param messages  The list of messages to consume. Their IDs will be resolved.
-     * @param operation The operation to execute for the list of new messages.
-     * @param <T>       The type of the messages.
+     * @param messages  the list of messages to consume.
+     * @param operation the business logic to execute with the list of new messages.
+     * @param <T>       the type of the messages.
+     * @throws IllegalArgumentException if no resolver is registered for the message type.
      */
     <T> void consume(List<T> messages, Consumer<List<T>> operation);
 }

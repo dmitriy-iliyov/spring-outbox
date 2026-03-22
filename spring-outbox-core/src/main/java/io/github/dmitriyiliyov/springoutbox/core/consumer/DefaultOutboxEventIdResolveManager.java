@@ -19,22 +19,22 @@ public class DefaultOutboxEventIdResolveManager implements OutboxEventIdResolveM
     }
 
     @Override
-    public <T> UUID resolve(T rowMessage) {
-        OutboxEventIdResolver<?> resolver = resolvers.get(rowMessage.getClass());
+    public <T> UUID resolve(T rawMessage) {
+        OutboxEventIdResolver<?> resolver = resolvers.get(rawMessage.getClass());
         if (resolver == null) {
             throw new IllegalArgumentException(
-                    "Unsupported class '%s'; cannot resolve".formatted(rowMessage.getClass().getName())
+                    "Unsupported class '%s'; cannot resolve".formatted(rawMessage.getClass().getName())
             );
         }
-        return ((OutboxEventIdResolver<T>) resolver).resolve(rowMessage);
+        return ((OutboxEventIdResolver<T>) resolver).resolve(rawMessage);
     }
 
     @Override
-    public <T> Map<UUID, T> resolve(List<T> rowMessages) {
-        if (rowMessages.isEmpty()) {
+    public <T> Map<UUID, T> resolve(List<T> rawMessages) {
+        if (rawMessages.isEmpty()) {
             return Collections.emptyMap();
         }
-        T exampleRowMessage = rowMessages.getFirst();
+        T exampleRowMessage = rawMessages.getFirst();
         OutboxEventIdResolver<?> resolver = resolvers.get(exampleRowMessage.getClass());
         if (resolver == null) {
             throw new IllegalArgumentException(
@@ -42,7 +42,7 @@ public class DefaultOutboxEventIdResolveManager implements OutboxEventIdResolveM
             );
         }
         final OutboxEventIdResolver<T> finalResolver = (OutboxEventIdResolver<T>) resolver;
-        return rowMessages.stream()
+        return rawMessages.stream()
                 .collect(Collectors.toMap(finalResolver::resolve, Function.identity()));
     }
 }
