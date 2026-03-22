@@ -27,10 +27,6 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
         }
         this.cacheName = cacheName;
         this.cacheManager = cacheManager;
-        Cache cache = cacheManager.getCache(cacheName);
-        if (cache == null) {
-            throw new IllegalStateException("Cache for outbox with name %s not found".formatted(cacheName));
-        }
         this.delegate = delegate;
         this.cacheObserver = cacheObserver;
     }
