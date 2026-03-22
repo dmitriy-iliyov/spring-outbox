@@ -12,8 +12,8 @@ import java.util.UUID;
 public class KafkaOutboxEventIdResolver implements OutboxEventIdResolver<ConsumerRecord<String, ?>> {
 
     @Override
-    public UUID resolve(ConsumerRecord<String, ?> rowMessage) {
-        Header [] headers = rowMessage.headers().toArray();
+    public UUID resolve(ConsumerRecord<String, ?> rawMessage) {
+        Header [] headers = rawMessage.headers().toArray();
         Header eventIdHeader = Arrays.stream(headers)
                 .filter(header -> header.key().equals(OutboxHeaders.EVENT_ID.getValue()))
                 .findFirst()
