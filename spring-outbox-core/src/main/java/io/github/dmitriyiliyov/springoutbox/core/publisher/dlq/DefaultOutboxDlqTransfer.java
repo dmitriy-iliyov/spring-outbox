@@ -103,7 +103,7 @@ public final class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                 event.getEventType(),
                 event.getPayloadType(),
                 event.getPayload(),
-                0,
+                -1,
                 Instant.now(),
                 event.getCreatedAt(),
                 Instant.now()
