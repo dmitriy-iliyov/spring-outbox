@@ -44,8 +44,8 @@ public final class OutboxDlqRepositoryFactory {
     /**
      * Generates an {@link OutboxDlqRepository} instance based on the database product name.
      *
-     * @param dataSource                The data source to get database metadata.
-     * @param jdbcTemplate              The JDBC template for database operations.
+     * @param dataSource                the data source to get database metadata.
+     * @param jdbcTemplate              the JDBC template for database operations.
      * @return                          A configured {@link OutboxDlqRepository} instance for the detected database.
      * @throws IllegalArgumentException if the database type is not supported.
      * @throws IllegalStateException    if the {@link JdbcTemplate} is null.

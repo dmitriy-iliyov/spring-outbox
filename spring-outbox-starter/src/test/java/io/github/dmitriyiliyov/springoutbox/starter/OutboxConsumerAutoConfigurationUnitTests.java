@@ -15,7 +15,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -82,7 +81,6 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(properties.getCache()).thenReturn(cacheProperties);
         when(cacheProperties.isEnabled()).thenReturn(true);
         when(cacheProperties.getCacheName()).thenReturn(cacheName);
-        when(cacheManager.getCache(cacheName)).thenReturn(mock(Cache.class));
 
         // when
         ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
@@ -99,7 +97,6 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(properties.getCache()).thenReturn(cacheProperties);
         when(cacheProperties.isEnabled()).thenReturn(true);
         when(cacheProperties.getCacheName()).thenReturn(cacheName);
-        when(cacheManager.getCache(cacheName)).thenReturn(mock(Cache.class));
 
         OutboxProperties.MetricsProperties metrics = mock(OutboxProperties.MetricsProperties.class);
         when(properties.getMetrics()).thenReturn(metrics);
@@ -120,7 +117,6 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(properties.getCache()).thenReturn(cacheProperties);
         when(cacheProperties.isEnabled()).thenReturn(true);
         when(cacheProperties.getCacheName()).thenReturn(cacheName);
-        when(cacheManager.getCache(cacheName)).thenReturn(mock(Cache.class));
 
         OutboxProperties.MetricsProperties metrics = mock(OutboxProperties.MetricsProperties.class);
         when(properties.getMetrics()).thenReturn(metrics);
@@ -141,7 +137,6 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(properties.getCache()).thenReturn(cacheProperties);
         when(cacheProperties.isEnabled()).thenReturn(true);
         when(cacheProperties.getCacheName()).thenReturn(cacheName);
-        when(cacheManager.getCache(cacheName)).thenReturn(mock(Cache.class));
 
         when(properties.getMetrics()).thenReturn(null);
 

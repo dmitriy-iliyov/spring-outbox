@@ -45,9 +45,9 @@ public final class OutboxDatabasePopulatorFactory {
     /**
      * Generates a {@link DatabasePopulator} based on the provided properties and data source.
      *
-     * @param properties             The outbox configuration properties.
-     * @param dataSource             The data source to connect to the database.
-     * @return                       A configured {@link DatabasePopulator} with the necessary SQL scripts.
+     * @param properties             the outbox configuration properties.
+     * @param dataSource             the data source to connect to the database.
+     * @return                       a configured {@link DatabasePopulator} with the necessary SQL scripts.
      * @throws IllegalStateException if the database type is not supported or a required script supplier is not found.
      * @throws RuntimeException      if a database connection cannot be established.
      */

@@ -13,8 +13,6 @@ import io.github.dmitriyiliyov.springoutbox.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqControllerAdvice;
 import io.micrometer.core.instrument.MeterRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;

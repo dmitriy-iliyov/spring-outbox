@@ -33,10 +33,10 @@ public final class OutboxSenderFactory {
     /**
      * Generates an {@link OutboxSender} instance based on the provided properties.
      *
-     * @param properties                The sender configuration properties.
-     * @param context                   The Spring application context to resolve broker templates.
-     * @param mapper                    The ObjectMapper for serialization.
-     * @return                          A configured {@link OutboxSender} instance.
+     * @param properties                the sender configuration properties.
+     * @param context                   the Spring application context to resolve broker templates.
+     * @param mapper                    the ObjectMapper for serialization.
+     * @return                          a configured {@link OutboxSender} instance.
      * @throws IllegalArgumentException if the sender type is not specified or unsupported, or if the required bean is not found.
      * @throws IllegalStateException    if multiple beans of the required template type are found without a specific bean name.
      */

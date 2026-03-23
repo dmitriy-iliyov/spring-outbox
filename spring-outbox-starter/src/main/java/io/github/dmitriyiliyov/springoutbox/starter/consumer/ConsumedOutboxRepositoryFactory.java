@@ -21,7 +21,7 @@ import java.util.function.Function;
 /**
  * A factory for creating {@link ConsumedOutboxRepository} instances based on the detected database type.
  * <p>
- * It supports PostgreSQL, MySQL, and Oracle.
+ * It supports PostgreSQL, MySQL, Oracle.
  */
 public final class ConsumedOutboxRepositoryFactory {
 
@@ -41,9 +41,9 @@ public final class ConsumedOutboxRepositoryFactory {
     /**
      * Generates a {@link ConsumedOutboxRepository} instance based on the database product name.
      *
-     * @param dataSource                The data source to get database metadata.
-     * @param jdbcTemplate              The JDBC template for database operations.
-     * @return                          A configured {@link ConsumedOutboxRepository} instance for the detected database.
+     * @param dataSource                the data source to get database metadata.
+     * @param jdbcTemplate              the JDBC template for database operations.
+     * @return                          a configured {@link ConsumedOutboxRepository} instance for the detected database.
      * @throws IllegalArgumentException if the database type is not supported.
      * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
      * @throws RuntimeException         if a database connection cannot be established.
