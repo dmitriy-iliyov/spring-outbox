@@ -14,7 +14,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- *  Abstract Multi SQL dialect implementation of {@link OutboxRepository}.
+ *  Abstract multi SQL dialect implementation of {@link OutboxRepository}.
  *  Provides a mechanism for incrementing retry counters and marking permanently failed events.
  */
 public abstract class AbstractOutboxRepository implements OutboxRepository {
