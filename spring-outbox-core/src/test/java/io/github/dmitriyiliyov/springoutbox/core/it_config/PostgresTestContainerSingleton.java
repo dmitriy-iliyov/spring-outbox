@@ -7,7 +7,7 @@ public class PostgresTestContainerSingleton {
     public static final PostgreSQLContainer<?> INSTANCE;
 
     static {
-        INSTANCE = new PostgreSQLContainer<>("postgres:16")
+        INSTANCE = new PostgreSQLContainer<>("postgres:18")
                 .withDatabaseName("testdb")
                 .withUsername("test")
                 .withPassword("test");

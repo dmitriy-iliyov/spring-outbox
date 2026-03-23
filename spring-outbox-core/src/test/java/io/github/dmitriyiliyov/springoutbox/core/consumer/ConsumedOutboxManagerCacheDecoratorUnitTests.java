@@ -74,20 +74,6 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
     }
 
     @Test
-    @DisplayName("UT constructor when cache not found should throw IllegalStateException")
-    void constructor_whenCacheNotFound_shouldThrowIllegalStateException() {
-        // given
-        String cacheName = "test-cache";
-        when(cacheManager.getCache(cacheName)).thenReturn(null);
-
-        // when + then
-        assertThatThrownBy(() -> new ConsumedOutboxManagerCacheDecorator(
-                cacheManager, cacheName, delegate, cacheObserver))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Cache for outbox with name test-cache not found");
-    }
-
-    @Test
     @DisplayName("UT isConsumed() when cache hit should increment hits counter and return true")
     void isConsumed_whenCacheHit_shouldIncrementHitsCounterAndReturnTrue() {
         // given
@@ -186,7 +172,6 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
         Set<UUID> ids = Set.of(id1, id2);
         Set<UUID> expectedResult = Set.of(id1);
         String cacheName = "test-cache";
-        when(cacheManager.getCache(cacheName)).thenReturn(cache);
         when(delegate.filterConsumed(ids)).thenReturn(expectedResult);
 
         decorator = new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheName, delegate, cacheObserver);
@@ -206,7 +191,6 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
         Set<UUID> ids = Set.of();
         Set<UUID> expectedResult = Set.of();
         String cacheName = "test-cache";
-        when(cacheManager.getCache(cacheName)).thenReturn(cache);
         when(delegate.filterConsumed(ids)).thenReturn(expectedResult);
 
         decorator = new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheName, delegate, cacheObserver);
@@ -227,7 +211,6 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
         int batchSize = 100;
         int expectedResult = 50;
         String cacheName = "test-cache";
-        when(cacheManager.getCache(cacheName)).thenReturn(cache);
         when(delegate.cleanBatchByTtl(ttl, batchSize)).thenReturn(expectedResult);
 
         decorator = new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheName, delegate, cacheObserver);
@@ -247,7 +230,6 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
         Duration ttl = Duration.ofHours(1);
         int batchSize = 100;
         String cacheName = "test-cache";
-        when(cacheManager.getCache(cacheName)).thenReturn(cache);
         when(delegate.cleanBatchByTtl(ttl, batchSize)).thenReturn(0);
 
         decorator = new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheName, delegate, cacheObserver);

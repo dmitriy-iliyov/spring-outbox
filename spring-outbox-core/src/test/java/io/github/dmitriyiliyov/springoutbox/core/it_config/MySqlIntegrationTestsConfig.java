@@ -16,6 +16,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
@@ -57,5 +59,15 @@ public class MySqlIntegrationTestsConfig {
     @Bean
     public ConsumedOutboxRepository mysqlConsumedOutboxRepository(DataSource dataSource) {
         return new MySqlConsumedOutboxRepository(new JdbcTemplate(dataSource), new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    }
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
+        return new TransactionTemplate(transactionManager);
     }
 }

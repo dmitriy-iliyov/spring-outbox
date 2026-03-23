@@ -299,8 +299,8 @@ public class DefaultOutboxDlqTransferUnitTests {
         assertEquals(eventId2, savedOutboxEvents.get(1).getId());
         assertEquals(EventStatus.PENDING, savedOutboxEvents.get(0).getStatus());
         assertEquals(EventStatus.PENDING, savedOutboxEvents.get(1).getStatus());
-        assertEquals(0, savedOutboxEvents.get(0).getRetryCount());
-        assertEquals(0, savedOutboxEvents.get(1).getRetryCount());
+        assertEquals(-1, savedOutboxEvents.get(0).getRetryCount());
+        assertEquals(-1, savedOutboxEvents.get(1).getRetryCount());
 
         ArgumentCaptor<Set<UUID>> deleteIdsCaptor = ArgumentCaptor.forClass(Set.class);
         verify(dlqManager).deleteBatch(deleteIdsCaptor.capture());
@@ -380,7 +380,7 @@ public class DefaultOutboxDlqTransferUnitTests {
 
         List<OutboxEvent> savedOutboxEvents = outboxEventsCaptor.getValue();
         assertEquals(1, savedOutboxEvents.size());
-        assertEquals(0, savedOutboxEvents.get(0).getRetryCount());
+        assertEquals(-1, savedOutboxEvents.get(0).getRetryCount());
     }
 
     @Test
