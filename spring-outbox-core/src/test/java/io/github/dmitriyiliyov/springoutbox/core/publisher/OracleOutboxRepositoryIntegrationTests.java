@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.it_config.BaseOracleIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.core.it.BaseOracleIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import org.junit.jupiter.api.DisplayName;
