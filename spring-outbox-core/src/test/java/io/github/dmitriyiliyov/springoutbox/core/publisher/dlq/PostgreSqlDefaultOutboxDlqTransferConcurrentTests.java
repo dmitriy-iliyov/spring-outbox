@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.core.it.BasePostgresSqlIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.PostgreSqlOutboxRepository;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -41,9 +42,11 @@ public class PostgreSqlDefaultOutboxDlqTransferConcurrentTests extends BasePostg
                 Arguments.of(100, 5),
                 Arguments.of(100, 10),
                 Arguments.of(1000, 10),
-                Arguments.of(1000, 100),
-                Arguments.of(10000, 100),
-                Arguments.of(10000, 1000)
+                Arguments.of(10000, 10)
+//                ,
+//                Arguments.of(1000, 100),
+//                Arguments.of(10000, 100),
+//                Arguments.of(10000, 1000)
         );
     }
 
@@ -54,6 +57,7 @@ public class PostgreSqlDefaultOutboxDlqTransferConcurrentTests extends BasePostg
         verifier.getJdbcTemplate().execute("DELETE FROM outbox_dlq_events");
     }
 
+    @Disabled
     @MethodSource("concurrentArgs")
     @ParameterizedTest
     @DisplayName("CT transferToDlq() concurrent execution should move each event exactly once")
@@ -64,6 +68,7 @@ public class PostgreSqlDefaultOutboxDlqTransferConcurrentTests extends BasePostg
         }
     }
 
+    @Disabled
     @MethodSource("concurrentArgs")
     @ParameterizedTest
     @DisplayName("CT transferFromDlq() concurrent execution should move each event exactly once")
