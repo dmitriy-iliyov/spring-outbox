@@ -5,9 +5,4 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(classes = TestApplication.class)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-public abstract class BaseIntegrationTests {
-
-    static boolean isCi() {
-        return System.getenv("CI") != null;
-    }
-}
+public abstract class BaseIntegrationTests { }

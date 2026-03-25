@@ -46,7 +46,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("rabbit-it")
 class RabbitMqOutboxSenderIntegrationTests {
 
-    private static final boolean IS_CI = System.getenv("CI") != null;
     private static final String EXCHANGE = "integration-test-exchange";
     private static final String QUEUE = "integration-test-queue";
     private static final String ROUTING_KEY = "TEST_EVENT";
@@ -54,22 +53,16 @@ class RabbitMqOutboxSenderIntegrationTests {
     static final RabbitMQContainer rabbit;
 
     static {
-        if (!IS_CI) {
-            rabbit = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management"));
-            rabbit.start();
-        } else {
-            rabbit = null;
-        }
+        rabbit = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.13-management"));
+        rabbit.start();
     }
 
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
-        if (!IS_CI) {
-            registry.add("spring.rabbitmq.host", rabbit::getHost);
-            registry.add("spring.rabbitmq.port", rabbit::getAmqpPort);
-            registry.add("spring.rabbitmq.username", rabbit::getAdminUsername);
-            registry.add("spring.rabbitmq.password", rabbit::getAdminPassword);
-        }
+        registry.add("spring.rabbitmq.host", rabbit::getHost);
+        registry.add("spring.rabbitmq.port", rabbit::getAmqpPort);
+        registry.add("spring.rabbitmq.username", rabbit::getAdminUsername);
+        registry.add("spring.rabbitmq.password", rabbit::getAdminPassword);
     }
 
     @Autowired

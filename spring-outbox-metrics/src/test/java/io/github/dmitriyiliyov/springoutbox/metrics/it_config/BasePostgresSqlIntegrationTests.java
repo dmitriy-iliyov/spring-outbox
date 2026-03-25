@@ -10,10 +10,8 @@ public abstract class BasePostgresSqlIntegrationTests extends BaseIntegrationTes
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        if (!BaseIntegrationTests.isCi()) {
-            registry.add("spring.datasource.url", PostgresTestContainerSingleton.INSTANCE::getJdbcUrl);
-            registry.add("spring.datasource.username", PostgresTestContainerSingleton.INSTANCE::getUsername);
-            registry.add("spring.datasource.password", PostgresTestContainerSingleton.INSTANCE::getPassword);
-        }
+        registry.add("spring.datasource.url", PostgresTestContainerSingleton.INSTANCE::getJdbcUrl);
+        registry.add("spring.datasource.username", PostgresTestContainerSingleton.INSTANCE::getUsername);
+        registry.add("spring.datasource.password", PostgresTestContainerSingleton.INSTANCE::getPassword);
     }
 }

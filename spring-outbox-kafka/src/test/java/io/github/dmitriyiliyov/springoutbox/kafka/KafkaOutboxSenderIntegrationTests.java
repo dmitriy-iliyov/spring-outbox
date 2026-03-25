@@ -39,32 +39,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("kafka-it")
 class KafkaOutboxSenderIntegrationTests {
 
-    private static final boolean IS_CI = System.getenv("CI") != null;
     private static final String TOPIC = "integration-test-topic";
 
     static final KafkaContainer kafka;
 
     static {
-        if (!IS_CI) {
-            kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
-            kafka.start();
-        } else {
-            kafka = null;
-        }
+        kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
+        kafka.start();
     }
 
     @DynamicPropertySource
     static void overrideProperties(DynamicPropertyRegistry registry) {
-        if (!IS_CI) {
-            registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
-            registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
-            registry.add("spring.kafka.consumer.group-id", () -> "test-group");
-            registry.add("spring.kafka.producer.value-serializer",
-                    () -> "org.springframework.kafka.support.serializer.JsonSerializer");
-            registry.add("spring.kafka.consumer.value-deserializer",
-                    () -> "org.springframework.kafka.support.serializer.JsonDeserializer");
-            registry.add("spring.kafka.consumer.properties.spring.json.trusted.packages", () -> "*");
-        }
+        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.kafka.consumer.auto-offset-reset", () -> "earliest");
+        registry.add("spring.kafka.consumer.group-id", () -> "test-group");
+        registry.add("spring.kafka.producer.value-serializer",
+                () -> "org.springframework.kafka.support.serializer.JsonSerializer");
+        registry.add("spring.kafka.consumer.value-deserializer",
+                () -> "org.springframework.kafka.support.serializer.JsonDeserializer");
+        registry.add("spring.kafka.consumer.properties.spring.json.trusted.packages", () -> "*");
     }
 
     @Autowired

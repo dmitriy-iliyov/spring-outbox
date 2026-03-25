@@ -14,9 +14,7 @@ public abstract class BaseRedisIntegrationTests {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        if (!BaseIntegrationTests.isCi()) {
-            registry.add("spring.data.redis.host", RedisTestContainerSingleton.INSTANCE::getHost);
-            registry.add("spring.data.redis.port", RedisTestContainerSingleton.INSTANCE::getFirstMappedPort);
-        }
+        registry.add("spring.data.redis.host", RedisTestContainerSingleton.INSTANCE::getHost);
+        registry.add("spring.data.redis.port", RedisTestContainerSingleton.INSTANCE::getFirstMappedPort);
     }
 }

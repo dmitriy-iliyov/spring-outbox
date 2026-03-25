@@ -11,10 +11,8 @@ public abstract class BaseMySqlIntegrationTests extends BaseIntegrationTests {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-        if (!BaseIntegrationTests.isCi()) {
-            registry.add("spring.datasource.url", MySqlTestContainerSingleton.INSTANCE::getJdbcUrl);
-            registry.add("spring.datasource.username", MySqlTestContainerSingleton.INSTANCE::getUsername);
-            registry.add("spring.datasource.password", MySqlTestContainerSingleton.INSTANCE::getPassword);
-        }
+        registry.add("spring.datasource.url", MySqlTestContainerSingleton.INSTANCE::getJdbcUrl);
+        registry.add("spring.datasource.username", MySqlTestContainerSingleton.INSTANCE::getUsername);
+        registry.add("spring.datasource.password", MySqlTestContainerSingleton.INSTANCE::getPassword);
     }
 }
