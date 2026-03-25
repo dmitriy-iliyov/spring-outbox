@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.core.it_config.BaseOracleIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.core.it.BaseOracleIntegrationTests;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;

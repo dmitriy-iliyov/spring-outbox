@@ -1,13 +1,15 @@
-package io.github.dmitriyiliyov.springoutbox.core.it_config;
+package io.github.dmitriyiliyov.springoutbox.core.it.config;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.MySqlConsumedOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.MySqlOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.MySqlOutboxDlqRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
@@ -67,7 +69,26 @@ public class MySqlIntegrationTestsConfig {
     }
 
     @Bean
-    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
-        return new TransactionTemplate(transactionManager);
+    public OutboxDlqManager mysqlOutboxDlqManager(@Qualifier("mysqlOutboxDlqRepository") OutboxDlqRepository repository) {
+        return new DefaultOutboxDlqManager(repository);
+    }
+
+    @Bean
+    public OutboxManager mysqlOutboxManager(@Qualifier("mysqlOutboxRepository") OutboxRepository repository) {
+        return new DefaultOutboxManager(repository);
+    }
+
+    @Bean
+    public OutboxDlqTransfer mysqlOutboxDlqTransfer(
+            PlatformTransactionManager transactionManager,
+            @Qualifier("mysqlOutboxManager") OutboxManager manager,
+            @Qualifier("mysqlOutboxDlqManager") OutboxDlqManager dlqManager
+    ) {
+        return new DefaultOutboxDlqTransfer(
+                new TransactionTemplate(transactionManager),
+                manager,
+                dlqManager,
+                new LogOutboxDlqHandler()
+        );
     }
 }

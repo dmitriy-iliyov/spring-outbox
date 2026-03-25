@@ -1,13 +1,15 @@
-package io.github.dmitriyiliyov.springoutbox.core.it_config;
+package io.github.dmitriyiliyov.springoutbox.core.it.config;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OracleConsumedOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OracleOutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OracleOutboxDlqRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
@@ -61,7 +63,26 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
-    public TransactionTemplate transactionTemplate(PlatformTransactionManager transactionManager) {
-        return new TransactionTemplate(transactionManager);
+    public OutboxDlqManager oracleOutboxDlqManager(@Qualifier("oracleOutboxDlqRepository") OutboxDlqRepository repository) {
+        return new DefaultOutboxDlqManager(repository);
+    }
+
+    @Bean
+    public OutboxManager oracleOutboxManager(@Qualifier("oracleOutboxRepository") OutboxRepository repository) {
+        return new DefaultOutboxManager(repository);
+    }
+
+    @Bean
+    public OutboxDlqTransfer oracleOutboxDlqTransfer(
+            PlatformTransactionManager transactionManager,
+            @Qualifier("oracleOutboxManager") OutboxManager manager,
+            @Qualifier("oracleOutboxDlqManager") OutboxDlqManager dlqManager
+    ) {
+        return new DefaultOutboxDlqTransfer(
+                new TransactionTemplate(transactionManager),
+                manager,
+                dlqManager,
+                new LogOutboxDlqHandler()
+        );
     }
 }

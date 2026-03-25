@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.core.it_config.BaseRedisIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.core.it.BaseRedisIntegrationTests;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

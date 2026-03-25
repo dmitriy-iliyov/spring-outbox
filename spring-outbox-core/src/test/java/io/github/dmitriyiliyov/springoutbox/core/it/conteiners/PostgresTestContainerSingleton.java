@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.it_config;
+package io.github.dmitriyiliyov.springoutbox.core.it.conteiners;
 
 import org.testcontainers.containers.PostgreSQLContainer;
 

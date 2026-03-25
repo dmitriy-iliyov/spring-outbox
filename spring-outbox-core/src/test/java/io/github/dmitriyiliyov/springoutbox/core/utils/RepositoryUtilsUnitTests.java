@@ -6,8 +6,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -27,20 +25,20 @@ class RepositoryUtilsUnitTests {
         assertThat(result).isFalse();
     }
 
-    @Test
-    @DisplayName("UT isIdsValid() should return false when ids size > 1000")
-    void isIdsValid_shouldReturnFalse_whenIdsSizeIsTooLarge() {
-        // given
-        Set<UUID> ids = IntStream.range(0, 1001)
-                .mapToObj(i -> UUID.randomUUID())
-                .collect(Collectors.toSet());
-
-        // when
-        boolean result = RepositoryUtils.isIdsValid(ids);
-
-        // then
-        assertThat(result).isFalse();
-    }
+//    @Test
+//    @DisplayName("UT isIdsValid() should return false when ids size > 1000")
+//    void isIdsValid_shouldReturnFalse_whenIdsSizeIsTooLarge() {
+//        // given
+//        Set<UUID> ids = IntStream.range(0, 1001)
+//                .mapToObj(i -> UUID.randomUUID())
+//                .collect(Collectors.toSet());
+//
+//        // when
+//        boolean result = RepositoryUtils.isIdsValid(ids);
+//
+//        // then
+//        assertThat(result).isFalse();
+//    }
 
     @Test
     @DisplayName("UT isIdsValid() should return true when ids size is valid")

@@ -1,5 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.core.it_config;
+package io.github.dmitriyiliyov.springoutbox.core.it;
 
+import io.github.dmitriyiliyov.springoutbox.core.it.config.RedisIntegrationTestsConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;

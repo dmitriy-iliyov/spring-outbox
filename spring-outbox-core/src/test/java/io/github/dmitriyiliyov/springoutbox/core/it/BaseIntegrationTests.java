@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.it_config;
+package io.github.dmitriyiliyov.springoutbox.core.it;
 
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;

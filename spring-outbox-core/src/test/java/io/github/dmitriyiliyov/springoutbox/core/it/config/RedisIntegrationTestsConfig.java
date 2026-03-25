@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.it_config;
+package io.github.dmitriyiliyov.springoutbox.core.it.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cache.CacheManager;
