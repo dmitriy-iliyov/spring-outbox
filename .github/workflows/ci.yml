@@ -75,6 +75,11 @@ jobs:
           KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
           KAFKA_LOG_DIRS: /kafka/data
           KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+        options: >-
+          --health-cmd "nc -z localhost 1431"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
       rabbitmq:
         image: rabbitmq:3.13-management
