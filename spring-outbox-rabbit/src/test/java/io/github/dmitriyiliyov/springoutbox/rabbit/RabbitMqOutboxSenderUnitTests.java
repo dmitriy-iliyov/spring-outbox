@@ -7,8 +7,6 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -27,7 +25,6 @@ import java.util.concurrent.Executors;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.anyString;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -44,9 +41,6 @@ class RabbitMqOutboxSenderUnitTests {
     @Mock
     private Channel channel;
 
-    @Captor
-    private ArgumentCaptor<ChannelCallback<Void>> channelCallbackCaptor;
-
     private RabbitMqOutboxSender rabbitMqOutboxSender;
 
     @BeforeAll
@@ -62,10 +56,11 @@ class RabbitMqOutboxSenderUnitTests {
     @BeforeEach
     void setUp() {
         rabbitMqOutboxSender = new RabbitMqOutboxSender(rabbitTemplate, TIMEOUT_SECONDS);
+
         doAnswer(invocation -> {
-            channelCallbackCaptor.getValue().doInRabbit(channel);
-            return null;
-        }).when(rabbitTemplate).execute(channelCallbackCaptor.capture());
+            ChannelCallback<Void> callback = invocation.getArgument(0);
+            return callback.doInRabbit(channel);
+        }).when(rabbitTemplate).execute(any(ChannelCallback.class));
     }
 
     @Test
@@ -96,13 +91,15 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(1L, false);
                     listener.handleAck(2L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -111,8 +108,7 @@ class RabbitMqOutboxSenderUnitTests {
 
         SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
 
-        verify(channel, times(2)).basicPublish(eq(EXCHANGE), anyString(), anyBoolean(),
-                any(AMQP.BasicProperties.class), any(byte[].class));
+        verify(channel, times(2)).basicPublish(eq(EXCHANGE), anyString(), anyBoolean(), any(AMQP.BasicProperties.class), any(byte[].class));
         assertThat(result.processedIds()).containsExactlyInAnyOrder(event1.getId(), event2.getId());
         assertThat(result.failedIds()).isEmpty();
     }
@@ -125,12 +121,14 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(2L, true);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -151,13 +149,15 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleNack(1L, false);
                     listener.handleNack(2L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -178,12 +178,14 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleNack(2L, true);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -204,13 +206,15 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(1L, false);
                     listener.handleNack(2L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -231,16 +235,17 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doThrow(new IOException("Publish failed"))
-                .when(channel).basicPublish(eq(EXCHANGE), eq(event2.getEventType()), anyBoolean(),
-                        any(AMQP.BasicProperties.class), any(byte[].class));
+                .when(channel).basicPublish(eq(EXCHANGE), eq(event2.getEventType()), anyBoolean(), any(AMQP.BasicProperties.class), any(byte[].class));
 
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(1L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -276,12 +281,14 @@ class RabbitMqOutboxSenderUnitTests {
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(1L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -300,12 +307,14 @@ class RabbitMqOutboxSenderUnitTests {
         OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(1L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
@@ -324,13 +333,15 @@ class RabbitMqOutboxSenderUnitTests {
         OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L);
+
         doAnswer(invocation -> {
             ConfirmListener listener = invocation.getArgument(0);
             executor.submit(() -> {
                 try {
+                    Thread.sleep(100);
                     listener.handleAck(1L, false);
                     listener.handleAck(1L, false);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             });
