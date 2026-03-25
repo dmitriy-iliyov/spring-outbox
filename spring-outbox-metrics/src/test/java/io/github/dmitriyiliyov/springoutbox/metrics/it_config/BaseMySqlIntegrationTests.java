@@ -7,7 +7,6 @@ import org.springframework.test.context.DynamicPropertySource;
 @ActiveProfiles("mysql-it")
 public abstract class BaseMySqlIntegrationTests extends BaseIntegrationTests {
 
-
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", MySqlTestContainerSingleton.INSTANCE::getJdbcUrl);
