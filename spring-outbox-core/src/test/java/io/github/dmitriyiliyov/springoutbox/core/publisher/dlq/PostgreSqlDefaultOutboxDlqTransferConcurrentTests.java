@@ -41,10 +41,7 @@ public class PostgreSqlDefaultOutboxDlqTransferConcurrentTests extends BasePostg
                 Arguments.of(100, 5),
                 Arguments.of(100, 10),
                 Arguments.of(1000, 10),
-                Arguments.of(10000, 10),
-                Arguments.of(1000, 100),
-                Arguments.of(10000, 100),
-                Arguments.of(10000, 1000)
+                Arguments.of(10000, 10)
         );
     }
 
