@@ -1,7 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.it.BasePostgresSqlIntegrationTests;
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultResultSetMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

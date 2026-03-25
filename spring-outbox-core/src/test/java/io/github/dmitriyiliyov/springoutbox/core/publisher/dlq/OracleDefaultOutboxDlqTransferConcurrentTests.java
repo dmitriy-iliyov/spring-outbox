@@ -3,7 +3,6 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.core.it.BaseOracleIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OracleOutboxRepository;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -59,7 +58,6 @@ public class OracleDefaultOutboxDlqTransferConcurrentTests extends BaseOracleInt
         verifier.getJdbcTemplate().execute("DELETE FROM outbox_dlq_events");
     }
 
-    @Disabled
     @MethodSource("concurrentArgs")
     @ParameterizedTest
     @DisplayName("CT transferToDlq() concurrent execution should move each event exactly once")
@@ -70,7 +68,6 @@ public class OracleDefaultOutboxDlqTransferConcurrentTests extends BaseOracleInt
         }
     }
 
-    @Disabled
     @MethodSource("concurrentArgs")
     @ParameterizedTest
     @DisplayName("CT transferFromDlq() concurrent execution should move each event exactly once")

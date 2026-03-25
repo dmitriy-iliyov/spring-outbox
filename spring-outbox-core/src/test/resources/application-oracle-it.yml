@@ -1,6 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:oracle:thin:@localhost:1430/outbox_test
-    username: admin
-    password: root
-    driver-class-name: oracle.jdbc.OracleDriver
