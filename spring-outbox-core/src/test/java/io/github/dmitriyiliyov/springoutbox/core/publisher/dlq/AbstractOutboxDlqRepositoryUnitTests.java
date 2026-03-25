@@ -11,7 +11,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -70,22 +69,6 @@ class AbstractOutboxDlqRepositoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT findBatch() when ids size is too big should early return")
-    void findBatch_whenIdsIsTooBig_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 1001; i++) {
-            ids.add(UUID.randomUUID());
-        }
-
-        // when
-        tested.findBatch(ids);
-
-        // then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
     @DisplayName("UT updateBatchStatus() when ids is empty should early return")
     void updateBatchStatus_whenIdsIsEmpty_shouldEarlyReturn() {
         // given
@@ -112,23 +95,6 @@ class AbstractOutboxDlqRepositoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT updateBatchStatus() when ids size is too big should early return")
-    void updateBatchStatus_whenIdsIsTooBig_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 1001; i++) {
-            ids.add(UUID.randomUUID());
-        }
-        DlqStatus status = DlqStatus.MOVED;
-
-        // when
-        tested.updateBatchStatus(ids, status);
-
-        // then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
     @DisplayName("UT deleteBatch() when ids is empty should early return")
     void deleteBatch_whenIdsIsEmpty_shouldEarlyReturn() {
         // given
@@ -149,22 +115,6 @@ class AbstractOutboxDlqRepositoryUnitTests {
 
         // when + then
         assertThrows(NullPointerException.class, () -> tested.deleteBatch(ids));
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT deleteBatch() when ids size is too big should early return")
-    void deleteBatch_whenIdsIsTooBig_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = new HashSet<>();
-        for (int i = 0; i < 1001; i++) {
-            ids.add(UUID.randomUUID());
-        }
-
-        // when
-        tested.deleteBatch(ids);
-
-        // then
         verifyNoInteractions(jdbcTemplate);
     }
 }

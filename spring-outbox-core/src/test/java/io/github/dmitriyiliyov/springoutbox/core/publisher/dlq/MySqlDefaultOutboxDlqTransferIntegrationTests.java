@@ -1,18 +1,16 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.it_config.BaseMySqlIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.core.it.BaseMySqlIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.MySqlOutboxRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
-
-import static org.mockito.Mockito.mock;
 
 @Transactional
 class MySqlDefaultOutboxDlqTransferIntegrationTests extends BaseMySqlIntegrationTests {
@@ -22,11 +20,13 @@ class MySqlDefaultOutboxDlqTransferIntegrationTests extends BaseMySqlIntegration
     @Autowired
     MySqlDefaultOutboxDlqTransferIntegrationTests(MySqlOutboxRepository outboxRepository,
                                                   MySqlOutboxDlqRepository dlqRepository,
-                                                  TransactionTemplate transactionTemplate,
+                                                  @Qualifier("mysqlOutboxDlqTransfer") DefaultOutboxDlqTransfer transfer,
                                                   JdbcTemplate jdbcTemplate) {
-        OutboxDlqHandler handler = mock(OutboxDlqHandler.class);
         this.verifier = new DefaultOutboxDlqTransferVerifier(
-                jdbcTemplate, outboxRepository, dlqRepository, transactionTemplate, handler,
+                jdbcTemplate,
+                outboxRepository,
+                dlqRepository,
+                transfer,
                 raw -> {
                     byte[] bytes = (byte[]) raw;
                     ByteBuffer bb = ByteBuffer.wrap(bytes);
@@ -43,15 +43,6 @@ class MySqlDefaultOutboxDlqTransferIntegrationTests extends BaseMySqlIntegration
 
     @Test @DisplayName("IT transferToDlq() should respect batch size")
     void transferToDlq_respectsBatchSize() { verifier.transferToDlq_respectsBatchSize(); }
-
-    @Test @DisplayName("IT transferToDlq() should call handler with moved events")
-    void transferToDlq_callsHandlerWithMovedEvents() { verifier.transferToDlq_callsHandlerWithMovedEvents(); }
-
-    @Test @DisplayName("IT transferToDlq() empty outbox should not call handler")
-    void transferToDlq_emptyOutbox_doesNotCallHandler() { verifier.transferToDlq_emptyOutbox_doesNotCallHandler(); }
-
-    @Test @DisplayName("IT transferToDlq() handler exception should not rollback transfer")
-    void transferToDlq_handlerException_doesNotRollback() { verifier.transferToDlq_handlerException_doesNotRollback(); }
 
     @Test @DisplayName("IT transferToDlq() should preserve event data")
     void transferToDlq_preservesEventData() { verifier.transferToDlq_preservesEventData(); }

@@ -1,12 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -17,11 +14,9 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 class DefaultOutboxDlqTransferVerifier {
 
@@ -29,7 +24,6 @@ class DefaultOutboxDlqTransferVerifier {
     private final OutboxRepository outboxRepository;
     private final OutboxDlqRepository dlqRepository;
     private final DefaultOutboxDlqTransfer transfer;
-    private final OutboxDlqHandler handler;
     private final IdExtractor idExtractor;
 
     @FunctionalInterface
@@ -41,20 +35,14 @@ class DefaultOutboxDlqTransferVerifier {
             JdbcTemplate jdbcTemplate,
             OutboxRepository outboxRepository,
             OutboxDlqRepository dlqRepository,
-            TransactionTemplate transactionTemplate,
-            OutboxDlqHandler handler, IdExtractor idExtractor
+            DefaultOutboxDlqTransfer transfer,
+            IdExtractor idExtractor
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.outboxRepository = outboxRepository;
         this.dlqRepository = dlqRepository;
-        this.handler = handler;
         this.idExtractor = idExtractor;
-        this.transfer = new DefaultOutboxDlqTransfer(
-                transactionTemplate,
-                new DefaultOutboxManager(outboxRepository),
-                new DefaultOutboxDlqManager(dlqRepository),
-                handler
-        );
+        this.transfer = transfer;
     }
 
     void transferToDlq_failedEvents_movedToDlqAndDeletedFromOutbox() {
@@ -93,34 +81,6 @@ class DefaultOutboxDlqTransferVerifier {
 
         assertThat(queryDlqIdsByStatus("MOVED")).hasSize(2);
         assertThat(queryOutboxIdsByStatus("FAILED")).hasSize(1);
-    }
-
-    void transferToDlq_callsHandlerWithMovedEvents() {
-        OutboxEvent failed = saveOutboxEvent(EventStatus.FAILED);
-
-        transfer.transferToDlq(10);
-
-        ArgumentCaptor<List<OutboxEvent>> captor = ArgumentCaptor.forClass(List.class);
-        verify(handler, times(1)).handle(captor.capture());
-        assertThat(captor.getValue())
-                .extracting(OutboxEvent::getId)
-                .containsOnly(failed.getId());
-    }
-
-    void transferToDlq_emptyOutbox_doesNotCallHandler() {
-        transfer.transferToDlq(10);
-
-        verify(handler, never()).handle(any());
-    }
-
-    void transferToDlq_handlerException_doesNotRollback() {
-        saveOutboxEvent(EventStatus.FAILED);
-        doThrow(new RuntimeException("handler error")).when(handler).handle(any());
-
-        assertThatCode(() -> transfer.transferToDlq(10)).doesNotThrowAnyException();
-
-        assertThat(queryDlqIdsByStatus("MOVED")).hasSize(1);
-        assertThat(queryOutboxIdsByStatus("FAILED")).isEmpty();
     }
 
     void transferToDlq_preservesEventData() {
@@ -215,8 +175,8 @@ class DefaultOutboxDlqTransferVerifier {
             });
         }
 
-        latch.await();
-        executor.shutdown();
+        latch.await(5, TimeUnit.SECONDS);
+        executor.awaitTermination(1, TimeUnit.SECONDS);
 
         List<UUID> ids = queryDlqIdsByStatus("MOVED");
         assertThat(ids).hasSize(eventCount);
@@ -238,8 +198,8 @@ class DefaultOutboxDlqTransferVerifier {
             });
         }
 
-        latch.await();
-        executor.shutdown();
+        latch.await(5, TimeUnit.SECONDS);
+        executor.awaitTermination(1, TimeUnit.SECONDS);
 
         List<UUID> ids = queryOutboxIdsByStatus("PENDING");
         assertThat(ids).hasSize(eventCount);

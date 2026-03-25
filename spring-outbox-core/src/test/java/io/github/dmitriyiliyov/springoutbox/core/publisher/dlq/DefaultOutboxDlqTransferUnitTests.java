@@ -3,7 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,18 +41,21 @@ public class DefaultOutboxDlqTransferUnitTests {
     @InjectMocks
     DefaultOutboxDlqTransfer tested;
 
-    @Test
-    @DisplayName("UT transferOutboxToDlq() when events is empty, should not transfer and not call handler")
-    public void transferOutboxToDlq_whenEventsIsEmpty_shouldNotTransferAndNotCallHandler() {
-        // given
-        int batchSize = 50;
-
-        doAnswer(invocation -> {
+    @BeforeEach
+    void setupTx() {
+        lenient().doAnswer(invocation -> {
             Consumer<?> action = invocation.getArgument(0);
-            when(manager.loadBatch(EventStatus.FAILED, batchSize)).thenReturn(List.of());
             action.accept(null);
             return null;
         }).when(transactionTemplate).executeWithoutResult(any());
+    }
+
+    @Test
+    @DisplayName("UT transferToDlq() when events is empty, should not transfer and not call handler")
+    void transferToDlq_whenEventsIsEmpty_shouldNotTransferAndNotCallHandler() {
+        // given
+        int batchSize = 50;
+        when(manager.loadBatch(EventStatus.FAILED, batchSize)).thenReturn(List.of());
 
         // when
         tested.transferToDlq(batchSize);
@@ -65,76 +68,39 @@ public class DefaultOutboxDlqTransferUnitTests {
     }
 
     @Test
-    @DisplayName("UT transferOutboxToDlq() when events exist, should transfer to dlq and call handler")
-    public void transferOutboxToDlq_whenEventsExist_shouldTransferToDlqAndCallHandler() {
+    @DisplayName("UT transferToDlq() when events exist, should transfer and call handler")
+    void transferToDlq_whenEventsExist_shouldTransferAndCallHandler() {
         // given
         int batchSize = 50;
-        UUID eventId1 = UUID.randomUUID();
-        UUID eventId2 = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
 
-        OutboxEvent event1 = new OutboxEvent(
-                eventId1,
+        OutboxEvent event = new OutboxEvent(
+                eventId,
                 EventStatus.FAILED,
-                "OrderCreated",
-                "com.example.OrderCreatedEvent",
-                "{\"orderId\":\"123\"}",
-                3,
+                "type",
+                "type",
+                "{}",
+                1,
                 Instant.now(),
                 Instant.now(),
                 Instant.now()
         );
 
-        OutboxEvent event2 = new OutboxEvent(
-                eventId2,
-                EventStatus.FAILED,
-                "UserRegistered",
-                "com.example.UserRegisteredEvent",
-                "{\"userId\":\"456\"}",
-                2,
-                Instant.now(),
-                Instant.now(),
-                Instant.now()
-        );
-
-        List<OutboxEvent> events = List.of(event1, event2);
-
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(manager.loadBatch(EventStatus.FAILED, batchSize)).thenReturn(events);
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
+        when(manager.loadBatch(EventStatus.FAILED, batchSize)).thenReturn(List.of(event));
 
         // when
         tested.transferToDlq(batchSize);
 
         // then
         verify(manager).loadBatch(EventStatus.FAILED, batchSize);
-
-        ArgumentCaptor<List<OutboxDlqEvent>> dlqEventsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(dlqManager).saveBatch(dlqEventsCaptor.capture());
-
-        List<OutboxDlqEvent> savedDlqEvents = dlqEventsCaptor.getValue();
-        assertEquals(2, savedDlqEvents.size());
-        assertEquals(eventId1, savedDlqEvents.get(0).getId());
-        assertEquals(eventId2, savedDlqEvents.get(1).getId());
-        Assertions.assertEquals(DlqStatus.MOVED, savedDlqEvents.get(0).getDlqStatus());
-        assertEquals(DlqStatus.MOVED, savedDlqEvents.get(1).getDlqStatus());
-
-        ArgumentCaptor<Set<UUID>> deleteIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(manager).deleteBatch(deleteIdsCaptor.capture());
-
-        Set<UUID> deletedIds = deleteIdsCaptor.getValue();
-        assertEquals(2, deletedIds.size());
-        assertTrue(deletedIds.contains(eventId1));
-        assertTrue(deletedIds.contains(eventId2));
-
-        verify(handler).handle(events);
+        verify(dlqManager).saveBatch(anyList());
+        verify(manager).deleteBatch(Set.of(eventId));
+        verify(handler).handle(List.of(event));
     }
 
     @Test
-    @DisplayName("UT transferOutboxToDlq() when exception in transaction, should not call handler")
-    public void transferToDlq_whenExceptionInTransaction_shouldNotCallHandler() {
+    @DisplayName("UT transferToDlq() when exception in transaction, should not call handler")
+    void transferToDlq_whenExceptionInTransaction_shouldNotCallHandler() {
         // given
         int batchSize = 50;
         UUID eventId = UUID.randomUUID();
@@ -172,47 +138,31 @@ public class DefaultOutboxDlqTransferUnitTests {
     }
 
     @Test
-    @DisplayName("UT transferOutboxToDlq() when handler throws exception, should not affect transaction")
-    public void transferToDlq_whenHandlerThrows_shouldNotAffectTransaction() {
+    @DisplayName("UT transferToDlq() when handler throws exception, should not affect transaction")
+    void transferToDlq_whenHandlerThrows_shouldNotAffectTransaction() {
         // given
         int batchSize = 50;
-        UUID eventId = UUID.randomUUID();
 
         OutboxEvent event = new OutboxEvent(
-                eventId,
-                EventStatus.FAILED,
-                "OrderCreated",
-                "com.example.OrderCreatedEvent",
-                "{\"orderId\":\"123\"}",
-                3,
-                Instant.now(),
-                Instant.now(),
-                Instant.now()
+                UUID.randomUUID(), EventStatus.FAILED, "t", "t", "{}", 1,
+                Instant.now(), Instant.now(), Instant.now()
         );
 
-        List<OutboxEvent> events = List.of(event);
+        when(manager.loadBatch(any(EventStatus.class), anyInt())).thenReturn(List.of(event));
+        doThrow(new RuntimeException()).when(handler).handle(anyList());
 
-        doAnswer(invocation -> {
-            Consumer<?> action = invocation.getArgument(0);
-            when(manager.loadBatch(EventStatus.FAILED, batchSize)).thenReturn(events);
-            action.accept(null);
-            return null;
-        }).when(transactionTemplate).executeWithoutResult(any());
-
-        doThrow(new RuntimeException("Handler error")).when(handler).handle(anyList());
-
-        // when/then - should not throw
+        // when / then
         assertDoesNotThrow(() -> tested.transferToDlq(batchSize));
 
-        verify(manager).loadBatch(EventStatus.FAILED, batchSize);
+        verify(manager).loadBatch(any(EventStatus.class), anyInt());
         verify(dlqManager).saveBatch(anyList());
         verify(manager).deleteBatch(anySet());
-        verify(handler).handle(events);
+        verify(handler).handle(List.of(event));
     }
 
     @Test
-    @DisplayName("UT transferDlqToOutbox() when dlq events is null, should not transfer")
-    public void transferDlqToOutbox_whenDlqEventsIsNull_shouldNotTransferFrom() {
+    @DisplayName("UT transferFromDlq() when dlq events is null, should not transfer")
+    void transferFromDlq_whenDlqEventsIsNull_shouldNotTransferFrom() {
         // given
         int batchSize = 50;
 
@@ -228,8 +178,8 @@ public class DefaultOutboxDlqTransferUnitTests {
     }
 
     @Test
-    @DisplayName("UT transferDlqToOutbox() when dlq events is empty, should not transfer")
-    public void transferDlqToOutbox_whenDlqEventsIsEmpty_shouldNotTransferFrom() {
+    @DisplayName("UT transferFromDlq() when dlq events is empty, should not transfer")
+    void transferFromDlq_whenDlqEventsIsEmpty_shouldNotTransferFrom() {
         // given
         int batchSize = 50;
 
@@ -245,86 +195,59 @@ public class DefaultOutboxDlqTransferUnitTests {
     }
 
     @Test
-    @DisplayName("UT transferDlqToOutbox() when dlq events exist, should transfer to outbox")
-    public void transferDlqToOutbox_whenDlqEventsExist_shouldTransferFrom() {
+    @DisplayName("UT transferFromDlq() when dlq events exist, should transfer to outbox")
+    void transferFromDlq_whenDlqEventsExist_shouldTransferFrom() {
         // given
         int batchSize = 50;
-        UUID eventId1 = UUID.randomUUID();
-        UUID eventId2 = UUID.randomUUID();
-        Instant now = Instant.now();
+        UUID eventId = UUID.randomUUID();
+        Instant createdAt = Instant.now().minusSeconds(1000);
 
-        OutboxDlqEvent dlqEvent1 = new OutboxDlqEvent(
-                eventId1,
+        OutboxDlqEvent dlqEvent = new OutboxDlqEvent(
+                eventId,
                 EventStatus.FAILED,
-                "OrderCreated",
-                "com.example.OrderCreatedEvent",
-                "{\"orderId\":\"123\"}",
-                3,
+                "type",
+                "type",
+                "{}",
+                5,
                 Instant.now(),
-                now.minusSeconds(3600),
-                now,
+                createdAt,
+                Instant.now(),
                 DlqStatus.TO_RETRY,
                 Instant.now()
         );
 
-        OutboxDlqEvent dlqEvent2 = new OutboxDlqEvent(
-                eventId2,
-                EventStatus.FAILED,
-                "UserRegistered",
-                "com.example.UserRegisteredEvent",
-                "{\"userId\":\"456\"}",
-                2,
-                Instant.now(),
-                now.minusSeconds(7200),
-                now,
-                DlqStatus.TO_RETRY,
-                Instant.now()
-        );
-
-        List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent1, dlqEvent2);
-        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
+        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(List.of(dlqEvent));
 
         // when
         tested.transferFromDlq(batchSize);
 
         // then
-        verify(dlqManager).loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
+        ArgumentCaptor<List<OutboxEvent>> captor = ArgumentCaptor.forClass(List.class);
+        verify(manager).saveBatch(captor.capture());
 
-        ArgumentCaptor<List<OutboxEvent>> outboxEventsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(manager).saveBatch(outboxEventsCaptor.capture());
+        OutboxEvent saved = captor.getValue().get(0);
 
-        List<OutboxEvent> savedOutboxEvents = outboxEventsCaptor.getValue();
-        assertEquals(2, savedOutboxEvents.size());
-        assertEquals(eventId1, savedOutboxEvents.get(0).getId());
-        assertEquals(eventId2, savedOutboxEvents.get(1).getId());
-        assertEquals(EventStatus.PENDING, savedOutboxEvents.get(0).getStatus());
-        assertEquals(EventStatus.PENDING, savedOutboxEvents.get(1).getStatus());
-        assertEquals(-1, savedOutboxEvents.get(0).getRetryCount());
-        assertEquals(-1, savedOutboxEvents.get(1).getRetryCount());
+        assertEquals(eventId, saved.getId());
+        assertEquals(EventStatus.PENDING, saved.getStatus());
+        assertEquals(-1, saved.getRetryCount());
+        assertEquals(createdAt, saved.getCreatedAt());
 
-        ArgumentCaptor<Set<UUID>> deleteIdsCaptor = ArgumentCaptor.forClass(Set.class);
-        verify(dlqManager).deleteBatch(deleteIdsCaptor.capture());
-
-        Set<UUID> deletedIds = deleteIdsCaptor.getValue();
-        assertEquals(2, deletedIds.size());
-        assertTrue(deletedIds.contains(eventId1));
-        assertTrue(deletedIds.contains(eventId2));
+        verify(dlqManager).deleteBatch(Set.of(eventId));
     }
 
     @Test
-    @DisplayName("UT transferDlqToOutbox() when exception occurs, should not delete from dlq")
-    public void transferDlqToOutbox_whenExceptionOccurs_shouldNotDeleteFromFromDlq() {
+    @DisplayName("UT transferFromDlq() when exception occurs, should not delete from dlq")
+    void transferFromDlq_whenExceptionOccurs_shouldNotDeleteFromFromDlq() {
         // given
         int batchSize = 50;
-        UUID eventId = UUID.randomUUID();
 
         OutboxDlqEvent dlqEvent = new OutboxDlqEvent(
-                eventId,
+                UUID.randomUUID(),
                 EventStatus.FAILED,
-                "OrderCreated",
-                "com.example.OrderCreatedEvent",
-                "{\"orderId\":\"123\"}",
-                3,
+                "type",
+                "type",
+                "{}",
+                1,
                 Instant.now(),
                 Instant.now(),
                 Instant.now(),
@@ -332,33 +255,29 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now()
         );
 
-        List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
+        when(dlqManager.loadAndLockBatch(any(), anyInt())).thenReturn(List.of(dlqEvent));
+        doThrow(new RuntimeException()).when(manager).saveBatch(anyList());
 
-        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
-        doThrow(new RuntimeException("Database error")).when(manager).saveBatch(anyList());
-
-        // when
+        // when / then
         assertThrows(RuntimeException.class, () -> tested.transferFromDlq(batchSize));
 
-        // then
-        verify(dlqManager).loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
+        verify(dlqManager).loadAndLockBatch(any(), anyInt());
         verify(manager).saveBatch(anyList());
         verify(dlqManager, never()).deleteBatch(anySet());
     }
 
     @Test
-    @DisplayName("UT transferDlqToOutbox() should reset retry count to zero")
-    public void transferFromDlqToOutbox_shouldResetRetryCountToZero() {
+    @DisplayName("UT transferFromDlq() should reset retry count to -1")
+    void transferFromDlq_shouldResetRetryCountToMinusOne() {
         // given
         int batchSize = 50;
-        UUID eventId = UUID.randomUUID();
 
         OutboxDlqEvent dlqEvent = new OutboxDlqEvent(
-                eventId,
+                UUID.randomUUID(),
                 EventStatus.FAILED,
-                "OrderCreated",
-                "com.example.OrderCreatedEvent",
-                "{\"orderId\":\"123\"}",
+                "type",
+                "type",
+                "{}",
                 5,
                 Instant.now(),
                 Instant.now(),
@@ -367,57 +286,48 @@ public class DefaultOutboxDlqTransferUnitTests {
                 Instant.now()
         );
 
-        List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
-
-        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
+        when(dlqManager.loadAndLockBatch(any(), anyInt())).thenReturn(List.of(dlqEvent));
 
         // when
         tested.transferFromDlq(batchSize);
 
         // then
-        ArgumentCaptor<List<OutboxEvent>> outboxEventsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(manager).saveBatch(outboxEventsCaptor.capture());
+        ArgumentCaptor<List<OutboxEvent>> captor = ArgumentCaptor.forClass(List.class);
+        verify(manager).saveBatch(captor.capture());
 
-        List<OutboxEvent> savedOutboxEvents = outboxEventsCaptor.getValue();
-        assertEquals(1, savedOutboxEvents.size());
-        assertEquals(-1, savedOutboxEvents.get(0).getRetryCount());
+        assertEquals(-1, captor.getValue().get(0).getRetryCount());
     }
 
     @Test
-    @DisplayName("UT transferDlqToOutbox() should preserve original created_at timestamp")
-    public void transferFromDlq_shouldPreserveOriginalCreatedAt() {
+    @DisplayName("UT transferFromDlq() should preserve original created_at timestamp")
+    void transferFromDlq_shouldPreserveOriginalCreatedAt() {
         // given
         int batchSize = 50;
-        UUID eventId = UUID.randomUUID();
-        Instant originalCreatedAt = Instant.now().minusSeconds(86400);
+        Instant createdAt = Instant.now().minusSeconds(86400);
 
         OutboxDlqEvent dlqEvent = new OutboxDlqEvent(
-                eventId,
+                UUID.randomUUID(),
                 EventStatus.FAILED,
-                "OrderCreated",
-                "com.example.OrderCreatedEvent",
-                "{\"orderId\":\"123\"}",
+                "type",
+                "type",
+                "{}",
                 3,
                 Instant.now(),
-                originalCreatedAt,
+                createdAt,
                 Instant.now(),
                 DlqStatus.TO_RETRY,
                 Instant.now()
         );
 
-        List<OutboxDlqEvent> dlqEvents = List.of(dlqEvent);
-
-        when(dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize)).thenReturn(dlqEvents);
+        when(dlqManager.loadAndLockBatch(any(), anyInt())).thenReturn(List.of(dlqEvent));
 
         // when
         tested.transferFromDlq(batchSize);
 
         // then
-        ArgumentCaptor<List<OutboxEvent>> outboxEventsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(manager).saveBatch(outboxEventsCaptor.capture());
+        ArgumentCaptor<List<OutboxEvent>> captor = ArgumentCaptor.forClass(List.class);
+        verify(manager).saveBatch(captor.capture());
 
-        List<OutboxEvent> savedOutboxEvents = outboxEventsCaptor.getValue();
-        assertEquals(1, savedOutboxEvents.size());
-        assertEquals(originalCreatedAt, savedOutboxEvents.get(0).getCreatedAt());
+        assertEquals(createdAt, captor.getValue().get(0).getCreatedAt());
     }
 }

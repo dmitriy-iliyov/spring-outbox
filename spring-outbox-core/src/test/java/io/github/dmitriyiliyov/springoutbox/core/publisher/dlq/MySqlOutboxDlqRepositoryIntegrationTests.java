@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.it_config.BaseMySqlIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.core.it.BaseMySqlIntegrationTests;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
