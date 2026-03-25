@@ -89,11 +89,13 @@ public class DefaultOutboxManager implements OutboxManager {
                 .filter(event -> failedIds.contains(event.getId()))
                 .map(event -> {
                             EventStatus newStatus;
-                            int newRetryCount = event.getRetryCount() + 1;                     // because this is after try
+                            // because this is after try
+                            int newRetryCount = event.getRetryCount() + 1;
                             Instant nextRetryAt;
                             if (newRetryCount < maxRetryCount) {
                                 newStatus = EventStatus.PENDING;
-                                nextRetryAt = nextRetryAtSupplier.apply(newRetryCount + 1); // should count time for next try
+                                // should count time for next try
+                                nextRetryAt = nextRetryAtSupplier.apply(newRetryCount);
                             } else {
                                 newStatus = EventStatus.FAILED;
                                 nextRetryAt = event.getNextRetryAt();
