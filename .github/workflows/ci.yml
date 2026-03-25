@@ -61,7 +61,7 @@ jobs:
           - 6379:6379
 
       kafka:
-        image: apache/kafka:4.1.1
+        image: confluentinc/cp-kafka:7.4.0
         ports:
           - 1431:9092
         env:
