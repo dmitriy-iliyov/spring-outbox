@@ -18,10 +18,6 @@ public final class RepositoryUtils {
         if (ids.isEmpty()) {
             return false;
         }
-        if (ids.size() > 1000) {
-            log.warn("Batch size {} is too large...", ids.size());
-            return false;
-        }
         return true;
     }
 
