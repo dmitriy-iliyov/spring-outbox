@@ -39,9 +39,10 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxRepository consumedOutboxRepository(DataSource dataSource,
-                                                             @Qualifier("outboxTransactionAwareJdbcTemplate")
-                                                             JdbcTemplate jdbcTemplate) {
+    public ConsumedOutboxRepository consumedOutboxRepository(
+            DataSource dataSource,
+            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    ) {
         return ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
     }
 
@@ -72,11 +73,12 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxIdempotentConsumer outboxIdempotentConsumer(@Qualifier("defaultOutboxEventIdResolveManager")
-                                                             OutboxEventIdResolveManager idResolver,
-                                                             TransactionTemplate transactionTemplate,
-                                                             ConsumedOutboxManager manager,
-                                                             MeterRegistry registry) {
+    public OutboxIdempotentConsumer outboxIdempotentConsumer(
+            @Qualifier("defaultOutboxEventIdResolveManager") OutboxEventIdResolveManager idResolver,
+            TransactionTemplate transactionTemplate,
+            ConsumedOutboxManager manager,
+            MeterRegistry registry
+    ) {
         OutboxIdempotentConsumer consumer = new DefaultOutboxIdempotentConsumer(
                 idResolver, transactionTemplate, manager
         );
@@ -116,9 +118,10 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnProperty(prefix = "outbox.consumer.clean-up", name = "enabled", havingValue = "true")
-    public OutboxScheduler consumedOutboxCleanUpScheduler(@Qualifier("outboxScheduledExecutorService")
-                                                          ScheduledExecutorService executor,
-                                                          ConsumedOutboxManager manager) {
+    public OutboxScheduler consumedOutboxCleanUpScheduler(
+            @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
+            ConsumedOutboxManager manager
+    ) {
         return new ConsumedOutboxCleanUpScheduler(properties.getCleanUp(), executor, manager);
     }
 }

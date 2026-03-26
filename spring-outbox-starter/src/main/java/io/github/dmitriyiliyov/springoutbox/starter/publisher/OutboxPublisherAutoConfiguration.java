@@ -50,9 +50,10 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxRepository outboxRepository(DataSource dataSource,
-                                             @Qualifier("outboxTransactionAwareJdbcTemplate")
-                                             JdbcTemplate jdbcTemplate) {
+    public OutboxRepository outboxRepository(
+            DataSource dataSource,
+            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    ) {
         return OutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
     }
 
@@ -183,8 +184,9 @@ public class OutboxPublisherAutoConfiguration {
             name = "enabled",
             havingValue = "true"
     )
-    public OutboxMetricsRepository outboxMetricsRepository(@Qualifier("outboxTransactionAwareJdbcTemplate")
-                                                           JdbcTemplate jdbcTemplate) {
+    public OutboxMetricsRepository outboxMetricsRepository(
+            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    ) {
         return new MultiSqlDialectOutboxMetricsRepository(jdbcTemplate);
     }
 

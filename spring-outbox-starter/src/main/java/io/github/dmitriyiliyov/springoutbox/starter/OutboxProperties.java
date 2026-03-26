@@ -33,17 +33,19 @@ public class OutboxProperties implements OutboxPropertiesHolder {
     @PostConstruct
     public void afterPropertiesSet() {
         threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
-        if (publisher != null) {
-            publisher.afterPropertiesSet();
-        } else {
+
+        if (publisher == null) {
             publisher = new OutboxPublisherProperties();
             publisher.setEnabled(false);
         }
+        publisher.afterPropertiesSet();
+
         if (consumer == null) {
             consumer = new OutboxConsumerProperties();
             consumer.setEnabled(false);
         }
         consumer.afterPropertiesSet();
+
         if (tables == null) {
             tables = new TablesProperties();
             tables.setAutoCreate(true);
