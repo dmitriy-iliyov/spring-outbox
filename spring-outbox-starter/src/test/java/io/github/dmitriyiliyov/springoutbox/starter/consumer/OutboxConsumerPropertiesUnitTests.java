@@ -1,6 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

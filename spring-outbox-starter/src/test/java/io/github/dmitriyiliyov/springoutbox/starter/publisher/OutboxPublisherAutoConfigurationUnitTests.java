@@ -1,19 +1,13 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxProcessor;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRecoveryScheduler;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxCleanUpScheduler;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisherScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherAutoConfiguration;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.BeanNameUtils;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,14 +27,8 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OutboxPublisherAutoConfigurationUnitTests {

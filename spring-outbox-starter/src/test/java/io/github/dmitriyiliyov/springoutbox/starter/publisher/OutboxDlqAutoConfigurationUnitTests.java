@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
@@ -7,8 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqTrans
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxDlqAutoConfiguration;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;

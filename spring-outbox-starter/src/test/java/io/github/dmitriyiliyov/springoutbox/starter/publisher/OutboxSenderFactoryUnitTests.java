@@ -1,12 +1,9 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxSender;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxSender;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxSender;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxSenderFactory;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.SenderType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

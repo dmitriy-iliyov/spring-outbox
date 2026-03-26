@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
@@ -6,8 +6,7 @@ import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolveMa
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerAutoConfiguration;
-import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

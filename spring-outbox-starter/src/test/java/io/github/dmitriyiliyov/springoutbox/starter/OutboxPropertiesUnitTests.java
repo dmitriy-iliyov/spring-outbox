@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -272,5 +273,228 @@ class OutboxPropertiesUnitTests {
 
         // then
         assertThat(cleanUp.getBatchSize()).isEqualTo(100);
+    }
+
+    @Test
+    @DisplayName("UT afterPropertiesSet() when threadPoolSize null should default to available processors capped at 5")
+    void afterPropertiesSet_whenThreadPoolSizeNull_shouldDefaultToProcessorCappedAt5() {
+        OutboxProperties props = new OutboxProperties();
+        props.setThreadPoolSize(null);
+
+        props.afterPropertiesSet();
+
+        int expected = Math.min(Runtime.getRuntime().availableProcessors(), 5);
+        assertThat(props.getThreadPoolSize()).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("UT MetricsProperties afterPropertiesSet() when enabled true should enable gauge with defaults")
+    void metrics_afterPropertiesSet_whenEnabledTrue_shouldEnableGaugeWithDefaults() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(true);
+        metrics.setGauge(null);
+
+        metrics.afterPropertiesSet();
+
+        assertThat(metrics.isEnabled()).isTrue();
+        assertThat(metrics.getGauge()).isNotNull();
+        assertThat(metrics.getGauge().isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT MetricsProperties afterPropertiesSet() when enabled false should disable gauge")
+    void metrics_afterPropertiesSet_whenEnabledFalse_shouldDisableGauge() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(false);
+
+        metrics.afterPropertiesSet();
+
+        assertThat(metrics.isEnabled()).isFalse();
+        assertThat(metrics.getGauge()).isNotNull();
+        assertThat(metrics.getGauge().isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT MetricsProperties afterPropertiesSet() when enabled null should disable metrics")
+    void metrics_afterPropertiesSet_whenEnabledNull_shouldDisable() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(null);
+
+        metrics.afterPropertiesSet();
+
+        assertThat(metrics.isEnabled()).isFalse();
+        assertThat(metrics.getGauge().isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT MetricsProperties afterPropertiesSet() when enabled true and gauge provided should preserve gauge")
+    void metrics_afterPropertiesSet_whenEnabledTrueAndGaugeProvided_shouldPreserveGauge() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(true);
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(true);
+        metrics.setGauge(gauge);
+
+        metrics.afterPropertiesSet();
+
+        assertThat(metrics.isEnabled()).isTrue();
+        assertThat(metrics.getGauge()).isSameAs(gauge);
+        assertThat(metrics.getGauge().isEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("UT GaugeProperties afterPropertiesSet() when enabled true and cache null should init cache with defaults")
+    void gauge_afterPropertiesSet_whenEnabledTrueAndCacheNull_shouldInitCacheDefaults() {
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(true);
+        gauge.setCache(null);
+
+        gauge.afterPropertiesSet();
+
+        assertThat(gauge.isEnabled()).isTrue();
+        assertThat(gauge.getCache()).isNotNull();
+        assertThat(gauge.getCache().isEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("UT GaugeProperties afterPropertiesSet() when enabled false should disable cache")
+    void gauge_afterPropertiesSet_whenEnabledFalse_shouldDisableCache() {
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(false);
+
+        gauge.afterPropertiesSet();
+
+        assertThat(gauge.isEnabled()).isFalse();
+        assertThat(gauge.getCache()).isNotNull();
+        assertThat(gauge.getCache().isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT GaugeProperties afterPropertiesSet() when enabled null should disable gauge and cache")
+    void gauge_afterPropertiesSet_whenEnabledNull_shouldDisable() {
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(null);
+
+        gauge.afterPropertiesSet();
+
+        assertThat(gauge.isEnabled()).isFalse();
+        assertThat(gauge.getCache().isEnabled()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT GaugeProperties afterPropertiesSet() when enabled true and cache provided should preserve cache")
+    void gauge_afterPropertiesSet_whenEnabledTrueAndCacheProvided_shouldPreserveCache() {
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(true);
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(true);
+        gauge.setCache(cache);
+
+        gauge.afterPropertiesSet();
+
+        assertThat(gauge.getCache()).isSameAs(cache);
+        assertThat(gauge.getCache().isEnabled()).isTrue();
+    }
+
+    @Test
+    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled true and ttls null should use default ttls")
+    void cache_afterPropertiesSet_whenEnabledTrueAndTtlsNull_shouldUseDefaults() {
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(true);
+        cache.setTtls(null);
+
+        cache.afterPropertiesSet();
+
+        assertThat(cache.isEnabled()).isTrue();
+        assertThat(cache.getTtls()).hasSize(3);
+        assertThat(cache.getTtls()).containsOnly(Duration.ofSeconds(60));
+    }
+
+    @Test
+    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled true and ttls empty should use default ttls")
+    void cache_afterPropertiesSet_whenEnabledTrueAndTtlsEmpty_shouldUseDefaults() {
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(true);
+        cache.setTtls(List.of());
+
+        cache.afterPropertiesSet();
+
+        assertThat(cache.getTtls()).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled true and ttls wrong size should use default ttls")
+    void cache_afterPropertiesSet_whenEnabledTrueAndTtlsWrongSize_shouldUseDefaults() {
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(true);
+        cache.setTtls(List.of(Duration.ofSeconds(10)));
+
+        cache.afterPropertiesSet();
+
+        assertThat(cache.getTtls()).hasSize(3);
+        assertThat(cache.getTtls()).containsOnly(Duration.ofSeconds(60));
+    }
+
+    @Test
+    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled true and ttls correct size should preserve ttls")
+    void cache_afterPropertiesSet_whenEnabledTrueAndTtlsCorrectSize_shouldPreserveTtls() {
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(true);
+        List<Duration> custom = List.of(Duration.ofSeconds(10), Duration.ofSeconds(20), Duration.ofSeconds(30));
+        cache.setTtls(custom);
+
+        cache.afterPropertiesSet();
+
+        assertThat(cache.getTtls()).isEqualTo(custom);
+    }
+
+    @Test
+    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled false should return empty ttls")
+    void cache_afterPropertiesSet_whenEnabledFalse_shouldReturnEmptyTtls() {
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(false);
+        cache.setTtls(List.of(Duration.ofSeconds(10), Duration.ofSeconds(20), Duration.ofSeconds(30)));
+
+        cache.afterPropertiesSet();
+
+        assertThat(cache.isEnabled()).isFalse();
+        assertThat(cache.getTtls()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled null should enable and use default ttls")
+    void cache_afterPropertiesSet_whenEnabledNull_shouldEnableAndUseDefaults() {
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cache.setEnabled(null);
+
+        cache.afterPropertiesSet();
+
+        assertThat(cache.isEnabled()).isTrue();
+        assertThat(cache.getTtls()).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("UT CleanUpProperties afterPropertiesSet() when custom valid values provided should preserve them")
+    void cleanUp_afterPropertiesSet_whenCustomValuesProvided_shouldPreserve() {
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        cleanUp.setEnabled(true);
+        cleanUp.setBatchSize(50);
+        cleanUp.setTtl(Duration.ofMinutes(30));
+        cleanUp.setInitialDelay(Duration.ofSeconds(10));
+        cleanUp.setFixedDelay(Duration.ofSeconds(3));
+
+        cleanUp.afterPropertiesSet();
+
+        assertThat(cleanUp.getBatchSize()).isEqualTo(50);
+        assertThat(cleanUp.getTtl()).isEqualTo(Duration.ofMinutes(30));
+        assertThat(cleanUp.getInitialDelay()).isEqualTo(Duration.ofSeconds(10));
+        assertThat(cleanUp.getFixedDelay()).isEqualTo(Duration.ofSeconds(3));
     }
 }

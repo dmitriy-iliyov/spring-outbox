@@ -1,10 +1,9 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.MySqlConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OracleConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.PostgreSqlConsumedOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.starter.consumer.ConsumedOutboxRepositoryFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
