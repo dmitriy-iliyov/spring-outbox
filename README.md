@@ -465,23 +465,6 @@ All events published through the outbox pattern include the following headers:
 | `outbox_event_type` | `OutboxHeaders.EVENT_TYPE` | String | Enables event dispatching when multiple event types share a topic/exchange                |
 | `outbox_event_id` | `OutboxHeaders.EVENT_ID` | UUID | Unique event identifier for idempotency, used by OutboxIdempotentConsumer implementation |                                                                                               |
 
-```java
-public enum OutboxHeaders {
-  EVENT_TYPE("outbox_event_type"),
-  EVENT_ID("outbox_event_id");
-
-  private final String value;
-
-  OutboxHeaders(String value) {
-    this.value = value;
-  }
-
-  public String getValue() {
-    return value;
-  }
-}
-```
-
 **Apache Kafka:**
 ```java
 @Component
@@ -922,6 +905,8 @@ outbox:
 ### Examples
 #### Producer-Only
 Minimal:
+> [!WARNING]
+> Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
 
 ```yaml
 outbox:
@@ -932,9 +917,6 @@ outbox:
       my-event:
         topic: my.topic
 ```
-> [!WARNING]
-> Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
-
 Minimal with all features:
 
 ```yaml
@@ -1032,7 +1014,11 @@ outbox:
 ---
 
 #### Consumer-Only
-Minimal (clean-up and cache enable by default, metrics disable):
+Minimal:
+
+> [!WARNING]
+> cleanup and cache enable by default, metrics disable
+
 ```yaml
 outbox:
   publisher:
