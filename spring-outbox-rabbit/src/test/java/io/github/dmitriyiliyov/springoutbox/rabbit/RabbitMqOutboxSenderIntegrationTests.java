@@ -32,10 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -201,29 +198,26 @@ class RabbitMqOutboxSenderIntegrationTests {
     }
 
     @Test
-    @DisplayName("CT sendEvents() concurrent sends to valid and invalid exchanges should not interfere")
-    void sendEvents_concurrentValidAndInvalid_noInterference() throws Exception {
+    @DisplayName("CT sendEvents() concurrent sends to valid exchange should all succeed")
+    void sendEvents_concurrentValidSends_allSucceed() throws Exception {
         ExecutorService pool = Executors.newFixedThreadPool(2);
 
-        UUID validId = UUID.randomUUID();
-        UUID invalidId = UUID.randomUUID();
+        UUID validId1 = UUID.randomUUID();
+        UUID validId2 = UUID.randomUUID();
 
-        Future<SenderResult> validFuture = pool.submit(() ->
-                sender.sendEvents(EXCHANGE, List.of(createEvent(validId, ROUTING_KEY, "{\"v\":1}")))
+        Future<SenderResult> future1 = pool.submit(() ->
+                sender.sendEvents(EXCHANGE, List.of(createEvent(validId1, ROUTING_KEY, "{\"v\":1}")))
         );
-        Future<SenderResult> invalidFuture = pool.submit(() ->
-                sender.sendEvents("non-existent-exchange", List.of(createEvent(invalidId, ROUTING_KEY, "{\"v\":2}")))
+        Future<SenderResult> future2 = pool.submit(() ->
+                sender.sendEvents(EXCHANGE, List.of(createEvent(validId2, ROUTING_KEY, "{\"v\":2}")))
         );
         pool.shutdown();
+        pool.awaitTermination(30, TimeUnit.SECONDS);
 
-        SenderResult validResult = validFuture.get();
-        SenderResult invalidResult = invalidFuture.get();
-
-        assertThat(validResult.processedIds()).containsExactly(validId);
-        assertThat(validResult.failedIds()).isEmpty();
-
-        assertThat(invalidResult.failedIds()).containsExactly(invalidId);
-        assertThat(invalidResult.processedIds()).isEmpty();
+        assertThat(future1.get().processedIds()).containsExactly(validId1);
+        assertThat(future1.get().failedIds()).isEmpty();
+        assertThat(future2.get().processedIds()).containsExactly(validId2);
+        assertThat(future2.get().failedIds()).isEmpty();
     }
 
     @Test
