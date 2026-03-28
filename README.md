@@ -401,7 +401,7 @@ public interface OutboxDlqHandler {
 The Dead Letter Queue provides a REST API for managing events that have failed delivery or require manual review.
 
 > [!WARNING]
-> you should secure DLQ REST API paths.
+> You should secure DLQ REST API paths.
 
 | Method | Path | Params | Request Body | Description |
 |--------|------|--------|--------------|-------------|
@@ -537,21 +537,15 @@ The automatic cleanup strategy for consumed events is identical to the publisher
 ### Publisher
 
 **Gauges**
-- `outbox_events`: total number of outbox events
 
-- `outbox_events_by_status`: number of outbox events
-    - **Tags:** `status={pending, in_process}`
-
-- `outbox_events_by_event_type_and_status`: number of outbox events by type
-    - **Tags:** `event_type`, `status={pending, in_process}`
-
-- `outbox_dlq_events`: total number of events in DLQ
-
-- `outbox_dlq_events_by_status`: number of outbox DLQ events by status
-    - **Tags:** `status={moved, in_process, to_retry}`
-
-- `outbox_dlq_events_by_event_type_and_status`: number of outbox DLQ events by type and status
-    - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
+| Metric Name                                 | Description                            | Tags                                           |
+|:--------------------------------------------|:---------------------------------------|:-----------------------------------------------|
+| `outbox_events`                             | Total number of outbox events          | —                                        |
+| `outbox_events_by_status`                   | Number of outbox events by status      | `status={pending, in_process}`                 |
+| `outbox_events_by_event_type_and_status`    | Number of outbox events by type        | `event_type`, `status={pending, in_process}`   |
+| `outbox_dlq_events`                         | Total number of events in DLQ          | —                                         |
+| `outbox_dlq_events_by_status`               | Number of DLQ events by status         | `status={moved, in_process, to_retry}`         |
+| `outbox_dlq_events_by_event_type_and_status`| Number of DLQ events by type and status| `event_type`, `status={moved, in_process, to_retry}` |
 
 All gauges execute `COUNT` queries against the database and therefore reflect the **exact number of events at the current moment**.
 
@@ -559,22 +553,20 @@ To avoid excessive database load caused by Prometheus scraping, gauge values are
 Caching can be disabled via metrics configuration.
 
 **Counters**
-- `outbox_events_rate_total`: number of events successfully processed or failed during consumption
-    - **Tags:** `event_type`, `status={processed, failed}`
 
-- `outbox_events_by_type_rate_total`: internal lifecycle counters, including
-    - **Tags:** `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`
-
-- `outbox_dlq_events_rate_total`: rate of DLQ state transitions per event type
-    - **Tags:** `event_type`, `status={moved, in_process, to_retry}`
-
-- `outbox_dlq_events_by_type_rate_total`: operational counters for DLQ management
-    - **Tags:** `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}`
+| Metric Name | Description | Tags |
+| :--- | :--- | :--- |
+| `outbox_events_rate_total` | Processed or failed events rate | `event_type`, `status={processed, failed}` |
+| `outbox_events_by_type_rate_total` | Internal lifecycle events rate | `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}` |
+| `outbox_dlq_events_rate_total` | DLQ state transitions rate | `event_type`, `status={moved, in_process, to_retry}` |
+| `outbox_dlq_events_by_type_rate_total` | DLQ operational events rate | `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
 
 **Timers**
-- `outbox_dlq_transfer_to_duration`: duration of batch transfers from outbox to DLQ
 
-- `outbox_dlq_transfer_from_duration`: duration of batch transfers from DLQ back to outbox
+| Metric Name | Description |
+| :--- | :--- |
+| `outbox_dlq_transfer_to_duration` | Duration of batch transfers from outbox to DLQ |
+| `outbox_dlq_transfer_from_duration` | Duration of batch transfers from DLQ back to outbox |
 
 These timers help identify performance bottlenecks during bulk recovery or DLQ reprocessing operations.
 
@@ -583,8 +575,10 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 ### Consumer
 
 **Counters**
-- `consumed_outbox_events_total`: number of outbox events by type
-    - **Tags:** `type={duplicated, consumed, cleaned, failed, cache-hit, cache-miss}`
+
+| Metric Name                     | Description | Tags                                                                  |
+| :--------------------------------| :--- |:----------------------------------------------------------------------|
+| `consumed_outbox_events_total`  | Number of consumed outbox events by type | `type={duplicated, consumed, cleaned, failed, cache-hit, cache-miss}` |
 
 ## Configuration
 ### Global
@@ -596,13 +590,10 @@ outbox:
     auto-create: true
 ```
 
-- `thread-pool-size`: size of the thread pool used for parallel event processing by type
-    - **Default**: `min(available_processors, 5)`
-    - **Description**: events of different types are processed in parallel using threads from this pool. Scale based on number of event types and system resources. The number should be calculated by the user based on the required processing frequency. You should also remember to leave at least one (and preferably two) threads for system workers such as cleanup, catching stuck workers, and transferring to the DLQ.
-
-- `auto-create`: automatically create outbox tables on application startup
-    - **Default**:`true`
-    - **Description**: when enabled, the library creates `outbox_events`, `outbox_dlq_events`, and `outbox_consumed_events` tables with appropriate indexes if they don't exist
+| Property                         | Description                                                                 | Default |
+|----------------------------------|-----------------------------------------------------------------------------|---------|
+| `thread-pool-size` | Size of the thread pool for parallel event processing. | `min(available_processors, 5)` |
+| `auto-create` | Automatically create outbox tables on startup. | `true` |
 
 ### Publisher
 
@@ -616,13 +607,11 @@ outbox:
       emergency-timeout: 120s
 ```
 
-- `type`: message broker type (**required**)
-    - **Values**: [`kafka`, `rabbit_mq`]
-- `bean-name`: custom sender bean name (**optional**)
-    - **Description**: use when you have multiple sender beans in the context.
-- `emergency-timeout`: maximum time to wait for send operation
-    - **Default**: `120s`
-    - **Description**: timeout for message broker send operations. If exceeded, operation is cancelled and event marked `FAILED`.
+| Property                         | Description                                                          | Default |
+|----------------------------------|----------------------------------------------------------------------|---|
+| `type`            | Message broker type (`kafka` or `rabbit_mq`) | — |
+| `bean-name`       | Custom sender bean name for multiple senders | — |
+| `emergency-timeout` | Maximum time to wait for a send operation  | `120s` |
 
 ---
 #### Defaults & Events
@@ -641,28 +630,15 @@ outbox:
         delay: 10s
         multiplier: 3
 ```
-
-- `batch-size`: number of events to poll and process per iteration
-    - **Default**: `50`
-    - **Description**: larger batches improve throughput but increase memory usage
-- `initial-delay`: delay before first polling starts after application startup
-    - **Default**: `300s`
-    - **Description**: gives application time to fully initialize before starting event processing
-- `fixed-delay`: interval between polling iterations
-    - **Default**: `2s`
-    - **Description**: lower values reduce latency but increase database load
-- `max-retries`: maximum retry attempts before moving to DLQ
-    - **Default**: `3`
-    - **Description**: total retry attempts before moving to DLQ
-- `backoff.enabled`: enable exponential backoff
-    - **Default**: `true`
-    - **Description**: when enabled, delay between retries increases exponentially
-- `backoff.delay`: initial backoff delay
-    - **Default**: `10s`
-    - **Description**: base delay for exponential backoff calculation
-- `backoff.multiplier`: exponential backoff multiplier
-    - **Default**: `3`
-    - **Description**: each retry delay = previous_delay * multiplier
+| Property                         | Description                                                                 | Default |
+|----------------------------------|-----------------------------------------------------------------------------|---------|
+| `batch-size`       | Number of events to process per iteration   | `50`      |
+| `initial-delay`    | Delay before first polling starts           | `300s`    |
+| `fixed-delay`      | Delay between polling iterations         | `2s`      |
+| `max-retries`      | Maximum retry attempts before moving to DLQ | `3`       |
+| `backoff.enabled`  | Enable exponential backoff for retries      | `true`    |
+| `backoff.delay`    | Initial backoff delay                       | `10s`     |
+| `backoff.multiplier` | Multiplier for exponential backoff          | `3`       |
 
 Individual event configurations override defaults for specific event types.
 Apache Kafka example:
@@ -690,8 +666,9 @@ outbox:
         topic: notifications
         # Other params inherited from defaults
 ```
-
-- `topic`: destination topic (Kafka) or exchange (RabbitMQ) name
+| Property                         | Description                                                                 |
+|----------------------------------|-----------------------------------------------------------------------------|
+| `topic`     | Destination topic (Kafka) or exchange (RabbitMQ) name |
 
 All other parameters same as `defaults` section, but override defaults for this specific event type
 
@@ -747,15 +724,12 @@ outbox:
       fixed-delay: 1800s
 ```
 
-- `batch-size`: number of stuck events to recover per iteration
-    - **Default**: `100`
-- `max-batch-processing-time`: time threshold for detecting stuck events
-    - **Default**: `300s`
-    - **Description**: events in `IN_PROCESS` status longer than this are considered stuck
-- `initial-delay`: delay before first recovery run
-    - **Default**: `300s`
-- `fixed-delay`: interval between recovery runs
-    - **Default**: `1800s`
+| Property                   | Description                                                                 | Default |
+|---------------------------|-----------------------------------------------------------------------------|---------|
+| `batch-size`                | Number of stuck events to recover per iteration                             | `100`     |
+| `max-batch-processing-time` | Time threshold for detecting stuck events (events in `IN_PROCESS` longer than this are considered stuck) | `300s`    |
+| `initial-delay`             | Delay before first recovery run                                             | `300s`    |
+| `fixed-delay`               | Delay between recovery runs                                              | `1800s`   |
 
 ---
 
@@ -773,23 +747,18 @@ outbox:
       metrics:
         enabled: true
 ```
-
 > [!WARNING]
-> when disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`
-- `enabled`: enable DLQ functionality
-    - **Default**: `false`
-- `batch-size`: number of events to transfer per iteration
-    - **Default**: `100`
-- `transfer-to-initial-delay`: delay before first transfer **to** DLQ
-    - **Default**: `300s`
-- `transfer-to-fixed-delay`: interval between transfers **to** DLQ
-    - **Default**: `900s`
-- `transfer-from-initial-delay`: delay before first transfer **from** DLQ **to** `outbox_events`
-    - **Default**: `300s`
-- `transfer-from-fixed-delay`: interval between transfers **from** DLQ **to** `outbox_events`
-    - **Default**: `3600s`
-- `metrics.enabled`: enable metrics collection, more [here](#metrics)
-    - **Default**: `false`
+> When disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`.
+
+| Property                         | Description                                               | Default  |
+|----------------------------------|-----------------------------------------------------------|----------|
+| `enabled`                          | Enable DLQ functionality                                  | `false`  |
+| `batch-size`                       | Number of events to transfer per iteration                | `100`    |
+| `transfer-to-initial-delay`        | Delay before first transfer to DLQ                        | `300s`   |
+| `transfer-to-fixed-delay`          | Delay between transfers to DLQ                            | `900s`   |
+| `transfer-from-initial-delay`      | Delay before first transfer from DLQ to outbox       | `300s`   |
+| `transfer-from-fixed-delay`        | Delay between transfers from DLQ to outbox           | `3600s`  |
+| `metrics.enabled`                  | Enable metrics collection, more [here](#metrics)          | `false`  |
 
 ---
 
@@ -806,19 +775,15 @@ outbox:
 ```
 
 > [!WARNING]
-> when disabled, processed events will accumulate indefinitely
-- `enabled`: enable automatic cleanup of processed events
-    - **Default**: `true`
-- `batch-size`: number of events to delete per iteration
-    - **Default**: `100`
-    - **Description**: controls transaction size.
-- `ttl`: time-to-live for processed events
-    - **Default**: `1h`
-    - **Description**: events with `PROCESSED` status older than this are deleted
-- `initial-delay`: delay before first cleanup run
-    - **Default**: `120s`
-- `fixed-delay`: interval between cleanup runs
-    - **Default**: `5s`
+> When disabled, processed events will accumulate indefinitely
+
+| Property      | Description                                                                                   | Default |
+|---------------|-----------------------------------------------------------------------------------------------|---------|
+| `enabled`       | Enable automatic cleanup of processed events                                                  | `true`    |
+| `batch-size`    | Number of events to delete per iteration                                                      | `100`     |
+| `ttl`           | Time-to-live for processed events. Events with `PROCESSED` status older than this are deleted | `1h`      |
+| `initial-delay` | Delay before first cleanup run                                                                | `120s`    |
+| `fixed-delay`   | Delay between cleanup runs                                                                 | `5s`      |
 
 ---
 
@@ -833,17 +798,14 @@ outbox:
         cache:
           ttls: [60s, 60s, 30s]
 ```
-- `metrics.enabled`: enable metrics collection
-  - **Default**: `false`
-- `gauge.enabled`: enable gauge metrics collection
-  - **Default**: `false`
-- `gauge.cache.enabled`: enable cache
-  - **Default**: normally `true`, but transitive from default `gauge.enabled: false` - `false`
-- `gauge.cache.ttls`: cache TTL for different gauge metrics (3 values)
-  - **Default**: `[60s, 60s, 60s]`
-  - **Description**: TTL for caching metric values.
+| Property              | Description                                                                 | Default              |
+|----------------------|-----------------------------------------------------------------------------|----------------------|
+| `metrics.enabled`      | Enable metrics collection                                                   | `false`                |
+| `gauge.enabled`        | Enable gauge metrics collection                                             | `false`                |
+| `gauge.cache.enabled`  | Enable cache (effective false when `gauge.enabled` is false)                | `false`                |
+| `gauge.cache.ttls`     | Cache TTL for different gauge metrics (TTL for caching metric values)       | `[60s, 60s, 60s]`      |
 
-This enable metrics collecting and gauges with cache default ttls
+This enable metrics collecting and gauges with cache default ttls:
 ```yaml
 outbox:
   publisher:
@@ -867,9 +829,10 @@ outbox:
 ```
 
 All parameters same as [Publisher Cleanup](#cleanup-2) with different defaults:
-- `ttl`
-    - **Default**: `1h`
-    - **Description**: consumed events are typically kept longer than published events for audit purposes
+
+| Property | Description                                                                 | Default |
+|----------|-----------------------------------------------------------------------------|---------|
+| `ttl`      | Consumed events are typically kept longer than published events for audit purposes | `1h`      |
 
 ---
 
@@ -884,11 +847,12 @@ outbox:
 ```
 
 > [!WARNING]
-> when disabled, idempotency check always hits database
-- `enabled`: enable distributed caching of consumed event ids
-    - **Default**: `false`
-- `cache-name`: name of the cache in CacheManager (**required** when enabled)
-    - **Description**: must match cache name configured in your `CacheManager` bean
+> When disabled, idempotency check always hits database
+
+| Property   | Description                                                                                                            | Default |
+|------------|------------------------------------------------------------------------------------------------------------------------|---------|
+| `enabled`    | Enable distributed caching of consumed event ids                                                                       | `false`   |
+| `cache-name` | Name of the cache in CacheManager (**required** when enabled). Must match cache name configured in your `CacheManager` bean. | —  |
 
 ---
 
@@ -899,8 +863,10 @@ outbox:
     metrics:
       enabled: true
 ```
-- `metrics.enabled`: enable metrics collection
-  - **Default**: `false`
+
+| Property                         | Description                                                                 | Default |
+|----------------------------------|-----------------------------------------------------------------------------|---------|
+| `metrics.enabled` | Enable metrics collection | `false` |
 
 ### Examples
 #### Producer-Only
@@ -1017,7 +983,7 @@ outbox:
 Minimal:
 
 > [!WARNING]
-> cleanup and cache enable by default, metrics disable
+> Clean up and cache enable by default, metrics disable
 
 ```yaml
 outbox:
