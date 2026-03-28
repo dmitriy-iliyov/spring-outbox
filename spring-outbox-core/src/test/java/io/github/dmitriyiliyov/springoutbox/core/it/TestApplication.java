@@ -6,8 +6,10 @@ import io.github.dmitriyiliyov.springoutbox.core.it.config.OracleIntegrationTest
 import io.github.dmitriyiliyov.springoutbox.core.it.config.PostgresSqlIntegrationTestsConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
+@EnableTransactionManagement
 @Import({
         BaseIntegrationTestsConfig.class,
         PostgresSqlIntegrationTestsConfig.class,

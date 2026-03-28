@@ -1,12 +1,13 @@
 package io.github.dmitriyiliyov.springoutbox.core.it.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.MySqlConsumedOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.MySqlOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.e2e.BusinessService;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidV7Generator;
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -14,7 +15,6 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
@@ -22,7 +22,12 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+
+import static io.github.dmitriyiliyov.springoutbox.core.e2e.BusinessService.EVENT_TYPE;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @TestConfiguration
 @Profile("mysql-it")
@@ -38,12 +43,10 @@ public class MySqlIntegrationTestsConfig {
                         false,
                         false,
                         StandardCharsets.UTF_8.name(),
-                        new Resource[] {
-                                new ClassPathResource("mysql/mysql_outbox_table.sql"),
-                                new ClassPathResource("mysql/mysql_outbox_dlq_table.sql"),
-                                new ClassPathResource("mysql/mysql_outbox_consumed_table.sql")
-                        }
-                )
+                        new ClassPathResource("mysql/mysql_outbox_table.sql"),
+                        new ClassPathResource("mysql/mysql_outbox_dlq_table.sql"),
+                        new ClassPathResource("mysql/mysql_outbox_consumed_table.sql"),
+                        new ClassPathResource("mysql/mysql_business_table.sql"))
         );
         return dataSourceInitializer;
     }
@@ -64,7 +67,7 @@ public class MySqlIntegrationTestsConfig {
     }
 
     @Bean
-    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+    public JdbcTemplate mysqlJdbcTemplate(DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
 
@@ -89,6 +92,34 @@ public class MySqlIntegrationTestsConfig {
                 manager,
                 dlqManager,
                 new LogOutboxDlqHandler()
+        );
+    }
+
+    @Bean
+    public OutboxPublisher mysqlOutboxPublisher(@Qualifier("mysqlOutboxManager") OutboxManager manager) {
+        OutboxPublisherPropertiesHolder propertiesHolder = mock(OutboxPublisherPropertiesHolder.class);
+        when(propertiesHolder.existEventType(EVENT_TYPE)).thenReturn(true);
+        return new DefaultOutboxPublisher(
+                propertiesHolder,
+                new JacksonOutboxSerializer(new ObjectMapper(), new UuidV7Generator()),
+                manager
+        );
+    }
+
+    @Bean
+    public BusinessService mysqlBusinessService(
+            @Qualifier("mysqlOutboxPublisher") OutboxPublisher publisher,
+            @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate
+    ) {
+        return new BusinessService(
+                publisher,
+                id -> {
+                    ByteBuffer bb = ByteBuffer.allocate(16);
+                    bb.putLong(id.getMostSignificantBits());
+                    bb.putLong(id.getLeastSignificantBits());
+                    return bb.array();
+                },
+                jdbcTemplate
         );
     }
 }
