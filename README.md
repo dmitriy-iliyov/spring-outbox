@@ -403,14 +403,14 @@ The Dead Letter Queue provides a REST API for managing events that have failed d
 > [!WARNING]
 > You should secure DLQ REST API paths.
 
-| Method                                                 | Path                           | Params                                                              | Request Body                                 | Description                    |
-|:-------------------------------------------------------|:-------------------------------|:--------------------------------------------------------------------|:---------------------------------------------|--------------------------------|
-| ![GET](https://img.shields.io/badge/GET-4CAF50)        | `/api/outbox-dlq/events/{id}`  | id: UUID                                                            | —                                            | Get DLQ event by ID            |
-| ![GET](https://img.shields.io/badge/GET-4CAF50)        | `/api/outbox-dlq/events`       | <br/>status: DlqStatus, <br/>batchNumber: int, <br/>batchSize: int  | —                                            | Get batch of DLQ events        |
-| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)    | `/api/outbox-dlq/events/{id}`  | id: UUID                                                            | status: DlqStatus                            | Update single DLQ event status |
-| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)    | `/api/outbox-dlq/events`       | —                                                                   | ids: Set&lt;UUID&gt;,<br/>status: DlqStatus  | Update batch DLQ events status |
-| ![DELETE](https://img.shields.io/badge/DELETE-F44336)  | `/api/outbox-dlq/events/{id}`  | id: UUID                                                            | —                                            | Delete single DLQ event        |
-| ![DELETE](https://img.shields.io/badge/DELETE-F44336)  | `/api/outbox-dlq/events`       | —                                                                   | ids: Set&lt;UUID&gt;                         | Delete batch of DLQ events     |
+| Method                                                 | Path                           | Params                                                        | Request Body                                 | Description                    |
+|:-------------------------------------------------------|:-------------------------------|:--------------------------------------------------------------|:---------------------------------------------|--------------------------------|
+| ![GET](https://img.shields.io/badge/GET-4CAF50)        | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                            | Get DLQ event by ID            |
+| ![GET](https://img.shields.io/badge/GET-4CAF50)        | `/api/outbox-dlq/events`       | status: DlqStatus, <br/>batchNumber: int, <br/>batchSize: int | —                                            | Get batch of DLQ events        |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)    | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | status: DlqStatus                            | Update single DLQ event status |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)    | `/api/outbox-dlq/events`       | —                                                             | ids: Set&lt;UUID&gt;,<br/>status: DlqStatus  | Update batch DLQ events status |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336)  | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                            | Delete single DLQ event        |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336)  | `/api/outbox-dlq/events`       | —                                                             | ids: Set&lt;UUID&gt;                         | Delete batch of DLQ events     |
 
 Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
 
