@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -68,14 +69,22 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository,
-                                             OutboxPublisherProperties properties,
-                                             MeterRegistry registry) {
-        OutboxDlqManager manager = new DefaultOutboxDlqManager(repository);
-        if (properties.getDlq().getMetrics() == null || !properties.getDlq().getMetrics().isEnabled()) {
-            return manager;
-        }
+    public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository) {
+        return new DefaultOutboxDlqManager(repository);
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxDlqManager outboxDlqManagerMetricsDecorator(OutboxDlqManager manager,
+                                                             OutboxPublisherProperties properties,
+                                                             MeterRegistry registry) {
         return new OutboxDlqManagerMetricsDecorator(properties, registry, manager);
+
     }
 
     @Bean
@@ -89,16 +98,20 @@ public class OutboxDlqAutoConfiguration {
     public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager,
                                                OutboxDlqManager dlqManager,
                                                OutboxDlqHandler handler,
-                                               TransactionTemplate transactionTemplate,
-                                               OutboxPublisherProperties properties,
-                                               MeterRegistry registry) {
-        OutboxDlqTransfer outboxDlqTransfer = new DefaultOutboxDlqTransfer(
-                transactionTemplate, manager, dlqManager, handler
-        );
-        if (properties.getDlq().getMetrics() == null || !properties.getDlq().getMetrics().isEnabled()) {
-            return outboxDlqTransfer;
-        }
-        return new OutboxDlqTransferMetricsDecorator(registry, outboxDlqTransfer);
+                                               TransactionTemplate transactionTemplate) {
+        return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler);
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.dlq.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxDlqTransfer outboxDlqTransferMetricsDecorator(OutboxDlqTransfer transfer,
+                                                               MeterRegistry registry) {
+        return new OutboxDlqTransferMetricsDecorator(registry, transfer);
     }
 
     @Bean
@@ -110,8 +123,8 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnClass(OutboxDlqController.class)
-    public OutboxDlqController outboxDlqController(OutboxDlqManager dlqManager) {
-        return new OutboxDlqController(dlqManager);
+    public OutboxDlqController outboxDlqController(OutboxDlqManager manager) {
+        return new OutboxDlqController(manager);
     }
 
     @Bean

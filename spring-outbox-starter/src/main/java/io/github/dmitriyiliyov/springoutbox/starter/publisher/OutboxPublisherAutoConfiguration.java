@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -83,24 +84,19 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public OutboxManager defaultOutboxManager(OutboxRepository repository) {
+        return new DefaultOutboxManager(repository);
+    }
+
+    @Bean
+    @Primary
     @ConditionalOnProperty(
             prefix = "outbox.publisher.metrics",
             name = "enabled",
             havingValue = "true"
     )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxManager outboxManagerMetricsDecorator(OutboxRepository repository, MeterRegistry registry) {
-        return new OutboxManagerMetricsDecorator(properties, registry, new DefaultOutboxManager(repository));
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public OutboxManager outboxManager(OutboxRepository repository) {
-        return new DefaultOutboxManager(repository);
+    public OutboxManager outboxManagerMetricsDecorator(OutboxManager manager, MeterRegistry registry) {
+        return new OutboxManagerMetricsDecorator(properties, registry, manager);
     }
 
     @Bean
@@ -125,6 +121,7 @@ public class OutboxPublisherAutoConfiguration {
     ) {
         return () -> {
             log.debug("Start initialize schedulers beans");
+            log.debug(manager.getClass().getName());
             for (OutboxPublisherProperties.EventPropertiesHolder event : publisherProperties.getEvents().values()) {
                 String beanName = BeanNameUtils.toBeanName(event.getEventType(), "OutboxPublisherScheduler");
                 if (!factory.containsBean(beanName)) {
