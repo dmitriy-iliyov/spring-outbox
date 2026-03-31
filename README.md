@@ -24,12 +24,11 @@ This approach ensures reliable event publication without relying on database log
 - Configurable retry policies with backoff
 - Dead Letter Queue support
 - Automatic stuck event recovery
-- Automatic cleanup of processed events
-- Idempotent event consumption
-- Automatic cleanup of consumed events
+- Idempotent consumer
+- Automatic cleanup of processed or consumed events
 
 ## Limitations
-- **Horizontal scaling** - performance degradation may occur when reaching a certain number of instances due to `SKIP LOCKED`-based concurrent polling mechanism. The optimal number of instances depends on the number of event types and database load.
+- **Horizontal scaling** - performance degradation may occur when reaching a certain number of instances due to `SKIP LOCKED` - based concurrent polling mechanism. The optimal number of instances depends on the number of event types and database load.
 - **No ordering guarantees** - events are processed in parallel by type, with no guaranteed delivery order within or across event types.
 
 ## Infrastructure
@@ -64,7 +63,7 @@ For Apache Kafka:
       <version>1.0.0</version>
   </dependency>
 ```
-For Rabbit MQ:
+For RabbitMQ:
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
@@ -102,7 +101,9 @@ public class PublisherRunner {
 }
 ```
 
-3. Minimal YAML config (**DLQ disabled by default**):
+3. Minimal YAML config:
+> [!WARNING]
+> DLQ disabled by default
 ```yaml
 outbox:
   publisher:
@@ -168,7 +169,10 @@ public class ConsumerRunner {
 }
 ```
 
-6. Minimal YAML config (clean-up and cache enable by default):
+6. Minimal YAML config ():
+> [!INFO]
+> Cleanup and cache enable by default
+
 ```yaml
 outbox:
   publisher:
@@ -849,10 +853,10 @@ outbox:
 > [!WARNING]
 > When disabled, idempotency check always hits database
 
-| Property     | Description                                                                                                                  |  Default  |
-|--------------|------------------------------------------------------------------------------------------------------------------------------|:---------:|
-| `enabled`    | Enable distributed caching of consumed event ids                                                                             |  `false`  |
-| `cache-name` | Name of the cache in CacheManager (**required** when enabled). Must match cache name configured in your `CacheManager` bean. |     —     |
+| Property     | Description                                                                                                                                           |  Default  |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|:---------:|
+| `enabled`    | Enable distributed caching of consumed event ids                                                                                                      |  `false`  |
+| `cache-name` | Name of the cache in CacheManager (**required** when `consumer.cache.enabled` is true). Must match cache name configured in your `CacheManager` bean. |     —     |
 
 ---
 
