@@ -16,8 +16,8 @@ class PostgreSqlOutboxPublisherAutoConfigurationIntegrationTests {
 
     @Test
     @DisplayName("IT should not load publisher config when enabled=false")
-    void shouldNotLoadWhenDisabled() {
-        verifier.shouldNotLoadWhenDisabled();
+    void shouldNotLoad_whenDisabled() {
+        verifier.shouldNotLoad_whenDisabled();
     }
 
     @Test
@@ -69,14 +69,92 @@ class PostgreSqlOutboxPublisherAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should registered metrics related beans when all metrics enabled")
+    void shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled() {
+        verifier.shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should registered only OutboxManagerMetricsDecorator when gauge unabled")
+    void shouldRegisteredMetricsRelatedBeans_whenGaugeUnabled() {
+        verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeUnabled();
+    }
+
+    @Test
+    @DisplayName("IT should registered only OutboxManagerMetricsDecorator when gauge is missed")
+    void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
+        verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed();
+    }
+
+    @Test
     @DisplayName("IT should not register duplicate OutboxRepository when custom bean provided")
-    void shouldNotRegisterOutboxRepositoryWhenCustomBeanProvided() {
-        verifier.shouldNotRegisterOutboxRepositoryWhenCustomBeanProvided();
+    void shouldNotRegisterOutboxRepository_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterOutboxRepository_whenCustomBeanProvided();
     }
 
     @Test
     @DisplayName("IT should not register duplicate OutboxProcessor when custom bean provided")
-    void shouldNotRegisterOutboxProcessorWhenCustomBeanProvided() {
-        verifier.shouldNotRegisterOutboxProcessorWhenCustomBeanProvided();
+    void shouldNotRegisterOutboxProcessor_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterOutboxProcessor_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate OutboxManager when custom bean provided")
+    void shouldNotRegisterOutboxManager_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterOutboxManager_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate OutboxSender when custom bean provided")
+    void shouldNotRegisterOutboxSender_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterOutboxSender_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate OutboxSerializer when custom bean provided")
+    void shouldNotRegisterOutboxSerializer_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterOutboxSerializer_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate UuidGenerator when custom bean provided")
+    void shouldNotRegisterUuidGenerator_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterUuidGenerator_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxManagerMetricsDecorator as primary when metrics enabled")
+    void shouldRegisterOutboxManager_whenMetricsEnabled_hasDecoratorAsPrimary() {
+        verifier.shouldRegisterOutboxManager_whenMetricsEnabled_hasDecoratorAsPrimary();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxPublisherScheduler per each event type")
+    void shouldRegisterPublisherScheduler_perEventType() {
+        verifier.shouldRegisterPublisherScheduler_perEventType();
+    }
+
+    @Test
+    @DisplayName("IT should always register OutboxRecoveryScheduler")
+    void shouldRegisterRecoveryScheduler() {
+        verifier.shouldRegisterRecoveryScheduler();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxCleanUpScheduler when clean-up enabled")
+    void shouldRegisterCleanUpScheduler_whenEnabled() {
+        verifier.shouldRegisterCleanUpScheduler_whenEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should not register OutboxCleanUpScheduler when clean-up disabled")
+    void shouldNotRegisterCleanUpScheduler_whenDisabled() {
+        verifier.shouldNotRegisterCleanUpScheduler_whenDisabled();
+    }
+
+    @Test
+    @DisplayName("IT should inject metrics decorator into schedulers when metrics enabled")
+    void shouldRegisterPublisherScheduler_withMetricsDecoratorAsManager() {
+        verifier.shouldRegisterPublisherScheduler_withMetricsDecoratorAsManager();
     }
 }

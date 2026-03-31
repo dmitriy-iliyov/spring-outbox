@@ -2,14 +2,11 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.BeanNameUtils;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -147,50 +144,50 @@ class OutboxPublisherAutoConfigurationUnitTests {
         assertThat(cache).isInstanceOf(SimpleOutboxCache.class);
     }
 
-    @Test
-    @DisplayName("UT outboxManager returns default manager when metrics disabled")
-    void outboxManager_metricsDisabled_returnsDefault() {
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-        metrics.setEnabled(false);
-        props.setMetrics(metrics);
-
-        OutboxRepository repository = mock(OutboxRepository.class);
-        MeterRegistry registry = mock(MeterRegistry.class);
-
-        OutboxManager manager = config.outboxManager(repository, registry);
-
-        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
-    }
-
-    @Test
-    @DisplayName("UT outboxManager returns default manager when metrics null")
-    void outboxManager_metricsNull_returnsDefault() {
-        props.setMetrics(null);
-
-        OutboxRepository repository = mock(OutboxRepository.class);
-        MeterRegistry registry = mock(MeterRegistry.class);
-
-        OutboxManager manager = config.outboxManager(repository, registry);
-
-        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
-    }
-
-    @Test
-    @DisplayName("UT outboxManager returns metrics decorator when metrics enabled")
-    void outboxManager_metricsEnabled_returnsDecorator() {
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-        metrics.setEnabled(true);
-        props.setMetrics(metrics);
-        props.setEvents(Map.of());
-
-        OutboxRepository repository = mock(OutboxRepository.class);
-        MeterRegistry registry = mock(MeterRegistry.class);
-        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(mock(Counter.class));
-
-        OutboxManager manager = config.outboxManager(repository, registry);
-
-        assertThat(manager).isInstanceOf(OutboxManagerMetricsDecorator.class);
-    }
+//    @Test
+//    @DisplayName("UT outboxManager returns default manager when metrics disabled")
+//    void outboxManager_metricsDisabled_returnsDefault() {
+//        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+//        metrics.setEnabled(false);
+//        props.setMetrics(metrics);
+//
+//        OutboxRepository repository = mock(OutboxRepository.class);
+//        MeterRegistry registry = mock(MeterRegistry.class);
+//
+//        OutboxManager manager = config.outboxManager(repository, registry);
+//
+//        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
+//    }
+//
+//    @Test
+//    @DisplayName("UT outboxManager returns default manager when metrics null")
+//    void outboxManager_metricsNull_returnsDefault() {
+//        props.setMetrics(null);
+//
+//        OutboxRepository repository = mock(OutboxRepository.class);
+//        MeterRegistry registry = mock(MeterRegistry.class);
+//
+//        OutboxManager manager = config.outboxManager(repository, registry);
+//
+//        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
+//    }
+//
+//    @Test
+//    @DisplayName("UT outboxManager returns metrics decorator when metrics enabled")
+//    void outboxManager_metricsEnabled_returnsDecorator() {
+//        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+//        metrics.setEnabled(true);
+//        props.setMetrics(metrics);
+//        props.setEvents(Map.of());
+//
+//        OutboxRepository repository = mock(OutboxRepository.class);
+//        MeterRegistry registry = mock(MeterRegistry.class);
+//        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(mock(Counter.class));
+//
+//        OutboxManager manager = config.outboxManager(repository, registry);
+//
+//        assertThat(manager).isInstanceOf(OutboxManagerMetricsDecorator.class);
+//    }
 
     @Test
     @DisplayName("UT outboxSchedulersInitializer should register publisher and recovery schedulers when cleanup is disabled")

@@ -16,8 +16,8 @@ class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
 
     @Test
     @DisplayName("IT should not load DLQ config when dlq.enabled=false")
-    void shouldNotLoadWhenDisabled() {
-        verifier.shouldNotLoadWhenDisabled();
+    void shouldNotLoad_whenDisabled() {
+        verifier.shouldNotLoad_whenDisabled();
     }
 
     @Test
@@ -51,20 +51,68 @@ class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should registered metrics related beans when all metrics enabled")
+    void shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled() {
+        verifier.shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should registered only OutboxDlqManagerMetricsDecorator when gauge unabled")
+    void shouldRegisteredMetricsRelatedBeans_whenGaugeUnabled() {
+        verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeUnabled();
+    }
+
+    @Test
+    @DisplayName("IT should registered only OutboxDlqManagerMetricsDecorator when gauge is missed")
+    void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
+        verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed();
+    }
+
+    @Test
     @DisplayName("IT should not register duplicate OutboxDlqHandler when custom bean provided")
-    void shouldNotRegisterDuplicateHandlerWhenCustomBeanProvided() {
-        verifier.shouldNotRegisterDuplicateHandlerWhenCustomBeanProvided();
+    void shouldNotRegisterDuplicateHandler_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterDuplicateHandler_whenCustomBeanProvided();
     }
 
     @Test
     @DisplayName("IT should not register duplicate OutboxDlqManager when custom bean provided")
-    void shouldNotRegisterDuplicateDlqManagerWhenCustomBeanProvided() {
-        verifier.shouldNotRegisterDuplicateDlqManagerWhenCustomBeanProvided();
+    void shouldNotRegisterDuplicateDlqManager_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterDuplicateDlqManager_whenCustomBeanProvided();
     }
 
     @Test
     @DisplayName("IT should create tables when auto-create is true")
-    void shouldCreateTablesWhenAutoCreateTrue() {
-        verifier.shouldCreateTablesWhenAutoCreateTrue();
+    void shouldCreateTables_whenAutoCreateTrue() {
+        verifier.shouldCreateTables_whenAutoCreateTrue();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate OutboxDlqTransfer when custom bean provided")
+    void shouldNotRegisterDuplicateDlqTransfer_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterDuplicateDlqTransfer_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate OutboxDlqRepository when custom bean provided")
+    void shouldNotRegisterDuplicateDlqRepository_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterDuplicateDlqRepository_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxDlqManagerMetricsDecorator as primary when metrics enabled")
+    void shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled() {
+        verifier.shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxDlqTransferMetricsDecorator as primary when metrics enabled")
+    void shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled() {
+        verifier.shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should register web layer beans when web layer is present")
+    void shouldRegisterWebBeans_whenWebLayerPresent() {
+        verifier.shouldRegisterWebBeans_whenWebLayerPresent();
     }
 }

@@ -4,6 +4,10 @@ import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsRepository;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsService;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -55,13 +59,17 @@ public class OutboxPublisherAutoConfigurationVerifier {
                 );
     }
 
-    public void shouldNotLoadWhenDisabled() {
+    public void shouldNotLoad_whenDisabled() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.publisher.enabled=false")
                 .run(ctx -> {
                     assertThat(ctx).doesNotHaveBean(OutboxProcessor.class);
                     assertThat(ctx).doesNotHaveBean(OutboxManager.class);
                     assertThat(ctx).doesNotHaveBean(OutboxSender.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
                 });
     }
 
@@ -72,9 +80,13 @@ public class OutboxPublisherAutoConfigurationVerifier {
     }
 
     public void shouldRegisterOutboxManager() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(OutboxManager.class)
-        );
+        getBaseContextRunner().run(ctx -> {
+            assertThat(ctx).hasSingleBean(OutboxManager.class);
+            assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
+            assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+            assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
+            assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+        });
     }
 
     public void shouldRegisterOutboxProcessor() {
@@ -113,7 +125,48 @@ public class OutboxPublisherAutoConfigurationVerifier {
         );
     }
 
-    public void shouldNotRegisterOutboxRepositoryWhenCustomBeanProvided() {
+    public void shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=true"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).hasSingleBean(OutboxMetricsService.class);
+                    assertThat(ctx).hasSingleBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxMetrics.class);
+                });
+    }
+
+    public void shouldRegisteredMetricsRelatedBeans_whenGaugeUnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=false"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                });
+    }
+
+    public void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.metrics.enabled=true"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                });
+    }
+
+    public void shouldNotRegisterOutboxRepository_whenCustomBeanProvided() {
         getBaseContextRunner()
                 .withBean("customOutboxRepository", OutboxRepository.class, () -> org.mockito.Mockito.mock(OutboxRepository.class))
                 .run(ctx -> {
@@ -122,12 +175,113 @@ public class OutboxPublisherAutoConfigurationVerifier {
                 });
     }
 
-    public void shouldNotRegisterOutboxProcessorWhenCustomBeanProvided() {
+    public void shouldNotRegisterOutboxProcessor_whenCustomBeanProvided() {
         getBaseContextRunner()
                 .withBean("customOutboxProcessor", OutboxProcessor.class, () -> org.mockito.Mockito.mock(OutboxProcessor.class))
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(OutboxProcessor.class);
                     assertThat(ctx).hasBean("customOutboxProcessor");
+                });
+    }
+
+    public void shouldNotRegisterOutboxManager_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customOutboxManager", OutboxManager.class, () -> org.mockito.Mockito.mock(OutboxManager.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxManager.class);
+                    assertThat(ctx).hasBean("customOutboxManager");
+                    assertThat(ctx).doesNotHaveBean(DefaultOutboxManager.class);
+                });
+    }
+
+    public void shouldNotRegisterOutboxSender_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customOutboxSender", OutboxSender.class, () -> org.mockito.Mockito.mock(OutboxSender.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxSender.class);
+                    assertThat(ctx).hasBean("customOutboxSender");
+                });
+    }
+
+    public void shouldNotRegisterOutboxSerializer_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customOutboxSerializer", OutboxSerializer.class, () -> org.mockito.Mockito.mock(OutboxSerializer.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxSerializer.class);
+                    assertThat(ctx).hasBean("customOutboxSerializer");
+                });
+    }
+
+    public void shouldNotRegisterUuidGenerator_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customUuidGenerator", UuidGenerator.class, () -> org.mockito.Mockito.mock(UuidGenerator.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(UuidGenerator.class);
+                    assertThat(ctx).hasBean("customUuidGenerator");
+                });
+    }
+
+    public void shouldRegisterOutboxManager_whenMetricsEnabled_hasDecoratorAsPrimary() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.publisher.metrics.enabled=true")
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("defaultOutboxManager");
+                    assertThat(ctx).hasBean("outboxManagerMetricsDecorator");
+                    OutboxManager primary = ctx.getBean(OutboxManager.class);
+                    assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
+                });
+    }
+
+    public void shouldRegisterPublisherScheduler_perEventType() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.events.my-event.topic=my.topic",
+                        "outbox.publisher.events.other-event.topic=other.topic"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("othereventOutboxPublisherScheduler");
+                });
+    }
+
+    public void shouldRegisterRecoveryScheduler() {
+        getBaseContextRunner()
+                .run(ctx ->
+                        assertThat(ctx).hasBean("outboxRecoveryScheduler")
+                );
+    }
+
+    public void shouldRegisterCleanUpScheduler_whenEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.clean-up.enabled=true",
+                        "outbox.publisher.clean-up.interval=PT1M",
+                        "outbox.publisher.clean-up.retention=PT24H"
+                )
+                .run(ctx ->
+                        assertThat(ctx).hasBean("outboxCleanUpScheduler")
+                );
+    }
+
+    public void shouldNotRegisterCleanUpScheduler_whenDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.publisher.clean-up.enabled=false")
+                .run(ctx ->
+                        assertThat(ctx).doesNotHaveBean("outboxCleanUpScheduler")
+                );
+    }
+
+    public void shouldRegisterPublisherScheduler_withMetricsDecoratorAsManager() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.events.my-event.topic=my.topic"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("outboxRecoveryScheduler");
+                    OutboxManager primary = ctx.getBean(OutboxManager.class);
+                    assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
                 });
     }
 }
