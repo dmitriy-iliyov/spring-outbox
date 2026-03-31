@@ -83,13 +83,24 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxManager outboxManager(OutboxRepository repository,
-                                       MeterRegistry registry) {
-        OutboxManager manager = new DefaultOutboxManager(repository);
-        if (properties.getMetrics() == null || !properties.getMetrics().isEnabled()) {
-            return manager;
-        }
-        return new OutboxManagerMetricsDecorator(properties, registry, manager);
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxManager outboxManagerMetricsDecorator(OutboxRepository repository, MeterRegistry registry) {
+        return new OutboxManagerMetricsDecorator(properties, registry, new DefaultOutboxManager(repository));
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public OutboxManager outboxManager(OutboxRepository repository) {
+        return new DefaultOutboxManager(repository);
     }
 
     @Bean
