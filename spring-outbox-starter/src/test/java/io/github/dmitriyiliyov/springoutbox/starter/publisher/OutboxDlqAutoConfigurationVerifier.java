@@ -225,4 +225,91 @@ public class OutboxDlqAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
                 });
     }
+
+    public void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
+        getBaseContextRunner()
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqHandler.class);
+                    assertThat(ctx).hasBean("outboxDlqScheduler");
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqManager.class);
+                    OutboxDlqManager primary = ctx.getBean(OutboxDlqManager.class);
+                    assertThat(primary).isInstanceOf(DefaultOutboxDlqManager.class);
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqTransfer.class);
+                    OutboxDlqTransfer transfer = ctx.getBean(OutboxDlqTransfer.class);
+                    assertThat(transfer).isInstanceOf(DefaultOutboxDlqTransfer.class);
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqController.class);
+                    assertThat(ctx).hasSingleBean(DlqStatusQueryConverter.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
+
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqTransferMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqMetrics.class);
+                });
+    }
+
+    public void shouldLoadFullConfiguration_whenAllFeaturesEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.dlq.metrics.enabled=true",
+                        "outbox.publisher.dlq.metrics.gauge.enabled=true",
+                        "outbox.publisher.dlq.metrics.gauge.cache.enabled=true",
+                        "outbox.publisher.dlq.metrics.gauge.cache.ttls[0]=PT10S",
+                        "outbox.publisher.dlq.metrics.gauge.cache.ttls[1]=PT30S",
+                        "outbox.publisher.dlq.metrics.gauge.cache.ttls[2]=PT60S"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqHandler.class);
+                    assertThat(ctx).hasBean("outboxDlqScheduler");
+
+                    assertThat(ctx).hasBean("outboxDlqManager");
+                    assertThat(ctx).hasBean("outboxDlqManagerMetricsDecorator");
+                    OutboxDlqManager primaryManager = ctx.getBean(OutboxDlqManager.class);
+                    assertThat(primaryManager).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
+
+                    assertThat(ctx).hasBean("outboxDlqTransfer");
+                    assertThat(ctx).hasBean("outboxDlqTransferMetricsDecorator");
+                    OutboxDlqTransfer primaryTransfer = ctx.getBean(OutboxDlqTransfer.class);
+                    assertThat(primaryTransfer).isInstanceOf(OutboxDlqTransferMetricsDecorator.class);
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqMetricsService.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqMetricsRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqMetrics.class);
+
+                    assertThat(ctx).hasSingleBean(OutboxDlqController.class);
+                    assertThat(ctx).hasSingleBean(DlqStatusQueryConverter.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
+                });
+    }
+
+    public void shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.dlq.metrics.enabled=true",
+                        "outbox.publisher.dlq.metrics.gauge.enabled=false"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    OutboxDlqManager primaryManager = ctx.getBean(OutboxDlqManager.class);
+                    assertThat(primaryManager).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
+
+                    OutboxDlqTransfer primaryTransfer = ctx.getBean(OutboxDlqTransfer.class);
+                    assertThat(primaryTransfer).isInstanceOf(OutboxDlqTransferMetricsDecorator.class);
+
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqMetrics.class);
+                });
+    }
 }

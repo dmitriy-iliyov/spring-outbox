@@ -15,6 +15,24 @@ class OracleOutboxDlqAutoConfigurationIntegrationTests {
             );
 
     @Test
+    @DisplayName("IT should load minimal DLQ configuration when only required properties set")
+    void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
+        verifier.shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet();
+    }
+
+    @Test
+    @DisplayName("IT should load full DLQ configuration when all features enabled")
+    void shouldLoadFullConfiguration_whenAllFeaturesEnabled() {
+        verifier.shouldLoadFullConfiguration_whenAllFeaturesEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should load DLQ configuration when metrics enabled but gauge disabled")
+    void shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled() {
+        verifier.shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled();
+    }
+
+    @Test
     @DisplayName("IT should not load DLQ config when dlq.enabled=false")
     void shouldNotLoad_whenDisabled() {
         verifier.shouldNotLoad_whenDisabled();

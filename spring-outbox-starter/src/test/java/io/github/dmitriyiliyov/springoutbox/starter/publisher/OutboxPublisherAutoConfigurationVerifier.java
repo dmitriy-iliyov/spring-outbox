@@ -59,6 +59,112 @@ public class OutboxPublisherAutoConfigurationVerifier {
                 );
     }
 
+    public void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
+        getBaseContextRunner()
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(OutboxRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxManager.class);
+                    assertThat(ctx).hasSingleBean(OutboxProcessor.class);
+                    assertThat(ctx).hasSingleBean(OutboxSender.class);
+                    assertThat(ctx).hasSingleBean(OutboxSerializer.class);
+                    assertThat(ctx).hasSingleBean(OutboxPublisher.class);
+                    assertThat(ctx).hasSingleBean(UuidGenerator.class);
+                    assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
+                    assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
+
+                    assertThat(ctx).hasBean("outboxRecoveryScheduler");
+                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("outboxCleanUpScheduler");
+
+                    assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                });
+    }
+
+    public void shouldLoadFullConfiguration_whenAllFeaturesEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=true",
+                        "outbox.publisher.metrics.gauge.cache.ttls[0]=PT10S",
+                        "outbox.publisher.metrics.gauge.cache.ttls[1]=PT30S",
+                        "outbox.publisher.metrics.gauge.cache.ttls[2]=PT60S",
+                        "outbox.publisher.clean-up.enabled=true",
+                        "outbox.publisher.clean-up.interval=PT1M",
+                        "outbox.publisher.clean-up.retention=PT24H",
+                        "outbox.publisher.events.my-event.topic=my.topic",
+                        "outbox.publisher.events.other-event.topic=other.topic"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(OutboxRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxProcessor.class);
+                    assertThat(ctx).hasSingleBean(OutboxSender.class);
+                    assertThat(ctx).hasSingleBean(OutboxSerializer.class);
+                    assertThat(ctx).hasSingleBean(OutboxPublisher.class);
+                    assertThat(ctx).hasSingleBean(UuidGenerator.class);
+                    assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
+                    assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
+
+                    assertThat(ctx).hasBean("defaultOutboxManager");
+                    assertThat(ctx).hasBean("outboxManagerMetricsDecorator");
+                    OutboxManager primary = ctx.getBean(OutboxManager.class);
+                    assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
+
+                    assertThat(ctx).hasSingleBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).hasSingleBean(OutboxMetricsService.class);
+                    assertThat(ctx).hasSingleBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxMetrics.class);
+
+                    assertThat(ctx).hasBean("outboxRecoveryScheduler");
+                    assertThat(ctx).hasBean("outboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("othereventOutboxPublisherScheduler");
+                });
+    }
+
+    public void shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=false"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    OutboxManager primary = ctx.getBean(OutboxManager.class);
+                    assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
+
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                });
+    }
+
+    public void shouldLoadConfiguration_whenCleanUpEnabledButMetricsDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.clean-up.enabled=true",
+                        "outbox.publisher.clean-up.interval=PT1M",
+                        "outbox.publisher.clean-up.retention=PT24H"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasBean("outboxCleanUpScheduler");
+                    assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
+
+                    OutboxManager primary = ctx.getBean(OutboxManager.class);
+                    assertThat(primary).isInstanceOf(DefaultOutboxManager.class);
+                });
+    }
+
     public void shouldNotLoad_whenDisabled() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.publisher.enabled=false")

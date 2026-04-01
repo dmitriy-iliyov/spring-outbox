@@ -15,6 +15,30 @@ class MySqlOutboxPublisherAutoConfigurationIntegrationTests {
             );
 
     @Test
+    @DisplayName("IT should load minimal configuration when only required properties set")
+    void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
+        verifier.shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet();
+    }
+
+    @Test
+    @DisplayName("IT should load full configuration when all features enabled")
+    void shouldLoadFullConfiguration_whenAllFeaturesEnabled() {
+        verifier.shouldLoadFullConfiguration_whenAllFeaturesEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should load configuration when metrics enabled but gauge disabled")
+    void shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled() {
+        verifier.shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled();
+    }
+
+    @Test
+    @DisplayName("IT should load configuration when clean-up enabled but metrics disabled")
+    void shouldLoadConfiguration_whenCleanUpEnabledButMetricsDisabled() {
+        verifier.shouldLoadConfiguration_whenCleanUpEnabledButMetricsDisabled();
+    }
+
+    @Test
     @DisplayName("IT should not load publisher config when enabled=false")
     void shouldNotLoad_whenDisabled() {
         verifier.shouldNotLoad_whenDisabled();
