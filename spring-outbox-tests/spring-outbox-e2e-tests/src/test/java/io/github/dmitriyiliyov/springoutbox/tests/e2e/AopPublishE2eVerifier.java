@@ -1,0 +1,163 @@
+package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.JsonNode;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class AopPublishE2eVerifier {
+
+    private final BusinessService service;
+    private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
+    private final IdExtractor idExtractor;
+
+    @FunctionalInterface
+    public interface IdExtractor {
+        UUID extract(ResultSet rs) throws SQLException;
+    }
+
+    public AopPublishE2eVerifier(BusinessService service, JdbcTemplate jdbcTemplate, IdExtractor idExtractor) {
+        this.service = service;
+        this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = new ObjectMapper();
+        this.idExtractor = idExtractor;
+    }
+
+    void publish_shouldSaveEvent() {
+        BusinessEvent event = BusinessEvent.of();
+
+        service.successSaveEvent(event);
+
+        List<UUID> outboxIds = selectOutboxIdsQuery();
+        assertThat(outboxIds).containsOnly(event.verifyId());
+
+        List<UUID> businessIds = selectBusinessIdsQuery();
+        assertThat(businessIds).containsOnly(event.verifyId());
+
+        assertEquals(outboxIds.getFirst(), businessIds.getFirst());
+    }
+
+    void publish_shouldSaveEvents(int eventCount) {
+        List<BusinessEvent> events = new ArrayList<>();
+        for (int i = 0; i < eventCount; i++) {
+            events.add(BusinessEvent.of());
+        }
+
+        service.successSaveEvents(events);
+
+        List<UUID> ids = events.stream().map(BusinessEvent::verifyId).toList();
+        List<UUID> outboxIds = selectOutboxIdsQuery();
+        assertThat(outboxIds).containsExactlyInAnyOrder(ids.toArray(new UUID[0]));
+
+        List<UUID> businessIds = selectBusinessIdsQuery();
+        assertThat(businessIds).containsExactlyInAnyOrder(ids.toArray(new UUID[0]));
+    }
+
+    void publish_successSaveReturnedEvent() {
+        BusinessEvent event = BusinessEvent.of();
+
+        service.successSaveReturnedEvent(event);
+
+        List<UUID> outboxIds = selectOutboxIdsQuery();
+        assertThat(outboxIds).containsOnly(event.verifyId());
+
+        List<UUID> businessIds = selectBusinessIdsQuery();
+        assertThat(businessIds).containsOnly(event.verifyId());
+
+        assertEquals(outboxIds.getFirst(), businessIds.getFirst());
+    }
+
+    void publish_successSaveReturnedEvents(int eventCount) {
+        List<BusinessEvent> events = new ArrayList<>();
+        for (int i = 0; i < eventCount; i++) {
+            events.add(BusinessEvent.of());
+        }
+
+        service.successSaveReturnedEvents(events);
+
+        List<UUID> ids = events.stream().map(BusinessEvent::verifyId).toList();
+        List<UUID> outboxIds = selectOutboxIdsQuery();
+        assertThat(outboxIds).containsExactlyInAnyOrder(ids.toArray(new UUID[0]));
+
+        List<UUID> businessIds = selectBusinessIdsQuery();
+        assertThat(businessIds).containsExactlyInAnyOrder(ids.toArray(new UUID[0]));
+    }
+
+    void publishEvent_shouldThrows_whenBusinessTransactionFailed() {
+        assertThrows(
+                RuntimeException.class,
+                () -> service.exceptionallyInBusinessTransaction(BusinessEvent.of())
+        );
+
+        assertThat(selectOutboxIdsQuery()).isEmpty();
+        assertThat(selectBusinessIdsQuery()).isEmpty();
+    }
+
+    void publishEvents_shouldThrows_whenBusinessTransactionFailed() {
+        assertThrows(
+                RuntimeException.class,
+                () -> service.exceptionallyInBusinessTransaction(List.of(BusinessEvent.of(), BusinessEvent.of()))
+        );
+
+        assertThat(selectOutboxIdsQuery()).isEmpty();
+        assertThat(selectBusinessIdsQuery()).isEmpty();
+    }
+
+    void publishEventWithReturnedEvent_shouldThrows_whenBusinessTransactionFailed() {
+        assertThrows(
+                RuntimeException.class,
+                () -> service.exceptionallyInBusinessTransactionWithReturnedEvent(BusinessEvent.of())
+        );
+
+        assertThat(selectOutboxIdsQuery()).isEmpty();
+        assertThat(selectBusinessIdsQuery()).isEmpty();
+    }
+
+    void publishEventsWithReturnedEvents_shouldThrows_whenBusinessTransactionFailed() {
+        assertThrows(
+                RuntimeException.class,
+                () -> service.exceptionallyInBusinessTransactionWithReturnedEvents(List.of(BusinessEvent.of(), BusinessEvent.of()))
+        );
+
+        assertThat(selectOutboxIdsQuery()).isEmpty();
+        assertThat(selectBusinessIdsQuery()).isEmpty();
+    }
+
+    private List<UUID> selectOutboxIdsQuery() {
+        return jdbcTemplate.query(
+                "SELECT payload FROM outbox_events",
+                (rs, n) -> {
+                    JsonNode node = null;
+                    try {
+                        node = objectMapper.readTree(rs.getString("payload"));
+                        return UUID.fromString(node.get("verifyId").asText());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
+    }
+
+    private List<UUID> selectBusinessIdsQuery() {
+        return jdbcTemplate.query(
+                "SELECT * FROM business_events",
+                (rs, n) -> idExtractor.extract(rs)
+        );
+    }
+
+    public void cleanUpQueries() {
+        jdbcTemplate.execute("DELETE FROM outbox_events WHERE 1=1");
+        jdbcTemplate.execute("DELETE FROM business_events WHERE 1=1");
+    }
+}
