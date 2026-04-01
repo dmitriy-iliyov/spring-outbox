@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.metrics.it_config;
 
+import io.github.dmitriyiliyov.springoutbox.tests.utils.OracleTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
