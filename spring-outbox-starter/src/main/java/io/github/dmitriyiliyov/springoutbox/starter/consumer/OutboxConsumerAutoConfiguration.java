@@ -18,6 +18,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -48,11 +49,21 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxManager consumedOutboxManager(CacheManager cacheManager,
-                                                       ConsumedOutboxRepository repository,
-                                                       MeterRegistry registry) {
+    public ConsumedOutboxManager consumedOutboxManager(ConsumedOutboxRepository repository) {
+        return new DefaultConsumedOutboxManager(repository);
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnProperty(
+            prefix = "outbox.consumer.metrics",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public ConsumedOutboxManager decoratedConsumedOutboxManager(ConsumedOutboxManager manager,
+                                                                CacheManager cacheManager,
+                                                                MeterRegistry registry) {
         OutboxConsumerProperties.CacheProperties cacheProperties = properties.getCache();
-        ConsumedOutboxManager manager = new DefaultConsumedOutboxManager(repository);
         if (cacheManager == null || !cacheProperties.isEnabled()) {
             if (cacheManager == null) {
                 log.error("CacheManager is null, impossible to create bean of ConsumedOutboxManagerCacheDecorator");
@@ -73,12 +84,10 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxIdempotentConsumer outboxIdempotentConsumer(
-            @Qualifier("defaultOutboxEventIdResolveManager") OutboxEventIdResolveManager idResolver,
-            TransactionTemplate transactionTemplate,
-            ConsumedOutboxManager manager,
-            MeterRegistry registry
-    ) {
+    public OutboxIdempotentConsumer outboxIdempotentConsumer(OutboxEventIdResolveManager idResolver,
+                                                             TransactionTemplate transactionTemplate,
+                                                             ConsumedOutboxManager manager,
+                                                             MeterRegistry registry) {
         OutboxIdempotentConsumer consumer = new DefaultOutboxIdempotentConsumer(
                 idResolver, transactionTemplate, manager
         );

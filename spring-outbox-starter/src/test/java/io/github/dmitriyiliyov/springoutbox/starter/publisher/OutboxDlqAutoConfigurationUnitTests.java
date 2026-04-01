@@ -1,29 +1,17 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqManagerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqTransferMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class OutboxDlqAutoConfigurationUnitTests {
 

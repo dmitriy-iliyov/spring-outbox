@@ -1,9 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolveManager;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
+import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -56,7 +55,54 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 );
     }
 
-    public void shouldNotLoadWhenDisabled() {
+    public void shouldLoadFullConfiguration_whenAllFeaturesEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.consumer.metrics.enabled=true",
+                        "outbox.consumer.cache.enabled=true",
+                        "outbox.consumer.cache.cache-name=outbox",
+                        "outbox.consumer.clean-up.enabled=true",
+                        "outbox.consumer.clean-up.interval=PT1M",
+                        "outbox.consumer.clean-up.retention=PT24H"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumer.class);
+                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
+
+                    ConsumedOutboxManager primary = ctx.getBean(ConsumedOutboxManager.class);
+                    assertThat(primary).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
+
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerMetricsDecorator.class);
+
+                    assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
+                    assertThat(ctx).hasBean("rabbitMqOutboxEventIdResolver");
+                    assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
+
+                    assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
+                });
+    }
+
+    public void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
+        getBaseContextRunner()
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxManager.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumer.class);
+                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
+
+                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecorator.class);
+                    assertThat(ctx).doesNotHaveBean("consumedOutboxCleanUpScheduler");
+                });
+    }
+
+    public void shouldNotLoad_whenDisabled() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(
                         DataSourceAutoConfiguration.class,
@@ -75,8 +121,8 @@ public class OutboxConsumerAutoConfigurationVerifier {
                         "outbox.consumer.enabled=false"
                 )
                 .run(ctx -> {
-                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumer.class);
-                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManager.class);
+                    assertThat(ctx).doesNotHaveBean(DefaultOutboxIdempotentConsumer.class);
+                    assertThat(ctx).doesNotHaveBean(DefaultConsumedOutboxManager.class);
                     assertThat(ctx).doesNotHaveBean(ConsumedOutboxRepository.class);
                 });
     }
@@ -117,7 +163,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
         );
     }
 
-    public void shouldNotRegisterCleanUpSchedulerWhenDisabled() {
+    public void shouldNotRegisterCleanUpScheduler_whenDisabled() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.consumer.clean-up.enabled=false")
                 .run(ctx ->
@@ -125,7 +171,15 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 );
     }
 
-    public void shouldNotRegisterDuplicateConsumedOutboxManagerWhenCustomBeanProvided() {
+    public void shouldNotRegisterCleanUpScheduler_whenEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.clean-up.enabled=true")
+                .run(ctx ->
+                        assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler")
+                );
+    }
+
+    public void shouldNotRegisterDuplicateConsumedOutboxManager_whenCustomBeanProvided() {
         getBaseContextRunner()
                 .withBean(
                         "customConsumedOutboxManager",
@@ -138,7 +192,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 });
     }
 
-    public void shouldCreateTablesWhenAutoCreateTrue() {
+    public void shouldCreateTables_whenAutoCreateTrue() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.tables.auto-create=true")
                 .run(ctx -> {
@@ -146,5 +200,84 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     JdbcTemplate jdbcTemplate = ctx.getBean("outboxTransactionAwareJdbcTemplate", JdbcTemplate.class);
                     jdbcTemplate.execute("SELECT 1 FROM outbox_consumed_events WHERE 1=0");
                 });
+    }
+
+    public void shouldNotRegisteredMetricsRelatedBeans_whenMetricsDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.metrics.enabled=false")
+                .run(ctx -> {
+                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecorator.class);
+                });
+    }
+
+    public void shouldRegisteredMetricsRelatedBeans_whenMetricsEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.metrics.enabled=true")
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecorator.class);
+                });
+    }
+
+    public void shouldNotRegisterDuplicateConsumedOutboxRepository_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customConsumedOutboxRepository", ConsumedOutboxRepository.class,
+                        () -> org.mockito.Mockito.mock(ConsumedOutboxRepository.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
+                    assertThat(ctx).hasBean("customConsumedOutboxRepository");
+                });
+    }
+
+    public void shouldNotRegisterDuplicateOutboxIdempotentConsumer_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customOutboxIdempotentConsumer", OutboxIdempotentConsumer.class,
+                        () -> org.mockito.Mockito.mock(OutboxIdempotentConsumer.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumer.class);
+                    assertThat(ctx).hasBean("customOutboxIdempotentConsumer");
+                });
+    }
+
+    public void shouldNotRegisterDuplicateOutboxEventIdResolveManager_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("customOutboxEventIdResolveManager", OutboxEventIdResolveManager.class,
+                        () -> org.mockito.Mockito.mock(OutboxEventIdResolveManager.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
+                    assertThat(ctx).hasBean("customOutboxEventIdResolveManager");
+                });
+    }
+
+    public void shouldRegisterConsumedOutboxManagerDecorator_asPrimary_whenMetricsEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.metrics.enabled=true")
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("consumedOutboxManager");
+                    assertThat(ctx).hasBean("decoratedConsumedOutboxManager");
+                    ConsumedOutboxManager primary = ctx.getBean(ConsumedOutboxManager.class);
+                    assertThat(primary).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
+                });
+    }
+
+    public void shouldRegisterOutboxIdempotentConsumerMetricsDecorator_whenMetricsEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.metrics.enabled=true")
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerMetricsDecorator.class)
+                );
+    }
+
+    public void shouldNotRegisterOutboxIdempotentConsumerMetricsDecorator_whenMetricsDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.metrics.enabled=false")
+                .run(ctx ->
+                        assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecorator.class)
+                );
+    }
+
+    public void shouldRegisterSpringMessageEventIdResolver() {
+        getBaseContextRunner().run(ctx ->
+                assertThat(ctx).hasBean("springMessageOutboxEventIdResolver")
+        );
     }
 }

@@ -1,11 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsRepository;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsService;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.github.dmitriyiliyov.springoutbox.web.DlqStatusQueryConverter;

@@ -1,7 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManager;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolveManager;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
@@ -37,44 +36,41 @@ class OutboxConsumerAutoConfigurationUnitTests {
     CacheManager cacheManager;
 
     @Mock
-    ConsumedOutboxRepository repository;
-
-    @Mock
     MeterRegistry registry;
 
     @Mock
     OutboxConsumerProperties.CacheProperties cacheProperties;
 
     @Test
-    @DisplayName("UT consumedOutboxManager() when cacheManager null should return metrics decorator")
-    void consumedOutboxManager_whenCacheManagerNull_shouldReturnMetricsDecorator() {
+    @DisplayName("UT decoratedConsumedOutboxManager() when cacheManager null should return metrics decorator")
+    void decoratedConsumedOutboxManager_whenCacheManagerNull_shouldReturnMetricsDecorator() {
         // given
         when(properties.getCache()).thenReturn(cacheProperties);
 
         // when
-        ConsumedOutboxManager manager = config.consumedOutboxManager(null, repository, registry);
+        ConsumedOutboxManager manager = config.decoratedConsumedOutboxManager(mock(ConsumedOutboxManager.class), null, registry);
 
         // then
         assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
     }
 
     @Test
-    @DisplayName("UT consumedOutboxManager() when cache disabled should return metrics decorator")
-    void consumedOutboxManager_whenCacheDisabled_shouldReturnMetricsDecorator() {
+    @DisplayName("UT decoratedConsumedOutboxManager() when cache disabled should return metrics decorator")
+    void decoratedConsumedOutboxManager_whenCacheDisabled_shouldReturnMetricsDecorator() {
         // given
         when(properties.getCache()).thenReturn(cacheProperties);
         when(cacheProperties.isEnabled()).thenReturn(false);
 
         // when
-        ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
+        ConsumedOutboxManager manager = config.decoratedConsumedOutboxManager(mock(ConsumedOutboxManager.class), cacheManager, registry);
 
         // then
         assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
     }
 
     @Test
-    @DisplayName("UT consumedOutboxManager() when cache enabled should return cache decorator")
-    void consumedOutboxManager_whenCacheEnabled_shouldReturnCacheDecorator() {
+    @DisplayName("UT decoratedConsumedOutboxManager() when cache enabled should return cache decorator")
+    void decoratedConsumedOutboxManager_whenCacheEnabled_shouldReturnCacheDecorator() {
         // given
         String cacheName = "myCache";
         when(properties.getCache()).thenReturn(cacheProperties);
@@ -82,15 +78,15 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(cacheProperties.getCacheName()).thenReturn(cacheName);
 
         // when
-        ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
+        ConsumedOutboxManager manager = config.decoratedConsumedOutboxManager(mock(ConsumedOutboxManager.class), cacheManager, registry);
 
         // then
         assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
     }
 
     @Test
-    @DisplayName("UT consumedOutboxManager() when metrics enabled should use MetricsConsumedOutboxCacheObserver")
-    void consumedOutboxManager_whenMetricsEnabled_shouldUseMetricsObserver() {
+    @DisplayName("UT decoratedConsumedOutboxManager() when metrics enabled should use MetricsConsumedOutboxCacheObserver")
+    void decoratedConsumedOutboxManager_whenMetricsEnabled_shouldUseMetricsObserver() {
         // given
         String cacheName = "myCache";
         when(properties.getCache()).thenReturn(cacheProperties);
@@ -102,15 +98,15 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(metrics.isEnabled()).thenReturn(true);
 
         // when
-        ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
+        ConsumedOutboxManager manager = config.decoratedConsumedOutboxManager(mock(ConsumedOutboxManager.class), cacheManager, registry);
 
         // then
         assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
     }
 
     @Test
-    @DisplayName("UT consumedOutboxManager() when metrics disabled should use NoopConsumedOutboxCacheObserver")
-    void consumedOutboxManager_whenMetricsDisabled_shouldUseNoopObserver() {
+    @DisplayName("UT decoratedConsumedOutboxManager() when metrics disabled should use NoopConsumedOutboxCacheObserver")
+    void decoratedConsumedOutboxManager_whenMetricsDisabled_shouldUseNoopObserver() {
         // given
         String cacheName = "myCache";
         when(properties.getCache()).thenReturn(cacheProperties);
@@ -122,15 +118,15 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(metrics.isEnabled()).thenReturn(false);
 
         // when
-        ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
+        ConsumedOutboxManager manager = config.decoratedConsumedOutboxManager(mock(ConsumedOutboxManager.class), cacheManager, registry);
 
         // then
         assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
     }
 
     @Test
-    @DisplayName("UT consumedOutboxManager() when metrics null should use NoopConsumedOutboxCacheObserver")
-    void consumedOutboxManager_whenMetricsNull_shouldUseNoopObserver() {
+    @DisplayName("UT decoratedConsumedOutboxManager() when metrics null should use NoopConsumedOutboxCacheObserver")
+    void decoratedConsumedOutboxManager_whenMetricsNull_shouldUseNoopObserver() {
         // given
         String cacheName = "myCache";
         when(properties.getCache()).thenReturn(cacheProperties);
@@ -140,7 +136,7 @@ class OutboxConsumerAutoConfigurationUnitTests {
         when(properties.getMetrics()).thenReturn(null);
 
         // when
-        ConsumedOutboxManager manager = config.consumedOutboxManager(cacheManager, repository, registry);
+        ConsumedOutboxManager manager = config.decoratedConsumedOutboxManager(mock(ConsumedOutboxManager.class), cacheManager, registry);
 
         // then
         assertThat(manager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
