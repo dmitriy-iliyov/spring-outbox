@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.it;
 
-import io.github.dmitriyiliyov.springoutbox.core.it.conteiners.OracleTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.OracleTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;

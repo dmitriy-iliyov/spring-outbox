@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.it;
 
-import io.github.dmitriyiliyov.springoutbox.core.it.conteiners.RedisTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.RedisTestContainerSingleton;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;

@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.it;
 
-import io.github.dmitriyiliyov.springoutbox.core.it.conteiners.PostgresTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.PostgresTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;

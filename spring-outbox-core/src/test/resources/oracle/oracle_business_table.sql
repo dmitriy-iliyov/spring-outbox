@@ -1,9 +1,0 @@
-BEGIN
-EXECUTE IMMEDIATE '
-        CREATE TABLE business_events (
-           verify_id RAW(16) NOT NULL
-        )';
-EXCEPTION WHEN OTHERS THEN
-    IF SQLCODE != -955 THEN RAISE; END IF;
-END;
-/
