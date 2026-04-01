@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.starter.it.OracleTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.OracleTestContainerSingleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -85,7 +85,6 @@ class OracleOutboxDlqAutoConfigurationIntegrationTests {
     void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
         verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed();
     }
-
 
     @Test
     @DisplayName("IT should not register duplicate OutboxDlqHandler when custom bean provided")

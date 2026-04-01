@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.starter.it.MySqlTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.MySqlTestContainerSingleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
