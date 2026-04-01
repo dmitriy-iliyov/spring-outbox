@@ -26,7 +26,7 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
       - name: Build test utils
-        run: mvn -f spring-outbox-test-utils/pom.xml clean install -DskipTests
+        run: mvn -f spring-outbox-tests/spring-outbox-test-utils/pom.xml clean install -DskipTests
 
       - name: Build and run tests
         run: mvn clean verify -X -Dgpg.skip=true
