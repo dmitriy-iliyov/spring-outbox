@@ -9,7 +9,7 @@
 
     <groupId>io.github.dmitriy-iliyov</groupId>
     <artifactId>spring-outbox-parent</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>pom</packaging>
 
     <name>spring-outbox</name>
@@ -36,7 +36,7 @@
         <connection>scm:git:https://github.com/dmitriy-iliyov/spring-outbox.git</connection>
         <developerConnection>scm:git:ssh://git@github.com:dmitriy-iliyov/spring-outbox.git</developerConnection>
         <url>https://github.com/dmitriy-iliyov/spring-outbox</url>
-        <tag>v1.0.0</tag>
+        <tag>v1.1.0</tag>
     </scm>
 
     <modules>
@@ -47,6 +47,7 @@
         <module>spring-outbox-rabbit</module>
         <module>spring-outbox-metrics</module>
         <module>spring-outbox-starter</module>
+        <module>spring-outbox-tests/spring-outbox-test-utils</module>
     </modules>
 
     <properties>
