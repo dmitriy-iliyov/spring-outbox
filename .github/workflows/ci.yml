@@ -25,11 +25,11 @@ jobs:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
 
-      - name: Build test utils
-        run: mvn -f spring-outbox-tests/spring-outbox-test-utils/pom.xml clean install -DskipTests
-
-      - name: Build and run tests
+      - name: Build and run UT and IT
         run: mvn clean verify -X -Dgpg.skip=true
+
+      - name: Build and run E2ET
+        run: mvn -f spring-outbox-tests/spring-outbox-e2e-tests/pom.xml clean verify -X -Dgpg.skip=true
 
       - name: Upload coverage to Codecov
         if: github.actor != 'dependabot[bot]'
