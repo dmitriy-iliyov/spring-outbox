@@ -4,8 +4,6 @@ import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
@@ -18,7 +16,6 @@ import java.util.Objects;
 public class OutboxProperties implements OutboxPropertiesHolder {
 
     private static final int DEFAULT_THREAD_POOL_SIZE = Math.min(Runtime.getRuntime().availableProcessors(), 5);
-    private static final Logger log = LoggerFactory.getLogger(OutboxProperties.class);
 
     private Integer threadPoolSize;
     @NestedConfigurationProperty
@@ -31,26 +28,26 @@ public class OutboxProperties implements OutboxPropertiesHolder {
     public OutboxProperties() {}
 
     @PostConstruct
-    public void afterPropertiesSet() {
+    public void init() {
         threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
 
         if (publisher == null) {
             publisher = new OutboxPublisherProperties();
             publisher.setEnabled(false);
         }
-        publisher.afterPropertiesSet();
+        publisher.init();
 
         if (consumer == null) {
             consumer = new OutboxConsumerProperties();
             consumer.setEnabled(false);
         }
-        consumer.afterPropertiesSet();
+        consumer.init();
 
         if (tables == null) {
             tables = new TablesProperties();
             tables.setAutoCreate(true);
         }
-        tables.afterPropertiesSet();
+        tables.init();
     }
 
     public Integer getThreadPoolSize() {
@@ -88,10 +85,10 @@ public class OutboxProperties implements OutboxPropertiesHolder {
     @Override
     public String toString() {
         return "OutboxProperties{" +
-                "\n\t threadPoolSize=" + threadPoolSize +
-                ",\n\t publisher=" + publisher +
-                ",\n\t consumer=" + consumer +
-                ",\n\t tables=" + tables +
+                "threadPoolSize=" + threadPoolSize +
+                ", publisher=" + publisher +
+                ", consumer=" + consumer +
+                ", tables=" + tables +
                 '}';
     }
 
@@ -108,7 +105,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
         private Duration initialDelay;
         private Duration fixedDelay;
 
-        public void afterPropertiesSet() {
+        public void init() {
             if (enabled == null || enabled) {
                 enabled = true;
                 batchSize = (batchSize == null || batchSize <= 0) ? DEFAULT_BATCH_SIZE : batchSize;
@@ -173,7 +170,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             return "CleanUpProperties{" +
                     "enabled=" + enabled +
                     ", batchSize=" + batchSize +
-                    ", ttl=" + ttl.toSeconds() +
+                    ", ttl=" + ttl +
                     ", initialDelay=" + initialDelay +
                     ", fixedDelay=" + fixedDelay +
                     '}';
@@ -184,7 +181,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
 
         private Boolean autoCreate;
 
-        public void afterPropertiesSet() {
+        public void init() {
             autoCreate = autoCreate == null || autoCreate;
         }
 
@@ -239,7 +236,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             this.gauge = gauge;
         }
 
-        public void afterPropertiesSet() {
+        public void init() {
             if (enabled != null && enabled) {
                 enabled = true;
                 if (gauge == null) {
@@ -251,7 +248,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                 gauge = new GaugeProperties();
                 gauge.setEnabled(false);
             }
-            gauge.afterPropertiesSet();
+            gauge.init();
         }
 
         @Override
@@ -284,7 +281,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                 this.cache = cache;
             }
 
-            public void afterPropertiesSet() {
+            public void init() {
                 if (enabled != null && enabled) {
                     enabled = true;
                     if (cache == null) {
@@ -296,7 +293,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                     cache = new CacheProperties();
                     cache.setEnabled(false);
                 }
-                cache.afterPropertiesSet();
+                cache.init();
             }
 
             @Override
@@ -332,7 +329,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                     this.ttls = ttls;
                 }
 
-                public void afterPropertiesSet() {
+                public void init() {
                     if (enabled == null || enabled) {
                         enabled = true;
                         if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {

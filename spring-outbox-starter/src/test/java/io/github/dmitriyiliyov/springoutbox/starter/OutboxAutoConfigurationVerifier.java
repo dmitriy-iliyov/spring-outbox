@@ -58,9 +58,9 @@ public class OutboxAutoConfigurationVerifier {
         );
     }
 
-    public void shouldRegisterTransactionAwareJdbcTemplate() {
+    public void shouldRegisterJdbcTemplate() {
         getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("outboxTransactionAwareJdbcTemplate")
+                assertThat(ctx).hasBean("outboxJdbcTemplate")
         );
     }
 
@@ -100,14 +100,14 @@ public class OutboxAutoConfigurationVerifier {
                 .withPropertyValues("outbox.tables.auto-create=true")
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
-                    JdbcTemplate jdbcTemplate = ctx.getBean("outboxTransactionAwareJdbcTemplate", JdbcTemplate.class);
+                    JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
                     jdbcTemplate.execute("SELECT 1 FROM outbox_events WHERE 1=0");
                 });
     }
 
     public void jdbcTemplateShouldBeTransactionAware() {
         getBaseContextRunner().run(ctx -> {
-            JdbcTemplate jdbcTemplate = ctx.getBean("outboxTransactionAwareJdbcTemplate", JdbcTemplate.class);
+            JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
             assertThat(jdbcTemplate.getDataSource()).isInstanceOf(TransactionAwareDataSourceProxy.class);
         });
     }

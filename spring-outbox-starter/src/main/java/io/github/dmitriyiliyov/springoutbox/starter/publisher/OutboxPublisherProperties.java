@@ -32,15 +32,15 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
     public OutboxPublisherProperties() {}
 
-    public void afterPropertiesSet() {
+    public void init() {
         if (enabled == null || enabled) {
             enabled = true;
             if (sender == null) {
                 throw new IllegalArgumentException("sender cannot be null");
             }
-            sender.afterPropertiesSet();
+            sender.init();
             defaults = defaults == null ? new Defaults() : defaults;
-            defaults.afterPropertiesSet();
+            defaults.init();
             if (events == null) {
                 throw new IllegalArgumentException("events cannot be null");
             }
@@ -49,12 +49,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             }
             events = applyDefaults(events);
             stuckRecovery = stuckRecovery == null ? new StuckRecoveryProperties() : stuckRecovery;
-            stuckRecovery.afterPropertiesSet();
+            stuckRecovery.init();
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
             }
-            cleanUp.afterPropertiesSet();
+            cleanUp.init();
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
@@ -62,7 +62,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 dlq = new DlqProperties();
                 dlq.setEnabled(false);
             }
-            dlq.afterPropertiesSet();
+            dlq.init();
             if (!dlq.isEnabled()) {
                 log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
             }
@@ -70,7 +70,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
-            metrics.afterPropertiesSet();
+            metrics.init();
             log.debug("OutboxPublisherProperties successfully initialized");
         } else {
             enabled = false;
@@ -93,7 +93,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                         e -> {
                             EventProperties event = e.getValue();
                             event.setEventType(e.getKey());
-                            event.afterPropertiesSet(defaults);
+                            event.init(defaults);
                             return event;
                         }
                 ));
@@ -182,15 +182,15 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
     @Override
     public String toString() {
         return "OutboxPublisherProperties{" +
-                "\n\t\t enabled=" + enabled +
-                ",\n\t\t sender=" + sender +
-                ",\n\t\t defaults=" + defaults +
-                ",\n\t\t events=" + events +
-                ",\n\t\t stuckRecovery=" + stuckRecovery +
-                ",\n\t\t cleanUp=" + cleanUp +
-                ",\n\t\t dlq=" + dlq +
-                ",\n\t\t metrics=" + metrics +
-                "\n\t}";
+                "enabled=" + enabled +
+                ", sender=" + sender +
+                ", defaults=" + defaults +
+                ", events=" + events +
+                ", stuckRecovery=" + stuckRecovery +
+                ", cleanUp=" + cleanUp +
+                ", dlq=" + dlq +
+                ", metrics=" + metrics +
+                '}';
     }
 
     public static final class SenderProperties {
@@ -201,7 +201,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         private String beanName;
         private Duration emergencyTimeout;
 
-        public void afterPropertiesSet() {
+        public void init() {
             if (type == null) {
                 throw new IllegalArgumentException("senderType cannot be null");
             }
@@ -238,7 +238,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                     "type=" + type +
                     ", beanName='" + beanName + '\'' +
                     ", emergencyTimeout=" + emergencyTimeout +
-                    "}";
+                    '}';
         }
     }
 
@@ -265,13 +265,13 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.backoff = DEFAULT_BACKOFF;
         }
 
-        public void afterPropertiesSet() {
+        public void init() {
             batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
             fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
             maxRetries = maxRetries == null || maxRetries < 0 ? DEFAULT_MAX_RETRY : maxRetries;
             backoff = backoff == null ? DEFAULT_BACKOFF : backoff;
-            backoff.afterPropertiesSet();
+            backoff.init();
         }
 
         public void setBatchSize(Integer batchSize) {
@@ -334,12 +334,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         @Override
         public String toString() {
             return "Defaults{" +
-                    "\n\t\t\t batchSize=" + batchSize +
-                    ",\n\t\t\t initialDelay=" + initialDelay +
-                    ",\n\t\t\t fixedDelay=" + fixedDelay +
-                    ",\n\t\t\t maxRetries=" + maxRetries +
-                    ",\n\t\t\t backoff=" + backoff +
-                    "\n\t\t }";
+                    "batchSize=" + batchSize +
+                    ", initialDelay=" + initialDelay +
+                    ", fixedDelay=" + fixedDelay +
+                    ", maxRetries=" + maxRetries +
+                    ", backoff=" + backoff +
+                    '}';
         }
     }
 
@@ -362,10 +362,10 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.enabled = enabled;
             this.delay = delay;
             this.multiplier = multiplier;
-            this.afterPropertiesSet();
+            this.init();
         }
 
-        public void afterPropertiesSet() {
+        public void init() {
             if (enabled == null || enabled) {
                 enabled = true;
                 delay = delay == null ? DEFAULT_DELAY : delay;
@@ -422,7 +422,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                     "enabled=" + enabled +
                     ", delay=" + delay +
                     ", multiplier=" + multiplier +
-                    "}";
+                    '}';
         }
     }
 
@@ -437,7 +437,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         @NestedConfigurationProperty
         private BackoffProperties backoff;
 
-        public void afterPropertiesSet(Defaults defaults) {
+        public void init(Defaults defaults) {
             if (eventType == null) {
                 throw new IllegalArgumentException("eventType cannot be null");
             }
@@ -470,7 +470,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                                 backoff.getMultiplier()
                 );
             }
-            backoff.afterPropertiesSet();
+            backoff.init();
         }
 
         @Override
@@ -566,14 +566,14 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         @Override
         public String toString() {
             return "EventProperties{" +
-                    "\n\t\t\t eventType='" + eventType + '\'' +
-                    ",\n\t\t\t topic='" + topic + '\'' +
-                    ",\n\t\t\t batchSize=" + batchSize +
-                    ",\n\t\t\t initialDelay=" + initialDelay +
-                    ",\n\t\t\t fixedDelay=" + fixedDelay +
-                    ",\n\t\t\t maxRetries=" + maxRetries +
-                    ",\n\t\t\t backoff=" + backoff +
-                    "\n\t\t }";
+                    "eventType='" + eventType + '\'' +
+                    ", topic='" + topic + '\'' +
+                    ", batchSize=" + batchSize +
+                    ", initialDelay=" + initialDelay +
+                    ", fixedDelay=" + fixedDelay +
+                    ", maxRetries=" + maxRetries +
+                    ", backoff=" + backoff +
+                    '}';
         }
     }
 
@@ -596,7 +596,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.fixedDelay = DEFAULT_FIXED_DELAY;
         }
 
-        public void afterPropertiesSet() {
+        public void init() {
             batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             maxBatchProcessingTime = maxBatchProcessingTime == null ? DEFAULT_MAX_BATCH_PROCESSING_TIME : maxBatchProcessingTime;
             initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
@@ -682,7 +682,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         @NestedConfigurationProperty
         private OutboxProperties.MetricsProperties metrics;
 
-        public void afterPropertiesSet() {
+        public void init() {
             if (enabled != null && enabled) {
                 enabled = true;
                 batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
@@ -702,7 +702,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
-            metrics.afterPropertiesSet();
+            metrics.init();
         }
 
         public Boolean isEnabled() {
@@ -769,14 +769,14 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         @Override
         public String toString() {
             return "DlqProperties{" +
-                    "\n\t\t\t enabled=" + enabled +
-                    ",\n\t\t\t batchSize=" + batchSize +
-                    ",\n\t\t\t transferToInitialDelay=" + transferToInitialDelay +
-                    ",\n\t\t\t transferToFixedDelay=" + transferToFixedDelay +
-                    ",\n\t\t\t transferFromInitialDelay=" + transferFromInitialDelay +
-                    ",\n\t\t\t transferFromFixedDelay=" + transferFromFixedDelay +
-                    ",\n\t\t\t metrics=" + metrics +
-                    "\n\t\t }";
+                    "enabled=" + enabled +
+                    ", batchSize=" + batchSize +
+                    ", transferToInitialDelay=" + transferToInitialDelay +
+                    ", transferToFixedDelay=" + transferToFixedDelay +
+                    ", transferFromInitialDelay=" + transferFromInitialDelay +
+                    ", transferFromFixedDelay=" + transferFromFixedDelay +
+                    ", metrics=" + metrics +
+                    '}';
         }
     }
 

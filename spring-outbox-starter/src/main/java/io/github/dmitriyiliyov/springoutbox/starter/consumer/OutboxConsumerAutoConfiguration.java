@@ -42,7 +42,7 @@ public class OutboxConsumerAutoConfiguration {
     @ConditionalOnMissingBean
     public ConsumedOutboxRepository consumedOutboxRepository(
             DataSource dataSource,
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         return ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
     }

@@ -36,7 +36,7 @@ public class OutboxDlqAutoConfiguration {
     @ConditionalOnMissingBean
     public OutboxDlqRepository outboxDlqRepository(
             DataSource dataSource,
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         return OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate);
     }
@@ -152,7 +152,7 @@ public class OutboxDlqAutoConfiguration {
             havingValue = "true"
     )
     public OutboxDlqMetricsRepository outboxDlqMetricsRepository(
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         return new MultiSqlDialectOutboxDlqMetricsRepository(jdbcTemplate);
     }

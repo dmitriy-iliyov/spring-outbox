@@ -27,9 +27,9 @@ class PostgreSqlOutboxAutoConfigurationIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT should register transaction-aware JdbcTemplate bean")
-    void shouldRegisterTransactionAwareJdbcTemplate() {
-        verifier.shouldRegisterTransactionAwareJdbcTemplate();
+    @DisplayName("IT should register JdbcTemplate bean")
+    void shouldRegisterJdbcTemplate() {
+        verifier.shouldRegisterJdbcTemplate();
     }
 
     @Test
@@ -60,12 +60,6 @@ class PostgreSqlOutboxAutoConfigurationIntegrationTests {
     @DisplayName("IT should create outbox_events table when auto-create is true")
     void shouldCreateTablesWhenAutoCreateTrue() {
         verifier.shouldCreateTablesWhenAutoCreateTrue();
-    }
-
-    @Test
-    @DisplayName("IT JdbcTemplate bean should be transaction-aware")
-    void jdbcTemplateShouldBeTransactionAware() {
-        verifier.jdbcTemplateShouldBeTransactionAware();
     }
 
     @Test

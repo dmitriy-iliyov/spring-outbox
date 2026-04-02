@@ -11,14 +11,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OutboxConsumerPropertiesUnitTests {
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when enabled null should disable consumer")
-    void afterPropertiesSet_whenEnabledNull_shouldDisable() {
+    @DisplayName("UT init() when enabled null should disable consumer")
+    void init_whenEnabledNull_shouldDisable() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(null);
 
         // when
-        props.afterPropertiesSet();
+        props.init();
 
         // then
         assertThat(props.isEnabled()).isFalse();
@@ -27,14 +27,14 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when enabled false should disable consumer")
-    void afterPropertiesSet_whenEnabledFalse_shouldDisable() {
+    @DisplayName("UT init() when enabled false should disable consumer")
+    void init_whenEnabledFalse_shouldDisable() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(false);
 
         // when
-        props.afterPropertiesSet();
+        props.init();
 
         // then
         assertThat(props.isEnabled()).isFalse();
@@ -43,8 +43,8 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when enabled true and cleanUp/cache null should initialize defaults")
-    void afterPropertiesSet_whenEnabledTrueAndNestedNull_shouldInitializeDefaults() {
+    @DisplayName("UT init() when enabled true and cleanUp/cache null should initialize defaults")
+    void init_whenEnabledTrueAndNestedNull_shouldInitializeDefaults() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(true);
@@ -53,7 +53,7 @@ class OutboxConsumerPropertiesUnitTests {
         props.setCache(cache);
 
         // when
-        props.afterPropertiesSet();
+        props.init();
 
         // then
         assertThat(props.isEnabled()).isTrue();
@@ -64,8 +64,8 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when enabled true and cleanUp disabled should keep cleanUp disabled")
-    void afterPropertiesSet_whenCleanUpDisabled_shouldKeepDisabled() {
+    @DisplayName("UT init() when enabled true and cleanUp disabled should keep cleanUp disabled")
+    void init_whenCleanUpDisabled_shouldKeepDisabled() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(true);
@@ -77,7 +77,7 @@ class OutboxConsumerPropertiesUnitTests {
         props.setCache(cache);
 
         // when
-        props.afterPropertiesSet();
+        props.init();
 
         // then
         assertThat(props.getCleanUp()).isNotNull();
@@ -85,8 +85,8 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when cache enabled true and cacheName null should throw NPE")
-    void afterPropertiesSet_whenCacheEnabledTrueAndNameNull_shouldThrowNPE() {
+    @DisplayName("UT init() when cache enabled true and cacheName null should throw NPE")
+    void init_whenCacheEnabledTrueAndNameNull_shouldThrowNPE() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(true);
@@ -96,12 +96,12 @@ class OutboxConsumerPropertiesUnitTests {
         props.setCache(cache);
 
         // when + then
-        assertThrows(NullPointerException.class, props::afterPropertiesSet);
+        assertThrows(NullPointerException.class, props::init);
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when cache enabled true and cacheName blank should throw IllegalArgumentException")
-    void afterPropertiesSet_whenCacheEnabledTrueAndNameBlank_shouldThrowIAE() {
+    @DisplayName("UT init() when cache enabled true and cacheName blank should throw IllegalArgumentException")
+    void init_whenCacheEnabledTrueAndNameBlank_shouldThrowIAE() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(true);
@@ -111,12 +111,12 @@ class OutboxConsumerPropertiesUnitTests {
         props.setCache(cache);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, props::afterPropertiesSet);
+        assertThrows(IllegalArgumentException.class, props::init);
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when cache enabled false should disable cache and nullify name")
-    void afterPropertiesSet_whenCacheDisabled_shouldNullifyName() {
+    @DisplayName("UT init() when cache enabled false should disable cache and nullify name")
+    void init_whenCacheDisabled_shouldNullifyName() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(true);
@@ -126,7 +126,7 @@ class OutboxConsumerPropertiesUnitTests {
         props.setCache(cache);
 
         // when
-        props.afterPropertiesSet();
+        props.init();
 
         // then
         assertThat(props.getCache().isEnabled()).isFalse();
@@ -134,15 +134,15 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT afterPropertiesSet() when CacheProperties is null")
-    void afterPropertiesSet_whenCachePropertiesIsNull_shouldPass() {
+    @DisplayName("UT init() when CacheProperties is null")
+    void init_whenCachePropertiesIsNull_shouldPass() {
         // given
         OutboxConsumerProperties props = new OutboxConsumerProperties();
         props.setEnabled(true);
         props.setCache(null);
 
         // when
-        props.afterPropertiesSet();
+        props.init();
 
         // then
         assertThat(props.getCache().isEnabled()).isFalse();
@@ -150,8 +150,8 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled null should enable")
-    void cache_afterPropertiesSet_whenEnabledNull_shouldDisable() {
+    @DisplayName("UT CacheProperties init() when enabled null should enable")
+    void cache_init_whenEnabledNull_shouldDisable() {
         // given
         String cacheName = "cache";
         OutboxConsumerProperties.CacheProperties cache = new OutboxConsumerProperties.CacheProperties();
@@ -159,7 +159,7 @@ class OutboxConsumerPropertiesUnitTests {
         cache.setCacheName(cacheName);
 
         // when
-        cache.afterPropertiesSet();
+        cache.init();
 
         // then
         assertThat(cache.isEnabled()).isTrue();
@@ -167,15 +167,15 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled false should disable and nullify name")
-    void cache_afterPropertiesSet_whenEnabledFalse_shouldDisable() {
+    @DisplayName("UT CacheProperties init() when enabled false should disable and nullify name")
+    void cache_init_whenEnabledFalse_shouldDisable() {
         // given
         OutboxConsumerProperties.CacheProperties cache = new OutboxConsumerProperties.CacheProperties();
         cache.setEnabled(false);
         cache.setCacheName("cache");
 
         // when
-        cache.afterPropertiesSet();
+        cache.init();
 
         // then
         assertThat(cache.isEnabled()).isFalse();
@@ -183,15 +183,15 @@ class OutboxConsumerPropertiesUnitTests {
     }
 
     @Test
-    @DisplayName("UT CacheProperties afterPropertiesSet() when enabled true and name valid should pass")
-    void cache_afterPropertiesSet_whenEnabledTrueAndNameValid_shouldPass() {
+    @DisplayName("UT CacheProperties init() when enabled true and name valid should pass")
+    void cache_init_whenEnabledTrueAndNameValid_shouldPass() {
         // given
         OutboxConsumerProperties.CacheProperties cache = new OutboxConsumerProperties.CacheProperties();
         cache.setEnabled(true);
         cache.setCacheName("validCache");
 
         // when
-        cache.afterPropertiesSet();
+        cache.init();
 
         // then
         assertThat(cache.isEnabled()).isTrue();

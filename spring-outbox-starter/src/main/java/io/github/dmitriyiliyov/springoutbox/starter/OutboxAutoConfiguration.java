@@ -9,7 +9,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
@@ -48,8 +47,9 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public JdbcTemplate outboxTransactionAwareJdbcTemplate(DataSource dataSource) {
-        return new JdbcTemplate(new TransactionAwareDataSourceProxy(dataSource));
+    @ConditionalOnMissingBean(name = "outboxJdbcTemplate")
+    public JdbcTemplate outboxJdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
     }
 
     @Bean(destroyMethod = "shutdown")

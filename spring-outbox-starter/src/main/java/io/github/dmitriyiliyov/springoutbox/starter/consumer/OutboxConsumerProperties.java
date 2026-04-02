@@ -19,13 +19,13 @@ public class OutboxConsumerProperties {
     @NestedConfigurationProperty
     private OutboxProperties.MetricsProperties metrics;
 
-    public void afterPropertiesSet() {
+    public void init() {
         if (enabled != null && enabled) {
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
             }
-            cleanUp.afterPropertiesSet();
+            cleanUp.init();
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
@@ -33,7 +33,7 @@ public class OutboxConsumerProperties {
                 cache = new CacheProperties();
                 cache.setEnabled(false);
             }
-            cache.afterPropertiesSet();
+            cache.init();
             if (!cache.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled cache");
             }
@@ -41,7 +41,7 @@ public class OutboxConsumerProperties {
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
-            metrics.afterPropertiesSet();
+            metrics.init();
             log.debug("OutboxConsumerProperties successfully initialized");
         } else {
             enabled = false;
@@ -83,11 +83,11 @@ public class OutboxConsumerProperties {
     @Override
     public String toString() {
         return "OutboxConsumerProperties{" +
-                "\n\t\t enabled=" + enabled +
-                ",\n\t\t cleanUp=" + cleanUp +
-                ",\n\t\t cache=" + cache +
-                ",\n\t\t metrics=" + metrics +
-                "\n\t}";
+                "enabled=" + enabled +
+                ", cleanUp=" + cleanUp +
+                ", cache=" + cache +
+                ", metrics=" + metrics +
+                "}";
     }
 
     public static final class CacheProperties {
@@ -95,7 +95,7 @@ public class OutboxConsumerProperties {
         public Boolean enabled;
         public String cacheName;
 
-        public void afterPropertiesSet() {
+        public void init() {
             if (enabled == null || enabled) {
                 enabled = true;
                 Objects.requireNonNull(cacheName, "cacheName cannot be null");

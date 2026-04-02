@@ -171,7 +171,7 @@ public class OutboxDlqAutoConfigurationVerifier {
                 .withPropertyValues("outbox.tables.auto-create=true")
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
-                    JdbcTemplate jdbcTemplate = ctx.getBean("outboxTransactionAwareJdbcTemplate", JdbcTemplate.class);
+                    JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
                     jdbcTemplate.execute("SELECT 1 FROM outbox_dlq_events WHERE 1=0");
                 });
     }
