@@ -7,7 +7,8 @@
     <parent>
         <groupId>io.github.dmitriy-iliyov</groupId>
         <artifactId>spring-outbox-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>spring-outbox-aop</artifactId>
@@ -18,7 +19,7 @@
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-core</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
         </dependency>
 
         <dependency>
