@@ -54,13 +54,13 @@ For Apache Kafka:
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-starter</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-kafka</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 ```
 For RabbitMQ:
@@ -68,13 +68,13 @@ For RabbitMQ:
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-starter</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-rabbit</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 ```
 You can also add `spring-outbox-web` for enable REST API for manual DLQ managing, read more [here](#dlq-rest-api).
@@ -82,7 +82,7 @@ You can also add `spring-outbox-web` for enable REST API for manual DLQ managing
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-web</artifactId>
-      <version>1.0.0</version>
+      <version>1.1.0</version>
   </dependency>
 ```
 
@@ -103,7 +103,7 @@ public class PublisherRunner {
 
 3. Minimal YAML config:
 > [!WARNING]
-> DLQ disabled by default
+> DLQ disabled by default.
 ```yaml
 outbox:
   publisher:
@@ -171,7 +171,7 @@ public class ConsumerRunner {
 
 6. Minimal YAML config ():
 > [!INFO]
-> Cleanup and cache enable by default
+> Cleanup and cache enable by default.
 
 ```yaml
 outbox:
@@ -779,7 +779,7 @@ outbox:
 ```
 
 > [!WARNING]
-> When disabled, processed events will accumulate indefinitely
+> When disabled, processed events will accumulate indefinitely.
 
 | Property        | Description                                                                          |  Default  |
 |-----------------|--------------------------------------------------------------------------------------|:---------:|
@@ -851,7 +851,7 @@ outbox:
 ```
 
 > [!WARNING]
-> When disabled, idempotency check always hits database
+> When disabled, idempotency check always hits database.
 
 | Property     | Description                                                                                                                                           |  Default  |
 |--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|:---------:|
@@ -987,7 +987,7 @@ outbox:
 Minimal:
 
 > [!WARNING]
-> Clean up and cache enable by default, metrics disable
+> Clean up and cache enable by default, metrics disable.
 
 ```yaml
 outbox:
