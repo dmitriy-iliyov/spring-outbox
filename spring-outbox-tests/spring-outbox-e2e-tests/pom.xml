@@ -2,20 +2,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.10</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.5.13</version>
+        <relativePath/>
     </parent>
 
     <artifactId>spring-outbox-e2e-tests</artifactId>
 
     <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <spring.boot.version>3.5.10</spring.boot.version>
+        <spring.boot.version>3.5.13</spring.boot.version>
     </properties>
 
     <dependencies>
@@ -27,23 +29,29 @@
         </dependency>
 
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-starter</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-kafka</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-web</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -56,35 +64,16 @@
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-test-utils</artifactId>
-            <version>1.0.0</version>
+            <version>1.1.0</version>
         </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <excludes>
-                        <exclude>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                        </exclude>
-                    </excludes>
-                </configuration>
             </plugin>
         </plugins>
     </build>

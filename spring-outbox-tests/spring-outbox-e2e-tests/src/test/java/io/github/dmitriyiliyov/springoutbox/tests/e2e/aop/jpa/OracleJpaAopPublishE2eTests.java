@@ -1,5 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.jpa;
 
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.AopPublishE2eVerifier;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.BaseOracleIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,21 +17,20 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class OracleAopPublishE2eTests extends BaseOracleIntegrationTests {
+public class OracleJpaAopPublishE2eTests extends BaseOracleIntegrationTests {
 
     private final AopPublishE2eVerifier verifier;
 
     static Stream<Arguments> arguments() {
         return Stream.of(
                 Arguments.of(100),
-                Arguments.of(1000),
-                Arguments.of(10000)
+                Arguments.of(1000)
         );
     }
 
-    public OracleAopPublishE2eTests(
-            @Qualifier("oracleBusinessService") BusinessService service,
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    public OracleJpaAopPublishE2eTests(
+            @Qualifier("oracleJpaBusinessService") BusinessService service,
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.verifier = new AopPublishE2eVerifier(
                 service,

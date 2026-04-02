@@ -1,0 +1,13 @@
+logging:
+  level:
+    root: debug
+spring:
+
+outbox:
+  thread-pool-size: 2
+  publisher:
+    sender:
+      type: kafka
+    events:
+      business-event:
+        topic: business-event

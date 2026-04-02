@@ -1,80 +1,48 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain;
 
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublish;
-import org.springframework.jdbc.core.JdbcTemplate;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.jpa.BusinessEntity;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 public class BusinessService {
 
     public static final String EVENT_TYPE = "business-event";
-    private final IdPreparer idPreparer;
-    private final JdbcTemplate jdbcTemplate;
+    private final BusinessRepository repository;
 
-    @FunctionalInterface
-    public interface IdPreparer {
-        Object prepare(UUID id);
-    }
-
-    public BusinessService(IdPreparer idPreparer, JdbcTemplate jdbcTemplate) {
-        this.idPreparer = idPreparer;
-        this.jdbcTemplate = jdbcTemplate;
+    public BusinessService(BusinessRepository repository) {
+        this.repository = repository;
     }
 
     @Transactional
     @OutboxPublish(eventType = EVENT_TYPE, payload = "#event")
     public void successSaveEvent(BusinessEvent event) {
-        String sql = """
-            INSERT INTO business_events (verify_id)
-            VALUES (?)
-        """;
-        jdbcTemplate.update(
-                sql,
-                idPreparer.prepare(event.verifyId())
-        );
+        repository.save(new BusinessEntity(event.verifyId()));
     }
 
     @Transactional
     @OutboxPublish(eventType = EVENT_TYPE, payload = "#events")
     public void successSaveEvents(List<BusinessEvent> events) {
-        String sql = """
-            INSERT INTO business_events (verify_id)
-            VALUES (?)
-        """;
-        jdbcTemplate.batchUpdate(
-                sql,
-                events.stream().map(e -> new Object [] {idPreparer.prepare(e.verifyId())}).toList()
+        repository.saveAll(
+                events.stream().map(event -> new BusinessEntity(event.verifyId())).toList()
         );
     }
 
     @Transactional
     @OutboxPublish(eventType = EVENT_TYPE)
     public BusinessEvent successSaveReturnedEvent(BusinessEvent event) {
-        String sql = """
-            INSERT INTO business_events (verify_id)
-            VALUES (?)
-        """;
-        jdbcTemplate.update(
-                sql,
-                idPreparer.prepare(event.verifyId())
-        );
-        return event;
+        BusinessEntity entity = repository.save(new BusinessEntity(event.verifyId()));
+        return BusinessEvent.of(entity.getVerifyId());
     }
 
     @Transactional
     @OutboxPublish(eventType = EVENT_TYPE)
     public List<BusinessEvent> successSaveReturnedEvents(List<BusinessEvent> events) {
-        String sql = """
-            INSERT INTO business_events (verify_id)
-            VALUES (?)
-        """;
-        jdbcTemplate.batchUpdate(
-                sql,
-                events.stream().map(e -> new Object [] {idPreparer.prepare(e.verifyId())}).toList()
+        List<BusinessEntity> entities = repository.saveAll(
+                events.stream().map(event -> new BusinessEntity(event.verifyId())).toList()
         );
-        return events;
+        return entities.stream().map(entity -> BusinessEvent.of(entity.getVerifyId())).toList();
     }
 
     @Transactional

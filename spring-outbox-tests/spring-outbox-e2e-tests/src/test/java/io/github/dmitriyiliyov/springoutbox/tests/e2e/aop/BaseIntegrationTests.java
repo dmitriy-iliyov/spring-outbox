@@ -1,5 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop;
 
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.TestApplication;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 

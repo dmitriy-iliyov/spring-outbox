@@ -1,5 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.config;
 
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessRepository;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessService;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.jdbc.JdbcBusinessRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +30,7 @@ public class OracleIntegrationTestsConfig {
         ResourceDatabasePopulator populator = new ResourceDatabasePopulator();
         populator.setSeparator("/");
         populator.setScripts(
-                new ClassPathResource("oracle_business_table.sql")
+                new ClassPathResource("oracle/oracle_business_table.sql")
         );
         populator.setContinueOnError(false);
         DataSourceInitializer initializer = new DataSourceInitializer();
@@ -37,18 +40,25 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
-    public BusinessService oracleBusinessService(
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    public BusinessService oracleJdbcBusinessService(
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         return new BusinessService(
-                id -> {
-                    ByteBuffer bb = ByteBuffer.allocate(16);
-                    bb.putLong(id.getMostSignificantBits());
-                    bb.putLong(id.getLeastSignificantBits());
-                    return bb.array();
-                },
-                jdbcTemplate
+                new JdbcBusinessRepository(
+                        jdbcTemplate,
+                        id -> {
+                            ByteBuffer bb = ByteBuffer.allocate(16);
+                            bb.putLong(id.getMostSignificantBits());
+                            bb.putLong(id.getLeastSignificantBits());
+                            return bb.array();
+                        }
+                )
         );
+    }
+
+    @Bean
+    public BusinessService oracleJpaBusinessService(@Qualifier("jpaBusinessRepositoryProxy") BusinessRepository repository) {
+        return new BusinessService(repository);
     }
 
     @Bean

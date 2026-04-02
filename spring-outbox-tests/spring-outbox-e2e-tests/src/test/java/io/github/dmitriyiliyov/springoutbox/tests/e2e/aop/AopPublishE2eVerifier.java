@@ -1,8 +1,10 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessEvent;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessService;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.JsonNode;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -34,7 +36,7 @@ public class AopPublishE2eVerifier {
         this.idExtractor = idExtractor;
     }
 
-    void publish_shouldSaveEvent() {
+    public void publish_shouldSaveEvent() {
         BusinessEvent event = BusinessEvent.of();
 
         service.successSaveEvent(event);
@@ -48,7 +50,7 @@ public class AopPublishE2eVerifier {
         assertEquals(outboxIds.getFirst(), businessIds.getFirst());
     }
 
-    void publish_shouldSaveEvents(int eventCount) {
+    public void publish_shouldSaveEvents(int eventCount) {
         List<BusinessEvent> events = new ArrayList<>();
         for (int i = 0; i < eventCount; i++) {
             events.add(BusinessEvent.of());
@@ -64,7 +66,7 @@ public class AopPublishE2eVerifier {
         assertThat(businessIds).containsExactlyInAnyOrder(ids.toArray(new UUID[0]));
     }
 
-    void publish_successSaveReturnedEvent() {
+    public void publish_successSaveReturnedEvent() {
         BusinessEvent event = BusinessEvent.of();
 
         service.successSaveReturnedEvent(event);
@@ -78,7 +80,7 @@ public class AopPublishE2eVerifier {
         assertEquals(outboxIds.getFirst(), businessIds.getFirst());
     }
 
-    void publish_successSaveReturnedEvents(int eventCount) {
+    public void publish_successSaveReturnedEvents(int eventCount) {
         List<BusinessEvent> events = new ArrayList<>();
         for (int i = 0; i < eventCount; i++) {
             events.add(BusinessEvent.of());
@@ -94,7 +96,7 @@ public class AopPublishE2eVerifier {
         assertThat(businessIds).containsExactlyInAnyOrder(ids.toArray(new UUID[0]));
     }
 
-    void publishEvent_shouldThrows_whenBusinessTransactionFailed() {
+    public void publishEvent_shouldThrows_whenBusinessTransactionFailed() {
         assertThrows(
                 RuntimeException.class,
                 () -> service.exceptionallyInBusinessTransaction(BusinessEvent.of())
@@ -104,7 +106,7 @@ public class AopPublishE2eVerifier {
         assertThat(selectBusinessIdsQuery()).isEmpty();
     }
 
-    void publishEvents_shouldThrows_whenBusinessTransactionFailed() {
+    public void publishEvents_shouldThrows_whenBusinessTransactionFailed() {
         assertThrows(
                 RuntimeException.class,
                 () -> service.exceptionallyInBusinessTransaction(List.of(BusinessEvent.of(), BusinessEvent.of()))
@@ -114,7 +116,7 @@ public class AopPublishE2eVerifier {
         assertThat(selectBusinessIdsQuery()).isEmpty();
     }
 
-    void publishEventWithReturnedEvent_shouldThrows_whenBusinessTransactionFailed() {
+    public void publishEventWithReturnedEvent_shouldThrows_whenBusinessTransactionFailed() {
         assertThrows(
                 RuntimeException.class,
                 () -> service.exceptionallyInBusinessTransactionWithReturnedEvent(BusinessEvent.of())
@@ -124,7 +126,7 @@ public class AopPublishE2eVerifier {
         assertThat(selectBusinessIdsQuery()).isEmpty();
     }
 
-    void publishEventsWithReturnedEvents_shouldThrows_whenBusinessTransactionFailed() {
+    public void publishEventsWithReturnedEvents_shouldThrows_whenBusinessTransactionFailed() {
         assertThrows(
                 RuntimeException.class,
                 () -> service.exceptionallyInBusinessTransactionWithReturnedEvents(List.of(BusinessEvent.of(), BusinessEvent.of()))
@@ -157,7 +159,7 @@ public class AopPublishE2eVerifier {
     }
 
     public void cleanUpQueries() {
-        jdbcTemplate.execute("DELETE FROM outbox_events WHERE 1=1");
-        jdbcTemplate.execute("DELETE FROM business_events WHERE 1=1");
+        jdbcTemplate.execute("DELETE FROM outbox_events");
+        jdbcTemplate.execute("DELETE FROM business_events");
     }
 }

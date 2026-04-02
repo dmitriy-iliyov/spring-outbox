@@ -1,5 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.jpa;
 
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.AopPublishE2eVerifier;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.BasePostgresSqlIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,11 +13,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class MySqlAopPublishE2eTests extends BaseMySqlIntegrationTests {
+public class PostgresSqlJpaAopPublishE2eTests extends BasePostgresSqlIntegrationTests {
 
     private final AopPublishE2eVerifier verifier;
 
@@ -25,17 +27,14 @@ public class MySqlAopPublishE2eTests extends BaseMySqlIntegrationTests {
         );
     }
 
-    public MySqlAopPublishE2eTests(
-            @Qualifier("mysqlBusinessService") BusinessService service,
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    public PostgresSqlJpaAopPublishE2eTests(
+            @Qualifier("postgresJpaBusinessService") BusinessService service,
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.verifier = new AopPublishE2eVerifier(
                 service,
                 jdbcTemplate,
-                rs -> {
-                    ByteBuffer bb = ByteBuffer.wrap(rs.getBytes("verify_id"));
-                    return new UUID(bb.getLong(), bb.getLong());
-                }
+                rs -> rs.getObject("verify_id", UUID.class)
         );
     }
 

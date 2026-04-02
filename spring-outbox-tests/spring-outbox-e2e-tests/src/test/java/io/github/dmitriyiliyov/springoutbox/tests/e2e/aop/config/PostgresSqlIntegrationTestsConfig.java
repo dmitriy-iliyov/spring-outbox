@@ -1,5 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.config;
 
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessRepository;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.domain.BusinessService;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.aop.jdbc.JdbcBusinessRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -12,7 +15,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
 
 import javax.sql.DataSource;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
@@ -20,11 +22,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestConfiguration
-@Profile("mysql-it")
-public class MySqlIntegrationTestsConfig {
+@Profile("postgres-it")
+public class PostgresSqlIntegrationTestsConfig {
 
     @Bean
-    public DataSourceInitializer myslqOutboxDataSourceInitializer(DataSource dataSource) {
+    public DataSourceInitializer postgresOutboxDataSourceInitializer(DataSource dataSource) {
         DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
         dataSourceInitializer.setEnabled(true);
         dataSourceInitializer.setDataSource(dataSource);
@@ -33,25 +35,24 @@ public class MySqlIntegrationTestsConfig {
                         false,
                         false,
                         StandardCharsets.UTF_8.name(),
-                        new ClassPathResource("mysql_business_table.sql")
+                        new ClassPathResource("psql/psql_business_table.sql")
                 )
         );
         return dataSourceInitializer;
     }
 
     @Bean
-    public BusinessService mysqlBusinessService(
-            @Qualifier("outboxTransactionAwareJdbcTemplate") JdbcTemplate jdbcTemplate
+    public BusinessService postgresJdbcBusinessService(
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         return new BusinessService(
-                id -> {
-                    ByteBuffer bb = ByteBuffer.allocate(16);
-                    bb.putLong(id.getMostSignificantBits());
-                    bb.putLong(id.getLeastSignificantBits());
-                    return bb.array();
-                },
-                jdbcTemplate
+                new JdbcBusinessRepository(jdbcTemplate, id -> id)
         );
+    }
+
+    @Bean
+    public BusinessService postgresJpaBusinessService(@Qualifier("jpaBusinessRepositoryProxy") BusinessRepository repository) {
+        return new BusinessService(repository);
     }
 
     @Bean

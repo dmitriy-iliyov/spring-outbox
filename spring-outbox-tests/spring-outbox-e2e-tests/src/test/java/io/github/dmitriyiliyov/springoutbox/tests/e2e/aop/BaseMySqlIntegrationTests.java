@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.aop;
 
 import io.github.dmitriyiliyov.springoutbox.tests.utils.MySqlTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
