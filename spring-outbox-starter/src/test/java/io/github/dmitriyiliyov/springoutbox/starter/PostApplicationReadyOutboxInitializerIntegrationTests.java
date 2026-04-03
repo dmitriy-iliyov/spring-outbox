@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.*;
 
 
-public class PostApplicationStartOutboxInitializerIntegrationTests {
+public class PostApplicationReadyOutboxInitializerIntegrationTests {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(OutboxAutoConfiguration.class))
@@ -32,7 +32,7 @@ public class PostApplicationStartOutboxInitializerIntegrationTests {
                     OutboxScheduler scheduler1 = ctx.getBean("testScheduler1", OutboxScheduler.class);
                     OutboxScheduler scheduler2 = ctx.getBean("testScheduler2", OutboxScheduler.class);
 
-                    ctx.getBean(PostApplicationStartOutboxInitializer.class).init();
+                    ctx.getBean(PostApplicationReadyOutboxInitializer.class).init();
 
                     verify(scheduler1, times(1)).schedule();
                     verify(scheduler2, times(1)).schedule();
@@ -49,7 +49,7 @@ public class PostApplicationStartOutboxInitializerIntegrationTests {
                     OutboxMetrics metrics1 = ctx.getBean("testMetrics1", OutboxMetrics.class);
                     OutboxMetrics metrics2 = ctx.getBean("testMetrics2", OutboxMetrics.class);
 
-                    ctx.getBean(PostApplicationStartOutboxInitializer.class).init();
+                    ctx.getBean(PostApplicationReadyOutboxInitializer.class).init();
 
                     verify(metrics1, times(1)).register();
                     verify(metrics2, times(1)).register();
@@ -84,7 +84,7 @@ public class PostApplicationStartOutboxInitializerIntegrationTests {
     void shouldWorkWithNoSchedulersAndNoMetricsBeans() {
         contextRunner.run(ctx ->
                 assertThatCode(() ->
-                        ctx.getBean(PostApplicationStartOutboxInitializer.class).init()
+                        ctx.getBean(PostApplicationReadyOutboxInitializer.class).init()
                 ).doesNotThrowAnyException()
         );
     }
@@ -96,8 +96,8 @@ public class PostApplicationStartOutboxInitializerIntegrationTests {
                 .withBean("testScheduler", OutboxScheduler.class, () -> mock(OutboxScheduler.class))
                 .run(ctx -> {
                     OutboxScheduler scheduler = ctx.getBean("testScheduler", OutboxScheduler.class);
-                    PostApplicationStartOutboxInitializer initializer =
-                            ctx.getBean(PostApplicationStartOutboxInitializer.class);
+                    PostApplicationReadyOutboxInitializer initializer =
+                            ctx.getBean(PostApplicationReadyOutboxInitializer.class);
 
                     initializer.init();
                     initializer.init();

@@ -201,4 +201,184 @@ class OutboxSenderFactoryUnitTests {
         // when + then
         assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
     }
+
+    @Test
+    @DisplayName("UT generate() when type is RABBIT_MQ and bean not found by name should throw IAE")
+    void generate_whenRabbitAndBeanNotFoundByName_shouldThrowIAE() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.RABBIT_MQ);
+        props.setBeanName("missingBean");
+
+        when(context.containsBean("missingBean")).thenReturn(false);
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is RABBIT_MQ and mandatory is false should still return RabbitMqOutboxSender")
+    void generate_whenRabbitAndMandatoryFalse_shouldReturnSender() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.RABBIT_MQ);
+        props.setBeanName("rabbitTemplate");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
+        when(rabbitTemplate.isMandatoryFor(any(Message.class))).thenReturn(false);
+
+        when(context.containsBean("rabbitTemplate")).thenReturn(true);
+        when(context.getBean("rabbitTemplate", RabbitTemplate.class)).thenReturn(rabbitTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(RabbitMqOutboxSender.class, result);
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is KAFKA and acks is not 'all' should still return KafkaOutboxSender")
+    void generate_whenKafkaAndAcksNotAll_shouldReturnSender() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.KAFKA);
+        props.setBeanName("kafkaTemplate");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        KafkaTemplate kafkaTemplate = mock(KafkaTemplate.class);
+        ProducerFactory producerFactory = mock(ProducerFactory.class);
+        when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
+        when(producerFactory.getConfigurationProperties()).thenReturn(Map.of("acks", "1", "enable.idempotence", true));
+
+        when(context.containsBean("kafkaTemplate")).thenReturn(true);
+        when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(KafkaOutboxSender.class, result);
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is KAFKA and idempotence is false should still return KafkaOutboxSender")
+    void generate_whenKafkaAndIdempotenceFalse_shouldReturnSender() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.KAFKA);
+        props.setBeanName("kafkaTemplate");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        KafkaTemplate kafkaTemplate = mock(KafkaTemplate.class);
+        ProducerFactory producerFactory = mock(ProducerFactory.class);
+        when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
+        when(producerFactory.getConfigurationProperties()).thenReturn(Map.of("acks", "all", "enable.idempotence", false));
+
+        when(context.containsBean("kafkaTemplate")).thenReturn(true);
+        when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(KafkaOutboxSender.class, result);
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is KAFKA and idempotence is String 'true' should return KafkaOutboxSender")
+    void generate_whenKafkaAndIdempotenceAsStringTrue_shouldReturnSender() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.KAFKA);
+        props.setBeanName("kafkaTemplate");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        KafkaTemplate kafkaTemplate = mock(KafkaTemplate.class);
+        ProducerFactory producerFactory = mock(ProducerFactory.class);
+        when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
+        when(producerFactory.getConfigurationProperties()).thenReturn(Map.of("acks", "all", "enable.idempotence", "true"));
+
+        when(context.containsBean("kafkaTemplate")).thenReturn(true);
+        when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(KafkaOutboxSender.class, result);
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is KAFKA and idempotence is String 'false' should still return KafkaOutboxSender")
+    void generate_whenKafkaAndIdempotenceAsStringFalse_shouldReturnSender() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.KAFKA);
+        props.setBeanName("kafkaTemplate");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        KafkaTemplate kafkaTemplate = mock(KafkaTemplate.class);
+        ProducerFactory producerFactory = mock(ProducerFactory.class);
+        when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
+        when(producerFactory.getConfigurationProperties()).thenReturn(Map.of("acks", "all", "enable.idempotence", "false"));
+
+        when(context.containsBean("kafkaTemplate")).thenReturn(true);
+        when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(KafkaOutboxSender.class, result);
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is KAFKA and beanName is empty should resolve by type")
+    void generate_whenKafkaAndBeanNameEmpty_shouldResolveByType() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.KAFKA);
+        props.setBeanName("");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        KafkaTemplate kafkaTemplate = mock(KafkaTemplate.class);
+        ProducerFactory producerFactory = mock(ProducerFactory.class);
+        when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
+        when(producerFactory.getConfigurationProperties()).thenReturn(Map.of("acks", "all", "enable.idempotence", true));
+
+        when(context.getBeanNamesForType(KafkaTemplate.class)).thenReturn(new String[]{"kafkaTemplate"});
+        when(context.containsBean("kafkaTemplate")).thenReturn(true);
+        when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(KafkaOutboxSender.class, result);
+    }
+
+    @Test
+    @DisplayName("UT generate() when type is RABBIT_MQ and beanName is empty should resolve by type")
+    void generate_whenRabbitAndBeanNameEmpty_shouldResolveByType() {
+        // given
+        OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
+        props.setType(SenderType.RABBIT_MQ);
+        props.setBeanName("");
+        props.setEmergencyTimeout(Duration.ofSeconds(10));
+
+        RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
+        when(rabbitTemplate.isMandatoryFor(any(Message.class))).thenReturn(true);
+
+        when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{"rabbitTemplate"});
+        when(context.containsBean("rabbitTemplate")).thenReturn(true);
+        when(context.getBean("rabbitTemplate", RabbitTemplate.class)).thenReturn(rabbitTemplate);
+
+        // when
+        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+
+        // then
+        assertInstanceOf(RabbitMqOutboxSender.class, result);
+    }
 }

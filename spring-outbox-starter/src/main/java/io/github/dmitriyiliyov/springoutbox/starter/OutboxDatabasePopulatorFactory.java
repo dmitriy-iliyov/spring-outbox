@@ -42,6 +42,8 @@ public final class OutboxDatabasePopulatorFactory {
             )
     );
 
+    private OutboxDatabasePopulatorFactory() {}
+
     /**
      * Generates a {@link DatabasePopulator} based on the provided properties and data source.
      *

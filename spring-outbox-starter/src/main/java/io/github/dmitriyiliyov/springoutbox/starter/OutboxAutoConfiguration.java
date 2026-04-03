@@ -65,7 +65,7 @@ public class OutboxAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public PostApplicationStartOutboxInitializer outboxInitializer(ApplicationContext applicationContext) {
-        return new PostApplicationStartOutboxInitializer(applicationContext);
+    public PostApplicationReadyOutboxInitializer outboxInitializer(ApplicationContext applicationContext) {
+        return new PostApplicationReadyOutboxInitializer(applicationContext);
     }
 }

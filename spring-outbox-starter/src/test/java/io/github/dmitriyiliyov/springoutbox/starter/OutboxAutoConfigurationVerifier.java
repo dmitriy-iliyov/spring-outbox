@@ -74,16 +74,16 @@ public class OutboxAutoConfigurationVerifier {
 
     public void shouldRegisterOutboxInitializerWhenMissing() {
         getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(PostApplicationStartOutboxInitializer.class)
+                assertThat(ctx).hasSingleBean(PostApplicationReadyOutboxInitializer.class)
         );
     }
 
     public void shouldNotRegisterOutboxInitializerWhenAlreadyPresent() {
         getBaseContextRunner()
-                .withBean(PostApplicationStartOutboxInitializer.class,
-                        () -> new PostApplicationStartOutboxInitializer(null))
+                .withBean(PostApplicationReadyOutboxInitializer.class,
+                        () -> new PostApplicationReadyOutboxInitializer(null))
                 .run(ctx ->
-                        assertThat(ctx).hasSingleBean(PostApplicationStartOutboxInitializer.class)
+                        assertThat(ctx).hasSingleBean(PostApplicationReadyOutboxInitializer.class)
                 );
     }
 
