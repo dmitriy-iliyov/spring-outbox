@@ -8,10 +8,5 @@ package io.github.dmitriyiliyov.springoutbox.metrics;
  */
 public interface OutboxMetrics {
 
-    /**
-     * Registers all relevant outbox metrics.
-     * <p>
-     * This method should initialize gauges, counters, and other metric collectors.
-     */
     void register();
 }
