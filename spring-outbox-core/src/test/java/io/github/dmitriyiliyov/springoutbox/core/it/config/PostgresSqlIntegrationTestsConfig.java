@@ -1,13 +1,12 @@
 package io.github.dmitriyiliyov.springoutbox.core.it.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.PostgreSqlConsumedOutboxRepository;
-import io.github.dmitriyiliyov.springoutbox.core.e2e.BusinessService;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxManager;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.PostgreSqlOutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidV7Generator;
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.PostgreSqlIdHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,10 +22,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
-
-import static io.github.dmitriyiliyov.springoutbox.core.e2e.BusinessService.EVENT_TYPE;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 @TestConfiguration
 @Profile("postgres-it")
@@ -91,29 +86,6 @@ public class PostgresSqlIntegrationTestsConfig {
                 manager,
                 dlqManager,
                 new LogOutboxDlqHandler()
-        );
-    }
-
-    @Bean
-    public OutboxPublisher postgresOutboxPublisher(@Qualifier("postgresOutboxManager") OutboxManager manager) {
-        OutboxPublisherPropertiesHolder propertiesHolder = mock(OutboxPublisherPropertiesHolder.class);
-        when(propertiesHolder.existEventType(EVENT_TYPE)).thenReturn(true);
-        return new DefaultOutboxPublisher(
-                propertiesHolder,
-                new JacksonOutboxSerializer(new ObjectMapper(), new UuidV7Generator()),
-                manager
-        );
-    }
-
-    @Bean
-    public BusinessService postgresBusinessService(
-            @Qualifier("postgresOutboxPublisher") OutboxPublisher publisher,
-            @Qualifier("postgresJdbcTemplate") JdbcTemplate jdbcTemplate
-    ) {
-        return new BusinessService(
-                publisher,
-                id -> id,
-                jdbcTemplate
         );
     }
 }
