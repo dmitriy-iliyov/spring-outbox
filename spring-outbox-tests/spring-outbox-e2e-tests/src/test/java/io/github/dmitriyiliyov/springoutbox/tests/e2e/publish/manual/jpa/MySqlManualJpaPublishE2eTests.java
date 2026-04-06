@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.jpa;
 
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.DefaultOutboxPublisherE2eVerifier;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.ManualBusinessService;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.ManualPublishE2eVerifier;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template.BaseMySqlIntegrationTests;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,9 +17,9 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class MySqlManualJpaDefaultOutboxPublisherE2eTests extends BaseMySqlIntegrationTests {
+public class MySqlManualJpaPublishE2eTests extends BaseMySqlIntegrationTests {
 
-    private final DefaultOutboxPublisherE2eVerifier verifier;
+    private final ManualPublishE2eVerifier verifier;
 
     static Stream<Arguments> arguments() {
         return Stream.of(
@@ -28,11 +28,11 @@ public class MySqlManualJpaDefaultOutboxPublisherE2eTests extends BaseMySqlInteg
         );
     }
 
-    public MySqlManualJpaDefaultOutboxPublisherE2eTests(
+    public MySqlManualJpaPublishE2eTests(
             @Qualifier("mysqlManualJdbcBusinessService") ManualBusinessService service,
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
-        this.verifier = new DefaultOutboxPublisherE2eVerifier(
+        this.verifier = new ManualPublishE2eVerifier(
                 service,
                 jdbcTemplate,
                 rs -> {

@@ -8,6 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Class for E2E testing {@link OutboxPublish}
+ */
 public class AopBusinessService {
 
     public static final String EVENT_TYPE = "business-event";

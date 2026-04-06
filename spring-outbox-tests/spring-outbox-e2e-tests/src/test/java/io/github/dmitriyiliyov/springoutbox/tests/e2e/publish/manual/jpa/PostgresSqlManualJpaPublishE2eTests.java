@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.jpa;
 
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.DefaultOutboxPublisherE2eVerifier;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.ManualBusinessService;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template.BaseOracleIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.ManualPublishE2eVerifier;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template.BasePostgresSqlIntegrationTests;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,13 +13,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class OracleManualJpaDefaultOutboxPublisherE2eTests extends BaseOracleIntegrationTests {
+public class PostgresSqlManualJpaPublishE2eTests extends BasePostgresSqlIntegrationTests {
 
-    private final DefaultOutboxPublisherE2eVerifier verifier;
+    private final ManualPublishE2eVerifier verifier;
 
     static Stream<Arguments> arguments() {
         return Stream.of(
@@ -28,17 +27,14 @@ public class OracleManualJpaDefaultOutboxPublisherE2eTests extends BaseOracleInt
         );
     }
 
-    public OracleManualJpaDefaultOutboxPublisherE2eTests(
-            @Qualifier("oracleManualJdbcBusinessService") ManualBusinessService service,
+    public PostgresSqlManualJpaPublishE2eTests(
+            @Qualifier("postgresManualJpaBusinessService") ManualBusinessService service,
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
-        this.verifier = new DefaultOutboxPublisherE2eVerifier(
+        this.verifier = new ManualPublishE2eVerifier(
                 service,
                 jdbcTemplate,
-                rs -> {
-                    ByteBuffer bb = ByteBuffer.wrap(rs.getBytes("verify_id"));
-                    return new UUID(bb.getLong(), bb.getLong());
-                }
+                rs -> rs.getObject("verify_id", UUID.class)
         );
     }
 

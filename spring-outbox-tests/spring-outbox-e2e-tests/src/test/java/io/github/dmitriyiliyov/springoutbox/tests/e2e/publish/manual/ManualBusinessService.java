@@ -9,6 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Class for E2E testing {@link io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxPublisher}
+ */
 public class ManualBusinessService {
 
     public static final String EVENT_TYPE = "business-event";

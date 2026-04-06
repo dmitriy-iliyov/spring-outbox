@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class DefaultOutboxPublisherE2eVerifier {
+public class ManualPublishE2eVerifier {
 
     private final ManualBusinessService service;
     private final JdbcTemplate jdbcTemplate;
@@ -29,7 +29,7 @@ public class DefaultOutboxPublisherE2eVerifier {
         UUID extract(ResultSet rs) throws SQLException;
     }
 
-    public DefaultOutboxPublisherE2eVerifier(ManualBusinessService service, JdbcTemplate jdbcTemplate, IdExtractor idExtractor) {
+    public ManualPublishE2eVerifier(ManualBusinessService service, JdbcTemplate jdbcTemplate, IdExtractor idExtractor) {
         this.service = service;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = new ObjectMapper();

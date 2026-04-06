@@ -1,8 +1,16 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true
+        format_sql: true
 logging:
   level:
-    root: debug
-spring:
-
+    io.github.dmitriyiliyov.springoutbox: DEBUG
 outbox:
   thread-pool-size: 2
   publisher:
