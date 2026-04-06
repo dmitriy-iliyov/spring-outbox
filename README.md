@@ -170,7 +170,7 @@ public class ConsumerRunner {
 ```
 
 6. Minimal YAML config ():
-> [!INFO]
+> [!NOTE]
 > Cleanup and cache enable by default.
 
 ```yaml
