@@ -123,8 +123,10 @@ class OutboxPropertiesUnitTests {
 
         // then
         assertThat(props.getConsumer().isEnabled()).isFalse();
-        assertThat(props.getConsumer().getCleanUp()).isNull();
-        assertThat(props.getConsumer().getCache()).isNull();
+        assertThat(props.getConsumer().getCleanUp()).isNotNull();
+        assertThat(props.getConsumer().getCleanUp().isEnabled()).isFalse();
+        assertThat(props.getConsumer().getCache()).isNotNull();
+        assertThat(props.getConsumer().getCache().isEnabled()).isFalse();
     }
 
     @Test

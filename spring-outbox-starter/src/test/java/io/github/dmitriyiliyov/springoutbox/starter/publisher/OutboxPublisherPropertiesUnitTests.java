@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class OutboxPublisherPropertiesUnitTests {
@@ -1161,5 +1162,10 @@ public class OutboxPublisherPropertiesUnitTests {
 
         // then
         assertFalse(properties.isEnabled());
+        assertFalse(properties.getCleanUp().isEnabled());
+        assertFalse(properties.getDlq().isEnabled());
+        assertThat(properties.getEvents()).isEmpty();
+        assertFalse(properties.getMetrics().isEnabled());
+        assertNull(properties.getSender());
     }
 }

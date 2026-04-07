@@ -45,6 +45,18 @@ public class OutboxConsumerProperties {
             log.debug("OutboxConsumerProperties successfully initialized");
         } else {
             enabled = false;
+
+            cleanUp = new OutboxProperties.CleanUpProperties();
+            cleanUp.setEnabled(false);
+            cleanUp.init();
+
+            cache = new CacheProperties();
+            cache.setEnabled(false);
+            cache.init();
+
+            metrics = new OutboxProperties.MetricsProperties();
+            metrics.setEnabled(false);
+            metrics.init();
         }
     }
 

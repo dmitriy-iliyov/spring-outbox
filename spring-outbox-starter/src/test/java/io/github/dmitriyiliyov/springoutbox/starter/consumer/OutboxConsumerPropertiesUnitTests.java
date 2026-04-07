@@ -22,8 +22,10 @@ class OutboxConsumerPropertiesUnitTests {
 
         // then
         assertThat(props.isEnabled()).isFalse();
-        assertThat(props.getCleanUp()).isNull();
-        assertThat(props.getCache()).isNull();
+        assertThat(props.getCleanUp()).isNotNull();
+        assertThat(props.getCleanUp().isEnabled()).isFalse();
+        assertThat(props.getCache()).isNotNull();
+        assertThat(props.getCache().isEnabled()).isFalse();
     }
 
     @Test
@@ -38,8 +40,10 @@ class OutboxConsumerPropertiesUnitTests {
 
         // then
         assertThat(props.isEnabled()).isFalse();
-        assertThat(props.getCleanUp()).isNull();
-        assertThat(props.getCache()).isNull();
+        assertThat(props.getCleanUp()).isNotNull();
+        assertThat(props.getCleanUp().isEnabled()).isFalse();
+        assertThat(props.getCache()).isNotNull();
+        assertThat(props.getCache().isEnabled()).isFalse();
     }
 
     @Test

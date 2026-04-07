@@ -146,4 +146,16 @@ public class OracleOutboxConsumerAutoConfigurationIntegrationTests {
     void shouldRegisterSpringMessageEventIdResolver() {
         verifier.shouldRegisterSpringMessageEventIdResolver();
     }
+
+    @Test
+    @DisplayName("IT should register ConsumedOutboxManagerCacheDecorator cache enabled and metrics disabled")
+    void shouldRegisteredConsumedOutboxManagerCacheDecorator_asPrimary_whenCacheEnableAndMetricsDisabled() {
+        verifier.shouldRegisteredConsumedOutboxManagerCacheDecorator_asPrimary_whenCacheEnableAndMetricsDisabled();
+    }
+
+    @Test
+    @DisplayName("IT should register ConsumedOutboxManagerCacheDecorator cache enabled and metrics missed")
+    void shouldRegisteredConsumedOutboxManagerCacheDecorator_asPrimary_whenCacheEnableAndMetricsMissed() {
+        verifier.shouldRegisteredConsumedOutboxManagerCacheDecorator_asPrimary_whenCacheEnableAndMetricsMissed();
+    }
 }

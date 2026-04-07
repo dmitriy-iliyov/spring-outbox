@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -35,12 +36,15 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
     public void init() {
         if (enabled == null || enabled) {
             enabled = true;
+
             if (sender == null) {
                 throw new IllegalArgumentException("sender cannot be null");
             }
             sender.init();
+
             defaults = defaults == null ? new Defaults() : defaults;
             defaults.init();
+
             if (events == null) {
                 throw new IllegalArgumentException("events cannot be null");
             }
@@ -48,8 +52,10 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 log.warn("Outbox is configured without events");
             }
             events = applyDefaults(events);
+
             stuckRecovery = stuckRecovery == null ? new StuckRecoveryProperties() : stuckRecovery;
             stuckRecovery.init();
+
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
@@ -58,6 +64,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
+
             if (dlq == null) {
                 dlq = new DlqProperties();
                 dlq.setEnabled(false);
@@ -66,6 +73,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             if (!dlq.isEnabled()) {
                 log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
             }
+
             if (metrics == null) {
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
@@ -74,6 +82,23 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             log.debug("OutboxPublisherProperties successfully initialized");
         } else {
             enabled = false;
+
+            defaults = new Defaults();
+            defaults.init();
+
+            events = Collections.emptyMap();
+
+            cleanUp = new OutboxProperties.CleanUpProperties();
+            cleanUp.setEnabled(false);
+            cleanUp.init();
+
+            dlq = new DlqProperties();
+            dlq.setEnabled(false);
+            dlq.init();
+
+            metrics = new OutboxProperties.MetricsProperties();
+            metrics.setEnabled(false);
+            metrics.init();
         }
     }
 
