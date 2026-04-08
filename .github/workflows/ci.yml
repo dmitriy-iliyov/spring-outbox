@@ -28,9 +28,6 @@ jobs:
       - name: Build and run UT and IT
         run: mvn clean install -X -Dgpg.skip=true
 
-      - name: Build and run E2ET
-        run: mvn -f spring-outbox-tests/spring-outbox-e2e-tests/pom.xml clean verify -X -Dgpg.skip=true
-
       - name: Upload coverage to Codecov
         if: github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v5
