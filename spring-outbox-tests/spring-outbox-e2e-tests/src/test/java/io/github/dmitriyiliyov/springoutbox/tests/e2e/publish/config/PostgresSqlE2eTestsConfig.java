@@ -24,8 +24,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestConfiguration
-@Profile("postgres-it")
-public class PostgresSqlIntegrationTestsConfig {
+@Profile("postgres-e2e & publish-e2e")
+public class PostgresSqlE2eTestsConfig {
 
     @Bean
     public DataSourceInitializer postgresOutboxDataSourceInitializer(DataSource dataSource) {

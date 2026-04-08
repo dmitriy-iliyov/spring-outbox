@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.jpa;
 
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.ManualBusinessService;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual.ManualPublishE2eVerifier;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template.BaseOracleIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.test_template.BaseOracleE2eTests;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class OracleManualJpaPublishE2eTests extends BaseOracleIntegrationTests {
+public class OracleManualJpaPublishE2eTests extends BaseOracleE2eTests {
 
     private final ManualPublishE2eVerifier verifier;
 

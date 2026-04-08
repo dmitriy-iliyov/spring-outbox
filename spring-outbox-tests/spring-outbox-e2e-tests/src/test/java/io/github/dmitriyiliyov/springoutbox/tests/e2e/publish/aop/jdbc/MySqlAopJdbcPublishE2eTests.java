@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop.jdbc;
 
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop.AopBusinessService;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop.AopPublishE2eVerifier;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template.BaseMySqlIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.test_template.BaseMySqlE2eTests;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class MySqlAopJdbcPublishE2eTests extends BaseMySqlIntegrationTests {
+public class MySqlAopJdbcPublishE2eTests extends BaseMySqlE2eTests {
 
     private final AopPublishE2eVerifier verifier;
 

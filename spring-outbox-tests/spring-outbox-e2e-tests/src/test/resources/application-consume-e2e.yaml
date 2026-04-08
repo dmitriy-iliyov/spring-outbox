@@ -1,0 +1,28 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true
+        format_sql: true
+    hibernate:
+      ddl-auto: none
+  kafka:
+    listener:
+      ack-mode: manual
+logging:
+  level:
+    io.github.dmitriyiliyov.springoutbox: DEBUG
+outbox:
+  thread-pool-size: 2
+  publisher:
+    enabled: false
+  consumer:
+    enabled: true
+    cache:
+      enabled: false
+    metrics:
+      enabled: false

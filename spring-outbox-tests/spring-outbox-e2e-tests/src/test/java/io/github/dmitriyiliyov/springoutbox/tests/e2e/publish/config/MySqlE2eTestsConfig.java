@@ -25,8 +25,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestConfiguration
-@Profile("mysql-it")
-public class MySqlIntegrationTestsConfig {
+@Profile("mysql-e2e & publish-e2e")
+public class MySqlE2eTestsConfig {
 
     @Bean
     public DataSourceInitializer mysqlOutboxDataSourceInitializer(DataSource dataSource) {

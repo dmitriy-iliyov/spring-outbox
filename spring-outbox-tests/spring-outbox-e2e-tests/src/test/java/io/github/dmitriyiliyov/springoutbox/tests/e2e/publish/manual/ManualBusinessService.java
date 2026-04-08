@@ -1,13 +1,12 @@
 package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.manual;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisher;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEntity;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.BusinessRepository;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain.BusinessEntity;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain.BusinessEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Class for E2E testing {@link io.github.dmitriyiliyov.springoutbox.core.publisher.DefaultOutboxPublisher}
@@ -17,11 +16,6 @@ public class ManualBusinessService {
     public static final String EVENT_TYPE = "business-event";
     private final OutboxPublisher publisher;
     private final BusinessRepository repository;
-
-    @FunctionalInterface
-    public interface IdPreparer {
-        Object prepare(UUID id);
-    }
 
     public ManualBusinessService(OutboxPublisher publisher, BusinessRepository repository) {
         this.publisher = publisher;

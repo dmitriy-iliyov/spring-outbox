@@ -1,12 +1,12 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.consume.test_template;
 
 import io.github.dmitriyiliyov.springoutbox.tests.utils.MySqlTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-@ActiveProfiles("mysql-it")
-public abstract class BaseMySqlIntegrationTests extends BaseIntegrationTests {
+@ActiveProfiles({"mysql-e2e", "consume-e2e"})
+public abstract class BaseMySqlE2eTests extends BaseE2eTests {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

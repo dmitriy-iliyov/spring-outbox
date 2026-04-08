@@ -1,9 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop;
 
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublish;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEntity;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.BusinessRepository;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain.BusinessEntity;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain.BusinessEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;

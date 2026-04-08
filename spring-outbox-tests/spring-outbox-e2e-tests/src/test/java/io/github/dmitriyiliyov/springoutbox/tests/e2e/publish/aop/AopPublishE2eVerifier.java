@@ -2,12 +2,11 @@ package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain.BusinessEvent;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.utils.IdExtractor;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.io.IOException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,11 +21,6 @@ public class AopPublishE2eVerifier {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final IdExtractor idExtractor;
-
-    @FunctionalInterface
-    public interface IdExtractor {
-        UUID extract(ResultSet rs) throws SQLException;
-    }
 
     public AopPublishE2eVerifier(AopBusinessService service, JdbcTemplate jdbcTemplate, IdExtractor idExtractor) {
         this.service = service;

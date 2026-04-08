@@ -24,8 +24,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @TestConfiguration
-@Profile("oracle-it")
-public class OracleIntegrationTestsConfig {
+@Profile("oracle-e2e & publish-e2e")
+public class OracleE2eTestsConfig {
 
     @Bean
     public DataSourceInitializer oracleOutboxDataSourceInitializer(DataSource dataSource) {

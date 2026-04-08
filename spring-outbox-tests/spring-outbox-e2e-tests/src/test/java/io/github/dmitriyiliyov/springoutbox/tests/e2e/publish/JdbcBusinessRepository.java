@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish;
 
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain.BusinessEntity;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEntity;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.utils.IdPreparer;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
-import java.util.UUID;
 
 public class JdbcBusinessRepository implements BusinessRepository {
 
@@ -40,10 +40,5 @@ public class JdbcBusinessRepository implements BusinessRepository {
                 entities.stream().map(e -> new Object [] {idPreparer.prepare(e.getVerifyId())}).toList()
         );
         return entities;
-    }
-
-    @FunctionalInterface
-    public interface IdPreparer {
-        Object prepare(UUID id);
     }
 }

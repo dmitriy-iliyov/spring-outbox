@@ -1,12 +1,12 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.test_template;
 
 import io.github.dmitriyiliyov.springoutbox.tests.utils.OracleTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
-@ActiveProfiles("oracle-it")
-public abstract class BaseOracleIntegrationTests extends BaseIntegrationTests {
+@ActiveProfiles({"oracle-e2e", "publish-e2e"})
+public abstract class BaseOracleE2eTests extends BaseE2eTests {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

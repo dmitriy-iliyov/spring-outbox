@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop.jdbc;
 
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop.AopBusinessService;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.aop.AopPublishE2eVerifier;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template.BasePostgresSqlIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.test_template.BasePostgresSqlE2eTests;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +16,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class PostgresSqlAopJdbcPublishE2eTests extends BasePostgresSqlIntegrationTests {
+public class PostgresSqlAopJdbcPublishE2eTests extends BasePostgresSqlE2eTests {
 
     private final AopPublishE2eVerifier verifier;
 

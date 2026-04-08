@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.domain;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.domain;
 
 import java.util.UUID;
 

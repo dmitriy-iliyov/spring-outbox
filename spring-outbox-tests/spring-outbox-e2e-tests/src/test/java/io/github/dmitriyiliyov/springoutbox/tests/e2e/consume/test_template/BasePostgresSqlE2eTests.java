@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.e2e.test_template;
+package io.github.dmitriyiliyov.springoutbox.tests.e2e.consume.test_template;
 
 import io.github.dmitriyiliyov.springoutbox.tests.utils.PostgresTestContainerSingleton;
 import org.springframework.test.context.ActiveProfiles;
@@ -6,8 +6,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 
-@ActiveProfiles("postgres-it")
-public abstract class BasePostgresSqlIntegrationTests extends BaseIntegrationTests {
+@ActiveProfiles({"postgres-e2e", "consume-e2e"})
+public abstract class BasePostgresSqlE2eTests extends BaseE2eTests {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

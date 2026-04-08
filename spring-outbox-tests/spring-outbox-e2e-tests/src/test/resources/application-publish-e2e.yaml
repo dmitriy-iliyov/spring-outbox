@@ -8,6 +8,8 @@ spring:
         order_updates: true
         generate_statistics: true
         format_sql: true
+    hibernate:
+      ddl-auto: none
 logging:
   level:
     io.github.dmitriyiliyov.springoutbox: DEBUG
