@@ -3,7 +3,6 @@ package io.github.dmitriyiliyov.springoutbox.core.consumer;
 import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
@@ -26,17 +25,22 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
     @Override
     public int saveIfAbsent(UUID id) {
         String sql = """
-            INSERT INTO outbox_consumed_events (id, consumed_at)
-            VALUES (?, ?)
+            MERGE INTO outbox_consumed_events t
+            USING (
+                SELECT ? AS id, ? AS consumed_at FROM dual
+            ) v_t
+            ON (t.id = v_t.id)
+            WHEN NOT MATCHED THEN
+                INSERT (id, consumed_at)
+                VALUES (v_t.id, v_t.consumed_at);
         """;
-        try {
-            return jdbcTemplate.update(sql, ps -> {
-                idHelper.setIdToPs(ps, 1, id);
-                ps.setTimestamp(2, Timestamp.from(Instant.now()));
-            });
-        } catch (DuplicateKeyException e) {
-            return 0;
-        }
+        return jdbcTemplate.update(
+                sql,
+                ps -> {
+                    idHelper.setIdToPs(ps, 1, id);
+                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                }
+        );
     }
 
     @Override
@@ -61,25 +65,27 @@ public class OracleConsumedOutboxRepository implements ConsumedOutboxRepository 
             return Collections.emptySet();
         }
         String insertSql = """
-            INSERT INTO outbox_consumed_events(id, consumed_at)
-            VALUES %s
-        """.formatted(RepositoryUtils.generateValuesPlaceholders(nonExistsIds.size(), 2));
+            INSERT /*+ IGNORE_ROW_ON_DUPKEY_INDEX(outbox_consumed_events (id)) */
+            INTO outbox_consumed_events (id, consumed_at)
+            VALUES (?, ?)
+        """;
         Instant consumedAt = Instant.now();
-        try {
-            jdbcTemplate.update(
-                    insertSql,
-                    ps -> {
-                        int paramId = 1;
-                        for (UUID id: nonExistsIds) {
-                            ps.setBytes(paramId++, idHelper.uuidToBytes(id));
-                            ps.setTimestamp(paramId++, Timestamp.from(consumedAt));
-                        }
-                    }
-            );
-            return new HashSet<>(nonExistsIds);
-        } catch (DuplicateKeyException e) {
-            throw new ConcurrentInsertException(nonExistsIds.size(), 0, nonExistsIds);
+        int [][] batchUpdateResult = jdbcTemplate.batchUpdate(
+                insertSql,
+                nonExistsIds,
+                nonExistsIds.size(),
+                (ps, id) -> {
+                    ps.setBytes(1, idHelper.uuidToBytes(id));
+                    ps.setTimestamp(2, Timestamp.from(consumedAt));
+                }
+        );
+        int updRowsCount = Arrays.stream(batchUpdateResult)
+                .flatMapToInt(Arrays::stream)
+                .sum();
+        if (nonExistsIds.size() != updRowsCount) {
+            throw new ConcurrentInsertException(nonExistsIds.size(), updRowsCount, nonExistsIds);
         }
+        return nonExistsIds;
     }
 
     @Override
