@@ -10,8 +10,7 @@ public class MySqlTestContainerSingleton {
         INSTANCE = new MySQLContainer<>("mysql:8")
                 .withDatabaseName("testdb")
                 .withUsername("test")
-                .withPassword("test")
-                .withReuse(true);
+                .withPassword("test");
         INSTANCE.start();
     }
 

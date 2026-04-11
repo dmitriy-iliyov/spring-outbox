@@ -10,8 +10,7 @@ public class OracleTestContainerSingleton {
         INSTANCE = new OracleContainer("gvenzl/oracle-free:23")
                 .withDatabaseName("testdb")
                 .withUsername("test")
-                .withPassword("test")
-                .withReuse(true);
+                .withPassword("test");
         INSTANCE.start();
     }
 

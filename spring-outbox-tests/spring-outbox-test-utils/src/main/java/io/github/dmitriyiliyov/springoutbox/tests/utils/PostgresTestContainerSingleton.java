@@ -10,8 +10,7 @@ public class PostgresTestContainerSingleton {
         INSTANCE = new PostgreSQLContainer<>("postgres:18")
                 .withDatabaseName("testdb")
                 .withUsername("test")
-                .withPassword("test")
-                .withReuse(true);
+                .withPassword("test");
         INSTANCE.start();
     }
 

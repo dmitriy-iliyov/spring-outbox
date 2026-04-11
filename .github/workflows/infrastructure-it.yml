@@ -1,0 +1,71 @@
+name: Infrastructure IT
+
+on:
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+
+  outbox-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgres, mysql, oracle]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run OUTBOX integration tests
+        run: mvn -B verify -Dtest.groups=outbox -Dspring.profiles.active=outbox -Ddb=${{ matrix.db }}
+
+  kafka-inbox-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgres, mysql, oracle]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run INBOX integration tests
+        run: mvn -B verify -Dtest.groups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
+
+  rabbit-inbox-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgres, mysql, oracle]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run INBOX integration tests
+        run: mvn -B verify -Dtest.groups=rabbit-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}

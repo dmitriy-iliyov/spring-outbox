@@ -8,8 +8,7 @@ public class RedisTestContainerSingleton {
 
     static {
         INSTANCE = new GenericContainer<>("redis:7")
-                .withExposedPorts(6379)
-                .withReuse(true);
+                .withExposedPorts(6379);
         INSTANCE.start();
     }
 
