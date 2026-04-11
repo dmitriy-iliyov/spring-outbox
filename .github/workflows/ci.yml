@@ -46,7 +46,7 @@ jobs:
 
       - name: Run infra OUTBOX IT
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
-        run: mvn -B verify -Dgpg.skip=true -Dgroups=outbox -Dspring.profiles.active=outbox -Ddb=postgres -o
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=outbox -Dspring.profiles.active=outbox -Ddb=postgres
 
   kafka-infra-inbox-it:
     runs-on: ubuntu-latest
@@ -67,4 +67,4 @@ jobs:
 
       - name: Run infra INBOX IT
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
-        run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=postgres -o
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=postgres
