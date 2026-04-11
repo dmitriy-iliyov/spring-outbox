@@ -62,7 +62,7 @@ jobs:
 
       - name: Run OUTBOX integration tests
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
-        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=outbox -Dspring.profiles.active=outbox -Ddb=${{ matrix.db }}
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=outbox -Dspring.profiles.active=outbox -Ddb=${{ matrix.db }}
 
   kafka-inbox-tests:
     runs-on: ubuntu-latest
@@ -92,7 +92,7 @@ jobs:
 
       - name: Run INBOX integration tests
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
-        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
 
   rabbit-inbox-tests:
     runs-on: ubuntu-latest
@@ -122,4 +122,4 @@ jobs:
 
       - name: Run INBOX integration tests
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
-        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=rabbit-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=rabbit-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
