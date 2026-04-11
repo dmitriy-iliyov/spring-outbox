@@ -28,6 +28,13 @@ jobs:
           path: .
           retention-days: 1
 
+      - name: Upload local Maven repo
+        uses: actions/upload-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository/io/github/dmitriy-iliyov
+          retention-days: 1
+
   infra-outbox-it:
     runs-on: ubuntu-latest
     needs: build-and-ut-it
@@ -37,6 +44,12 @@ jobs:
         with:
           name: workspace
           path: .
+
+      - name: Download local Maven repo
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository/io/github/dmitriy-iliyov
 
       - uses: actions/setup-java@v4
         with:
@@ -58,6 +71,12 @@ jobs:
         with:
           name: workspace
           path: .
+
+      - name: Download local Maven repo
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository/io/github/dmitriy-iliyov
 
       - uses: actions/setup-java@v4
         with:
