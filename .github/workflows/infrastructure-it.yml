@@ -26,7 +26,7 @@ jobs:
           cache: maven
 
       - name: Run OUTBOX integration tests
-        run: mvn -B verify -Dtest.groups=outbox -Dspring.profiles.active=outbox -Ddb=${{ matrix.db }}
+        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=outbox -Dspring.profiles.active=outbox -Ddb=${{ matrix.db }}
 
   kafka-inbox-tests:
     runs-on: ubuntu-latest
@@ -47,7 +47,7 @@ jobs:
           cache: maven
 
       - name: Run INBOX integration tests
-        run: mvn -B verify -Dtest.groups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
+        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
 
   rabbit-inbox-tests:
     runs-on: ubuntu-latest
@@ -68,4 +68,4 @@ jobs:
           cache: maven
 
       - name: Run INBOX integration tests
-        run: mvn -B verify -Dtest.groups=rabbit-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}
+        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=rabbit-inbox -Dspring.profiles.active=inbox -Ddb=${{ matrix.db }}

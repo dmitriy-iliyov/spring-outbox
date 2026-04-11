@@ -45,7 +45,7 @@ jobs:
           cache: maven
 
       - name: Run infra OUTBOX IT
-        run: mvn verify -Dtest.groups=outbox -Dspring.profiles.active=outbox -Ddb=postgres
+        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=outbox -Dspring.profiles.active=outbox -Ddb=postgres
 
   kafka-infra-inbox-it:
     runs-on: ubuntu-latest
@@ -61,4 +61,4 @@ jobs:
           cache: maven
 
       - name: Run infra INBOX IT
-        run: mvn verify -Dtest.groups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=postgres
+        run: mvn -B verify -Dgpg.skip=true -Dtest.groups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=postgres
