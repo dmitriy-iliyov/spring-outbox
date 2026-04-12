@@ -108,7 +108,7 @@ public class PublisherRunner {
 outbox:
   publisher:
     sender:
-      type: kafka    # or rabbit_mq
+      type: kafka    # or rabbitmq
     events:
       create-example-event:
         topic: "example-events"
@@ -611,11 +611,11 @@ outbox:
       emergency-timeout: 120s
 ```
 
-| Property            | Description                                  | Default                                                |
-|---------------------|----------------------------------------------|:-------------------------------------------------------|
-| `type`              | Message broker type (`kafka` or `rabbit_mq`) | —                                                      |
-| `bean-name`         | Custom sender bean name for multiple senders | Try resolving by Java type according to `sender.type`  |
-| `emergency-timeout` | Maximum time to wait for a send operation    | `120s`                                                 |
+| Property            | Description                                  | Default                                               |
+|---------------------|----------------------------------------------|:------------------------------------------------------|
+| `type`              | Message broker type (`kafka` or `rabbitmq`)  | —                                                     |
+| `bean-name`         | Custom sender bean name for multiple senders | Try resolving by Java type according to `sender.type` |
+| `emergency-timeout` | Maximum time to wait for a send operation    | `120s`                                                |
 
 ---
 #### Defaults & Events

@@ -137,7 +137,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndBeanNameSpecified_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
         props.setBeanName("rabbitTemplate");
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
@@ -159,7 +159,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndBeanNameNotSpecified_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
         RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
@@ -181,7 +181,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndMultipleBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
 
         when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{"rabbit1", "rabbit2"});
 
@@ -194,7 +194,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndNoBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
 
         when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{});
 
@@ -207,7 +207,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndBeanNotFoundByName_shouldThrowIAE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
         props.setBeanName("missingBean");
 
         when(context.containsBean("missingBean")).thenReturn(false);
@@ -221,7 +221,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndMandatoryFalse_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
         props.setBeanName("rabbitTemplate");
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
@@ -364,7 +364,7 @@ class OutboxSenderFactoryUnitTests {
     void generate_whenRabbitAndBeanNameEmpty_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBIT_MQ);
+        props.setType(SenderType.RABBITMQ);
         props.setBeanName("");
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 

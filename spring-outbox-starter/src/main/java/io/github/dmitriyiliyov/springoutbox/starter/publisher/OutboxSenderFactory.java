@@ -25,7 +25,7 @@ public final class OutboxSenderFactory {
     private static final Logger log = LoggerFactory.getLogger(OutboxSenderFactory.class);
     private static final Map<SenderType, OutboxSenderSupplier> SUPPORTED_BROKERS = Map.of(
             SenderType.KAFKA, new KafkaOutboxSenderSupplier(),
-            SenderType.RABBIT_MQ, new RabbitMqOutboxSenderSupplier()
+            SenderType.RABBITMQ, new RabbitMqOutboxSenderSupplier()
     );
 
     private OutboxSenderFactory() {}
