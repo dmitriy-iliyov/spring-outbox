@@ -8,16 +8,16 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public final class OutboxPublisherScheduler implements OutboxScheduler {
+public final class OutboxPollingScheduler implements OutboxScheduler {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxPublisherScheduler.class);
+    private static final Logger log = LoggerFactory.getLogger(OutboxPollingScheduler.class);
 
     private final OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties;
     private final ScheduledExecutorService executor;
     private final OutboxProcessor processor;
 
-    public OutboxPublisherScheduler(OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties, ScheduledExecutorService executor,
-                                    OutboxProcessor processor) {
+    public OutboxPollingScheduler(OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties, ScheduledExecutorService executor,
+                                  OutboxProcessor processor) {
         this.eventProperties = eventProperties;
         this.executor = executor;
         this.processor = processor;
@@ -34,9 +34,9 @@ public final class OutboxPublisherScheduler implements OutboxScheduler {
                         log.error("Error process outbox events for type={}", eventProperties.getEventType(), e);
                     }
                 },
-                eventProperties.getInitialDelay().toSeconds(),
-                eventProperties.getFixedDelay().toSeconds(),
-                TimeUnit.SECONDS
+                eventProperties.getInitialDelay().toMillis(),
+                eventProperties.getFixedDelay().toMillis(),
+                TimeUnit.MILLISECONDS
         );
     }
 }

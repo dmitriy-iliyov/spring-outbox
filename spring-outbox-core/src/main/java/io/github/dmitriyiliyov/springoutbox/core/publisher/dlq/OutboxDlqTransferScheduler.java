@@ -34,9 +34,9 @@ public final class OutboxDlqTransferScheduler implements OutboxScheduler {
                         log.error("Error process transfer failed events from outbox to DLQ", e);
                     }
                 },
-                properties.getTransferToInitialDelay().toSeconds(),
-                properties.getTransferToFixedDelay().toSeconds(),
-                TimeUnit.SECONDS
+                properties.getTransferToInitialDelay().toMillis(),
+                properties.getTransferToFixedDelay().toMillis(),
+                TimeUnit.MILLISECONDS
         );
         executor.scheduleWithFixedDelay(
                 () -> {
@@ -47,9 +47,9 @@ public final class OutboxDlqTransferScheduler implements OutboxScheduler {
                         log.error("Error process transfer failed events from DLQ to outbox to retry", e);
                     }
                 },
-                properties.getTransferFromInitialDelay().toSeconds(),
-                properties.getTransferFromFixedDelay().toSeconds(),
-                TimeUnit.SECONDS
+                properties.getTransferFromInitialDelay().toMillis(),
+                properties.getTransferFromFixedDelay().toMillis(),
+                TimeUnit.MILLISECONDS
         );
     }
 }

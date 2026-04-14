@@ -18,7 +18,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxPublisherSchedulerUnitTests {
+class OutboxPollingSchedulerUnitTests {
 
     @Mock
     private OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties;
@@ -30,7 +30,7 @@ class OutboxPublisherSchedulerUnitTests {
     private OutboxProcessor processor;
 
     @InjectMocks
-    private OutboxPublisherScheduler scheduler;
+    private OutboxPollingScheduler scheduler;
 
     @Test
     @DisplayName("UT schedule() should schedule task with correct parameters")
@@ -47,9 +47,9 @@ class OutboxPublisherSchedulerUnitTests {
         // then
         verify(executor).scheduleWithFixedDelay(
                 any(Runnable.class),
-                eq(10L),
-                eq(60L),
-                eq(TimeUnit.SECONDS)
+                eq(10000L),
+                eq(60000L),
+                eq(TimeUnit.MILLISECONDS)
         );
     }
 

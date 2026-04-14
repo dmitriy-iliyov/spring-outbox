@@ -33,9 +33,9 @@ public final class ConsumedOutboxCleanUpScheduler implements OutboxScheduler {
                         log.error("Error when cleanup consumed outbox events", e);
                     }
                 },
-                properties.getInitialDelay().toSeconds(),
-                properties.getFixedDelay().toSeconds(),
-                TimeUnit.SECONDS
+                properties.getInitialDelay().toMillis(),
+                properties.getFixedDelay().toMillis(),
+                TimeUnit.MILLISECONDS
         );
     }
 }

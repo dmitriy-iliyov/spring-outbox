@@ -34,9 +34,9 @@ public final class OutboxRecoveryScheduler implements OutboxScheduler {
                         log.error("Error process recover stuck outbox events", e);
                     }
                 },
-                properties.getInitialDelay().toSeconds(),
-                properties.getFixedDelay().toSeconds(),
-                TimeUnit.SECONDS
+                properties.getInitialDelay().toMillis(),
+                properties.getFixedDelay().toMillis(),
+                TimeUnit.MILLISECONDS
         );
     }
 }

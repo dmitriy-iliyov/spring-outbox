@@ -53,15 +53,15 @@ class OutboxDlqTransferSchedulerUnitTests {
         // then
         verify(executor).scheduleWithFixedDelay(
                 any(Runnable.class),
-                eq(10L),
-                eq(60L),
-                eq(TimeUnit.SECONDS)
+                eq(10000L),
+                eq(60000L),
+                eq(TimeUnit.MILLISECONDS)
         );
         verify(executor).scheduleWithFixedDelay(
                 any(Runnable.class),
-                eq(20L),
-                eq(120L),
-                eq(TimeUnit.SECONDS)
+                eq(20000L),
+                eq(120000L),
+                eq(TimeUnit.MILLISECONDS)
         );
     }
 

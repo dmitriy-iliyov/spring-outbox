@@ -48,9 +48,9 @@ class OutboxCleanUpSchedulerUnitTests {
         // then
         verify(executor).scheduleWithFixedDelay(
                 any(Runnable.class),
-                eq(10L),
-                eq(60L),
-                eq(TimeUnit.SECONDS)
+                eq(10000L),
+                eq(60000L),
+                eq(TimeUnit.MILLISECONDS)
         );
     }
 
