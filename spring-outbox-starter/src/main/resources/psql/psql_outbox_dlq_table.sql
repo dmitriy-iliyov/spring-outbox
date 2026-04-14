@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS outbox_dlq_events (
     moved_at TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_outbox_dlq_count ON outbox_dlq_events(event_type, dlq_status);
-CREATE INDEX IF NOT EXISTS idx_outbox_dlq_move_to_main
-    ON outbox_dlq_events(moved_at, id)
+CREATE INDEX IF NOT EXISTS idx_outbox_dlq_by_moved_at
+    ON outbox_dlq_events(moved_at)
     WHERE dlq_status = 'TO_RETRY';

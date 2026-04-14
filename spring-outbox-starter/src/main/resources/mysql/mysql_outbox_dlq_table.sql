@@ -16,22 +16,10 @@ SET @exists := (
     SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
     WHERE table_schema = DATABASE()
     AND table_name = 'outbox_dlq_events'
-    AND index_name = 'idx_outbox_dlq_count'
+    AND index_name = 'idx_outbox_dlq_by_moved_at'
     );
 SET @sql := IF(@exists = 0,
-    'CREATE INDEX idx_outbox_dlq_count ON outbox_dlq_events(event_type, dlq_status)',
-    'SELECT 1'
-    );
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE table_schema = DATABASE()
-    AND table_name = 'outbox_dlq_events'
-    AND index_name = 'idx_outbox_dlq_move_to_main'
-    );
-SET @sql := IF(@exists = 0,
-    'CREATE INDEX idx_outbox_dlq_move_to_main ON outbox_dlq_events(moved_at, id)',
+    'CREATE INDEX idx_outbox_dlq_by_moved_at ON outbox_dlq_events(moved_at, id)',
     'SELECT 1'
     );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
