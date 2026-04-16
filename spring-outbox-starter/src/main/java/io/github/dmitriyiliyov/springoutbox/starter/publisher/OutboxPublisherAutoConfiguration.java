@@ -125,7 +125,7 @@ public class OutboxPublisherAutoConfiguration {
             for (OutboxPublisherProperties.EventPropertiesHolder event : publisherProperties.getEvents().values()) {
                 String beanName = BeanNameUtils.toBeanName(event.getEventType(), "OutboxPublisherScheduler");
                 if (!factory.containsBean(beanName)) {
-                    factory.registerSingleton(beanName, new OutboxPublisherScheduler(event, executor, processor));
+                    factory.registerSingleton(beanName, new OutboxPollingScheduler(event, executor, processor));
                     log.debug("Created bean with beanName {}", beanName);
                 }
             }

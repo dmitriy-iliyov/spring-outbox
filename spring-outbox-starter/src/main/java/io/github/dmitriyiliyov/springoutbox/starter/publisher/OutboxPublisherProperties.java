@@ -269,9 +269,9 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
     public static final class Defaults {
 
-        private static final int DEFAULT_BATCH_SIZE = 50;
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(2);
+        private static final int DEFAULT_BATCH_SIZE = 200;
+        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofMinutes(5);
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofMillis(500);
         private static final int DEFAULT_MAX_RETRY = 3;
         private static final BackoffProperties DEFAULT_BACKOFF = new BackoffProperties();
 
@@ -371,11 +371,11 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
     public static final class BackoffProperties {
 
         private static final Duration DEFAULT_DELAY = Duration.ofSeconds(10);
-        private static final Long DEFAULT_MULTIPLIER = 3L;
+        private static final Double DEFAULT_MULTIPLIER = 3.0;
 
         private Boolean enabled;
         private Duration delay;
-        private Long multiplier;
+        private Double multiplier;
 
         public BackoffProperties() {
             this.enabled = true;
@@ -383,7 +383,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.multiplier = DEFAULT_MULTIPLIER;
         }
 
-        public BackoffProperties(Boolean enabled, Duration delay, Long multiplier) {
+        public BackoffProperties(Boolean enabled, Duration delay, Double multiplier) {
             this.enabled = enabled;
             this.delay = delay;
             this.multiplier = multiplier;
@@ -398,7 +398,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             } else {
                 enabled = false;
                 delay = Duration.ofSeconds(0);
-                multiplier = 1L;
+                multiplier = 1.0;
             }
         }
 
@@ -418,11 +418,11 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.delay = delay;
         }
 
-        public Long getMultiplier() {
+        public Double getMultiplier() {
             return multiplier;
         }
 
-        public void setMultiplier(Long multiplier) {
+        public void setMultiplier(Double multiplier) {
             this.multiplier = multiplier;
         }
 
@@ -561,12 +561,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         }
 
         @Override
-        public long backoffMultiplier() {
+        public Double backoffMultiplier() {
             return backoff.getMultiplier();
         }
 
         @Override
-        public long backoffDelay() {
+        public Long backoffDelay() {
             return backoff.getDelay().toSeconds();
         }
 
@@ -604,10 +604,10 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
     public static final class StuckRecoveryProperties implements StuckRecoveryPropertiesHolder {
 
-        private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final Duration DEFAULT_MAX_BATCH_PROCESSING_TIME = Duration.ofSeconds(300);
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(300);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(1800);
+        private static final int DEFAULT_BATCH_SIZE = 500;
+        private static final Duration DEFAULT_MAX_BATCH_PROCESSING_TIME = Duration.ofMinutes(5);
+        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofMinutes(5);
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(60);
 
         private Integer batchSize;
         private Duration maxBatchProcessingTime;
@@ -692,11 +692,11 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
     public static final class DlqProperties implements DlqPropertiesHolder {
 
-        private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final Duration DEFAULT_TO_INITIAL_DELAY = Duration.ofSeconds(300);
-        private static final Duration DEFAULT_TO_FIXED_DELAY = Duration.ofSeconds(900);
-        private static final Duration DEFAULT_FROM_INITIAL_DELAY = Duration.ofSeconds(300);
-        private static final Duration DEFAULT_FROM_FIXED_DELAY = Duration.ofSeconds(3600);
+        private static final int DEFAULT_BATCH_SIZE = 500;
+        private static final Duration DEFAULT_TO_INITIAL_DELAY = Duration.ofMinutes(5);
+        private static final Duration DEFAULT_TO_FIXED_DELAY = Duration.ofMinutes(1);
+        private static final Duration DEFAULT_FROM_INITIAL_DELAY = Duration.ofMinutes(5);
+        private static final Duration DEFAULT_FROM_FIXED_DELAY = Duration.ofMinutes(10);
 
         private Boolean enabled;
         private Integer batchSize;

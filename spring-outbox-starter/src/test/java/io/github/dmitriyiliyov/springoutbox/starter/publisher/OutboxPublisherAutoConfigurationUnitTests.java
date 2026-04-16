@@ -207,7 +207,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
 
             initializer.afterSingletonsInstantiated();
 
-            verify(factory).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPublisherScheduler.class));
+            verify(factory).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
             verify(factory).registerSingleton(eq("outboxRecoveryScheduler"), any(OutboxRecoveryScheduler.class));
             verify(factory, never()).registerSingleton(eq("outboxCleanUpScheduler"), any());
         }
@@ -232,7 +232,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
 
             initializer.afterSingletonsInstantiated();
 
-            verify(factory, never()).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPublisherScheduler.class));
+            verify(factory, never()).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
             verify(factory).registerSingleton(eq("outboxRecoveryScheduler"), any(OutboxRecoveryScheduler.class));
         }
     }

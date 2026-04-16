@@ -27,11 +27,11 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
         // then
         assertTrue(dlq.isEnabled());
-        assertEquals(100, dlq.getBatchSize());
+        assertEquals(500, dlq.getBatchSize());
         assertEquals(Duration.ofSeconds(300), dlq.getTransferToInitialDelay());
-        assertEquals(Duration.ofSeconds(900), dlq.getTransferToFixedDelay());
+        assertEquals(Duration.ofSeconds(60), dlq.getTransferToFixedDelay());
         assertEquals(Duration.ofSeconds(300), dlq.getTransferFromInitialDelay());
-        assertEquals(Duration.ofSeconds(3600), dlq.getTransferFromFixedDelay());
+        assertEquals(Duration.ofSeconds(600), dlq.getTransferFromFixedDelay());
     }
 
     @Test
@@ -75,11 +75,11 @@ public class OutboxPropertiesDlqPublisherPropertiesUnitTests {
 
         // then
         assertTrue(dlq.isEnabled());
-        assertEquals(100, dlq.getBatchSize());
+        assertEquals(500, dlq.getBatchSize());
         assertEquals(Duration.ofSeconds(300), dlq.getTransferToInitialDelay());
         assertEquals(Duration.ofSeconds(50), dlq.getTransferToFixedDelay());
         assertEquals(Duration.ofSeconds(300), dlq.getTransferFromInitialDelay());
-        assertEquals(Duration.ofSeconds(3600), dlq.getTransferFromFixedDelay());
+        assertEquals(Duration.ofSeconds(600), dlq.getTransferFromFixedDelay());
     }
 
     @Test

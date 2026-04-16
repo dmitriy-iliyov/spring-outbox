@@ -632,17 +632,17 @@ outbox:
       backoff:
         enabled: true
         delay: 10s
-        multiplier: 3
+        multiplier: 3.0
 ```
-| Property             | Description                                 |  Default  |
-|----------------------|---------------------------------------------|:---------:|
-| `batch-size`         | Number of events to process per iteration   |   `50`    |
-| `initial-delay`      | Delay before first polling starts           |  `300s`   |
-| `fixed-delay`        | Delay between polling iterations            |   `2s`    |
-| `max-retries`        | Maximum retry attempts before moving to DLQ |    `3`    |
-| `backoff.enabled`    | Enable exponential backoff for retries      |  `true`   |
-| `backoff.delay`      | Initial backoff delay                       |   `10s`   |
-| `backoff.multiplier` | Multiplier for exponential backoff          |    `3`    |
+| Property             | Description                                 | Default |
+|----------------------|---------------------------------------------|:-------:|
+| `batch-size`         | Number of events to process per iteration   |  `200`  |
+| `initial-delay`      | Delay before first polling starts           | `300s`  |
+| `fixed-delay`        | Delay between polling iterations            | `500ms` |
+| `max-retries`        | Maximum retry attempts before moving to DLQ |   `3`   |
+| `backoff.enabled`    | Enable exponential backoff for retries      | `true`  |
+| `backoff.delay`      | Initial backoff delay                       |  `10s`  |
+| `backoff.multiplier` | Multiplier for exponential backoff          |  `3.0`  |
 
 Individual event configurations override defaults for specific event types.
 Apache Kafka example:
@@ -650,25 +650,26 @@ Apache Kafka example:
 outbox:
   publisher:
     events:
-      order-created:
+      create-order:
         topic: orders
-        batch-size: 100
-        fixed-delay: 1s
-        max-retries: 5
+        batch-size: 200
+        fixed-delay: 200ms
+        max-retries: 2
         backoff:
           delay: 5s
-          multiplier: 2
-      
-      order-updated:
+          multiplier: 2.0
+
+      update-order:
         topic: orders
-        batch-size: 50
-        fixed-delay: 2s
+        batch-size: 200
+        fixed-delay: 250ms
         backoff:
           enabled: false  # Use fixed delay instead
-      
-      notification-sent:
-        topic: notifications
-        # Other params inherited from defaults
+
+      delete-order:
+        topic: orders-exchange
+        batch-size: 500
+        fixed-delay: 1m
 ```
 | Property | Description                                           |
 |----------|-------------------------------------------------------|
@@ -681,16 +682,16 @@ RabbitMQ example:
     events:
       create-order:
         topic: orders-exchange
-        batch-size: 100
-        fixed-delay: 1s
+        batch-size: 200
+        fixed-delay: 200ms
       update-order:
         topic: orders-exchange
-        batch-size: 50
-        fixed-delay: 1s
+        batch-size: 200
+        fixed-delay: 250ms
       delete-order:
         topic: orders-exchange
-        batch-size: 50
-        fixed-delay: 10s
+        batch-size: 500
+        fixed-delay: 1m
 ```
 
 **Example with inheritance from `defaults`:**
@@ -698,9 +699,9 @@ RabbitMQ example:
 outbox:
   publisher:
     defaults:
-      batch-size: 50
-      fixed-delay: 2s
-      max-retries: 3
+      batch-size: 100
+      fixed-delay: 1s
+      max-retries: 3.0
     
     events:
       high-priority:
@@ -722,18 +723,18 @@ outbox:
 outbox:
   publisher:
     stuck-recovery:
-      batch-size: 100
+      batch-size: 500
       max-batch-processing-time: 300s
       initial-delay: 300s
-      fixed-delay: 1800s
+      fixed-delay: 60s
 ```
 
-| Property                    | Description                                                                                              |  Default  |
-|-----------------------------|----------------------------------------------------------------------------------------------------------|:---------:|
-| `batch-size`                | Number of stuck events to recover per iteration                                                          |   `100`   |
-| `max-batch-processing-time` | Time threshold for detecting stuck events (events in `IN_PROCESS` longer than this are considered stuck) |  `300s`   |
-| `initial-delay`             | Delay before first recovery run                                                                          |  `300s`   |
-| `fixed-delay`               | Delay between recovery runs                                                                              |  `1800s`  |
+| Property                    | Description                                                                                              | Default |
+|-----------------------------|----------------------------------------------------------------------------------------------------------|:-------:|
+| `batch-size`                | Number of stuck events to recover per iteration                                                          |  `500`  |
+| `max-batch-processing-time` | Time threshold for detecting stuck events (events in `IN_PROCESS` longer than this are considered stuck) | `300s`  |
+| `initial-delay`             | Delay before first recovery run                                                                          | `300s`  |
+| `fixed-delay`               | Delay between recovery runs                                                                              |  `60s`  |
 
 ---
 
@@ -743,26 +744,26 @@ outbox:
   publisher:
     dlq:
       enabled: true
-      batch-size: 100
+      batch-size: 500
       transfer-to-initial-delay: 300s
-      transfer-to-fixed-delay: 900s
+      transfer-to-fixed-delay: 60s
       transfer-from-initial-delay: 300s
-      transfer-from-fixed-delay: 3600s
+      transfer-from-fixed-delay: 600s
       metrics:
         enabled: true
 ```
 > [!WARNING]
 > When disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`.
 
-| Property                      | Description                                      |  Default  |
-|-------------------------------|--------------------------------------------------|:---------:|
-| `enabled`                     | Enable DLQ functionality                         |  `false`  |
-| `batch-size`                  | Number of events to transfer per iteration       |   `100`   |
-| `transfer-to-initial-delay`   | Delay before first transfer to DLQ               |  `300s`   |
-| `transfer-to-fixed-delay`     | Delay between transfers to DLQ                   |  `900s`   |
-| `transfer-from-initial-delay` | Delay before first transfer from DLQ to outbox   |  `300s`   |
-| `transfer-from-fixed-delay`   | Delay between transfers from DLQ to outbox       |  `3600s`  |
-| `metrics.enabled`             | Enable metrics collection, more [here](#metrics) |  `false`  |
+| Property                      | Description                                      | Default |
+|-------------------------------|--------------------------------------------------|:-------:|
+| `enabled`                     | Enable DLQ functionality                         | `false` |
+| `batch-size`                  | Number of events to transfer per iteration       |  `500`  |
+| `transfer-to-initial-delay`   | Delay before first transfer to DLQ               | `300s`  |
+| `transfer-to-fixed-delay`     | Delay between transfers to DLQ                   |  `60s`  |
+| `transfer-from-initial-delay` | Delay before first transfer from DLQ to outbox   | `300s`  |
+| `transfer-from-fixed-delay`   | Delay between transfers from DLQ to outbox       | `600s`  |
+| `metrics.enabled`             | Enable metrics collection, more [here](#metrics) | `false` |
 
 ---
 
@@ -772,22 +773,22 @@ outbox:
   publisher:
     clean-up:
       enabled: true
-      batch-size: 100
-      ttl: 1h
+      batch-size: 200
+      ttl: 24h
       initial-delay: 120s
-      fixed-delay: 5s
+      fixed-delay: 200ms
 ```
 
 > [!WARNING]
 > When disabled, processed events will accumulate indefinitely.
 
-| Property        | Description                                                                          |  Default  |
-|-----------------|--------------------------------------------------------------------------------------|:---------:|
-| `enabled`       | Enable automatic cleanup of processed events                                         |  `true`   |
-| `batch-size`    | Number of events to delete per iteration                                             |   `100`   |
-| `ttl`           | TTL for processed events. Events with `PROCESSED` status older than this are deleted |   `1h`    |
-| `initial-delay` | Delay before first cleanup run                                                       |  `120s`   |
-| `fixed-delay`   | Delay between cleanup runs                                                           |   `5s`    |
+| Property        | Description                                                                          | Default |
+|-----------------|--------------------------------------------------------------------------------------|:-------:|
+| `enabled`       | Enable automatic cleanup of processed events                                         | `true`  |
+| `batch-size`    | Number of events to delete per iteration                                             |  `200`  |
+| `ttl`           | TTL for processed events. Events with `PROCESSED` status older than this are deleted |  `24h`  |
+| `initial-delay` | Delay before first cleanup run                                                       | `120s`  |
+| `fixed-delay`   | Delay between cleanup runs                                                           | `200ms` |
 
 ---
 
@@ -826,17 +827,12 @@ outbox:
   consumer:
     clean-up:
       enabled: true
-      batch-size: 100
+      batch-size: 200
       ttl: 24h
       initial-delay: 120s
-      fixed-delay: 5s
+      fixed-delay: 200ms
 ```
-
-All parameters same as [Publisher Cleanup](#cleanup-2) with different defaults:
-
-| Property | Description                                                                        |  Default  |
-|----------|------------------------------------------------------------------------------------|:---------:|
-| `ttl`    | Consumed events are typically kept longer than published events for audit purposes |   `1h`    |
+All parameters same as [Publisher Cleanup](#cleanup-2).
 
 ---
 
@@ -929,7 +925,7 @@ outbox:
       backoff:
         enabled: true
         delay: 10s
-        multiplier: 3
+        multiplier: 3.0
     
     events:
       order-created:
@@ -955,18 +951,18 @@ outbox:
     
     clean-up:
       enabled: true
-      batch-size: 100
-      ttl: 1h
+      batch-size: 200
+      ttl: 24h
       initial-delay: 120s
-      fixed-delay: 5s
+      fixed-delay: 200ms
     
     dlq:
       enabled: true
-      batch-size: 100
+      batch-size: 500
       transfer-to-initial-delay: 120s
-      transfer-to-fixed-delay: 900s
+      transfer-to-fixed-delay: 60s
       transfer-from-initial-delay: 120s
-      transfer-from-fixed-delay: 3600s
+      transfer-from-fixed-delay: 600s
       metrics:
         enabled: true
         gauge:
@@ -1026,10 +1022,10 @@ outbox:
     enabled: true
     clean-up:
       enabled: true
-      batch-size: 100
+      batch-size: 200
       ttl: 24h
       initial-delay: 120s
-      fixed-delay: 120s
+      fixed-delay: 200ms
     cache:
       enabled: true
       cache-name: "outbox:consumed"

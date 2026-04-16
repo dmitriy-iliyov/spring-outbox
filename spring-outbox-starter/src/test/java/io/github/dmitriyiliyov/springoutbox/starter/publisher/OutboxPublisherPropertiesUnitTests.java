@@ -112,9 +112,9 @@ public class OutboxPublisherPropertiesUnitTests {
 
         // then
         assertNotNull(properties.getStuckRecovery());
-        assertEquals(100, properties.getStuckRecovery().getBatchSize());
+        assertEquals(500, properties.getStuckRecovery().getBatchSize());
         assertEquals(Duration.ofSeconds(300), properties.getStuckRecovery().getInitialDelay());
-        assertEquals(Duration.ofSeconds(1800), properties.getStuckRecovery().getFixedDelay());
+        assertEquals(Duration.ofSeconds(60), properties.getStuckRecovery().getFixedDelay());
     }
 
     @Test
@@ -133,9 +133,9 @@ public class OutboxPublisherPropertiesUnitTests {
 
         // then
         assertNotNull(properties.getDefaults());
-        assertEquals(50, properties.getDefaults().getBatchSize());
+        assertEquals(200, properties.getDefaults().getBatchSize());
         assertEquals(Duration.ofSeconds(300), properties.getDefaults().getInitialDelay());
-        assertEquals(Duration.ofSeconds(2), properties.getDefaults().getFixedDelay());
+        assertEquals(Duration.ofMillis(500), properties.getDefaults().getFixedDelay());
         assertEquals(3, properties.getDefaults().getMaxRetries());
     }
 
@@ -187,25 +187,25 @@ public class OutboxPublisherPropertiesUnitTests {
         assertEquals(SenderType.KAFKA, properties.getSender().getType());
         assertEquals("kafkaOutboxTemplate", properties.getSender().getBeanName());
 
-        assertEquals(50, properties.getEvents().get("account-delete").getBatchSize());
+        assertEquals(200, properties.getEvents().get("account-delete").getBatchSize());
         assertEquals(Duration.ofSeconds(300), properties.getEvents().get("account-delete").getInitialDelay());
         assertEquals(Duration.ofSeconds(10), properties.getEvents().get("account-delete").getFixedDelay());
         assertEquals(1, properties.getEvents().get("account-delete").getMaxRetries());
 
-        assertEquals(50, properties.getEvents().get("user-registered").getBatchSize());
+        assertEquals(200, properties.getEvents().get("user-registered").getBatchSize());
         assertEquals(Duration.ofSeconds(300), properties.getEvents().get("user-registered").getInitialDelay());
-        assertEquals(Duration.ofSeconds(2), properties.getEvents().get("user-registered").getFixedDelay());
+        assertEquals(Duration.ofMillis(500), properties.getEvents().get("user-registered").getFixedDelay());
         assertEquals(4, properties.getEvents().get("user-registered").getMaxRetries());
 
-        assertEquals(100, properties.getStuckRecovery().getBatchSize());
+        assertEquals(500, properties.getStuckRecovery().getBatchSize());
         assertEquals(Duration.ofSeconds(300), properties.getStuckRecovery().getInitialDelay());
-        assertEquals(Duration.ofSeconds(1800), properties.getStuckRecovery().getFixedDelay());
+        assertEquals(Duration.ofSeconds(60), properties.getStuckRecovery().getFixedDelay());
 
         assertTrue(properties.isCleanUpEnabled());
-        assertEquals(100, properties.getCleanUp().getBatchSize());
-        assertEquals(Duration.ofHours(1), properties.getCleanUp().getTtl());
+        assertEquals(200, properties.getCleanUp().getBatchSize());
+        assertEquals(Duration.ofHours(24), properties.getCleanUp().getTtl());
         assertEquals(Duration.ofSeconds(120), properties.getCleanUp().getInitialDelay());
-        assertEquals(Duration.ofSeconds(5), properties.getCleanUp().getFixedDelay());
+        assertEquals(Duration.ofMillis(200), properties.getCleanUp().getFixedDelay());
     }
 
     @Test
@@ -282,7 +282,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties();
         backoff.setEnabled(true);
         backoff.setDelay(Duration.ofSeconds(5));
-        backoff.setMultiplier(2L);
+        backoff.setMultiplier(3.9);
         defaults.setBackoff(backoff);
         properties.setDefaults(defaults);
 
@@ -303,7 +303,7 @@ public class OutboxPublisherPropertiesUnitTests {
         assertEquals(5, resultEvent.getMaxRetries());
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(5), resultEvent.getBackoff().getDelay());
-        assertEquals(2, resultEvent.getBackoff().getMultiplier());
+        assertEquals(3.9, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -325,7 +325,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(5));
-        defaultBackoff.setMultiplier(2L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -339,7 +339,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(15));
-        eventBackoff.setMultiplier(5L);
+        eventBackoff.setMultiplier(5.4);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -355,7 +355,7 @@ public class OutboxPublisherPropertiesUnitTests {
         assertEquals(10, resultEvent.getMaxRetries());
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(15), resultEvent.getBackoff().getDelay());
-        assertEquals(5, resultEvent.getBackoff().getMultiplier());
+        assertEquals(5.4, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -377,7 +377,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(5));
-        defaultBackoff.setMultiplier(2L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -416,7 +416,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(3L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -425,7 +425,7 @@ public class OutboxPublisherPropertiesUnitTests {
         event.setTopic("test-topic");
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
-        eventBackoff.setMultiplier(5L);
+        eventBackoff.setMultiplier(5.4);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -437,7 +437,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(10), resultEvent.getBackoff().getDelay());
-        assertEquals(5, resultEvent.getBackoff().getMultiplier());
+        assertEquals(5.4, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -455,7 +455,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(3L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -465,7 +465,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(25));
-        eventBackoff.setMultiplier(5L);
+        eventBackoff.setMultiplier(5.4);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -477,7 +477,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
-        assertEquals(5, resultEvent.getBackoff().getMultiplier());
+        assertEquals(5.4, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -495,7 +495,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -516,7 +516,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
-        assertEquals(3, resultEvent.getBackoff().getMultiplier());
+        assertEquals(3.0, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -534,7 +534,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -544,7 +544,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(20));
-        eventBackoff.setMultiplier(0L);
+        eventBackoff.setMultiplier(0.0);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -556,7 +556,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
-        assertEquals(4L, resultEvent.getBackoff().getMultiplier());
+        assertEquals(3.9, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -574,7 +574,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -584,7 +584,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(20));
-        eventBackoff.setMultiplier(-2L);
+        eventBackoff.setMultiplier(-2.8);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -596,7 +596,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
-        assertEquals(4L, resultEvent.getBackoff().getMultiplier());
+        assertEquals(3.9, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -614,7 +614,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -624,7 +624,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(20));
-        eventBackoff.setMultiplier(1L);
+        eventBackoff.setMultiplier(1.0);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -636,7 +636,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
-        assertEquals(1, resultEvent.getBackoff().getMultiplier());
+        assertEquals(1.0, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -654,7 +654,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -664,7 +664,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(20));
-        eventBackoff.setMultiplier(7L);
+        eventBackoff.setMultiplier(7.3);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -676,7 +676,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
-        assertEquals(7, resultEvent.getBackoff().getMultiplier());
+        assertEquals(7.3, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -695,7 +695,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(2.6);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -715,7 +715,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(10), resultEvent.getBackoff().getDelay());
-        assertEquals(3, resultEvent.getBackoff().getMultiplier());
+        assertEquals(3.0, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -733,7 +733,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(3.9);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -743,7 +743,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(25));
-        eventBackoff.setMultiplier(6L);
+        eventBackoff.setMultiplier(6.4);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -755,7 +755,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
-        assertEquals(6, resultEvent.getBackoff().getMultiplier());
+        assertEquals(6.4, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -773,7 +773,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(15));
-        defaultBackoff.setMultiplier(4L);
+        defaultBackoff.setMultiplier(4.0);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -783,7 +783,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties eventBackoff = new OutboxPublisherProperties.BackoffProperties();
         eventBackoff.setEnabled(true);
         eventBackoff.setDelay(Duration.ofSeconds(25));
-        eventBackoff.setMultiplier(0L);
+        eventBackoff.setMultiplier(0.0);
         event.setBackoff(eventBackoff);
         events.put("test-event", event);
         properties.setEvents(events);
@@ -795,7 +795,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
-        assertEquals(4L, resultEvent.getBackoff().getMultiplier());
+        assertEquals(4.0, resultEvent.getBackoff().getMultiplier());
     }
 
     @Test
@@ -1034,7 +1034,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties defaultBackoff = new OutboxPublisherProperties.BackoffProperties();
         defaultBackoff.setEnabled(true);
         defaultBackoff.setDelay(Duration.ofSeconds(10));
-        defaultBackoff.setMultiplier(2L);
+        defaultBackoff.setMultiplier(2.8);
         defaults.setBackoff(defaultBackoff);
         properties.setDefaults(defaults);
 
@@ -1062,7 +1062,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.BackoffProperties backoff3 = new OutboxPublisherProperties.BackoffProperties();
         backoff3.setEnabled(true);
         backoff3.setDelay(Duration.ofSeconds(20));
-        backoff3.setMultiplier(3L);
+        backoff3.setMultiplier(3.0);
         event3.setBackoff(backoff3);
         events.put("event3", event3);
 
@@ -1093,7 +1093,7 @@ public class OutboxPublisherPropertiesUnitTests {
         assertEquals(5, resultEvent3.getMaxRetries());
         assertTrue(resultEvent3.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent3.getBackoff().getDelay());
-        assertEquals(3, resultEvent3.getBackoff().getMultiplier());
+        assertEquals(3.0, resultEvent3.getBackoff().getMultiplier());
     }
 
     @Test

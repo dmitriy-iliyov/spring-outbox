@@ -95,12 +95,12 @@ public interface OutboxPublisherPropertiesHolder {
         /**
          * The multiplier for exponential backoff retry strategy.
          */
-        long backoffMultiplier();
+        Double backoffMultiplier();
 
         /**
          * The base delay for exponential backoff retry strategy.
          */
-        long backoffDelay();
+        Long backoffDelay();
     }
 
     /**

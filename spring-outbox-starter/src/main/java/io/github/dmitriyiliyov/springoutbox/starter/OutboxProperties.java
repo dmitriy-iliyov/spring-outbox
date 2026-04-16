@@ -94,10 +94,10 @@ public class OutboxProperties implements OutboxPropertiesHolder {
 
     public static final class CleanUpProperties implements CleanUpPropertiesHolder {
 
-        private static final int DEFAULT_BATCH_SIZE = 100;
-        private static final Duration DEFAULT_TTL = Duration.ofHours(1);
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofSeconds(120);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(5);
+        private static final int DEFAULT_BATCH_SIZE = 200;
+        private static final Duration DEFAULT_TTL = Duration.ofHours(24);
+        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofMinutes(2);
+        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofMillis(200);
 
         private Boolean enabled;
         private Integer batchSize;

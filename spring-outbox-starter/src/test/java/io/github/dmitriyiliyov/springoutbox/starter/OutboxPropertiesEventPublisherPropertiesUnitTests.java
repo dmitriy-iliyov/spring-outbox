@@ -101,7 +101,7 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
     @DisplayName("UT backoffMultiplier() should return correct multiplier")
     public void backoffMultiplier_shouldReturnCorrectValue() {
         // given
-        OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties(true, Duration.ofSeconds(5), 7L);
+        OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties(true, Duration.ofSeconds(5), 7.3);
         OutboxPublisherProperties.EventProperties event = new OutboxPublisherProperties.EventProperties();
         event.setEventType("event");
         event.setTopic("topic");
@@ -111,17 +111,17 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
 
         // when
         event.init(defaults);
-        long multiplier = event.backoffMultiplier();
+        Double multiplier = event.backoffMultiplier();
 
         // then
-        assertEquals(7L, multiplier);
+        assertEquals(7.3, multiplier);
     }
 
     @Test
     @DisplayName("UT backoffDelay() should return correct delay in seconds")
     public void backoffDelay_shouldReturnCorrectValue() {
         // given
-        OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties(true, Duration.ofSeconds(15), 3L);
+        OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties(true, Duration.ofSeconds(15), 3.5);
         OutboxPublisherProperties.EventProperties event = new OutboxPublisherProperties.EventProperties();
         event.setEventType("event");
         event.setTopic("topic");
@@ -141,7 +141,7 @@ public class OutboxPropertiesEventPublisherPropertiesUnitTests {
     @DisplayName("UT initialize() with valid parameters should create object")
     public void init_validParameters_shouldCreateObject() {
         // given
-        OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties(true, Duration.ofSeconds(10), 5L);
+        OutboxPublisherProperties.BackoffProperties backoff = new OutboxPublisherProperties.BackoffProperties(true, Duration.ofSeconds(10), 5.3);
         OutboxPublisherProperties.EventProperties event = new OutboxPublisherProperties.EventProperties();
         event.setEventType("user-registered");
         event.setTopic("user-topic");

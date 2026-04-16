@@ -19,9 +19,9 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery.init();
 
         // then
-        assertEquals(100, recovery.getBatchSize());
+        assertEquals(500, recovery.getBatchSize());
         assertEquals(Duration.ofSeconds(300), recovery.getInitialDelay());
-        assertEquals(Duration.ofSeconds(1800), recovery.getFixedDelay());
+        assertEquals(Duration.ofSeconds(60), recovery.getFixedDelay());
     }
 
     @Test
@@ -37,9 +37,10 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery.init();
 
         // then
-        assertEquals(100, recovery.getBatchSize());
+        assertEquals(500, recovery.getBatchSize());
+        assertEquals(Duration.ofSeconds(300), recovery.getMaxBatchProcessingTime());
         assertEquals(Duration.ofSeconds(300), recovery.getInitialDelay());
-        assertEquals(Duration.ofSeconds(1800), recovery.getFixedDelay());
+        assertEquals(Duration.ofSeconds(60), recovery.getFixedDelay());
     }
 
     @Test
@@ -55,7 +56,8 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
         recovery.init();
 
         // then
-        assertEquals(100, recovery.getBatchSize());
+        assertEquals(500, recovery.getBatchSize());
+        assertEquals(Duration.ofSeconds(300), recovery.getMaxBatchProcessingTime());
         assertEquals(Duration.ofSeconds(100), recovery.getInitialDelay());
         assertEquals(Duration.ofSeconds(200), recovery.getFixedDelay());
     }
@@ -78,6 +80,7 @@ public class OutboxPropertiesStuckRecoveryPublisherPropertiesUnitTests {
 
         // then
         assertEquals(batchSize, recovery.getBatchSize());
+        assertEquals(Duration.ofSeconds(300), recovery.getMaxBatchProcessingTime());
         assertEquals(initialDelay, recovery.getInitialDelay());
         assertEquals(fixedDelay, recovery.getFixedDelay());
     }

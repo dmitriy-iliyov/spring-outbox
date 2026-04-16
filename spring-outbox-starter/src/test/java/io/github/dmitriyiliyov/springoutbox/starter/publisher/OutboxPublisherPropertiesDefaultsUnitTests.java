@@ -25,9 +25,9 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.init();
 
         // then
-        assertEquals(50, defaults.getBatchSize());
+        assertEquals(200, defaults.getBatchSize());
         assertEquals(Duration.ofSeconds(300), defaults.getInitialDelay());
-        assertEquals(Duration.ofSeconds(2), defaults.getFixedDelay());
+        assertEquals(Duration.ofMillis(500), defaults.getFixedDelay());
         assertEquals(3, defaults.getMaxRetries());
         assertNotNull(defaults.getBackoff());
     }
@@ -47,7 +47,7 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
         defaults.init();
 
         // then
-        assertEquals(50, defaults.getBatchSize());
+        assertEquals(200, defaults.getBatchSize());
     }
 
     @Test
@@ -125,6 +125,6 @@ public class OutboxPublisherPropertiesDefaultsUnitTests {
 
         // then
         assertEquals(Duration.ofSeconds(300), defaults.getInitialDelay());
-        assertEquals(Duration.ofSeconds(2), defaults.getFixedDelay());
+        assertEquals(Duration.ofMillis(500), defaults.getFixedDelay());
     }
 }

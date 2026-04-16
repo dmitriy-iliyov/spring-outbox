@@ -50,7 +50,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(false);
         backoff.setDelay(Duration.ofSeconds(100));
-        backoff.setMultiplier(10L);
+        backoff.setMultiplier(5.6);
 
         // when
         backoff.init();
@@ -86,7 +86,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(true);
         backoff.setDelay(Duration.ofSeconds(20));
-        backoff.setMultiplier(5L);
+        backoff.setMultiplier(5.6);
 
         // when
         backoff.init();
@@ -94,7 +94,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         // then
         assertTrue(backoff.isEnabled());
         assertEquals(Duration.ofSeconds(20), backoff.getDelay());
-        assertEquals(5L, backoff.getMultiplier());
+        assertEquals(5.6, backoff.getMultiplier());
     }
 
     @Test
@@ -104,7 +104,7 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         BackoffProperties backoff = new BackoffProperties();
         backoff.setEnabled(true);
         backoff.setDelay(Duration.ofSeconds(5));
-        backoff.setMultiplier(0L);
+        backoff.setMultiplier(0.0);
 
         // when
         backoff.init();
@@ -122,19 +122,19 @@ public class OutboxPropertiesBackoffPublisherPropertiesUnitTests {
         BackoffProperties b1 = new BackoffProperties();
         b1.setEnabled(true);
         b1.setDelay(Duration.ofSeconds(10));
-        b1.setMultiplier(3L);
+        b1.setMultiplier(5.6);
         b1.init();
 
         BackoffProperties b2 = new BackoffProperties();
         b2.setEnabled(true);
         b2.setDelay(Duration.ofSeconds(10));
-        b2.setMultiplier(3L);
+        b2.setMultiplier(5.6);
         b2.init();
 
         BackoffProperties b3 = new BackoffProperties();
         b3.setEnabled(false);
         b3.setDelay(Duration.ofSeconds(0));
-        b3.setMultiplier(1L);
+        b3.setMultiplier(5.6);
         b3.init();
 
         // then

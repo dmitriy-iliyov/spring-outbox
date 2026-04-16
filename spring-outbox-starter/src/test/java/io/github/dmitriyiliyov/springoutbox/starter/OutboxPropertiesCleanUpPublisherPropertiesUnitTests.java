@@ -22,10 +22,10 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
         // then
         assertTrue(cleanup.isEnabled());
-        assertEquals(100, cleanup.getBatchSize());
-        assertEquals(Duration.ofHours(1), cleanup.getTtl());
+        assertEquals(200, cleanup.getBatchSize());
+        assertEquals(Duration.ofHours(24), cleanup.getTtl());
         assertEquals(Duration.ofSeconds(120), cleanup.getInitialDelay());
-        assertEquals(Duration.ofSeconds(5), cleanup.getFixedDelay());
+        assertEquals(Duration.ofMillis(200), cleanup.getFixedDelay());
     }
 
     @Test
@@ -66,10 +66,10 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
         // then
         assertTrue(cleanup.isEnabled());
-        assertEquals(100, cleanup.getBatchSize());
-        assertEquals(Duration.ofHours(1), cleanup.getTtl());
+        assertEquals(200, cleanup.getBatchSize());
+        assertEquals(Duration.ofHours(24), cleanup.getTtl());
         assertEquals(Duration.ofSeconds(200), cleanup.getInitialDelay());
-        assertEquals(Duration.ofSeconds(5), cleanup.getFixedDelay());
+        assertEquals(Duration.ofMillis(200), cleanup.getFixedDelay());
     }
 
     @Test
@@ -106,9 +106,9 @@ public class OutboxPropertiesCleanUpPublisherPropertiesUnitTests {
 
         // then
         assertTrue(cleanup.isEnabled());
-        assertEquals(100, cleanup.getBatchSize());
-        assertEquals(Duration.ofHours(1), cleanup.getTtl());
+        assertEquals(200, cleanup.getBatchSize());
+        assertEquals(Duration.ofHours(24), cleanup.getTtl());
         assertEquals(Duration.ofSeconds(120), cleanup.getInitialDelay());
-        assertEquals(Duration.ofSeconds(5), cleanup.getFixedDelay());
+        assertEquals(Duration.ofMillis(200), cleanup.getFixedDelay());
     }
 }

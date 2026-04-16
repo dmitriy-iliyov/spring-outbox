@@ -167,7 +167,7 @@ class DefaultOutboxProcessorVerifier {
         return event;
     }
 
-    private OutboxPublisherPropertiesHolder.EventPropertiesHolder createProperties(int batchSize, int maxRetries, long backoffMultiplier, long backoffDelay) {
+    private OutboxPublisherPropertiesHolder.EventPropertiesHolder createProperties(int batchSize, int maxRetries, double backoffMultiplier, long backoffDelay) {
         OutboxPublisherPropertiesHolder.EventPropertiesHolder props = mock(OutboxPublisherPropertiesHolder.EventPropertiesHolder.class);
         when(props.getEventType()).thenReturn("ORDER_CREATED");
         when(props.getBatchSize()).thenReturn(batchSize);

@@ -54,7 +54,7 @@ public class OutboxAutoConfiguration {
 
     @Bean(destroyMethod = "shutdown")
     public ScheduledExecutorService outboxScheduledExecutorService() {
-        CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("outbox-thread-");
+        CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("otbx-thread-");
         threadFactory.setDaemon(true);
         threadFactory.setThreadPriority(Thread.NORM_PRIORITY);
         return Executors.newScheduledThreadPool(
