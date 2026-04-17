@@ -54,7 +54,7 @@ public class OutboxManagerMetricsDecoratorUnitTests {
     @DisplayName("UT finalizeBatch(): when event isn't empty and eventType != null, should delegate and involve counters")
     public void finalizeBatch_whenArgumentsValid_shouldDelegateAndGetCount() {
         // given
-        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "test-event-type", "payloadType", "{}");
+        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "test-event-type", "payloadType", "{}", Instant.now());
         List<OutboxEvent> events = List.of(event);
         Set<UUID> processedIds = Set.of(UUID.randomUUID(), UUID.randomUUID());
         Set<UUID> failedIds = Set.of(UUID.randomUUID());
@@ -89,7 +89,7 @@ public class OutboxManagerMetricsDecoratorUnitTests {
     @DisplayName("UT finalizeBatch(): when event eventType == null, should delegate and not involve counters")
     public void finalizeBatch_whenEventTypeIsNull_shouldDelegateAndGetCount() {
         // given
-        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), null, "payloadType", "{}");
+        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), null, "payloadType", "{}", Instant.now());
         List<OutboxEvent> events = List.of(event);
         Set<UUID> processedIds = Set.of(UUID.randomUUID(), UUID.randomUUID());
         Set<UUID> failedIds = Set.of(UUID.randomUUID());
