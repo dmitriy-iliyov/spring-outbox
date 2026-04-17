@@ -24,21 +24,21 @@ import java.util.function.Supplier;
 public final class OutboxDatabasePopulatorFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDatabasePopulatorFactory.class);
-    private static final Map<DatabaseType, Map<SupplierType, Supplier<Resource>>> OUTBOX_TABLE_SUPPLIERS = Map.of(
+    private static final Map<DatabaseType, Map<TableSupplierType, Supplier<Resource>>> OUTBOX_TABLE_SUPPLIERS = Map.of(
             DatabaseType.POSTGRESQL, Map.of(
-                    SupplierType.OUTBOX_TABLE, new PostgreSqlOutboxTableSqlResourceSupplier(),
-                    SupplierType.OUTBOX_DLQ_TABLE, new PostgreSqlOutboxDlqTableSqlResourceSupplier(),
-                    SupplierType.CONSUMED_OUTBOX_TABLE, new PostgreSqlOutboxConsumedTableSqlResourceSupplier()
+                    TableSupplierType.OUTBOX, new PostgreSqlOutboxTableSqlResourceSupplier(),
+                    TableSupplierType.OUTBOX_DLQ, new PostgreSqlOutboxDlqTableSqlResourceSupplier(),
+                    TableSupplierType.CONSUMED_OUTBOX, new PostgreSqlOutboxConsumedTableSqlResourceSupplier()
             ),
             DatabaseType.MYSQL, Map.of(
-                    SupplierType.OUTBOX_TABLE, new MySqlOutboxTableSqlResourceSupplier(),
-                    SupplierType.OUTBOX_DLQ_TABLE, new MySqlOutboxDlqTableSqlResourceSupplier(),
-                    SupplierType.CONSUMED_OUTBOX_TABLE, new MySqlOutboxConsumedTableSqlResourceSupplier()
+                    TableSupplierType.OUTBOX, new MySqlOutboxTableSqlResourceSupplier(),
+                    TableSupplierType.OUTBOX_DLQ, new MySqlOutboxDlqTableSqlResourceSupplier(),
+                    TableSupplierType.CONSUMED_OUTBOX, new MySqlOutboxConsumedTableSqlResourceSupplier()
             ),
             DatabaseType.ORACLE, Map.of(
-                    SupplierType.OUTBOX_TABLE, new OracleOutboxTableSqlResourceSupplier(),
-                    SupplierType.OUTBOX_DLQ_TABLE, new OracleOutboxDlqTableSqlResourceSupplier(),
-                    SupplierType.CONSUMED_OUTBOX_TABLE, new OracleOutboxConsumedTableSqlResourceSupplier()
+                    TableSupplierType.OUTBOX, new OracleOutboxTableSqlResourceSupplier(),
+                    TableSupplierType.OUTBOX_DLQ, new OracleOutboxDlqTableSqlResourceSupplier(),
+                    TableSupplierType.CONSUMED_OUTBOX, new OracleOutboxConsumedTableSqlResourceSupplier()
             )
     );
 
@@ -58,19 +58,19 @@ public final class OutboxDatabasePopulatorFactory {
         DatabaseType databaseType;
         try (Connection connection = dataSource.getConnection()) {
             databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());
-            Map<SupplierType, Supplier<Resource>> suppliers = OUTBOX_TABLE_SUPPLIERS.get(databaseType);
+            Map<TableSupplierType, Supplier<Resource>> suppliers = OUTBOX_TABLE_SUPPLIERS.get(databaseType);
             if (suppliers == null) {
                 log.error("Unsupported database type: {}", databaseType);
                 throw new IllegalStateException("Suppliers not found for database: " + databaseType);
             }
-            Supplier<Resource> outboxSupplier = suppliers.get(SupplierType.OUTBOX_TABLE);
+            Supplier<Resource> outboxSupplier = suppliers.get(TableSupplierType.OUTBOX);
             if (outboxSupplier == null || databaseType == null) {
                 log.error("Unsupported database: {}", databaseType);
                 throw new IllegalStateException("Supplier for outbox_events not found, database: " + databaseType);
             }
             scripts.add(outboxSupplier.get());
             if (properties.getPublisher().getDlq() != null && properties.getPublisher().getDlq().isEnabled()) {
-                Supplier<Resource> dlqSupplier = suppliers.get(SupplierType.OUTBOX_DLQ_TABLE);
+                Supplier<Resource> dlqSupplier = suppliers.get(TableSupplierType.OUTBOX_DLQ);
                 if (dlqSupplier == null) {
                     log.error("Supplier for outbox_dlq_events not found, database: {}", databaseType);
                     throw new IllegalStateException("Supplier for outbox_dlq_events not found, database: " + databaseType);
@@ -78,7 +78,7 @@ public final class OutboxDatabasePopulatorFactory {
                 scripts.add(dlqSupplier.get());
             }
             if (properties.getConsumer() != null && properties.getConsumer().isEnabled()) {
-                Supplier<Resource> consumedSupplier = suppliers.get(SupplierType.CONSUMED_OUTBOX_TABLE);
+                Supplier<Resource> consumedSupplier = suppliers.get(TableSupplierType.CONSUMED_OUTBOX);
                 if (consumedSupplier == null) {
                     log.error("Supplier for outbox_consumed_events not found, database: {}", databaseType);
                     throw new IllegalStateException("Supplier for outbox_consumed_events not found, database: " + databaseType);
