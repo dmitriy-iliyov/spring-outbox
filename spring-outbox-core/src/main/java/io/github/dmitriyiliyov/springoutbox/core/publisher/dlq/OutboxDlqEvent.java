@@ -11,8 +11,16 @@ public class OutboxDlqEvent extends OutboxEvent {
     private DlqStatus dlqStatus;
     private Instant movedAt;
 
-    public OutboxDlqEvent(UUID id, EventStatus status, String eventType, String payloadType, String payload,
-                          int retryCount, Instant nextRetryAt, Instant createdAt, Instant updatedAt, DlqStatus dlqStatus,
+    public OutboxDlqEvent(UUID id,
+                          EventStatus status,
+                          String eventType,
+                          String payloadType,
+                          String payload,
+                          int retryCount,
+                          Instant nextRetryAt,
+                          Instant createdAt,
+                          Instant updatedAt,
+                          DlqStatus dlqStatus,
                           Instant movedAt) {
         super(id, status, eventType, payloadType, payload, retryCount, nextRetryAt, createdAt, updatedAt);
         this.dlqStatus = dlqStatus;

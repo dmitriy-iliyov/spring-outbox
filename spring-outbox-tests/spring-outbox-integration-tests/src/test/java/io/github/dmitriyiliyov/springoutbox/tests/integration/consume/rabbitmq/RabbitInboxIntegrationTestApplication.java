@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
 
 import io.github.dmitriyiliyov.springoutbox.starter.EnableOutbox;
+import io.github.dmitriyiliyov.springoutbox.tests.integration.ClockConfig;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared.InboxIntegrationTestsConfig;
 import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -23,7 +24,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableRabbit
 @Import({
         InboxIntegrationTestsConfig.class,
-        RabbitMqIntegrationTestsConfig.class
+        RabbitMqIntegrationTestsConfig.class,
+        ClockConfig.class
 })
 public class RabbitInboxIntegrationTestApplication {
 }

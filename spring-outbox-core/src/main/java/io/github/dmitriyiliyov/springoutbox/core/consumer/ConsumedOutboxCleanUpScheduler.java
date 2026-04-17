@@ -16,7 +16,8 @@ public final class ConsumedOutboxCleanUpScheduler implements OutboxScheduler {
     private final ScheduledExecutorService executor;
     private final ConsumedOutboxManager manager;
 
-    public ConsumedOutboxCleanUpScheduler(OutboxPropertiesHolder.CleanUpPropertiesHolder properties, ScheduledExecutorService executor,
+    public ConsumedOutboxCleanUpScheduler(OutboxPropertiesHolder.CleanUpPropertiesHolder properties,
+                                          ScheduledExecutorService executor,
                                           ConsumedOutboxManager manager) {
         this.properties = properties;
         this.executor = executor;

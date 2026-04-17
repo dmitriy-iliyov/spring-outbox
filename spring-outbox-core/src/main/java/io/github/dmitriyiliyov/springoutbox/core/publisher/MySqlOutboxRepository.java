@@ -8,6 +8,7 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
@@ -15,13 +16,15 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-// MySql 8.0.0+
 public class MySqlOutboxRepository extends AbstractOutboxRepository {
 
     protected final ResultSetMapper mapper;
 
-    public MySqlOutboxRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
-        super(jdbcTemplate, idHelper);
+    public MySqlOutboxRepository(JdbcTemplate jdbcTemplate,
+                                 Clock clock,
+                                 SqlIdHelper idHelper,
+                                 ResultSetMapper mapper) {
+        super(jdbcTemplate, clock, idHelper);
         this.mapper = mapper;
     }
 
@@ -41,7 +44,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                 ps -> {
                     ps.setString(1, eventType);
                     ps.setString(2, status.name());
-                    ps.setTimestamp(3, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(3, Timestamp.from(clock.instant()));
                     ps.setInt(4, batchSize);
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
@@ -82,7 +85,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
-        Instant updatedAt = Instant.now();
+        Instant updatedAt = clock.instant();
         jdbcTemplate.update(
                 lockSql,
                 ps -> {
@@ -117,7 +120,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                 sql,
                 ps -> {
                     ps.setString(1, newStatus.name());
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(2, Timestamp.from(clock.instant()));
                     ps.setString(3, status.name());
                     ps.setTimestamp(4, Timestamp.from(threshold));
                     ps.setInt(5, batchSize);

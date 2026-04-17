@@ -4,6 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashSet;
@@ -12,10 +13,12 @@ import java.util.UUID;
 
 public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
-    private final JdbcTemplate jdbcTemplate;
+    protected final JdbcTemplate jdbcTemplate;
+    protected final Clock clock;
 
-    public PostgreSqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate) {
+    public PostgreSqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate, Clock clock) {
         this.jdbcTemplate = jdbcTemplate;
+        this.clock = clock;
     }
 
     @Override
@@ -29,7 +32,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
                 sql,
                 ps -> {
                     ps.setObject(1, id);
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(2, Timestamp.from(clock.instant()));
                 }
         );
     }
@@ -45,7 +48,7 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
                 ON CONFLICT (id) DO NOTHING
                 RETURNING id
         """.formatted(RepositoryUtils.generateValuesPlaceholders(ids.size(), 2));
-        Instant consumedAt = Instant.now();
+        Instant consumedAt = clock.instant();
         return new HashSet<>(
                 jdbcTemplate.query(
                         sql,

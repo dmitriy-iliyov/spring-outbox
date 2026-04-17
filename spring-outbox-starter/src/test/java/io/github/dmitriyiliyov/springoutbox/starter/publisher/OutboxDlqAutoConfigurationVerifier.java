@@ -17,6 +17,8 @@ import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfigu
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.Clock;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OutboxDlqAutoConfigurationVerifier {
@@ -46,6 +48,7 @@ public class OutboxDlqAutoConfigurationVerifier {
                         KafkaAutoConfiguration.class
                 ))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
                         "spring.datasource.url=" + dbUrl,
                         "spring.datasource.driver-class-name=" + dbDriver,
@@ -88,6 +91,12 @@ public class OutboxDlqAutoConfigurationVerifier {
     public void shouldRegisterDefaultOutboxDlqHandler() {
         getBaseContextRunner().run(ctx ->
                 assertThat(ctx).hasSingleBean(OutboxDlqHandler.class)
+        );
+    }
+
+    public void shouldRegisterDefaultOutboxDlqEventMapper() {
+        getBaseContextRunner().run(ctx ->
+                assertThat(ctx).hasSingleBean(DefaultOutboxDlqEventMapper.class)
         );
     }
 

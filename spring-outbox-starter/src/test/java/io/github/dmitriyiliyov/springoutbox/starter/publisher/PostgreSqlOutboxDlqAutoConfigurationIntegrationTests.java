@@ -81,6 +81,12 @@ class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should register OutboxDlqEventMapper bean")
+    void shouldRegisterOutboxDlqEventMapper() {
+        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
+    }
+
+    @Test
     @DisplayName("IT should registered only OutboxDlqManagerMetricsDecorator when gauge is missed")
     void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
         verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed();

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.net.URI;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,12 @@ public class OutboxDlqControllerAdvice {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqControllerAdvice.class);
 
+    private final Clock clock;
+
+    public OutboxDlqControllerAdvice(Clock clock) {
+        this.clock = clock;
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ProblemDetail> handleException(Exception e, HttpServletRequest request) {
         log.error("Unexpected error: {}", request.getRequestURI(), e);
@@ -35,7 +42,7 @@ public class OutboxDlqControllerAdvice {
                 "Internal Server Error",
                 e.getMessage(),
                 request.getRequestURI(),
-                Instant.now()
+                clock.instant()
         );
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -50,7 +57,7 @@ public class OutboxDlqControllerAdvice {
                 "Not Found",
                 e.getDetail(),
                 request.getRequestURI(),
-                Instant.now()
+                clock.instant()
         );
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
@@ -65,7 +72,7 @@ public class OutboxDlqControllerAdvice {
                 "Bad Request",
                 e.getDetail(),
                 request.getRequestURI(),
-                Instant.now()
+                clock.instant()
         );
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
@@ -80,7 +87,7 @@ public class OutboxDlqControllerAdvice {
                 "Validation Failed",
                 "Request validation failed",
                 request.getRequestURI(),
-                Instant.now()
+                clock.instant()
         );
 
         List<Map<String, String>> errors = new ArrayList<>();
@@ -109,7 +116,7 @@ public class OutboxDlqControllerAdvice {
                 "Validation Failed",
                 "Constraint validation failed",
                 request.getRequestURI(),
-                Instant.now()
+                clock.instant()
         );
         List<Map<String, String>> violations = e.getConstraintViolations().stream()
                 .map(v -> Map.of("property", v.getPropertyPath().toString(), "message", v.getMessage()))
@@ -130,7 +137,7 @@ public class OutboxDlqControllerAdvice {
                 "Database Access Error",
                 "A database operation failed: " + e.getMostSpecificCause().getMessage(),
                 request.getRequestURI(),
-                Instant.now()
+                clock.instant()
         );
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)

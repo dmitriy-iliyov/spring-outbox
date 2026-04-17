@@ -22,6 +22,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.net.URI;
+import java.time.Clock;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,11 +38,14 @@ class OutboxDlqControllerAdviceUnitTests {
     @Mock
     HttpServletRequest request;
 
+    @Mock
+    Clock clock;
+
     OutboxDlqControllerAdvice tested;
 
     @BeforeEach
     void setUp() {
-        tested = new OutboxDlqControllerAdvice();
+        tested = new OutboxDlqControllerAdvice(clock);
         when(request.getRequestURI()).thenReturn("/test/uri");
     }
 

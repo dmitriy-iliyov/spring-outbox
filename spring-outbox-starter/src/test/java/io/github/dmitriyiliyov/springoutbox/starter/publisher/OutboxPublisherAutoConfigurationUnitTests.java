@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +45,9 @@ class OutboxPublisherAutoConfigurationUnitTests {
 
     @Mock
     private OutboxManager manager;
+
+    @Mock
+    private Clock clock;
 
     @Mock
     private ConfigurableListableBeanFactory factory;
@@ -144,51 +148,6 @@ class OutboxPublisherAutoConfigurationUnitTests {
         assertThat(cache).isInstanceOf(SimpleOutboxCache.class);
     }
 
-//    @Test
-//    @DisplayName("UT outboxManager returns default manager when metrics disabled")
-//    void outboxManager_metricsDisabled_returnsDefault() {
-//        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-//        metrics.setEnabled(false);
-//        props.setMetrics(metrics);
-//
-//        OutboxRepository repository = mock(OutboxRepository.class);
-//        MeterRegistry registry = mock(MeterRegistry.class);
-//
-//        OutboxManager manager = config.outboxManager(repository, registry);
-//
-//        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
-//    }
-//
-//    @Test
-//    @DisplayName("UT outboxManager returns default manager when metrics null")
-//    void outboxManager_metricsNull_returnsDefault() {
-//        props.setMetrics(null);
-//
-//        OutboxRepository repository = mock(OutboxRepository.class);
-//        MeterRegistry registry = mock(MeterRegistry.class);
-//
-//        OutboxManager manager = config.outboxManager(repository, registry);
-//
-//        assertThat(manager).isInstanceOf(DefaultOutboxManager.class);
-//    }
-//
-//    @Test
-//    @DisplayName("UT outboxManager returns metrics decorator when metrics enabled")
-//    void outboxManager_metricsEnabled_returnsDecorator() {
-//        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-//        metrics.setEnabled(true);
-//        props.setMetrics(metrics);
-//        props.setEvents(Map.of());
-//
-//        OutboxRepository repository = mock(OutboxRepository.class);
-//        MeterRegistry registry = mock(MeterRegistry.class);
-//        when(registry.counter(anyString(), anyString(), anyString())).thenReturn(mock(Counter.class));
-//
-//        OutboxManager manager = config.outboxManager(repository, registry);
-//
-//        assertThat(manager).isInstanceOf(OutboxManagerMetricsDecorator.class);
-//    }
-
     @Test
     @DisplayName("UT outboxSchedulersInitializer should register publisher and recovery schedulers when cleanup is disabled")
     void shouldRegisterPublisherAndRecoverySchedulers() {
@@ -202,7 +161,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
                     .thenReturn("testEventOutboxPublisherScheduler");
 
             SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    mockedPublisherProperties, executor, processor, manager, factory
+                    mockedPublisherProperties, executor, processor, manager, clock, factory
             );
 
             initializer.afterSingletonsInstantiated();
@@ -227,7 +186,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
             when(factory.containsBean("testEventOutboxPublisherScheduler")).thenReturn(true);
 
             SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    mockedPublisherProperties, executor, processor, manager, factory
+                    mockedPublisherProperties, executor, processor, manager, clock, factory
             );
 
             initializer.afterSingletonsInstantiated();
@@ -245,7 +204,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
         when(mockedPublisherProperties.getCleanUp()).thenReturn(mock(OutboxProperties.CleanUpProperties.class));
 
         SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                mockedPublisherProperties, executor, processor, manager, factory
+                mockedPublisherProperties, executor, processor, manager, clock, factory
         );
 
         initializer.afterSingletonsInstantiated();
@@ -262,7 +221,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
         when(mockedPublisherProperties.getCleanUp()).thenReturn(null);
 
         SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                mockedPublisherProperties, executor, processor, manager, factory
+                mockedPublisherProperties, executor, processor, manager, clock, factory
         );
 
         assertThatThrownBy(initializer::afterSingletonsInstantiated)

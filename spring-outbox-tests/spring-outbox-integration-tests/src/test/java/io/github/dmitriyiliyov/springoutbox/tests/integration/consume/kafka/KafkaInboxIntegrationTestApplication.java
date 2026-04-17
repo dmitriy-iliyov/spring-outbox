@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.kafka;
 
 import io.github.dmitriyiliyov.springoutbox.starter.EnableOutbox;
+import io.github.dmitriyiliyov.springoutbox.tests.integration.ClockConfig;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared.InboxIntegrationTestsConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableOutbox
 @Import({
         InboxIntegrationTestsConfig.class,
-        KafkaIntegrationTestsConfig.class
+        KafkaIntegrationTestsConfig.class,
+        ClockConfig.class
 })
 public class KafkaInboxIntegrationTestApplication { }

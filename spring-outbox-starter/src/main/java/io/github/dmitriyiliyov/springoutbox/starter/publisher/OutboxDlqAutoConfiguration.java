@@ -24,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -95,11 +96,18 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxDlqTransfer outboxDlqTransfer(OutboxManager manager,
+    public OutboxDlqEventMapper outboxDlqEventMapper(Clock clock) {
+        return new DefaultOutboxDlqEventMapper(clock);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public OutboxDlqTransfer outboxDlqTransfer(TransactionTemplate transactionTemplate,
+                                               OutboxManager manager,
                                                OutboxDlqManager dlqManager,
-                                               OutboxDlqHandler handler,
-                                               TransactionTemplate transactionTemplate) {
-        return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, handler);
+                                               OutboxDlqEventMapper mapper,
+                                               OutboxDlqHandler handler) {
+        return new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, mapper, handler);
     }
 
     @Bean
@@ -135,8 +143,8 @@ public class OutboxDlqAutoConfiguration {
 
     @Bean
     @ConditionalOnClass(OutboxDlqControllerAdvice.class)
-    public OutboxDlqControllerAdvice outboxDlqControllerAdvice() {
-        return new OutboxDlqControllerAdvice();
+    public OutboxDlqControllerAdvice outboxDlqControllerAdvice(Clock clock) {
+        return new OutboxDlqControllerAdvice(clock);
     }
 
     @Bean

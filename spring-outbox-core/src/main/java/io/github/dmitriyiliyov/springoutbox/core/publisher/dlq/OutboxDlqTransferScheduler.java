@@ -16,7 +16,8 @@ public final class OutboxDlqTransferScheduler implements OutboxScheduler {
     private final ScheduledExecutorService executor;
     private final OutboxDlqTransfer transfer;
 
-    public OutboxDlqTransferScheduler(OutboxPublisherPropertiesHolder.DlqPropertiesHolder properties, ScheduledExecutorService executor,
+    public OutboxDlqTransferScheduler(OutboxPublisherPropertiesHolder.DlqPropertiesHolder properties,
+                                      ScheduledExecutorService executor,
                                       OutboxDlqTransfer transfer) {
         this.properties = properties;
         this.executor = executor;

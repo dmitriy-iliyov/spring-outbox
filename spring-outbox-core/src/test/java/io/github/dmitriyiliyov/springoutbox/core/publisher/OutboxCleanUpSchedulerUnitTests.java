@@ -9,6 +9,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ScheduledExecutorService;
@@ -29,6 +30,9 @@ class OutboxCleanUpSchedulerUnitTests {
 
     @Mock
     private OutboxManager manager;
+
+    @Mock
+    private Clock clock;
 
     @InjectMocks
     private OutboxCleanUpScheduler scheduler;
@@ -64,6 +68,7 @@ class OutboxCleanUpSchedulerUnitTests {
         when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
         when(properties.getTtl()).thenReturn(ttl);
         when(properties.getBatchSize()).thenReturn(batchSize);
+        when(clock.instant()).thenReturn(Instant.now());
 
         // when
         scheduler.schedule();
@@ -84,6 +89,7 @@ class OutboxCleanUpSchedulerUnitTests {
         when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
         when(properties.getTtl()).thenReturn(Duration.ZERO);
         when(properties.getBatchSize()).thenReturn(1);
+        when(clock.instant()).thenReturn(Instant.now());
         doThrow(new RuntimeException("error")).when(manager).deleteProcessedBatch(any(), anyInt());
 
         // when

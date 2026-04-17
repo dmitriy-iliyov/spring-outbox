@@ -6,7 +6,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
+import java.time.Clock;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -17,10 +17,12 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
 
     protected final OutboxManager manager;
     protected final OutboxSender sender;
+    protected final Clock clock;
 
-    public DefaultOutboxProcessor(OutboxManager manager, OutboxSender sender) {
+    public DefaultOutboxProcessor(OutboxManager manager, OutboxSender sender, Clock clock) {
         this.manager = manager;
         this.sender = sender;
+        this.clock = clock;
     }
 
     @Override
@@ -29,11 +31,11 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
         List<OutboxEvent> events = manager.loadBatch(properties.getEventType(), properties.getBatchSize());
         if (events == null) {
             log.warn("Outbox events is unexpectedly null, for eventType={}; timestamp={}",
-                    properties.getEventType(), Instant.now());
+                    properties.getEventType(), clock.instant());
             return;
         }
         if (events.isEmpty()) {
-            log.info("Outbox events is empty, for eventType={}; timestamp={}", properties.getEventType(), Instant.now());
+            log.info("Outbox events is empty, for eventType={}; timestamp={}", properties.getEventType(), clock.instant());
             return;
         }
         SenderResult result;
@@ -53,7 +55,7 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
                 result.processedIds(),
                 result.failedIds(),
                 properties.getMaxRetries(),
-                retryCount -> Instant.now().plusSeconds(
+                retryCount -> clock.instant().plusSeconds(
                         (long) Math.pow(properties.backoffMultiplier(), retryCount) * properties.backoffDelay()
                 )
         );

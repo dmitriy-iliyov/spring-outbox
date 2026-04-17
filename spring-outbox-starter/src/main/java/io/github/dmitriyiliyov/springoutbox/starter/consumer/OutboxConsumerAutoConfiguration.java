@@ -23,6 +23,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -42,15 +43,16 @@ public class OutboxConsumerAutoConfiguration {
     @ConditionalOnMissingBean
     public ConsumedOutboxRepository consumedOutboxRepository(
             DataSource dataSource,
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+            Clock clock
     ) {
-        return ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
+        return ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxManager consumedOutboxManager(ConsumedOutboxRepository repository) {
-        return new DefaultConsumedOutboxManager(repository);
+    public ConsumedOutboxManager consumedOutboxManager(ConsumedOutboxRepository repository, Clock clock) {
+        return new DefaultConsumedOutboxManager(repository, clock);
     }
 
     @Bean
@@ -81,8 +83,10 @@ public class OutboxConsumerAutoConfiguration {
             name = "enabled",
             havingValue = "true"
     )
-    public ConsumedOutboxManagerDecoratorSupplier consumedOutboxManagerCacheDecoratorFactory(CacheManager cacheManager,
-                                                                                             ConsumedOutboxCacheObserver cacheObserver) {
+    public ConsumedOutboxManagerDecoratorSupplier consumedOutboxManagerCacheDecoratorFactory(
+            CacheManager cacheManager,
+            ConsumedOutboxCacheObserver cacheObserver
+    ) {
         return new ConsumedOutboxManagerCacheDecoratorSupplier(
                 cacheManager,
                 properties.getCache().getCacheName(),

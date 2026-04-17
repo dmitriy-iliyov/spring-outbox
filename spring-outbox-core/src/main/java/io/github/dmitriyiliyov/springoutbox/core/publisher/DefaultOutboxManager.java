@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -20,9 +21,11 @@ public class DefaultOutboxManager implements OutboxManager {
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxManager.class);
 
     protected final OutboxRepository repository;
+    protected final Clock clock;
 
-    public DefaultOutboxManager(OutboxRepository repository) {
+    public DefaultOutboxManager(OutboxRepository repository, Clock clock) {
         this.repository = repository;
+        this.clock = clock;
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -109,7 +112,7 @@ public class DefaultOutboxManager implements OutboxManager {
                                     Math.min(newRetryCount, maxRetryCount),
                                     nextRetryAt,
                                     event.getCreatedAt(),
-                                    Instant.now()
+                                    clock.instant()
                             );
                 })
                 .toList();
@@ -120,7 +123,7 @@ public class DefaultOutboxManager implements OutboxManager {
     public int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
         int recoverSize = repository.updateBatchStatusByStatusAndThreshold(
                 EventStatus.IN_PROCESS,
-                Instant.now().minusSeconds(maxBatchProcessingTime.toSeconds()),
+                clock.instant().minusSeconds(maxBatchProcessingTime.toSeconds()),
                 batchSize,
                 EventStatus.PENDING
         );

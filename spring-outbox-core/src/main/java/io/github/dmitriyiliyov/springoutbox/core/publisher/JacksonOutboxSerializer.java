@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 
@@ -12,10 +13,12 @@ public class JacksonOutboxSerializer implements OutboxSerializer {
 
     private final ObjectMapper mapper;
     private final UuidGenerator uuidGenerator;
+    private final Clock clock;
 
-    public JacksonOutboxSerializer(ObjectMapper mapper, UuidGenerator uuidGenerator) {
+    public JacksonOutboxSerializer(ObjectMapper mapper, UuidGenerator uuidGenerator, Clock clock) {
         this.mapper = mapper;
         this.uuidGenerator = uuidGenerator;
+        this.clock = clock;
     }
 
     @Override
@@ -24,7 +27,7 @@ public class JacksonOutboxSerializer implements OutboxSerializer {
             UUID id = uuidGenerator.generate();
             String payloadType = event.getClass().getName();
             String payload = mapper.writeValueAsString(event);
-            return new OutboxEvent(id, eventType, payloadType, payload);
+            return new OutboxEvent(id, eventType, payloadType, payload, clock.instant());
         } catch (JsonProcessingException e) {
             throw new OutboxSerializationException("Error when serialize event", e);
         }

@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -29,6 +30,9 @@ public class AbstractOutboxRepositoryUnitTests {
     JdbcTemplate jdbcTemplate;
 
     @Mock
+    Clock clock;
+
+    @Mock
     SqlIdHelper idHelper;
 
     AbstractOutboxRepository tested;
@@ -36,7 +40,7 @@ public class AbstractOutboxRepositoryUnitTests {
     @BeforeEach
     void setUp() {
         tested = Mockito.spy(
-                new AbstractOutboxRepository(jdbcTemplate, idHelper) {
+                new AbstractOutboxRepository(jdbcTemplate, clock, idHelper) {
                     @Override
                     public List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize, EventStatus lockStatus) {
                         return List.of();

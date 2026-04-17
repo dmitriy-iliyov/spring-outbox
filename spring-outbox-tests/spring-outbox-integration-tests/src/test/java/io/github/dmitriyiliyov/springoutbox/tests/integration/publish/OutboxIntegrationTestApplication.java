@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.tests.integration.publish;
 
 import io.github.dmitriyiliyov.springoutbox.starter.EnableOutbox;
+import io.github.dmitriyiliyov.springoutbox.tests.integration.ClockConfig;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.publish.config.OutboxIntegrationTestsConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableOutbox
 @Import({
-        OutboxIntegrationTestsConfig.class
+        OutboxIntegrationTestsConfig.class,
+        ClockConfig.class
 })
 public class OutboxIntegrationTestApplication { }

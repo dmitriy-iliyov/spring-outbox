@@ -8,7 +8,7 @@ public class KafkaTestContainerSingleton {
     public static final KafkaContainer INSTANCE;
 
     static {
-        INSTANCE = new KafkaContainer(DockerImageName.parse("apache/kafka:3.8.0"))
+        INSTANCE = new KafkaContainer(DockerImageName.parse("apache/kafka:4.2.0"))
                 .withReuse(true);
         INSTANCE.start();
     }

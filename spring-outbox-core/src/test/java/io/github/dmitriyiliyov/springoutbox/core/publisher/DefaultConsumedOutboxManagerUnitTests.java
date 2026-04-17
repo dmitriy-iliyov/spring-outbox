@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 
@@ -22,6 +23,9 @@ public class DefaultConsumedOutboxManagerUnitTests {
 
     @Mock
     OutboxRepository repository;
+
+    @Mock
+    Clock clock;
 
     @InjectMocks
     DefaultOutboxManager tested;

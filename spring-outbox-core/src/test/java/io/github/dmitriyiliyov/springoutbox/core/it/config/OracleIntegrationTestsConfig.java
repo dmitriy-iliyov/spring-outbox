@@ -21,6 +21,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 
 @TestConfiguration
 @Profile("oracle-it")
@@ -44,18 +45,23 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
+    public Clock clock() {
+        return Clock.systemDefaultZone();
+    }
+
+    @Bean
     public OutboxDlqRepository oracleOutboxDlqRepository(DataSource dataSource) {
         return new OracleOutboxDlqRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
     }
 
     @Bean
-    public OutboxRepository oracleOutboxRepository(DataSource dataSource) {
-        return new OracleOutboxRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    public OutboxRepository oracleOutboxRepository(DataSource dataSource, Clock clock) {
+        return new OracleOutboxRepository(new JdbcTemplate(dataSource), clock, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
     }
 
     @Bean
-    public ConsumedOutboxRepository oracleConsumedOutboxRepository(DataSource dataSource) {
-        return new OracleConsumedOutboxRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    public ConsumedOutboxRepository oracleConsumedOutboxRepository(DataSource dataSource, Clock clock) {
+        return new OracleConsumedOutboxRepository(new JdbcTemplate(dataSource), clock, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
     }
 
     @Bean
@@ -69,20 +75,23 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxManager oracleOutboxManager(@Qualifier("oracleOutboxRepository") OutboxRepository repository) {
-        return new DefaultOutboxManager(repository);
+    public OutboxManager oracleOutboxManager(@Qualifier("oracleOutboxRepository") OutboxRepository repository,
+                                             Clock clock) {
+        return new DefaultOutboxManager(repository, clock);
     }
 
     @Bean
     public OutboxDlqTransfer oracleOutboxDlqTransfer(
             PlatformTransactionManager transactionManager,
             @Qualifier("oracleOutboxManager") OutboxManager manager,
-            @Qualifier("oracleOutboxDlqManager") OutboxDlqManager dlqManager
+            @Qualifier("oracleOutboxDlqManager") OutboxDlqManager dlqManager,
+            Clock clock
     ) {
         return new DefaultOutboxDlqTransfer(
                 new TransactionTemplate(transactionManager),
                 manager,
                 dlqManager,
+                new DefaultOutboxDlqEventMapper(clock),
                 new LogOutboxDlqHandler()
         );
     }

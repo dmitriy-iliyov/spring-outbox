@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
@@ -12,9 +13,11 @@ import java.util.stream.Collectors;
 public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
 
     protected final ConsumedOutboxRepository repository;
+    protected final Clock clock;
 
-    public DefaultConsumedOutboxManager(ConsumedOutboxRepository repository) {
+    public DefaultConsumedOutboxManager(ConsumedOutboxRepository repository, Clock clock) {
         this.repository = repository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -36,7 +39,7 @@ public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
     @Override
     public int cleanBatchByTtl(Duration ttl, int batchSize) {
         Objects.requireNonNull(ttl, "ttl cannot be null");
-        Instant threshold = Instant.now().minusSeconds(ttl.toSeconds());
+        Instant threshold = clock.instant().minusSeconds(ttl.toSeconds());
         return repository.deleteBatchByThreshold(threshold, batchSize);
     }
 }

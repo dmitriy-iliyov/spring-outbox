@@ -7,7 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.Clock;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -20,10 +20,12 @@ import java.util.UUID;
 public abstract class AbstractOutboxRepository implements OutboxRepository {
 
     protected final JdbcTemplate jdbcTemplate;
+    protected final Clock clock;
     protected final SqlIdHelper idHelper;
 
-    public AbstractOutboxRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper) {
+    public AbstractOutboxRepository(JdbcTemplate jdbcTemplate, Clock clock, SqlIdHelper idHelper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.clock = clock;
         this.idHelper = idHelper;
     }
 
@@ -92,7 +94,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                 sql,
                 ps -> {
                     ps.setString(1, newStatus.name());
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(2, Timestamp.from(clock.instant()));
                     idHelper.setIdsToPs(ps, 3, ids);
                 }
         );
@@ -118,7 +120,7 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
                     ps.setInt(1, event.getRetryCount());
                     ps.setString(2, event.getStatus().name());
                     ps.setTimestamp(3, Timestamp.from(event.getNextRetryAt()));
-                    ps.setTimestamp(4, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(4, Timestamp.from(clock.instant()));
                     idHelper.setIdToPs(ps, 5, event.getId());
                 }
         );

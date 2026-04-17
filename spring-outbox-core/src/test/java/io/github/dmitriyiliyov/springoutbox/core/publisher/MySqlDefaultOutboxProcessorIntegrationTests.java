@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.ByteBuffer;
+import java.time.Clock;
 import java.util.UUID;
 
 @Transactional
@@ -31,10 +32,13 @@ public class MySqlDefaultOutboxProcessorIntegrationTests extends BaseMySqlIntegr
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private Clock clock;
+
     @BeforeEach
     void setUp() {
         Mockito.reset(outboxSender);
-        DefaultOutboxProcessor processor = new DefaultOutboxProcessor(outboxManager, outboxSender);
+        DefaultOutboxProcessor processor = new DefaultOutboxProcessor(outboxManager, outboxSender, clock);
         this.verifier = new DefaultOutboxProcessorVerifier(
                 jdbcTemplate,
                 outboxRepository,

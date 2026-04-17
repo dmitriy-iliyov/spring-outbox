@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 
 @TestConfiguration
 @Profile("postgres-it")
@@ -46,18 +47,23 @@ public class PostgresSqlIntegrationTestsConfig {
     }
 
     @Bean
+    public Clock clock() {
+        return Clock.systemDefaultZone();
+    }
+
+    @Bean
     public OutboxDlqRepository postgresOutboxDlqRepository(DataSource dataSource) {
         return new PostgreSqlOutboxDlqRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper());
     }
 
     @Bean
-    public OutboxRepository postgresOutboxRepository(DataSource dataSource) {
-        return new PostgreSqlOutboxRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper());
+    public OutboxRepository postgresOutboxRepository(DataSource dataSource,  Clock clock) {
+        return new PostgreSqlOutboxRepository(new JdbcTemplate(dataSource), clock, new PostgreSqlIdHelper(), new DefaultResultSetMapper());
     }
 
     @Bean
-    public ConsumedOutboxRepository postgresConsumedOutboxRepository(DataSource dataSource) {
-        return new PostgreSqlConsumedOutboxRepository(new JdbcTemplate(dataSource));
+    public ConsumedOutboxRepository postgresConsumedOutboxRepository(DataSource dataSource, Clock clock) {
+        return new PostgreSqlConsumedOutboxRepository(new JdbcTemplate(dataSource), clock);
     }
 
     @Bean
@@ -71,20 +77,22 @@ public class PostgresSqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxManager postgresOutboxManager(@Qualifier("postgresOutboxRepository") OutboxRepository repository) {
-        return new DefaultOutboxManager(repository);
+    public OutboxManager postgresOutboxManager(@Qualifier("postgresOutboxRepository") OutboxRepository repository, Clock clock) {
+        return new DefaultOutboxManager(repository, clock);
     }
 
     @Bean
     public OutboxDlqTransfer postgresOutboxDlqTransfer(
             PlatformTransactionManager transactionManager,
             @Qualifier("postgresOutboxManager") OutboxManager manager,
-            @Qualifier("postgresOutboxDlqManager") OutboxDlqManager dlqManager
-            ) {
+            @Qualifier("postgresOutboxDlqManager") OutboxDlqManager dlqManager,
+            Clock clock
+    ) {
         return new DefaultOutboxDlqTransfer(
                 new TransactionTemplate(transactionManager),
                 manager,
                 dlqManager,
+                new DefaultOutboxDlqEventMapper(clock),
                 new LogOutboxDlqHandler()
         );
     }

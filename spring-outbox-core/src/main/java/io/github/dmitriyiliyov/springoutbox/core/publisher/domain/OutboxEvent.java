@@ -16,20 +16,31 @@ public class OutboxEvent {
     protected Instant createdAt;
     protected Instant updatedAt;
 
-    public OutboxEvent(UUID id, String eventType, String payloadType, String payload) {
+    public OutboxEvent(UUID id,
+                       String eventType,
+                       String payloadType,
+                       String payload,
+                       Instant createdAt) {
         this.id = id;
         this.status = EventStatus.PENDING;
         this.eventType = eventType;
         this.payloadType = payloadType;
         this.payload = payload;
         this.retryCount = -1;
-        this.nextRetryAt = Instant.now();
-        this.createdAt = Instant.now();
-        this.updatedAt = Instant.now();
+        this.nextRetryAt = createdAt;
+        this.createdAt = createdAt;
+        this.updatedAt = createdAt;
     }
 
-    public OutboxEvent(UUID id, EventStatus status, String eventType, String payloadType, String payload, int retryCount,
-                       Instant nextRetryAt, Instant createdAt, Instant updatedAt) {
+    public OutboxEvent(UUID id,
+                       EventStatus status,
+                       String eventType,
+                       String payloadType,
+                       String payload,
+                       int retryCount,
+                       Instant nextRetryAt,
+                       Instant createdAt,
+                       Instant updatedAt) {
         this.id = id;
         this.status = status;
         this.eventType = eventType;

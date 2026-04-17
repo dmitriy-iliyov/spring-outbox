@@ -45,6 +45,12 @@ class OracleOutboxDlqAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should register OutboxDlqEventMapper bean")
+    void shouldRegisterOutboxDlqEventMapper() {
+        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
+    }
+
+    @Test
     @DisplayName("IT should register OutboxDlqManager bean")
     void shouldRegisterOutboxDlqManager() {
         verifier.shouldRegisterOutboxDlqManager();

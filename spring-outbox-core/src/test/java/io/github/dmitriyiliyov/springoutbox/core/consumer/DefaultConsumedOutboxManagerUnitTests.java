@@ -8,6 +8,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Set;
@@ -26,11 +27,14 @@ class DefaultConsumedOutboxManagerUnitTests {
     @Mock
     private ConsumedOutboxRepository repository;
 
+    @Mock
+    private Clock clock;
+
     private DefaultConsumedOutboxManager manager;
 
     @BeforeEach
     void setUp() {
-        manager = new DefaultConsumedOutboxManager(repository);
+        manager = new DefaultConsumedOutboxManager(repository, clock);
     }
 
     @Test
@@ -151,6 +155,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         Duration ttl = Duration.ofHours(1);
         int batchSize = 100;
         when(repository.deleteBatchByThreshold(any(Instant.class), eq(batchSize))).thenReturn(50);
+        when(clock.instant()).thenReturn(Instant.now());
 
         // when
         int result = manager.cleanBatchByTtl(ttl, batchSize);
@@ -175,6 +180,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         Duration ttl = Duration.ofHours(24);
         int batchSize = 100;
         when(repository.deleteBatchByThreshold(any(Instant.class), eq(batchSize))).thenReturn(0);
+        when(clock.instant()).thenReturn(Instant.now());
 
         // when
         int result = manager.cleanBatchByTtl(ttl, batchSize);
@@ -191,6 +197,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         Duration ttl = Duration.ofMinutes(30);
         int batchSize = 50;
         when(repository.deleteBatchByThreshold(any(Instant.class), eq(batchSize))).thenReturn(25);
+        when(clock.instant()).thenReturn(Instant.now());
 
         // when
         int result = manager.cleanBatchByTtl(ttl, batchSize);
@@ -215,6 +222,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         Duration ttl = Duration.ZERO;
         int batchSize = 100;
         when(repository.deleteBatchByThreshold(any(Instant.class), eq(batchSize))).thenReturn(10);
+        when(clock.instant()).thenReturn(Instant.now());
 
         // when
         int result = manager.cleanBatchByTtl(ttl, batchSize);

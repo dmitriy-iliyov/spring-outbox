@@ -8,17 +8,20 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-// Oracle 23+
 public class OracleOutboxRepository extends AbstractOutboxRepository {
 
     protected final BytesSqlResultSetMapper mapper;
 
-    public OracleOutboxRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, BytesSqlResultSetMapper mapper) {
-        super(jdbcTemplate, idHelper);
+    public OracleOutboxRepository(JdbcTemplate jdbcTemplate,
+                                  Clock clock,
+                                  SqlIdHelper idHelper,
+                                  BytesSqlResultSetMapper mapper) {
+        super(jdbcTemplate, clock, idHelper);
         this.mapper = mapper;
     }
 
@@ -42,7 +45,7 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 ps -> {
                     ps.setString(1, eventType);
                     ps.setString(2, status.name());
-                    ps.setTimestamp(3, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(3, Timestamp.from(clock.instant()));
                     ps.setInt(4, batchSize);
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
@@ -87,7 +90,7 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 SET status = ?, updated_at = ?
             WHERE id IN(%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
-        Instant updatedAt = Instant.now();
+        Instant updatedAt = clock.instant();
         jdbcTemplate.update(
                 lockSql,
                 ps -> {
@@ -138,7 +141,7 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                 lockSql,
                 ps -> {
                     ps.setString(1, newStatus.name());
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(2, Timestamp.from(clock.instant()));
                     idHelper.setIdsToPs(ps, 3, ids);
                 }
         );

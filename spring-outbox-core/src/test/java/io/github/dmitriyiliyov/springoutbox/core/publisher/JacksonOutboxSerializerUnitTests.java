@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,11 +26,14 @@ public class JacksonOutboxSerializerUnitTests {
     @Mock
     UuidGenerator uuidGenerator;
 
+    @Mock
+    Clock clock;
+
     JacksonOutboxSerializer serializer;
 
     @BeforeEach
     void setup() {
-        serializer = new JacksonOutboxSerializer(mapper, uuidGenerator);
+        serializer = new JacksonOutboxSerializer(mapper, uuidGenerator, clock);
     }
 
     @Test

@@ -117,6 +117,12 @@ class MySqlOutboxDlqAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should register OutboxDlqEventMapper bean")
+    void shouldRegisterOutboxDlqEventMapper() {
+        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
+    }
+
+    @Test
     @DisplayName("IT should register OutboxDlqManagerMetricsDecorator as primary when metrics enabled")
     void shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled() {
         verifier.shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled();

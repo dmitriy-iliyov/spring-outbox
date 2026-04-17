@@ -16,6 +16,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.Clock;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class OutboxConsumerAutoConfigurationVerifier {
@@ -44,6 +46,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 ))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
                 .withBean(CacheManager.class, () -> new ConcurrentMapCacheManager("outbox"))
+                .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
                         "spring.datasource.url=" + dbUrl,
                         "spring.datasource.driver-class-name=" + dbDriver,

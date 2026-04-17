@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,9 +54,10 @@ public class OutboxPublisherAutoConfiguration {
     @ConditionalOnMissingBean
     public OutboxRepository outboxRepository(
             DataSource dataSource,
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+            Clock clock
     ) {
-        return OutboxRepositoryFactory.generate(dataSource, jdbcTemplate);
+        return OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
     }
 
     @Bean
@@ -84,8 +86,8 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxManager defaultOutboxManager(OutboxRepository repository) {
-        return new DefaultOutboxManager(repository);
+    public OutboxManager defaultOutboxManager(OutboxRepository repository, Clock clock) {
+        return new DefaultOutboxManager(repository, clock);
     }
 
     @Bean
@@ -107,8 +109,8 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxProcessor outboxProcessor(OutboxManager manager, OutboxSender sender) {
-        return new DefaultOutboxProcessor(manager, sender);
+    public OutboxProcessor outboxProcessor(OutboxManager manager, OutboxSender sender, Clock clock) {
+        return new DefaultOutboxProcessor(manager, sender, clock);
     }
 
     @Bean
@@ -117,6 +119,7 @@ public class OutboxPublisherAutoConfiguration {
             @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
             OutboxProcessor processor,
             OutboxManager manager,
+            Clock clock,
             ConfigurableListableBeanFactory factory
     ) {
         return () -> {
@@ -145,7 +148,7 @@ public class OutboxPublisherAutoConfiguration {
                 String cleanUpSchedulerBeanName = "outboxCleanUpScheduler";
                 factory.registerSingleton(
                         cleanUpSchedulerBeanName,
-                        new OutboxCleanUpScheduler(cleanUpProperties, executor, manager)
+                        new OutboxCleanUpScheduler(cleanUpProperties, executor, manager, clock)
                 );
                 log.debug("Created bean with beanName {}", cleanUpSchedulerBeanName);
             }
@@ -161,8 +164,8 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxSerializer outboxSerializer(UuidGenerator uuidGenerator) {
-        return new JacksonOutboxSerializer(mapper, uuidGenerator);
+    public OutboxSerializer outboxSerializer(UuidGenerator uuidGenerator, Clock clock) {
+        return new JacksonOutboxSerializer(mapper, uuidGenerator, clock);
     }
 
     @Bean

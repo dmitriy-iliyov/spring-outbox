@@ -14,9 +14,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.time.Clock;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * A factory for creating {@link ConsumedOutboxRepository} instances based on the detected database type.
@@ -26,14 +26,10 @@ import java.util.function.Function;
 public final class ConsumedOutboxRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(ConsumedOutboxRepositoryFactory.class);
-    private static final Map<DatabaseType, Function<JdbcTemplate, ConsumedOutboxRepository>> SUPPORTED_DB = Map.of(
-            DatabaseType.POSTGRESQL, PostgreSqlConsumedOutboxRepository::new,
-            DatabaseType.MYSQL, jdbcTemplate -> new MySqlConsumedOutboxRepository(
-                    jdbcTemplate, new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper()
-            ),
-            DatabaseType.ORACLE, jdbcTemplate -> new OracleConsumedOutboxRepository(
-                    jdbcTemplate, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper()
-            )
+    private static final Map<DatabaseType, ConsumedOutboxRepositorySupplier> SUPPORTED_DB = Map.of(
+            DatabaseType.POSTGRESQL, new PostgreSqlConsumedOutboxRepositorySupplier(),
+            DatabaseType.MYSQL, new MySqlConsumedOutboxRepositorySupplier(),
+            DatabaseType.ORACLE, new OracleConsumedOutboxRepositorySupplier()
     );
 
     private ConsumedOutboxRepositoryFactory() {}
@@ -48,11 +44,11 @@ public final class ConsumedOutboxRepositoryFactory {
      * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
      * @throws RuntimeException         if a database connection cannot be established.
      */
-    public static ConsumedOutboxRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
+    public static ConsumedOutboxRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate, Clock clock) {
         Objects.requireNonNull(dataSource, "dataSource cannot be null");
         try (Connection connection = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());
-            Function<JdbcTemplate, ConsumedOutboxRepository> supplier = SUPPORTED_DB.get(databaseType);
+            ConsumedOutboxRepositorySupplier supplier = SUPPORTED_DB.get(databaseType);
             if (supplier == null) {
                 log.error("Supplier is null because database is unsupported");
                 throw new IllegalArgumentException("Unsupported database " + databaseType);
@@ -60,13 +56,54 @@ public final class ConsumedOutboxRepositoryFactory {
             if (jdbcTemplate == null) {
                 throw new IllegalStateException("JdbcTemplate is null");
             }
-            return supplier.apply(jdbcTemplate);
+            if (clock == null) {
+                throw new IllegalStateException("Clock is null");
+            }
+            return supplier.supply(jdbcTemplate, clock);
         } catch (Exception e) {
             log.error("Error when connecting to database");
             if (e instanceof RuntimeException re) {
                 throw re;
             }
             throw new RuntimeException(e);
+        }
+    }
+
+    public interface ConsumedOutboxRepositorySupplier {
+        ConsumedOutboxRepository supply(JdbcTemplate jdbcTemplate, Clock clock);
+    }
+
+    public static class PostgreSqlConsumedOutboxRepositorySupplier implements ConsumedOutboxRepositorySupplier {
+
+        @Override
+        public ConsumedOutboxRepository supply(JdbcTemplate jdbcTemplate, Clock clock) {
+            return new PostgreSqlConsumedOutboxRepository(jdbcTemplate, clock);
+        }
+    }
+
+    public static class MySqlConsumedOutboxRepositorySupplier implements ConsumedOutboxRepositorySupplier {
+
+        @Override
+        public ConsumedOutboxRepository supply(JdbcTemplate jdbcTemplate, Clock clock) {
+            return new MySqlConsumedOutboxRepository(
+                    jdbcTemplate,
+                    clock,
+                    new MySqlIdHelper(),
+                    new DefaultBytesSqlResultSetMapper()
+            );
+        }
+    }
+
+    public static class OracleConsumedOutboxRepositorySupplier implements ConsumedOutboxRepositorySupplier{
+
+        @Override
+        public ConsumedOutboxRepository supply(JdbcTemplate jdbcTemplate, Clock clock) {
+            return new OracleConsumedOutboxRepository(
+                    jdbcTemplate,
+                    clock,
+                    new OracleSqlIdHelper(),
+                    new DefaultBytesSqlResultSetMapper()
+            );
         }
     }
 }

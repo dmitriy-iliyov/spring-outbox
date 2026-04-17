@@ -6,6 +6,7 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -13,11 +14,16 @@ import java.util.stream.Collectors;
 public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
     protected final JdbcTemplate jdbcTemplate;
+    protected final Clock clock;
     protected final BytesSqlIdHelper idHelper;
     protected final BytesSqlResultSetMapper mapper;
 
-    public MySqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper, BytesSqlResultSetMapper mapper) {
+    public MySqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate,
+                                         Clock clock,
+                                         BytesSqlIdHelper idHelper,
+                                         BytesSqlResultSetMapper mapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.clock = clock;
         this.idHelper = idHelper;
         this.mapper = mapper;
     }
@@ -32,7 +38,7 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
                 sql,
                 ps -> {
                     idHelper.setIdToPs(ps, 1, id);
-                    ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                    ps.setTimestamp(2, Timestamp.from(clock.instant()));
                 }
         );
     }
@@ -62,7 +68,7 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
             INSERT IGNORE INTO outbox_consumed_events(id, consumed_at)
             VALUES %s
         """.formatted(RepositoryUtils.generateValuesPlaceholders(nonExistsIds.size(), 2));
-        Instant consumedAt = Instant.now();
+        Instant consumedAt = clock.instant();
         int updatedRows = jdbcTemplate.update(
                 insertSql,
                 ps -> {
