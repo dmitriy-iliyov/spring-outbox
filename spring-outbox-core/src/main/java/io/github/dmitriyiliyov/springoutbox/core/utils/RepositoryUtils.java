@@ -1,8 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.core.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -11,7 +8,7 @@ import java.util.stream.IntStream;
 
 public final class RepositoryUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(RepositoryUtils.class);
+    private RepositoryUtils() {}
 
     public static boolean isIdsValid(Set<UUID> ids) {
         Objects.requireNonNull(ids, "ids cannot be null");
