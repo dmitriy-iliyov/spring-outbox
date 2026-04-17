@@ -16,6 +16,7 @@ import org.springframework.amqp.rabbit.core.ChannelCallback;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -86,8 +87,8 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when all events are acked individually, should return all in processedIds")
     void sendEvents_shouldSucceedWhenAllEventsAreAckedIndividually() throws Exception {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -116,8 +117,8 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when all events are acked with multiple flag, should return all in processedIds")
     void sendEvents_shouldSucceedWhenAllEventsAreAckedMultiple() throws Exception {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -144,8 +145,8 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when all events are nacked individually, should return all in failedIds")
     void sendEvents_shouldFailWhenAllEventsAreNackedIndividually() throws Exception {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -173,8 +174,8 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when all events are nacked with multiple flag, should return all in failedIds")
     void sendEvents_shouldFailWhenAllEventsAreNackedMultiple() throws Exception {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -201,8 +202,8 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when some events acked and some nacked, should split into processedIds and failedIds")
     void sendEvents_shouldHandleMixOfAcksAndNacks() throws Exception {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -230,8 +231,8 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when publish throws exception for one event, should mark that event as failed")
     void sendEvents_shouldMarkEventAsFailedWhenPublishThrowsException() throws Exception {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -261,7 +262,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when rabbitTemplate execute throws exception, should mark all events as failed")
     void sendEvents_shouldMarkAllAsFailedWhenExecuteThrowsException() {
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
         List<OutboxEvent> events = List.of(event1);
 
         doThrow(new AmqpException("Connection failed")).when(rabbitTemplate).execute(any(ChannelCallback.class));
@@ -276,8 +277,8 @@ class RabbitMqOutboxSenderUnitTests {
     @DisplayName("UT sendEvents(), when timeout expires before all confirms, should mark unconfirmed events as failed")
     void sendEvents_shouldMarkUnconfirmedAsFailedOnTimeout() throws Exception {
         rabbitMqOutboxSender = new RabbitMqOutboxSender(rabbitTemplate, 1);
-        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
-        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2");
+        OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
+        OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L, 2L);
@@ -304,7 +305,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when single event is acked, should return it in processedIds")
     void sendEvents_singleEvent_ackedIndividually_shouldSucceed() throws Exception {
-        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
+        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L);
 
@@ -330,7 +331,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when same delivery tag is acked twice, should not process it twice")
     void sendEvents_shouldNotProcessSameTagTwice() throws Exception {
-        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1");
+        OutboxEvent event = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
 
         when(channel.getNextPublishSeqNo()).thenReturn(1L);
 
