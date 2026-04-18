@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxHeaders;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.CacheableClassResolver;
+import org.apache.kafka.common.KafkaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -23,6 +24,16 @@ import java.util.concurrent.TimeUnit;
 public class KafkaOutboxSender implements OutboxSender {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaOutboxSender.class);
+
+    /**
+     * These exceptions will not cause the entire batch of events to fail
+     */
+    private static final Set<Class<? extends KafkaException>> IGNORABLE_EXCEPTIONS = Set.of(
+            org.apache.kafka.common.errors.RecordTooLargeException.class,
+            org.apache.kafka.common.errors.SerializationException.class,
+            org.apache.kafka.common.errors.InvalidTopicException.class,
+            org.apache.kafka.common.errors.UnknownTopicOrPartitionException.class
+    );
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final long emergencyTimeout;
@@ -93,6 +104,11 @@ public class KafkaOutboxSender implements OutboxSender {
     private boolean isInfrastructureError(Throwable t) {
         while (t != null) {
             if (t instanceof org.apache.kafka.common.KafkaException) {
+                for (Class<? extends KafkaException> e : IGNORABLE_EXCEPTIONS) {
+                    if (e.isInstance(t)) {
+                        return false;
+                    }
+                }
                 return true;
             }
             t = t.getCause();

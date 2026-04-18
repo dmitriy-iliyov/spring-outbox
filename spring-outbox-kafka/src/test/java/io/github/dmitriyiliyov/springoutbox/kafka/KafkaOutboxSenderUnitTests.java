@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.errors.SerializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,7 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -260,5 +262,57 @@ public class KafkaOutboxSenderUnitTests {
         verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
         verify(kafkaTemplate).send(any(Message.class));
         verifyNoMoreInteractions(kafkaTemplate, mapper);
+    }
+
+    @Test
+    @DisplayName("UT sendEvents() when detected ignorable Kafka infrastructure exception")
+    public void sendEvents_whenDetectedIgnorableKafkaInfrastructureException_shouldFailOnlyProblematicEvent() throws JsonProcessingException {
+        // given
+        String topic = "test-topic";
+
+        OutboxEvent validEvent = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "{}",
+                0,
+                Instant.now(),
+                Instant.now(),
+                null
+        );
+
+        OutboxEvent badEvent = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "{}",
+                0,
+                Instant.now(),
+                Instant.now(),
+                null
+        );
+
+        List<OutboxEvent> events = List.of(validEvent, badEvent);
+
+        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
+
+        when(kafkaTemplate.send(any(Message.class)))
+                .thenReturn(CompletableFuture.completedFuture(null))
+                .thenThrow(new org.apache.kafka.common.errors.SerializationException("Too big or bad format"));
+
+        // when
+        SenderResult result = tested.sendEvents(topic, events);
+
+        // then
+        assertTrue(result.processedIds().contains(validEvent.getId()), "Valid event should be processed");
+        assertTrue(result.failedIds().contains(badEvent.getId()), "Bad event should be failed");
+
+        assertEquals(1, result.processedIds().size());
+        assertEquals(1, result.failedIds().size());
+
+        verify(mapper, times(2)).readValue(anyString(), any(Class.class));
+        verify(kafkaTemplate, times(2)).send(any(Message.class));
     }
 }
