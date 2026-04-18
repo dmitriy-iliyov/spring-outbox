@@ -96,11 +96,11 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT GET / should return 200 with batch")
+    @DisplayName("IT GET /batch should return 200 with batch")
     void getBatch_validRequest_returns200() throws Exception {
         when(manager.loadBatch(any(BatchRequestProjection.class))).thenReturn(List.of(buildEvent(UUID.randomUUID())));
 
-        mockMvc.perform(get("/api/outbox-dlq/events")
+        mockMvc.perform(get("/api/outbox-dlq/events/batch")
                         .param("status", DlqStatus.RESOLVED.name())
                         .param("batchNumber", "1")
                         .param("batchSize", "10"))
@@ -108,12 +108,12 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT GET / when database error should return 500")
+    @DisplayName("IT GET /batch when database error should return 500")
     void getBatch_databaseError_returns500() throws Exception {
         when(manager.loadBatch(any(BatchRequestProjection.class)))
                 .thenThrow(new DataAccessException("DB error") {});
 
-        mockMvc.perform(get("/api/outbox-dlq/events")
+        mockMvc.perform(get("/api/outbox-dlq/events/batch")
                         .param("status", DlqStatus.RESOLVED.name())
                         .param("batchNumber", "1")
                         .param("batchSize", "10"))
@@ -192,7 +192,7 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT PATCH / should return 204")
+    @DisplayName("IT PATCH /batch should return 204")
     void updateBatchStatus_validRequest_returns204() throws Exception {
         BatchUpdateRequest request = new BatchUpdateRequest(
                 Set.of(UUID.randomUUID(), UUID.randomUUID()),
@@ -200,18 +200,18 @@ class OutboxDlqControllerIntegrationTests {
         );
         doNothing().when(manager).updateBatchStatus(any(BatchUpdateRequestProjection.class));
 
-        mockMvc.perform(patch("/api/outbox-dlq/events")
+        mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("IT PATCH / with empty ids should return 400")
+    @DisplayName("IT PATCH /batch with empty ids should return 400")
     void updateBatchStatus_emptyIds_returns400() throws Exception {
         BatchUpdateRequest request = new BatchUpdateRequest(Set.of(), DlqStatus.RESOLVED);
 
-        mockMvc.perform(patch("/api/outbox-dlq/events")
+        mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -220,9 +220,9 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT PATCH / with null status should return 400")
+    @DisplayName("IT PATCH /batch with null status should return 400")
     void updateBatchStatus_nullStatus_returns400() throws Exception {
-        mockMvc.perform(patch("/api/outbox-dlq/events")
+        mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ids\": [\"" + UUID.randomUUID() + "\"], \"status\": null}"))
                 .andExpect(status().isBadRequest())
@@ -230,7 +230,7 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT PATCH / when not found should return 404")
+    @DisplayName("IT PATCH /batch when not found should return 404")
     void updateBatchStatus_notFound_returns404() throws Exception {
         BatchUpdateRequest request = new BatchUpdateRequest(
                 Set.of(UUID.randomUUID()), DlqStatus.RESOLVED
@@ -238,14 +238,14 @@ class OutboxDlqControllerIntegrationTests {
         doThrow(new OutboxDlqEventNotFoundException("Not found"))
                 .when(manager).updateBatchStatus(any(BatchUpdateRequestProjection.class));
 
-        mockMvc.perform(patch("/api/outbox-dlq/events")
+        mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("IT PATCH / when database error should return 500")
+    @DisplayName("IT PATCH /batch when database error should return 500")
     void updateBatchStatus_databaseError_returns500() throws Exception {
         BatchUpdateRequest request = new BatchUpdateRequest(
                 Set.of(UUID.randomUUID()), DlqStatus.RESOLVED
@@ -253,7 +253,7 @@ class OutboxDlqControllerIntegrationTests {
         doThrow(new DataAccessException("DB error") {})
                 .when(manager).updateBatchStatus(any(BatchUpdateRequestProjection.class));
 
-        mockMvc.perform(patch("/api/outbox-dlq/events")
+        mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError())
@@ -304,25 +304,25 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT DELETE / should return 204")
+    @DisplayName("IT DELETE /batch should return 204")
     void deleteBatch_validRequest_returns204() throws Exception {
         DeleteBatchRequest request = new DeleteBatchRequest(
                 Set.of(UUID.randomUUID(), UUID.randomUUID())
         );
         when(manager.deleteBatchWithCheck(any())).thenReturn(2);
 
-        mockMvc.perform(delete("/api/outbox-dlq/events")
+        mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @DisplayName("IT DELETE / with empty ids should return 400")
+    @DisplayName("IT DELETE /batch with empty ids should return 400")
     void deleteBatch_emptyIds_returns400() throws Exception {
         DeleteBatchRequest request = new DeleteBatchRequest(Set.of());
 
-        mockMvc.perform(delete("/api/outbox-dlq/events")
+        mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -331,33 +331,33 @@ class OutboxDlqControllerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT DELETE / with null ids should return 400")
+    @DisplayName("IT DELETE /batch with null ids should return 400")
     void deleteBatch_nullIds_returns400() throws Exception {
-        mockMvc.perform(delete("/api/outbox-dlq/events")
+        mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ids\": null}"))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("IT DELETE / when not found should return 404")
+    @DisplayName("IT DELETE /batch when not found should return 404")
     void deleteBatch_notFound_returns404() throws Exception {
         DeleteBatchRequest request = new DeleteBatchRequest(Set.of(UUID.randomUUID()));
         when(manager.deleteBatchWithCheck(any())).thenThrow(new OutboxDlqEventNotFoundException("Not found"));
 
-        mockMvc.perform(delete("/api/outbox-dlq/events")
+        mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("IT DELETE / when database error should return 500")
+    @DisplayName("IT DELETE /batch when database error should return 500")
     void deleteBatch_databaseError_returns500() throws Exception {
         DeleteBatchRequest request = new DeleteBatchRequest(Set.of(UUID.randomUUID()));
         when(manager.deleteBatchWithCheck(any())).thenThrow(new DataAccessException("DB error") {});
 
-        mockMvc.perform(delete("/api/outbox-dlq/events")
+        mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError())

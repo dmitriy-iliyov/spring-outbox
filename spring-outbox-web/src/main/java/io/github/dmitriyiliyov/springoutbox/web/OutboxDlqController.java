@@ -1,70 +1,97 @@
 package io.github.dmitriyiliyov.springoutbox.web;
 
+import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqManager;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/outbox-dlq/events")
 public class OutboxDlqController {
 
-    private static final Logger log = LoggerFactory.getLogger(OutboxDlqController.class);
     private final OutboxDlqManager manager;
 
     public OutboxDlqController(OutboxDlqManager manager) {
         this.manager = manager;
-        log.warn("OutboxDlqController on '/api/outbox-dlq/events' path should be secured");
     }
 
+    @Operation(summary = "Get event by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Event successfully retrieved",
+                    content = @Content(schema = @Schema(implementation = OutboxDlqEvent.class))),
+            @ApiResponse(responseCode = "404", description = "Event not found")
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<?> get(@PathVariable("id") UUID id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(manager.loadById(id));
+    public OutboxDlqEvent get(@Parameter(description = "Id of the DLQ event", required = true)
+                              @PathVariable("id") UUID id) {
+        return manager.loadById(id);
     }
 
-    @GetMapping
-    public ResponseEntity<?> getBatch(@ModelAttribute @Valid BatchRequest request) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(manager.loadBatch(request));
+    @Operation(summary = "Get events by DLQ status with pagination")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200", description = "Event batch successfully retrieved",
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = OutboxDlqEvent.class)))
+            )
+    })
+    @GetMapping("/batch")
+    public List<OutboxDlqEvent> getBatch(@ModelAttribute @Valid BatchRequest request) {
+        return manager.loadBatch(request);
     }
 
+    @Operation(summary = "Update event's DLQ status")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Event successfully updated"),
+            @ApiResponse(responseCode = "404", description = "Event not found"),
+    })
     @PatchMapping("/{id}")
-    public ResponseEntity<?> updateStatus(@PathVariable("id") UUID id, @RequestBody @Valid DlqStatusDto dto) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateStatus(@Parameter(description = "Id of the DLQ event to update", required = true)
+                             @PathVariable("id") UUID id,
+                             @RequestBody @Valid DlqStatusDto dto) {
         manager.updateStatus(id, dto.status());
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 
-    @PatchMapping
-    public ResponseEntity<?> updateBatchStatus(@RequestBody @Valid BatchUpdateRequest request) {
+    @Operation(summary = "Update DLQ status for multiple events by ids")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Event batch successfully updated")
+    })
+    @PatchMapping("/batch")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateBatchStatus(@RequestBody @Valid BatchUpdateRequest request) {
         manager.updateBatchStatus(request);
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 
+    @Operation(summary = "Delete event by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Event successfully deleted"),
+            @ApiResponse(responseCode = "404", description = "Event not found"),
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") UUID id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@Parameter(description = "Id of the DLQ event to delete", required = true)
+                       @PathVariable("id") UUID id) {
         manager.deleteById(id);
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 
-    @DeleteMapping
-    public ResponseEntity<?> deleteBatch(@RequestBody @Valid DeleteBatchRequest request) {
+    @Operation(summary = "Delete multiple events by ids")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Event batch successfully deleted")
+    })
+    @DeleteMapping("/batch")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteBatch(@RequestBody @Valid DeleteBatchRequest request) {
         manager.deleteBatchWithCheck(request.ids());
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 }
