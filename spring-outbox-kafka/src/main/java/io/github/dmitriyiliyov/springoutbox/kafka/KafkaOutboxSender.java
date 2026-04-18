@@ -65,8 +65,17 @@ public class KafkaOutboxSender implements OutboxSender {
                 failedIds.add(event.getId());
                 log.error("Error when parsing event payload with id={} ", event.getId(), e);
             } catch (Exception e) {
+                log.error("Error when preparing event with id={} to send in topic={}", event.getId(), topic, e);
+                if (isInfrastructureError(e)) {
+                    failedIds.addAll(
+                            events.stream()
+                                    .map(OutboxEvent::getId)
+                                    .toList()
+                    );
+                    log.info("Mark whole '{}' event batch as failed", event.getEventType());
+                    return new SenderResult(Collections.emptySet(), new HashSet<>(failedIds));
+                }
                 failedIds.add(event.getId());
-                log.error("Error when sending event with id={} to topic={} ", event.getId(), topic, e);
             }
         }
         try {
@@ -79,5 +88,15 @@ public class KafkaOutboxSender implements OutboxSender {
                     .forEach(event -> failedIds.add(event.getId()));
         }
         return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
+    }
+
+    private boolean isInfrastructureError(Throwable t) {
+        while (t != null) {
+            if (t instanceof org.apache.kafka.common.KafkaException) {
+                return true;
+            }
+            t = t.getCause();
+        }
+        return false;
     }
 }

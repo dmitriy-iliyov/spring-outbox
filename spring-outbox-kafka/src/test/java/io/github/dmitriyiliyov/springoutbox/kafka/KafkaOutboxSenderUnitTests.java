@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
+import org.apache.kafka.common.KafkaException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -228,5 +229,36 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertEquals(Set.of(event.getId()), result.failedIds());
         assertEquals(Set.of(), result.processedIds());
+    }
+
+    @Test
+    @DisplayName("UT sendEvents() when detected Kafka infrastructure exception")
+    public void sendEvents_whenDetectedKafkaInfrastructureException_shouldFailWholeBatch() throws JsonProcessingException {
+        // given
+        String topic = "test-topic";
+        OutboxEvent event = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "invalid-json",
+                0,
+                Instant.now(),
+                Instant.now(),
+                Instant.now()
+        );
+        List<OutboxEvent> events = List.of(event);
+        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
+        when(kafkaTemplate.send(any(Message.class))).thenThrow(new KafkaException());
+
+        // when
+        SenderResult result = tested.sendEvents(topic, events);
+
+        // then
+        assertEquals(Set.of(event.getId()), result.failedIds());
+        assertEquals(Set.of(), result.processedIds());
+        verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
+        verify(kafkaTemplate).send(any(Message.class));
+        verifyNoMoreInteractions(kafkaTemplate, mapper);
     }
 }
