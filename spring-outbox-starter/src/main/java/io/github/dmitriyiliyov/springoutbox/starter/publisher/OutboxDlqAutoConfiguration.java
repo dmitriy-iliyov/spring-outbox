@@ -13,6 +13,8 @@ import io.github.dmitriyiliyov.springoutbox.web.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqControllerAdvice;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -32,6 +34,8 @@ import java.util.concurrent.ScheduledExecutorService;
 @Configuration
 @ConditionalOnProperty(prefix = "outbox.publisher.dlq", name = "enabled", havingValue = "true")
 public class OutboxDlqAutoConfiguration {
+
+    private static final Logger log = LoggerFactory.getLogger(OutboxDlqAutoConfiguration.class);
 
     @Bean
     @ConditionalOnMissingBean
@@ -132,6 +136,7 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnClass(OutboxDlqController.class)
     public OutboxDlqController outboxDlqController(OutboxDlqManager manager) {
+        log.warn("Outbox DLQ API is exposed at '/api/outbox-dlq/events' path should be secured");
         return new OutboxDlqController(manager);
     }
 
@@ -162,7 +167,7 @@ public class OutboxDlqAutoConfiguration {
     public OutboxDlqMetricsRepository outboxDlqMetricsRepository(
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
-        return new MultiSqlDialectOutboxDlqMetricsRepository(jdbcTemplate);
+        return new MultiDialectOutboxDlqMetricsRepository(jdbcTemplate);
     }
 
     @Bean

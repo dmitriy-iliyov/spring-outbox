@@ -198,7 +198,7 @@ public class OutboxPublisherAutoConfiguration {
     public OutboxMetricsRepository outboxMetricsRepository(
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
-        return new MultiSqlDialectOutboxMetricsRepository(jdbcTemplate);
+        return new MultiDialectOutboxMetricsRepository(jdbcTemplate);
     }
 
     @Bean
