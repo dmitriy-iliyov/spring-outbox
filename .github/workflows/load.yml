@@ -93,5 +93,5 @@ jobs:
 
       - name: Stop infrastructure
         if: always()
-        working-directory: ./spring-outbox-example
+        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
         run: COMPOSE_PROFILES=${{ matrix.db }} docker compose down -v
