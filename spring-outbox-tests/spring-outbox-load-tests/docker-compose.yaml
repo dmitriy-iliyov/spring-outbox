@@ -1,0 +1,59 @@
+name: spring-outbox-load-tests
+services:
+
+  outbox-producer-app:
+    container_name: outbox-producer-app
+    build:
+      context: ../..
+      dockerfile: ./spring-outbox-example/spring-outbox-producer-example/Dockerfile
+    image: outbox-producer-app
+    environment:
+      SPRING_PROFILES_ACTIVE: ${COMPOSE_PROFILES}
+    ports:
+      - "8080:8080"
+
+  outbox-producer-postgresql:
+    container_name: outbox-producer-postgresql
+    image: postgres:18-alpine
+    profiles: [ "postgres" ]
+    networks:
+      - default
+    environment:
+      POSTGRES_PASSWORD: root
+      POSTGRES_USER: admin
+      POSTGRES_DB: outbox_example
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  outbox-producer-mysql:
+    container_name: outbox-producer-mysql
+    image: mysql:8.0.1
+    profiles: [ "mysql" ]
+    networks:
+      - default
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: root
+      MYSQL_DATABASE: outbox_example
+    ports:
+      - "3306:3306"
+
+  outbox-producer-oracle:
+    container_name: outbox-producer-oracle
+    image: gvenzl/oracle-free:23
+    profiles: [ "oracle" ]
+    networks:
+      - default
+    environment:
+      ORACLE_PASSWORD: root
+      APP_USER: admin
+      ORACLE_DATABASE: outbox_example
+      APP_USER_PASSWORD: root
+    ports:
+      - "1521:1521"
+
+volumes:
+  pg_data:
