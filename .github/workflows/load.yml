@@ -69,6 +69,11 @@ jobs:
           echo "Database port is open, waiting extra 10s for full initialization..."
           sleep 10
 
+      - name: Show container logs
+        if: always()
+        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        run: docker compose logs --tail=100
+
       - name: Wait for application to be ready
         run: |
           if [ "${{ matrix.db }}" == "oracle" ]; then
@@ -78,6 +83,11 @@ jobs:
           fi
           echo "Waiting for producer app..."
           timeout $TIMEOUT bash -c 'until curl -sf http://localhost:8080/actuator/health | grep -q "UP"; do sleep 5; done'
+
+      - name: Show container logs on failure
+        if: failure()
+        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        run: docker compose logs --tail=200
 
       - name: Run Gatling Load Tests
         working-directory: ./spring-outbox-tests/spring-outbox-load-tests
