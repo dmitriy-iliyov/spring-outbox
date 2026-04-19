@@ -49,7 +49,7 @@ jobs:
           cache: maven
 
       - name: Start infrastructure
-        working-directory: ./spring-outbox-example
+        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
         run: COMPOSE_PROFILES=${{ matrix.db }} docker compose up -d --build
 
       - name: Wait for database to be ready
