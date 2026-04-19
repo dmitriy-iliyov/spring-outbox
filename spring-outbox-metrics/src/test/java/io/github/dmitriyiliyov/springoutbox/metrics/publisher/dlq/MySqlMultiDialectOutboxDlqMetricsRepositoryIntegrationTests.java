@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.metrics.publisher;
+package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.metrics.it_config.BaseMySqlIntegrationTests;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,22 +9,21 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-public class MySqlMultiSqlDialectOutboxMetricsRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
+class MySqlMultiDialectOutboxDlqMetricsRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
 
-    private final MySqlOutboxMetricsRepositoryVerifier verifier;
+    private final MySqlOutboxMetricsDlqRepositoryVerifier verifier;
 
-    MySqlMultiSqlDialectOutboxMetricsRepositoryIntegrationTests(
-            @Qualifier("mysqlMetricsRepo") MultiSqlDialectOutboxMetricsRepository repository,
+    MySqlMultiDialectOutboxDlqMetricsRepositoryIntegrationTests(
+            @Qualifier("mysqlDlqMetricsRepo") MultiDialectOutboxDlqMetricsRepository repository,
             @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
-        this.verifier = new MySqlOutboxMetricsRepositoryVerifier(repository, jdbcTemplate);
+        this.verifier = new MySqlOutboxMetricsDlqRepositoryVerifier(repository, jdbcTemplate);
     }
 
     @BeforeEach
     void cleanUp() { verifier.cleanUp(); }
 
-    @Test
-    @DisplayName("IT count() when no events should return zero")
+    @Test @DisplayName("IT count() when no events should return zero")
     void count_noEvents_returnsZero() { verifier.count_noEvents_returnsZero(); }
 
     @Test @DisplayName("IT count() with events should return total")

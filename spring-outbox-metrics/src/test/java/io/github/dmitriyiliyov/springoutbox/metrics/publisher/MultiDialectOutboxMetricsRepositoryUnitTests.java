@@ -1,6 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
+package io.github.dmitriyiliyov.springoutbox.metrics.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,25 +13,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class MultiSqlDialectOutboxDlqMetricsRepositoryUnitTests {
+class MultiDialectOutboxMetricsRepositoryUnitTests {
 
     @Mock
     JdbcTemplate jdbcTemplate;
 
-    MultiSqlDialectOutboxDlqMetricsRepository repository;
+    MultiDialectOutboxMetricsRepository repository;
 
     @BeforeEach
     void setUp() {
-        repository = new MultiSqlDialectOutboxDlqMetricsRepository(jdbcTemplate);
+        repository = new MultiDialectOutboxMetricsRepository(jdbcTemplate);
     }
 
     @Test
-    @DisplayName("UT count() should execute correct SQL")
-    void count_shouldExecuteCorrectSql() {
+    @DisplayName("UT count() should execute correct SQL and return count")
+    void count_shouldExecuteCorrectSqlAndReturnCount() {
         // given
         long expectedCount = 100L;
         when(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM outbox_dlq_events",
+                "SELECT COUNT(*) FROM outbox_events",
                 Long.class)
         ).thenReturn(expectedCount);
 
@@ -43,13 +43,29 @@ class MultiSqlDialectOutboxDlqMetricsRepositoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT countByStatus() should execute correct SQL")
-    void countByStatus_shouldExecuteCorrectSql() {
+    @DisplayName("UT count() should handle null result")
+    void count_shouldHandleNullResult() {
         // given
-        DlqStatus status = DlqStatus.MOVED;
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_events",
+                Long.class)
+        ).thenReturn(null);
+
+        // when
+        long result = repository.count();
+
+        // then
+        assertThat(result).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("UT countByStatus() should execute correct SQL and return count")
+    void countByStatus_shouldExecuteCorrectSqlAndReturnCount() {
+        // given
+        EventStatus status = EventStatus.PENDING;
         long expectedCount = 50L;
         when(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM outbox_dlq_events WHERE dlq_status = ?",
+                "SELECT COUNT(*) FROM outbox_events WHERE status = ?",
                 Long.class,
                 status.name())
         ).thenReturn(expectedCount);
@@ -62,14 +78,14 @@ class MultiSqlDialectOutboxDlqMetricsRepositoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT countByEventTypeAndStatus() should execute correct SQL")
-    void countByEventTypeAndStatus_shouldExecuteCorrectSql() {
+    @DisplayName("UT countByEventTypeAndStatus() should execute correct SQL and return count")
+    void countByEventTypeAndStatus_shouldExecuteCorrectSqlAndReturnCount() {
         // given
         String eventType = "test-event";
-        DlqStatus status = DlqStatus.MOVED;
+        EventStatus status = EventStatus.PENDING;
         long expectedCount = 20L;
         when(jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM outbox_dlq_events WHERE event_type = ? AND dlq_status = ?",
+                "SELECT COUNT(*) FROM outbox_events WHERE event_type = ? AND status = ?",
                 Long.class,
                 eventType,
                 status.name())

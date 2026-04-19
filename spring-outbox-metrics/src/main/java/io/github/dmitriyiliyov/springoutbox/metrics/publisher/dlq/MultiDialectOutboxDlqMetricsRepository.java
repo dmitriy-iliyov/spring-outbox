@@ -3,11 +3,11 @@ package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-public class MultiSqlDialectOutboxDlqMetricsRepository implements OutboxDlqMetricsRepository {
+public class MultiDialectOutboxDlqMetricsRepository implements OutboxDlqMetricsRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public MultiSqlDialectOutboxDlqMetricsRepository(JdbcTemplate jdbcTemplate) {
+    public MultiDialectOutboxDlqMetricsRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 

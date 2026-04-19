@@ -9,12 +9,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-class OracleMultiSqlDialectOutboxMetricsRepositoryIntegrationTests extends BaseOracleIntegrationTests {
+class OracleMultiDialectOutboxMetricsRepositoryIntegrationTests extends BaseOracleIntegrationTests {
 
     private final OracleOutboxMetricsRepositoryVerifier verifier;
 
-    OracleMultiSqlDialectOutboxMetricsRepositoryIntegrationTests(
-            @Qualifier("oracleMetricsRepo") MultiSqlDialectOutboxMetricsRepository repository,
+    OracleMultiDialectOutboxMetricsRepositoryIntegrationTests(
+            @Qualifier("oracleMetricsRepo") MultiDialectOutboxMetricsRepository repository,
             @Qualifier("oracleJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.verifier = new OracleOutboxMetricsRepositoryVerifier(repository, jdbcTemplate);

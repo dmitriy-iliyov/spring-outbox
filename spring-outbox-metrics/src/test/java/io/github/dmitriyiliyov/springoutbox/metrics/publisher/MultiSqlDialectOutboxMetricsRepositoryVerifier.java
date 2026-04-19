@@ -12,11 +12,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class MultiSqlDialectOutboxMetricsRepositoryVerifier {
 
-    private final MultiSqlDialectOutboxMetricsRepository repository;
+    private final MultiDialectOutboxMetricsRepository repository;
     protected final JdbcTemplate jdbcTemplate;
 
     MultiSqlDialectOutboxMetricsRepositoryVerifier(
-            MultiSqlDialectOutboxMetricsRepository repository,
+            MultiDialectOutboxMetricsRepository repository,
             JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;

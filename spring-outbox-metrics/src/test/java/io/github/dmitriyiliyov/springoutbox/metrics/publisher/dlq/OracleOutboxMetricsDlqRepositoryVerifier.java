@@ -7,8 +7,8 @@ import java.util.UUID;
 
 public class OracleOutboxMetricsDlqRepositoryVerifier extends MultiSqlDialectOutboxDlqMetricsRepositoryVerifier {
 
-    OracleOutboxMetricsDlqRepositoryVerifier(MultiSqlDialectOutboxDlqMetricsRepository repository,
-                                          JdbcTemplate jdbcTemplate) {
+    OracleOutboxMetricsDlqRepositoryVerifier(MultiDialectOutboxDlqMetricsRepository repository,
+                                             JdbcTemplate jdbcTemplate) {
         super(repository, jdbcTemplate);
     }
 

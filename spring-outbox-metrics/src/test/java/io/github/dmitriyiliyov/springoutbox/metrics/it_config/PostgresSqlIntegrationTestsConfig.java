@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.metrics.it_config;
 
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.MultiSqlDialectOutboxMetricsRepository;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.MultiDialectOutboxMetricsRepository;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsRepository;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.MultiSqlDialectOutboxDlqMetricsRepository;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.MultiDialectOutboxDlqMetricsRepository;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetricsRepository;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -48,11 +48,11 @@ public class PostgresSqlIntegrationTestsConfig {
 
     @Bean
     public OutboxDlqMetricsRepository psqlDlqMetricsRepo(@Qualifier("psqlJdbcTemplate") JdbcTemplate jdbcTemplate) {
-        return new MultiSqlDialectOutboxDlqMetricsRepository(jdbcTemplate);
+        return new MultiDialectOutboxDlqMetricsRepository(jdbcTemplate);
     }
 
     @Bean
     public OutboxMetricsRepository psqlMetricsRepo(@Qualifier("psqlJdbcTemplate") JdbcTemplate jdbcTemplate) {
-        return new MultiSqlDialectOutboxMetricsRepository(jdbcTemplate);
+        return new MultiDialectOutboxMetricsRepository(jdbcTemplate);
     }
 }

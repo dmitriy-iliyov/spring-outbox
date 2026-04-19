@@ -9,12 +9,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-class PostgresSqlMultiSqlDialectOutboxMetricsRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
+class PostgresSqlMultiDialectOutboxMetricsRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
 
     private final MultiSqlDialectOutboxMetricsRepositoryVerifier verifier;
 
-    PostgresSqlMultiSqlDialectOutboxMetricsRepositoryIntegrationTests(
-            @Qualifier("psqlMetricsRepo") MultiSqlDialectOutboxMetricsRepository repository,
+    PostgresSqlMultiDialectOutboxMetricsRepositoryIntegrationTests(
+            @Qualifier("psqlMetricsRepo") MultiDialectOutboxMetricsRepository repository,
             @Qualifier("psqlJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.verifier = new MultiSqlDialectOutboxMetricsRepositoryVerifier(repository, jdbcTemplate);

@@ -7,7 +7,7 @@ import java.util.UUID;
 
 class MySqlOutboxMetricsRepositoryVerifier extends MultiSqlDialectOutboxMetricsRepositoryVerifier {
 
-    MySqlOutboxMetricsRepositoryVerifier(MultiSqlDialectOutboxMetricsRepository repository,
+    MySqlOutboxMetricsRepositoryVerifier(MultiDialectOutboxMetricsRepository repository,
                                          JdbcTemplate jdbcTemplate) {
         super(repository, jdbcTemplate);
     }

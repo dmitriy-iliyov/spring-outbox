@@ -3,11 +3,11 @@ package io.github.dmitriyiliyov.springoutbox.metrics.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-public class MultiSqlDialectOutboxMetricsRepository implements OutboxMetricsRepository {
+public class MultiDialectOutboxMetricsRepository implements OutboxMetricsRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public MultiSqlDialectOutboxMetricsRepository(JdbcTemplate jdbcTemplate) {
+    public MultiDialectOutboxMetricsRepository(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
