@@ -50,7 +50,7 @@ jobs:
 
       - name: Start infrastructure
         working-directory: ./spring-outbox-tests/spring-outbox-load-tests
-        run: COMPOSE_PROFILES=${{ matrix.db }} docker compose up -d --build
+        run: COMPOSE_PROFILES=kafka,${{ matrix.db }} docker compose up -d --build
 
       - name: Wait for database to be ready
         run: |
@@ -104,4 +104,4 @@ jobs:
       - name: Stop infrastructure
         if: always()
         working-directory: ./spring-outbox-tests/spring-outbox-load-tests
-        run: COMPOSE_PROFILES=${{ matrix.db }} docker compose down -v
+        run: COMPOSE_PROFILES=kafka,${{ matrix.db }} docker compose down -v
