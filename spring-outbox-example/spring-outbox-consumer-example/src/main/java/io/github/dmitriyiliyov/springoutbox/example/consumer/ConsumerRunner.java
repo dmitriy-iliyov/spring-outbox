@@ -9,8 +9,6 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @SpringBootApplication
-@EnableJpaRepositories
-@EnableTransactionManagement
 @EnableKafka
 @EnableCaching
 @EnableOutbox

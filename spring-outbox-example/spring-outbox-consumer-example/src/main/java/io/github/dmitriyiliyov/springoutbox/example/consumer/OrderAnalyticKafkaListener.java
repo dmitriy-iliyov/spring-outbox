@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.context.annotation.Profile;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -33,18 +34,23 @@ public class OrderAnalyticKafkaListener {
      * This demonstrates how Outbox pattern headers can be used to dynamically dispatch messages.
      */
     @KafkaListener(topics = "orders", groupId = "analytics")
-    public void listen(ConsumerRecord<String, OrderDto> record) {
-        String eventType = new String(
-                record.headers()
-                        .lastHeader(OutboxHeaders.EVENT_TYPE.getValue())
-                        .value()
-        );
-        outboxConsumer.consume(record, () -> {
-            Consumer<ConsumerRecord<String, OrderDto>> handler = handlers.get(eventType);
-            if (handler != null) {
-                handler.accept(record);
-            }
-        });
+    public void listen(ConsumerRecord<String, OrderDto> record, Acknowledgment ack) {
+        try {
+            String eventType = new String(
+                    record.headers()
+                            .lastHeader(OutboxHeaders.EVENT_TYPE.getValue())
+                            .value()
+            );
+            outboxConsumer.consume(record, () -> {
+                Consumer<ConsumerRecord<String, OrderDto>> handler = handlers.get(eventType);
+                if (handler != null) {
+                    handler.accept(record);
+                }
+            });
+            ack.acknowledge();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 
     /**
@@ -53,12 +59,17 @@ public class OrderAnalyticKafkaListener {
      * and process them together for better throughput and efficiency.
      */
     @KafkaListener(topics = "orders.created", groupId = "analytics", containerFactory = "orderBatchFactory")
-    public void listenBatch(List<ConsumerRecord<String, OrderDto>> records) {
-        outboxConsumer.consume(
-                records,
-                (recordList) -> recordList.forEach(
-                        record -> log.info("Analytics receive 'created-order' {}", record.value())
-                )
-        );
+    public void listenBatch(List<ConsumerRecord<String, OrderDto>> records, Acknowledgment ack) {
+        try {
+            outboxConsumer.consume(
+                    records,
+                    (recordList) -> recordList.forEach(
+                            record -> log.info("Analytics receive 'created-order' {}", record.value())
+                    )
+            );
+            ack.acknowledge();
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }

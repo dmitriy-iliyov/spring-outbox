@@ -8,3 +8,6 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual

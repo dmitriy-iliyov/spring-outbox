@@ -1,10 +1,13 @@
 package io.github.dmitriyiliyov.springoutbox.example.producer;
 
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
+import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,54 +20,44 @@ public class OrderController {
     private final OrderService service;
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody OrderCreateDto dto) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(service.save(dto));
+    @ResponseStatus(HttpStatus.CREATED)
+    public OrderDto create(@RequestBody OrderCreateDto dto) {
+        return service.save(dto);
     }
 
     @PostMapping("/batch")
-    public ResponseEntity<?> createBatch(@RequestBody List<OrderCreateDto> dtoList) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(service.saveBatch(dtoList));
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<OrderDto> createBatch(@RequestBody List<OrderCreateDto> dtos) {
+        return service.saveBatch(dtos);
     }
 
     @GetMapping
-    public ResponseEntity<?> getAll() {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(service.findAll());
+    public List<OrderDto> getAll(@NonNull @PageableDefault(size = 50) Pageable pageable) {
+        return service.findAll(pageable);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable("id") Long id, @RequestBody OrderUpdateDto dto) {
+    @ResponseStatus(HttpStatus.OK)
+    public OrderDto update(@PathVariable("id") Long id, @RequestBody OrderUpdateDto dto) {
         dto.setId(id);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(service.update(dto));
+        return service.update(dto);
     }
 
     @PatchMapping("/batch")
-    public ResponseEntity<?> updateBatch(@RequestBody List<OrderUpdateDto> dtoList) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(service.updateBatch(dtoList));
+    @ResponseStatus(HttpStatus.OK)
+    public List<OrderDto> updateBatch(@RequestBody List<OrderUpdateDto> dtos) {
+        return service.updateBatch(dtos);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable("id") Long id) {
         service.delete(id);
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 
     @DeleteMapping("/batch")
-    public ResponseEntity<?> deleteBatch(@RequestBody List<Long> ids) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteBatch(@RequestBody List<Long> ids) {
         service.deleteBatch(ids);
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .build();
     }
 }

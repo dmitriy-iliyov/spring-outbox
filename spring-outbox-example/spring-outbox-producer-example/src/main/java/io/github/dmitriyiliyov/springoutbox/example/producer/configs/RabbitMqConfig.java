@@ -1,6 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.example.producer.configs;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -8,7 +12,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbit_mq")
+@ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbitmq")
 @Configuration
 @Slf4j
 public class RabbitMqConfig {

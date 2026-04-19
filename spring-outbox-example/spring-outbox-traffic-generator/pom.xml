@@ -14,37 +14,25 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <spring.boot.version>3.5.6</spring.boot.version>
+        <gatling.version>3.15.0</gatling.version>
+        <gatling-maven-plugin.version>4.21.5</gatling-maven-plugin.version>
     </properties>
 
     <dependencies>
+
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>io.gatling</groupId>
+            <artifactId>gatling-core-java</artifactId>
+            <version>${gatling.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-shared-contract</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
+            <groupId>io.gatling.highcharts</groupId>
+            <artifactId>gatling-charts-highcharts</artifactId>
+            <version>${gatling.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -58,33 +46,14 @@
                     <source>${java.version}</source>
                     <target>${java.version}</target>
                     <release>${java.version}</release>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-configuration-processor</artifactId>
-                            <version>${spring.boot.version}</version>
-                        </path>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.36</version>
-                        </path>
-                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>3.5.6</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>io.gatling</groupId>
+                <artifactId>gatling-maven-plugin</artifactId>
+                <version>${gatling-maven-plugin.version}</version>
                 <configuration>
-                    <mainClass>io.github.dmitriyiliyov.springoutbox.example.trafficgenerator.TrafficGeneratorRunner</mainClass>
+                    <simulationClass>io.github.dmitriyiliyov.springoutbox.example.traficgenerator.OrderSimulation</simulationClass>
                 </configuration>
             </plugin>
         </plugins>

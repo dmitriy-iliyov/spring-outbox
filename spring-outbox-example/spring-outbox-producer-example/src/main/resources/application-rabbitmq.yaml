@@ -1,0 +1,17 @@
+outbox:
+  publisher:
+    sender:
+      type: rabbitmq
+    events:
+      create-order:
+        topic: orders-exchange
+        batch-size: 200
+        fixed-delay: 250ms
+      update-order:
+        topic: orders-exchange
+        batch-size: 200
+        fixed-delay: 500ms
+      delete-order:
+        topic: orders-exchange
+        batch-size: 200
+        fixed-delay: 500ms

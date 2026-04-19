@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1522/FREEPDB1
+    username: admin
+    password: root
+    driver-class-name: oracle.jdbc.OracleDriver
+  jpa:
+    database-platform: org.hibernate.dialect.OracleDialect

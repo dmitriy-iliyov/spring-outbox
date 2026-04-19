@@ -1,11 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.example.producer;
 
-import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublish;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisher;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderCreateDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto;
 import io.github.dmitriyiliyov.springoutbox.example.shared.OrderUpdateDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +30,7 @@ public class OrderService {
 
     private final OrderRepository repository;
     private final OrderMapper mapper;
-    private final OutboxPublisher outboxPublisher;
+    //private final OutboxPublisher outboxPublisher;
     private final PriceService priceService;
 
     /**
@@ -52,7 +51,7 @@ public class OrderService {
      * @return order data
      */
     @Transactional
-    @OutboxPublish(eventType = "create-order")
+    //@OutboxPublish(eventType = "create-order")
     public OrderDto save(OrderCreateDto dto) {
         Order order = mapper.toEntity(dto);
         order.setAmount(priceService.countAmount(order.getItemIds()));
@@ -69,7 +68,7 @@ public class OrderService {
      * @return list of order data
      */
     @Transactional
-    @OutboxPublish(eventType = "create-order")
+    //@OutboxPublish(eventType = "create-order")
     public List<OrderDto> saveBatch(List<OrderCreateDto> dtoList) {
         List<Order> orders = mapper.toEntityList(dtoList);
         orders.forEach(order -> order.setAmount(priceService.countAmount(order.getItemIds())));
@@ -105,7 +104,7 @@ public class OrderService {
             order.setItemIds(newIds);
             order.setAmount(priceService.countAmount(order.getItemIds()));
             order = repository.save(order);
-            outboxPublisher.publish("update-order", mapper.toDto(order));
+            //outboxPublisher.publish("update-order", mapper.toDto(order));
         }
         return mapper.toDto(order);
     }
@@ -140,7 +139,7 @@ public class OrderService {
                 })
                 .toList();
         repository.saveAll(ordersToUpdate);
-        outboxPublisher.publish("update-order", mapper.toDtoList(ordersToUpdate));
+        //outboxPublisher.publish("update-order", mapper.toDtoList(ordersToUpdate));
         return mapper.toDtoList(orders);
     }
 
@@ -161,7 +160,7 @@ public class OrderService {
      * @param id order id to delete
      */
     @Transactional
-    @OutboxPublish(eventType = "delete-order", payload = "#id")
+    //@OutboxPublish(eventType = "delete-order", payload = "#id")
     public void delete(Long id) {
         repository.deleteById(id);
     }
@@ -176,12 +175,15 @@ public class OrderService {
      * @param ids list of order ids to delete
      */
     @Transactional
-    @OutboxPublish(eventType = "delete-order", payload = "#ids")
+    //@OutboxPublish(eventType = "delete-order", payload = "#ids")
     public void deleteBatch(List<Long> ids) {
         repository.deleteAllById(ids);
     }
 
-    public List<Order> findAll() {
-        return repository.findAll();
+    public List<OrderDto> findAll(Pageable pageable) {
+        return repository.findAll(pageable)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
     }
 }

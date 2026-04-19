@@ -1,11 +1,13 @@
 FROM maven:3.9.6-eclipse-temurin-21 AS builder
 WORKDIR /app
 
-COPY spring-outbox-example/spring-outbox-shared-contract spring-outbox-example/spring-outbox-shared-contract
-RUN mvn -f spring-outbox-example/spring-outbox-shared-contract/pom.xml clean install -DskipTests
+# build lib
+COPY . .
+RUN mvn clean install -DskipTests -Dgpg.skip=true
 
-COPY spring-outbox-example/spring-outbox-consumer-example spring-outbox-example/spring-outbox-consumer-example
-RUN mvn -f spring-outbox-example/spring-outbox-consumer-example/pom.xml clean package -DskipTests
+# build consumer
+RUN mvn -f spring-outbox-example/spring-outbox-shared-contract/pom.xml clean install -DskipTests
+RUN mvn -f spring-outbox-example/spring-outbox-consumer-example/pom.xml clean install -DskipTests
 
 FROM eclipse-temurin:21-jre AS final
 WORKDIR /app

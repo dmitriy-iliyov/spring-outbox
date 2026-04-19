@@ -33,9 +33,7 @@ The system consists of three main components:
 - supports single and batch consumption 
 - maintains internal state
 3. Traffic Generator 
-- simulates client requests to Producer 
-- generates CREATE / UPDATE / DELETE operations 
-- supports deterministic, stochastic, and RPS-based modes
+- Gatling scenario
 
 ## Ports 
 
@@ -61,14 +59,22 @@ The system consists of three main components:
 6. Metrics are available in Prometheus and Grafana
 
 ## Run
-
 From the project root:
+
+1. Build
+```bash
+docker compose build
+```
+2. Run
 - with Apache Kafka:
 ```bash
-docker compose --profile kafka up --build
+COMPOSE_PROFILES=kafka,postgres docker compose up
 ```
 
 - with RabbitMQ:
 ```bash
-docker compose --profile rabbitmq up --build
+COMPOSE_PROFILES=rabbitmq,postgres docker compose up
 ```
+
+> [!NOTE]
+> For test with other db use `mysql` ot `oracle`, and for enable traffic generator use `test` as `COMPOSE_PROFILES`

@@ -1,0 +1,6 @@
+CREATE TABLE orders(
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    item_ids VARCHAR(255) NOT NULL,
+    amount NUMERIC(10,2) NOT NULL
+);

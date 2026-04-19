@@ -1,64 +1,54 @@
 spring:
   application:
     name: spring-outbox-producer-example
-  datasource:
-    url: jdbc:postgresql://outbox-producer-postgresql:5432/outbox_example
-    username: admin
-    password: root
-    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true
+        format_sql: true
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
   flyway:
     enabled: true
-    locations: classpath:db/migration
+    locations: classpath:db/migration/{vendor}
     baseline-on-migrate: true
-  jpa:
-    open-in-view: false
 logging:
   level:
     root: info
 outbox:
-  thread-pool-size: 5
+  thread-pool-size: 7
   tables:
     auto-create: true
   publisher:
-    sender:
-      type: kafka
     defaults:
       batch-size: 100
       initial-delay: 30s
       max-retries: 3
       backoff:
         delay: 1m
-        multiplier: 1
-    events:
-      create-order:
-        topic: orders.created    # or orders-exchange for rabbit mq
-        batch-size: 100
-        fixed-delay: 1s
-      update-order:
-        topic: orders            # or orders-exchange for rabbit mq
-        batch-size: 50
-        fixed-delay: 1s
-      delete-order:
-        topic: orders            # or orders-exchange for rabbit mq
-        batch-size: 50
-        fixed-delay: 10s
+        multiplier: 1.5
     clean-up:
       enabled: true
-      batch-size: 100
-      ttl: 1h
+      batch-size: 500
+      ttl: 10m
       initial-delay: 2m
-      fixed-delay: 2s
+      fixed-delay: 500ms
     stuck-recovery:
-      batch-size: 100
+      batch-size: 500
       initial-delay: 2m
-      fixed-delay: 5m
+      fixed-delay: 5s
     dlq:
       enabled: true
-      batch-size: 100
+      batch-size: 200
       transfer-to-initial-delay: 2m
-      transfer-to-fixed-delay: 1s
+      transfer-to-fixed-delay: 1m
       transfer-from-initial-delay: 2m
-      transfer-from-fixed-delay: 1h
+      transfer-from-fixed-delay: 10m
       metrics:
         gauge:
           enabled: true

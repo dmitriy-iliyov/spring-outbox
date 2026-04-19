@@ -1,15 +1,19 @@
 package io.github.dmitriyiliyov.springoutbox.example.producer;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.math.BigDecimal;
 
 @Entity
 @Table(name = "orders")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
 public class Order {
 
     @Id

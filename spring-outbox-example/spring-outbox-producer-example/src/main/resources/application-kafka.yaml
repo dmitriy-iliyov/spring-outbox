@@ -1,0 +1,17 @@
+outbox:
+  publisher:
+    sender:
+      type: kafka
+    events:
+      create-order:
+        topic: orders.created
+        batch-size: 200
+        fixed-delay: 250ms
+      update-order:
+        topic: orders
+        batch-size: 200
+        fixed-delay: 500ms
+      delete-order:
+        topic: orders
+        batch-size: 200
+        fixed-delay: 500ms
