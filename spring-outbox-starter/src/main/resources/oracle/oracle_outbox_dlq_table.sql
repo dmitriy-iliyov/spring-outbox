@@ -7,7 +7,7 @@ EXECUTE IMMEDIATE '
             event_type VARCHAR2(255) NOT NULL,
             payload_type VARCHAR2(255) NOT NULL,
             payload CLOB NOT NULL,
-            retry_count INTEGER DEFAULT 0,
+            retry_count INTEGER NOT NULL,
             next_retry_at TIMESTAMP NOT NULL,
             created_at TIMESTAMP NOT NULL,
             updated_at TIMESTAMP NOT NULL,

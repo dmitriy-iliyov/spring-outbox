@@ -133,10 +133,4 @@ class MySqlOutboxDlqAutoConfigurationIntegrationTests {
     void shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled() {
         verifier.shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled();
     }
-
-    @Test
-    @DisplayName("IT should register web layer beans when web layer is present")
-    void shouldRegisterWebBeans_whenWebLayerPresent() {
-        verifier.shouldRegisterWebBeans_whenWebLayerPresent();
-    }
 }

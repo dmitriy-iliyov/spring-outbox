@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS outbox_dlq_events (
     event_type VARCHAR(255) NOT NULL,
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
-    retry_count INTEGER DEFAULT 0,
+    retry_count INTEGER NOT NULL,
     next_retry_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,

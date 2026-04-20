@@ -3,18 +3,14 @@ package io.github.dmitriyiliyov.springoutbox.web;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqManager;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventInProcessException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventNotFoundException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchRequestProjection;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchUpdateRequestProjection;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
+import io.github.dmitriyiliyov.springoutbox.web.exception.OutboxDlqEventInProcessException;
+import io.github.dmitriyiliyov.springoutbox.web.exception.OutboxDlqEventNotFoundException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,12 +25,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = OutboxDlqController.class)
-@Import(ClockConfig.class)
 class OutboxDlqControllerIntegrationTests {
 
     @Autowired
@@ -44,14 +38,14 @@ class OutboxDlqControllerIntegrationTests {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private OutboxDlqManager manager;
+    private OutboxDlqWebManager manager;
 
     @Test
     @DisplayName("IT GET /{id} should return 200 with event")
     void get_existingId_returns200() throws Exception {
         UUID id = UUID.randomUUID();
         OutboxDlqEvent event = buildEvent(id);
-        when(manager.loadById(id)).thenReturn(event);
+        when(manager.findById(id)).thenReturn(event);
 
         mockMvc.perform(get("/api/outbox-dlq/events/{id}", id))
                 .andExpect(status().isOk())
@@ -62,7 +56,7 @@ class OutboxDlqControllerIntegrationTests {
     @DisplayName("IT GET /{id} when not found should return 404")
     void get_notFound_returns404() throws Exception {
         UUID id = UUID.randomUUID();
-        when(manager.loadById(id)).thenThrow(new OutboxDlqEventNotFoundException("Event not found"));
+        when(manager.findById(id)).thenThrow(new OutboxDlqEventNotFoundException("Event not found"));
 
         mockMvc.perform(get("/api/outbox-dlq/events/{id}", id))
                 .andExpect(status().isNotFound())
@@ -75,7 +69,7 @@ class OutboxDlqControllerIntegrationTests {
     @DisplayName("IT GET /{id} when unexpected error should return 500")
     void get_unexpectedError_returns500() throws Exception {
         UUID id = UUID.randomUUID();
-        when(manager.loadById(id)).thenThrow(new RuntimeException("Unexpected"));
+        when(manager.findById(id)).thenThrow(new RuntimeException("Unexpected"));
 
         mockMvc.perform(get("/api/outbox-dlq/events/{id}", id))
                 .andExpect(status().isInternalServerError())
@@ -87,7 +81,7 @@ class OutboxDlqControllerIntegrationTests {
     @DisplayName("IT GET /{id} when database error should return 500")
     void get_databaseError_returns500() throws Exception {
         UUID id = UUID.randomUUID();
-        when(manager.loadById(id)).thenThrow(new DataAccessException("DB error") {});
+        when(manager.findById(id)).thenThrow(new DataAccessException("DB error") {});
 
         mockMvc.perform(get("/api/outbox-dlq/events/{id}", id))
                 .andExpect(status().isInternalServerError())
@@ -98,7 +92,7 @@ class OutboxDlqControllerIntegrationTests {
     @Test
     @DisplayName("IT GET /batch should return 200 with batch")
     void getBatch_validRequest_returns200() throws Exception {
-        when(manager.loadBatch(any(BatchRequestProjection.class))).thenReturn(List.of(buildEvent(UUID.randomUUID())));
+        when(manager.findBatch(any(BatchRequest.class))).thenReturn(List.of(buildEvent(UUID.randomUUID())));
 
         mockMvc.perform(get("/api/outbox-dlq/events/batch")
                         .param("status", DlqStatus.RESOLVED.name())
@@ -110,13 +104,54 @@ class OutboxDlqControllerIntegrationTests {
     @Test
     @DisplayName("IT GET /batch when database error should return 500")
     void getBatch_databaseError_returns500() throws Exception {
-        when(manager.loadBatch(any(BatchRequestProjection.class)))
+        when(manager.findBatch(any(BatchRequest.class)))
                 .thenThrow(new DataAccessException("DB error") {});
 
         mockMvc.perform(get("/api/outbox-dlq/events/batch")
                         .param("status", DlqStatus.RESOLVED.name())
                         .param("batchNumber", "1")
                         .param("batchSize", "10"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.type").value("/errors/outbox/database"));
+    }
+
+    @Test
+    @DisplayName("IT GET /count should return 200 with count value")
+    void getCount_validRequest_returns200() throws Exception {
+        when(manager.count(DlqStatus.RESOLVED)).thenReturn(42L);
+
+        mockMvc.perform(get("/api/outbox-dlq/events/count")
+                        .param("status", DlqStatus.RESOLVED.name()))
+                .andExpect(status().isOk())
+                .andExpect(content().string("42"));
+    }
+
+    @Test
+    @DisplayName("IT GET /count without status parameter should return 200 with count value")
+    void getCount_missingStatus_returns200() throws Exception {
+        when(manager.count(null)).thenReturn(42L);
+
+        mockMvc.perform(get("/api/outbox-dlq/events/count"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("42"));
+    }
+
+    @Test
+    @DisplayName("IT GET /count with invalid status should return 400")
+    void getCount_invalidStatus_returns400() throws Exception {
+        mockMvc.perform(get("/api/outbox-dlq/events/count")
+                        .param("status", "INVALID_ENUM_VALUE"))
+                .andDo(print())
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("IT GET /count when database error should return 500")
+    void getCount_databaseError_returns500() throws Exception {
+        when(manager.count(DlqStatus.RESOLVED)).thenThrow(new DataAccessException("DB error") {});
+
+        mockMvc.perform(get("/api/outbox-dlq/events/count")
+                        .param("status", DlqStatus.RESOLVED.name()))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.type").value("/errors/outbox/database"));
     }
@@ -198,7 +233,7 @@ class OutboxDlqControllerIntegrationTests {
                 Set.of(UUID.randomUUID(), UUID.randomUUID()),
                 DlqStatus.RESOLVED
         );
-        doNothing().when(manager).updateBatchStatus(any(BatchUpdateRequestProjection.class));
+        doNothing().when(manager).updateBatchStatus(any(BatchUpdateRequest.class));
 
         mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -236,7 +271,7 @@ class OutboxDlqControllerIntegrationTests {
                 Set.of(UUID.randomUUID()), DlqStatus.RESOLVED
         );
         doThrow(new OutboxDlqEventNotFoundException("Not found"))
-                .when(manager).updateBatchStatus(any(BatchUpdateRequestProjection.class));
+                .when(manager).updateBatchStatus(any(BatchUpdateRequest.class));
 
         mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -251,7 +286,7 @@ class OutboxDlqControllerIntegrationTests {
                 Set.of(UUID.randomUUID()), DlqStatus.RESOLVED
         );
         doThrow(new DataAccessException("DB error") {})
-                .when(manager).updateBatchStatus(any(BatchUpdateRequestProjection.class));
+                .when(manager).updateBatchStatus(any(BatchUpdateRequest.class));
 
         mockMvc.perform(patch("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -309,7 +344,7 @@ class OutboxDlqControllerIntegrationTests {
         DeleteBatchRequest request = new DeleteBatchRequest(
                 Set.of(UUID.randomUUID(), UUID.randomUUID())
         );
-        when(manager.deleteBatchWithCheck(any())).thenReturn(2);
+        when(manager.deleteBatch(any())).thenReturn(2);
 
         mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -343,7 +378,7 @@ class OutboxDlqControllerIntegrationTests {
     @DisplayName("IT DELETE /batch when not found should return 404")
     void deleteBatch_notFound_returns404() throws Exception {
         DeleteBatchRequest request = new DeleteBatchRequest(Set.of(UUID.randomUUID()));
-        when(manager.deleteBatchWithCheck(any())).thenThrow(new OutboxDlqEventNotFoundException("Not found"));
+        when(manager.deleteBatch(any())).thenThrow(new OutboxDlqEventNotFoundException("Not found"));
 
         mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -355,7 +390,7 @@ class OutboxDlqControllerIntegrationTests {
     @DisplayName("IT DELETE /batch when database error should return 500")
     void deleteBatch_databaseError_returns500() throws Exception {
         DeleteBatchRequest request = new DeleteBatchRequest(Set.of(UUID.randomUUID()));
-        when(manager.deleteBatchWithCheck(any())).thenThrow(new DataAccessException("DB error") {});
+        when(manager.deleteBatch(any())).thenThrow(new DataAccessException("DB error") {});
 
         mockMvc.perform(delete("/api/outbox-dlq/events/batch")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -368,7 +403,7 @@ class OutboxDlqControllerIntegrationTests {
     @DisplayName("IT error response contains timestamp and path properties")
     void errorResponse_containsTimestampAndPath() throws Exception {
         UUID id = UUID.randomUUID();
-        when(manager.loadById(id)).thenThrow(new OutboxDlqEventNotFoundException("Not found"));
+        when(manager.findById(id)).thenThrow(new OutboxDlqEventNotFoundException("Not found"));
 
         mockMvc.perform(get("/api/outbox-dlq/events/{id}", id))
                 .andExpect(status().isNotFound())

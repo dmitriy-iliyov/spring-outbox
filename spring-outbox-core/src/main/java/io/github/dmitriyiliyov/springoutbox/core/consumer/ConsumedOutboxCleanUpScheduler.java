@@ -29,6 +29,7 @@ public final class ConsumedOutboxCleanUpScheduler implements OutboxScheduler {
         executor.scheduleWithFixedDelay(
                 () -> {
                     try {
+                        log.debug("Start clean up consumed events");
                         manager.cleanBatchByTtl(properties.getTtl(), properties.getBatchSize());
                     } catch (Exception e) {
                         log.error("Error when cleanup consumed outbox events", e);

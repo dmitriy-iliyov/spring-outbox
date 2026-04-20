@@ -226,15 +226,6 @@ public class OutboxDlqAutoConfigurationVerifier {
                 });
     }
 
-    public void shouldRegisterWebBeans_whenWebLayerPresent() {
-        getBaseContextRunner()
-                .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(OutboxDlqController.class);
-                    assertThat(ctx).hasSingleBean(DlqStatusQueryConverter.class);
-                    assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
-                });
-    }
-
     public void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
         getBaseContextRunner()
                 .run(ctx -> {
@@ -252,9 +243,9 @@ public class OutboxDlqAutoConfigurationVerifier {
                     OutboxDlqTransfer transfer = ctx.getBean(OutboxDlqTransfer.class);
                     assertThat(transfer).isInstanceOf(DefaultOutboxDlqTransfer.class);
 
-                    assertThat(ctx).hasSingleBean(OutboxDlqController.class);
-                    assertThat(ctx).hasSingleBean(DlqStatusQueryConverter.class);
-                    assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqController.class);
+                    assertThat(ctx).doesNotHaveBean(DlqStatusQueryConverter.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxDlqControllerAdvice.class);
 
                     assertThat(ctx).doesNotHaveBean(OutboxDlqManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqTransferMetricsDecorator.class);
@@ -294,10 +285,6 @@ public class OutboxDlqAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqMetricsRepository.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqMetrics.class);
-
-                    assertThat(ctx).hasSingleBean(OutboxDlqController.class);
-                    assertThat(ctx).hasSingleBean(DlqStatusQueryConverter.class);
-                    assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
                 });
     }
 

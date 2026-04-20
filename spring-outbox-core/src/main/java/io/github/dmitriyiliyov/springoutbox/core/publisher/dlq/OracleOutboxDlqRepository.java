@@ -62,25 +62,4 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
         events.forEach(event -> event.setDlqStatus(lockStatus));
         return events;
     }
-
-    @Override
-    public List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize) {
-        String selectSql = """
-            SELECT *
-            FROM outbox_dlq_events
-            WHERE dlq_status = ?
-            ORDER BY moved_at
-            OFFSET ? ROWS
-            FETCH NEXT ? ROWS ONLY
-        """;
-        return jdbcTemplate.query(
-                selectSql,
-                ps -> {
-                    ps.setString(1, status.name());
-                    ps.setInt(2, (batchNumber - 1) * batchSize);
-                    ps.setInt(3, batchSize);
-                },
-                (rs, rowNum) -> mapper.toDlqEvent(rs)
-        );
-    }
 }

@@ -1,7 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.web;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchUpdateRequestProjection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -31,4 +30,4 @@ public record BatchUpdateRequest(
         @NotNull(message = "Status cannot be null")
         DlqStatus status
 
-) implements BatchUpdateRequestProjection { }
+) { }

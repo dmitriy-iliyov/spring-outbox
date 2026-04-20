@@ -109,7 +109,29 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
         return deletedCount;
     }
 
+    /**
+     * Defines tags for the {@code outbox_events_by_type_rate_total} metric.
+     */
     private enum AdditionalCounterType {
-        ATTEMPT_MOVE_TO_DLQ, RECOVERED, CLEANED, SUCCESS_MOVED_TO_DLQ;
+
+        /**
+         * Incremented upon attempt to load and move failed events from the main outbox to the DLQ.
+         */
+        ATTEMPT_MOVE_TO_DLQ,
+
+        /**
+         * Incremented when stuck events are successfully recovered by the background process.
+         */
+        RECOVERED,
+
+        /**
+         * Incremented upon the automatic deletion of old processed events by the cleanup process.
+         */
+        CLEANED,
+
+        /**
+         * Incremented upon the successful deletion of a batch from the main outbox after moving it to the DLQ.
+         */
+        SUCCESS_MOVED_TO_DLQ;
     }
 }

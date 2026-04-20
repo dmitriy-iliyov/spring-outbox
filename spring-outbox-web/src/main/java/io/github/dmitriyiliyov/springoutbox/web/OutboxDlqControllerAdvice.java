@@ -1,7 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.web;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.BadRequestException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.NotFoundException;
+import io.github.dmitriyiliyov.springoutbox.web.exception.BadRequestException;
+import io.github.dmitriyiliyov.springoutbox.web.exception.NotFoundException;
+import io.github.dmitriyiliyov.springoutbox.web.exception.UnknownDlqStatusException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
@@ -14,6 +15,7 @@ import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.net.URI;
 import java.time.Clock;
@@ -79,7 +81,7 @@ public class OutboxDlqControllerAdvice {
                 .body(problemDetail);
     }
 
-    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
+    @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ProblemDetail> handleValidationExceptions(Exception e, HttpServletRequest request) {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.BAD_REQUEST,
@@ -96,11 +98,24 @@ public class OutboxDlqControllerAdvice {
             ex.getBindingResult().getFieldErrors().forEach(error ->
                     errors.add(Map.of("field", error.getField(), "message", error.getDefaultMessage()))
             );
-        } else {
-            BindException ex = (BindException) e;
+        } else if (e instanceof BindException ex) {
             ex.getBindingResult().getFieldErrors().forEach(error ->
                     errors.add(Map.of("field", error.getField(), "message", error.getDefaultMessage()))
             );
+        } else {
+            Throwable cause = e.getCause();
+            while (true) {
+                Throwable newCause = cause.getCause();
+                if (newCause == null) {
+                    break;
+                }
+                cause = newCause;
+            }
+            if (cause instanceof UnknownDlqStatusException udse) {
+                problemDetail.setDetail(udse.getDetail());
+            } else {
+                errors.add(Map.of("message", e.getMessage()));
+            }
         }
         problemDetail.setProperty("errors", errors);
         return ResponseEntity

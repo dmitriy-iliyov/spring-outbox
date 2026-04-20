@@ -1,7 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.web;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchRequestProjection;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -32,4 +31,4 @@ public record BatchRequest(
         @Min(value = 10, message = "Min batch size is 10")
         @Max(value = 100, message = "Max batch size is 100")
         int batchSize
-) implements BatchRequestProjection { }
+) { }

@@ -34,7 +34,7 @@ public final class OutboxCleanUpScheduler implements OutboxScheduler {
         executor.scheduleWithFixedDelay(
                 () -> {
                     try {
-                        log.debug("Start clean up processed event");
+                        log.debug("Start clean up processed events");
                         Instant threshold = clock.instant().minus(cleanupProperties.getTtl());
                         manager.deleteProcessedBatch(threshold, cleanupProperties.getBatchSize());
                     } catch (Exception e) {

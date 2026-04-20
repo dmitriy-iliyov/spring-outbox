@@ -1,19 +1,16 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventBatchNotFoundException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventInProcessException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.OutboxDlqEventNotFoundException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchRequestProjection;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.projection.BatchUpdateRequestProjection;
-import org.springframework.transaction.annotation.Isolation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class DefaultOutboxDlqManager implements OutboxDlqManager {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultOutboxDlqManager.class);
 
     private final OutboxDlqRepository repository;
 
@@ -25,15 +22,10 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
     @Override
     public void saveBatch(List<OutboxDlqEvent> events) {
         if (events.isEmpty()) {
+            log.debug("List of submitted events is empty, so saving was rejected");
             return;
         }
         repository.saveBatch(events);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public OutboxDlqEvent loadById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
     }
 
     @Transactional
@@ -42,79 +34,13 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
         return repository.findAndLockBatchByStatus(status, batchSize, DlqStatus.IN_PROCESS);
     }
 
-    @Transactional(readOnly = true)
-    @Override
-    public List<OutboxDlqEvent> loadBatch(BatchRequestProjection request) {
-        return repository.findBatchByStatus(request.status(), request.batchNumber(), request.batchSize());
-    }
-
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
-    @Override
-    public void updateStatus(UUID id, DlqStatus status) {
-        OutboxDlqEvent event = repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
-        if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
-            throw new OutboxDlqEventInProcessException(event.getId());
-        }
-        repository.updateStatus(id, status);
-    }
-
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
-    @Override
-    public void updateBatchStatus(BatchUpdateRequestProjection request) {
-        if (request.ids() == null || request.ids().isEmpty()) {
-            return;
-        }
-        checkEventsAvailability(request.ids());
-        repository.updateBatchStatus(request.ids(), request.status());
-    }
-
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
-    @Override
-    public int deleteById(UUID id) {
-        OutboxDlqEvent event = repository.findById(id).orElseThrow(
-                () -> new OutboxDlqEventNotFoundException(id)
-        );
-        if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
-            throw new OutboxDlqEventInProcessException(event.getId());
-        }
-        return repository.deleteById(id);
-    }
-
     @Transactional
     @Override
     public int deleteBatch(Set<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
+            log.debug("List of submitted ids is empty, so deleting was rejected");
             return 0;
         }
         return repository.deleteBatch(ids);
-    }
-
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
-    @Override
-    public int deleteBatchWithCheck(Set<UUID> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return 0;
-        }
-        checkEventsAvailability(ids);
-        return repository.deleteBatch(ids);
-    }
-
-    private void checkEventsAvailability(Set<UUID> ids) {
-        List<OutboxDlqEvent> events = repository.findBatch(ids);
-        if (events == null || events.isEmpty()) {
-            throw new OutboxDlqEventBatchNotFoundException(ids);
-        }
-        if (events.size() != ids.size()) {
-            Set<UUID> foundIds = events.stream()
-                    .map(OutboxDlqEvent::getId)
-                    .collect(Collectors.toSet());
-            ids.removeAll(foundIds);
-            throw new OutboxDlqEventBatchNotFoundException(ids);
-        }
-        for (OutboxDlqEvent event: events) {
-            if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
-                throw new OutboxDlqEventInProcessException(event.getId());
-            }
-        }
     }
 }

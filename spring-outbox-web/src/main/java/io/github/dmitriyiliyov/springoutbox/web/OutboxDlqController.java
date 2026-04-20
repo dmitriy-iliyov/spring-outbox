@@ -1,7 +1,8 @@
+
 package io.github.dmitriyiliyov.springoutbox.web;
 
+import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqManager;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -20,9 +21,9 @@ import java.util.UUID;
 @RequestMapping("/api/outbox-dlq/events")
 public class OutboxDlqController {
 
-    private final OutboxDlqManager manager;
+    private final OutboxDlqWebManager manager;
 
-    public OutboxDlqController(OutboxDlqManager manager) {
+    public OutboxDlqController(OutboxDlqWebManager manager) {
         this.manager = manager;
     }
 
@@ -35,7 +36,7 @@ public class OutboxDlqController {
     @GetMapping("/{id}")
     public OutboxDlqEvent get(@Parameter(description = "Id of the DLQ event", required = true)
                               @PathVariable("id") UUID id) {
-        return manager.loadById(id);
+        return manager.findById(id);
     }
 
     @Operation(summary = "Get events by DLQ status with pagination")
@@ -47,7 +48,20 @@ public class OutboxDlqController {
     })
     @GetMapping("/batch")
     public List<OutboxDlqEvent> getBatch(@ModelAttribute @Valid BatchRequest request) {
-        return manager.loadBatch(request);
+        return manager.findBatch(request);
+    }
+
+    @Operation(summary = "Count DLQ events by status")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200", description = "Event count successfully retrieved",
+                    content = @Content(schema = @Schema(implementation = Long.class))
+            )
+    })
+    @GetMapping("/count")
+    public Long getCount(@Parameter(description = "DLQ event status to count events")
+                         @RequestParam(value = "status", required = false) DlqStatus status) {
+        return manager.count(status);
     }
 
     @Operation(summary = "Update event's DLQ status")
@@ -92,6 +106,6 @@ public class OutboxDlqController {
     @DeleteMapping("/batch")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteBatch(@RequestBody @Valid DeleteBatchRequest request) {
-        manager.deleteBatchWithCheck(request.ids());
+        manager.deleteBatch(request.ids());
     }
 }

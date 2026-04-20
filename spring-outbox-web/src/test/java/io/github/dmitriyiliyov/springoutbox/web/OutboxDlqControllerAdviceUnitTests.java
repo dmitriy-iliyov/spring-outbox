@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.web;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.BadRequestException;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception.NotFoundException;
+import io.github.dmitriyiliyov.springoutbox.web.exception.BadRequestException;
+import io.github.dmitriyiliyov.springoutbox.web.exception.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;

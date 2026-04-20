@@ -9,11 +9,11 @@ import org.junit.jupiter.api.Test;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DefaultOutboxDlqEventMapperUnitTests {
 
@@ -354,6 +354,80 @@ public class DefaultOutboxDlqEventMapperUnitTests {
 
         // then
         assertTrue(result.stream().allMatch(e -> e.getRetryCount() == -1));
+    }
+
+    @Test
+    @DisplayName("UT toDlqEvent() should return null when input is null")
+    void toDlqEvent_whenNull_shouldReturnNull() {
+        // when
+        OutboxDlqEvent result = tested.toDlqEvent(null);
+
+        // then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("UT toDlqEvents() should return empty list when input is null")
+    void toDlqEvents_whenNull_shouldReturnEmptyList() {
+        // when
+        List<OutboxDlqEvent> result = tested.toDlqEvents(null);
+
+        // then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("UT toDlqEvents() should filter out null elements from list")
+    void toDlqEvents_whenContainsNullElements_shouldFilterThemOut() {
+        // given
+        List<OutboxEvent> events = Arrays.asList(
+                outboxEvent(UUID.randomUUID(), 1),
+                null,
+                outboxEvent(UUID.randomUUID(), 2)
+        );
+
+        // when
+        List<OutboxDlqEvent> result = tested.toDlqEvents(events);
+
+        // then
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    @DisplayName("UT toOutboxEvent() should return null when input is null")
+    void toOutboxEvent_whenNull_shouldReturnNull() {
+        // when
+        OutboxEvent result = tested.toOutboxEvent(null);
+
+        // then
+        assertNull(result);
+    }
+
+    @Test
+    @DisplayName("UT toOutboxEvents() should return empty list when input is null")
+    void toOutboxEvents_whenNull_shouldReturnEmptyList() {
+        // when
+        List<OutboxEvent> result = tested.toOutboxEvents(null);
+
+        // then
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("UT toOutboxEvents() should filter out null elements from list")
+    void toOutboxEvents_whenContainsNullElements_shouldFilterThemOut() {
+        // given
+        List<OutboxDlqEvent> dlqEvents = Arrays.asList(
+                dlqEvent(UUID.randomUUID(), Instant.now()),
+                null,
+                dlqEvent(UUID.randomUUID(), Instant.now())
+        );
+
+        // when
+        List<OutboxEvent> result = tested.toOutboxEvents(dlqEvents);
+
+        // then
+        assertEquals(2, result.size());
     }
 
     private OutboxEvent outboxEvent(UUID id, int retryCount) {

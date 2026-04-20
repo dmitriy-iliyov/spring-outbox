@@ -56,7 +56,7 @@ public interface OutboxManager {
      * Loads and locks a batch of events with a specific status.
      * <p>
      * Locked events have their status changed to {@link EventStatus#IN_PROCESS}.
-     * Typically used for maintenance tasks such as DLQ transfer or cleanup.
+     * Used for DLQ transfer.
      *
      * @param status    the status of events to load.
      * @param batchSize the maximum number of events to load and lock.

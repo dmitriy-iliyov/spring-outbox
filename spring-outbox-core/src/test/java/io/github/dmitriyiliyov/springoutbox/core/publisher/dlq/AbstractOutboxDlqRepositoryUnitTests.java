@@ -45,56 +45,6 @@ class AbstractOutboxDlqRepositoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT findBatch() when ids is empty should early return")
-    void findBatch_whenIdsIsEmpty_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = Set.of();
-
-        // when
-        tested.findBatch(ids);
-
-        // then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT findBatch() when ids is null should throw NPE")
-    void findBatch_whenIdsIsNull_shouldThrow() {
-        // given
-        Set<UUID> ids = null;
-
-        // when + then
-        assertThrows(NullPointerException.class, () -> tested.findBatch(ids));
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT updateBatchStatus() when ids is empty should early return")
-    void updateBatchStatus_whenIdsIsEmpty_shouldEarlyReturn() {
-        // given
-        Set<UUID> ids = Set.of();
-        DlqStatus status = DlqStatus.MOVED;
-
-        // when
-        tested.updateBatchStatus(ids, status);
-
-        // then
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
-    @DisplayName("UT updateBatchStatus() when ids is null should throw NPE")
-    void updateBatchStatus_whenIdsIsNull_shouldThrow() {
-        // given
-        Set<UUID> ids = null;
-        DlqStatus status = DlqStatus.MOVED;
-
-        // when + then
-        assertThrows(NullPointerException.class, () -> tested.updateBatchStatus(ids, status));
-        verifyNoInteractions(jdbcTemplate);
-    }
-
-    @Test
     @DisplayName("UT deleteBatch() when ids is empty should early return")
     void deleteBatch_whenIdsIsEmpty_shouldEarlyReturn() {
         // given

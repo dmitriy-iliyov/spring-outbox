@@ -12,38 +12,34 @@ This library provides an implementation of the [Transactional Outbox Pattern](ht
 The library offers flexible configuration for processing different event types.
 Each event type is handled independently, and events are processed in parallel using a configurable thread pool, allowing predictable throughput and controlled resource usage.
 
-Two delivery guarantees are supported:
-- **At-least-once delivery**
-- **Exactly-once delivery**, achieved through an idempotent consumer implementation provided by the library
-
 This approach ensures reliable event publication without relying on database log-based CDC solutions, making it suitable for environments where simplicity, portability, and explicit control over event processing are preferred.
 
 ## Key Features
-- Atomic event storage within business transactions
-- Scheduled polling and publishing to message broker
-- Configurable retry policies with backoff
-- Dead Letter Queue support
-- Automatic stuck event recovery
-- Idempotent consumer
-- Automatic cleanup of processed or consumed events
+- **Atomic persistence** - event storage within business transactions.
+- **Adaptive pooling** - dynamically adjusts polling interval based on workload for optimal database efficiency.
+- **At-least-once delivery** - with configurable retry policies with backoff.
+- **Exactly-once delivery** - achieved through an idempotent consumer, implementation provided by the library.
+- **Dead Letter Queue** - storage events when all retries are exhausted, with REST API support.
+- **Background service** - automatic stuck event recovery, cleanup processed or consumed events.
+- **Observability** - Micrometer metrics out of the box.
 
-## Limitations
-- **Horizontal scaling** - performance degradation may occur when reaching a certain number of instances due to `SKIP LOCKED` - based concurrent polling mechanism. The optimal number of instances depends on the number of event types and database load.
-- **No ordering guarantees** - events are processed in parallel by type, with no guaranteed delivery order within or across event types.
+## Supported Infrastructure
 
-## Infrastructure
-
-**Supported Databases:**
+**Databases:**
 - PostgreSQL 16+
 - MySQL 8+
 - Oracle Database 23+
 
-**Supported Message Brokers:**
+**Message Brokers:**
 - Apache Kafka 3.7+
 - RabbitMQ 3.12+
 
 **Cache Storage (optional for caching):**
 - Redis 7+
+
+## Limitations
+- **Horizontal scaling** - performance degradation may occur when reaching a certain number of instances due to `SKIP LOCKED` - based concurrent polling mechanism. The optimal number of instances depends on the number of event types and database load.
+- **No ordering guarantees** - events are processed in parallel by type, with no guaranteed delivery order within or across event types.
 
 ## Quick Start
 
@@ -91,7 +87,7 @@ You can also add `spring-outbox-web` for enable REST API for manual DLQ managing
 @SpringBootApplication
 @EnableJpaRepositories
 @EnableTransactionManagement
-@EnableKafka        // or @EnableRabbit for RabbitMQ
+@EnableKafka
 @EnableOutbox
 public class PublisherRunner {
 
@@ -145,7 +141,7 @@ public class ExampleService {
     private final ExampleMapper mapper;
 
     @Transactional
-    @OutboxPublish(eventType = "create-example-event")    // payload by default is "#result"
+    @OutboxPublish(eventType = "create-example-event")    // annotation using method result as argument
     public ExampleDto save(ExampleCreateDto dto) {
         ExampleEntity entity = repository.save(mapper.toEntity(dto));
         return mapper.toDto(entity);
@@ -158,7 +154,7 @@ public class ExampleService {
 @SpringBootApplication
 @EnableJpaRepositories
 @EnableTransactionManagement
-@EnableKafka        // or @EnableRabbit for RabbitMQ
+@EnableKafka
 @EnableCaching
 @EnableOutbox
 public class ConsumerRunner {
@@ -197,8 +193,7 @@ public class ExampleKafkaListener {
     @KafkaListener(topics = "example-events", groupId = "example-group")
     public void listen(ConsumerRecord<String, ExampleDto> record) {
         outboxConsumer.consume(
-                record,    // event metadata (type, id) is in headers
-                () -> log.info("Some business operation with payload {}", record.value())
+                record, () -> log.info("Some business operation with payload {}", record.value())
         );
     }
 }
@@ -218,8 +213,7 @@ public class ExampleRabbitListener {
     public void handle(Message message) {
       ExampleDto dto = objectMapper.readValue(message.getBody(), ExampleDto.class);
       outboxConsumer.consume(
-            message,    // event metadata (type, id) is in headers
-            () -> log.info("Some business operation with payload {}", dto)
+            message, () -> log.info("Some business operation with payload {}", dto)
         );
     }
 }
@@ -239,7 +233,7 @@ Example of full configured project with simple traffic generator is [here](https
 
 The system architecture with full configuration looks as follows:
 
-![outbox-architecture](./images/outbox-architecture.png)
+![outbox-architecture](docs/images/outbox-architecture.png)
 
 The event lifecycle follows these steps:
 1. Event or batch of events is created
@@ -407,14 +401,15 @@ The Dead Letter Queue provides a REST API for managing events that have failed d
 > [!WARNING]
 > You should secure DLQ REST API paths.
 
-| Method                                                | Path                           | Params                                                        | Request Body                                | Description                    |
-|:------------------------------------------------------|:-------------------------------|:--------------------------------------------------------------|:--------------------------------------------|--------------------------------|
-| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                           | Get DLQ event by ID            |
-| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/batch` | status: DlqStatus, <br/>batchNumber: int, <br/>batchSize: int | —                                           | Get batch of DLQ events        |
-| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | status: DlqStatus                           | Update single DLQ event status |
-| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/batch` | —                                                             | ids: Set&lt;UUID&gt;,<br/>status: DlqStatus | Update batch DLQ events status |
-| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                           | Delete single DLQ event        |
-| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/batch` | —                                                             | ids: Set&lt;UUID&gt;                        | Delete batch of DLQ events     |
+| Method                                                | Path                           | Params                                                        | Request Body                                | Description                                                                   |
+|:------------------------------------------------------|:-------------------------------|:--------------------------------------------------------------|:--------------------------------------------|-------------------------------------------------------------------------------|
+| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                           | Get DLQ event by ID                                                           |
+| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/batch` | status: DlqStatus, <br/>batchNumber: int, <br/>batchSize: int | —                                           | Get batch of DLQ events                                                       |
+| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/count` | status: DlqStatus                                             | —                                           | Get the number of DLQ events by status, count all if the parameter is missing |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | status: DlqStatus                           | Update single DLQ event status                                                |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/batch` | —                                                             | ids: Set&lt;UUID&gt;,<br/>status: DlqStatus | Update batch DLQ events status                                                |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                           | Delete single DLQ event                                                       |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/batch` | —                                                             | ids: Set&lt;UUID&gt;                        | Delete batch of DLQ events                                                    |
 
 Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
 
@@ -478,7 +473,6 @@ public class OrderKafkaListener {
 
   private final OutboxIdempotentConsumer outboxConsumer;
 
-  // Map containing event type to handler strategy mapping
   private final Map<String, OrderEventHandler> handlers;
 
   @KafkaListener(topics = "orders", groupId = "order-group")
@@ -508,7 +502,6 @@ public class OrderRabbitListener {
 
   private final OutboxIdempotentConsumer outboxConsumer;
 
-  // Map containing event type to handler strategy mapping
   private final Map<String, OrderEventHandler> handlers;
 
   @RabbitListener(bindings = @QueueBinding(
@@ -562,7 +555,6 @@ Caching can be disabled via metrics configuration.
 |:---------------------------------------|:--------------------------------|:-------------------------------------------------------------------------|
 | `outbox_events_rate_total`             | Processed or failed events rate | `event_type`, <br/>`status={processed, failed}`                          |
 | `outbox_events_by_type_rate_total`     | Internal lifecycle events rate  | `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`   |
-| `outbox_dlq_events_rate_total`         | DLQ state transitions rate      | `event_type`, <br/>`status={moved, in_process, to_retry}`                |
 | `outbox_dlq_events_by_type_rate_total` | DLQ operational events rate     | `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
 
 **Timers**
@@ -594,10 +586,10 @@ outbox:
     auto-create: true
 ```
 
-| Property           | Description                                                                                                                                                                                          | Default                         |
-|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------|
-| `thread-pool-size` | Size of the thread pool for parallel event processing                                                                                                                                                | `min(available_processors, 5)`  |
-| `auto-create`      | Automatically create outbox tables on startup. Create 3 tables: <br/>- `outbox_events`; <br/>- `outbox_dlq_events`; <br/>- `outbox_consumed_events` (only when `outbox.consumer.enabled` is `true`). | `true`                          |
+| Property           | Description                                                                                                                                                                                                                                     | Default                         |
+|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------|
+| `thread-pool-size` | Size of the thread pool for parallel event processing                                                                                                                                                                                           | `min(available_processors, 5)`  |
+| `auto-create`      | Automatically create outbox tables on startup. Create 3 tables: <br/>- `outbox_events`; <br/>- `outbox_dlq_events` (when `outbox.publisher.dlq.enabled` is `true`); <br/>- `outbox_consumed_events` (when `outbox.consumer.enabled` is `true`). | `true`                          |
 
 ### Publisher
 

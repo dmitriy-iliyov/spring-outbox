@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.exception;
+package io.github.dmitriyiliyov.springoutbox.web.exception;
 
 import java.util.UUID;
 

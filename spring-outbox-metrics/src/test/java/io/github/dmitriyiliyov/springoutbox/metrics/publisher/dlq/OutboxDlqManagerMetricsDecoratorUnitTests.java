@@ -1,6 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqManager;
@@ -16,7 +15,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,9 +24,6 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
     @Mock
     OutboxDlqManager delegate;
 
-    @Mock
-    OutboxPublisherPropertiesHolder properties;
-
     SimpleMeterRegistry registry;
 
     OutboxDlqManagerMetricsDecorator tested;
@@ -36,11 +31,7 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
     @BeforeEach
     void setUp() {
         registry = new SimpleMeterRegistry();
-        Map<String, OutboxPublisherPropertiesHolder.EventPropertiesHolder> eventProps = Map.of(
-                "test-event", Mockito.mock(OutboxPublisherPropertiesHolder.EventPropertiesHolder.class)
-        );
-        Mockito.when(properties.getEventHolders()).thenReturn(eventProps);
-        tested = new OutboxDlqManagerMetricsDecorator(properties, registry, delegate);
+        tested = new OutboxDlqManagerMetricsDecorator(registry, delegate);
     }
 
     @Test
@@ -82,12 +73,8 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
     void saveBatch_whenEventsPresent_shouldDelegateAndIncrement() {
         // given
         OutboxDlqEvent event1 = Mockito.mock(OutboxDlqEvent.class);
-        Mockito.when(event1.getEventType()).thenReturn("test-event");
-        Mockito.when(event1.getDlqStatus()).thenReturn(DlqStatus.MOVED);
 
         OutboxDlqEvent event2 = Mockito.mock(OutboxDlqEvent.class);
-        Mockito.when(event2.getEventType()).thenReturn("test-event");
-        Mockito.when(event2.getDlqStatus()).thenReturn(DlqStatus.RESOLVED);
 
         List<OutboxDlqEvent> events = List.of(event1, event2);
 
@@ -96,17 +83,6 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
 
         // then
         Mockito.verify(delegate).saveBatch(events);
-        Counter movedCounter = registry.get("outbox_dlq_events_rate_total")
-                .tag("event_type", "test-event")
-                .tag("status", "moved")
-                .counter();
-        Assertions.assertEquals(1.0, movedCounter.count());
-
-        Counter resolvedCounter = registry.get("outbox_dlq_events_rate_total")
-                .tag("event_type", "test-event")
-                .tag("status", "resolved")
-                .counter();
-        Assertions.assertEquals(1.0, resolvedCounter.count());
     }
 
     @Test
@@ -114,7 +90,6 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
     void saveBatch_whenEventTypeUnknown_shouldDelegateAndNotIncrement() {
         // given
         OutboxDlqEvent event = Mockito.mock(OutboxDlqEvent.class);
-        Mockito.when(event.getEventType()).thenReturn("unknown-event");
         List<OutboxDlqEvent> events = List.of(event);
 
         // when
@@ -122,13 +97,6 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
 
         // then
         Mockito.verify(delegate).saveBatch(events);
-        Assertions.assertEquals(
-                0,
-                registry.getMeters().stream()
-                        .filter(m -> m instanceof Counter)
-                        .mapToDouble(m -> ((Counter) m).count())
-                        .sum()
-        );
     }
 
     @Test
@@ -184,24 +152,6 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
     }
 
     @Test
-    @DisplayName("UT deleteById() should increment manual deleted counter")
-    void deleteById_shouldIncrementManualDeletedCounter() {
-        // given
-        UUID id = UUID.randomUUID();
-        Mockito.when(delegate.deleteById(id)).thenReturn(1);
-
-        // when
-        tested.deleteById(id);
-
-        // then
-        Mockito.verify(delegate).deleteById(id);
-        Counter manualDeletedCounter = registry.get("outbox_dlq_events_by_type_rate_total")
-                .tag("type", "manual_deleted")
-                .counter();
-        Assertions.assertEquals(1.0, manualDeletedCounter.count());
-    }
-
-    @Test
     @DisplayName("UT deleteBatch() should increment success moved counter")
     void deleteBatch_shouldIncrementSuccessMovedCounter() {
         // given
@@ -217,23 +167,5 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
                 .tag("type", "success_moved_to_outbox")
                 .counter();
         Assertions.assertEquals(2.0, successMovedCounter.count());
-    }
-
-    @Test
-    @DisplayName("UT deleteBatchWithCheck() should increment manual deleted counter")
-    void deleteBatchWithCheck_shouldIncrementManualDeletedCounter() {
-        // given
-        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
-        Mockito.when(delegate.deleteBatchWithCheck(ids)).thenReturn(3);
-
-        // when
-        tested.deleteBatchWithCheck(ids);
-
-        // then
-        Mockito.verify(delegate).deleteBatchWithCheck(ids);
-        Counter manualDeletedCounter = registry.get("outbox_dlq_events_by_type_rate_total")
-                .tag("type", "manual_deleted")
-                .counter();
-        Assertions.assertEquals(3.0, manualDeletedCounter.count());
     }
 }
