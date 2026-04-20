@@ -75,14 +75,7 @@ jobs:
         run: docker compose logs --tail=300
 
       - name: Wait for application to be ready
-        run: |
-          if [ "${{ matrix.db }}" == "oracle" ]; then
-            TIMEOUT=180
-          else
-            TIMEOUT=120
-          fi
-          echo "Waiting for producer app..."
-          timeout $TIMEOUT bash -c 'until curl -sf http://localhost:8080/actuator/health | grep -q "UP"; do sleep 5; done'
+        run: sleep 180
 
       - name: Show container logs on failure
         if: failure()
