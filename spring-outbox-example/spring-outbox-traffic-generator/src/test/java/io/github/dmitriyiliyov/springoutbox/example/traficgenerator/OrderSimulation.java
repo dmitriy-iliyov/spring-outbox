@@ -24,8 +24,8 @@ public class OrderSimulation extends Simulation {
     private static final int USERS = intProp("users", 100);
     private static final int DURATION = intProp("durationSec", 60);
 
-    private static final int MIN_WAIT_MS = intProp("minWaitMs", 5);
-    private static final int MAX_WAIT_MS = intProp("maxWaitMs", 10);
+    private static final int MIN_WAIT_MS = intProp("minWaitMs", 1);
+    private static final int MAX_WAIT_MS = intProp("maxWaitMs", 2);
 
     private final HttpProtocolBuilder httpProtocol = http
             .baseUrl(PROTOCOL + "://" + HOST + ":" + PORT)

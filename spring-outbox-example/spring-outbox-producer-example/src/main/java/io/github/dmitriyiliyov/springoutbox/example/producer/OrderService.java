@@ -102,12 +102,10 @@ public class OrderService {
     public OrderDto update(OrderUpdateDto dto) {
         Order order = repository.findById(dto.getId()).orElseThrow(RuntimeException::new);
         String newIds = dto.getItemIds();
-        if (!order.getItemIds().equals(newIds)) {
-            order.setItemIds(newIds);
-            order.setAmount(priceService.countAmount(order.getItemIds()));
-            order = repository.save(order);
-            outboxPublisher.publish("update-order", mapper.toDto(order));
-        }
+        order.setItemIds(newIds);
+        order.setAmount(priceService.countAmount(order.getItemIds()));
+        order = repository.save(order);
+        outboxPublisher.publish("update-order", mapper.toDto(order));
         return mapper.toDto(order);
     }
 
@@ -126,22 +124,13 @@ public class OrderService {
                 .stream()
                 .collect(Collectors.toMap(OrderUpdateDto::getId, Function.identity()));
         List<Order> orders = repository.findAllById(dtoMap.keySet());
-        if (orders.isEmpty()) {
-            return Collections.emptyList();
-        }
-        List<Order> ordersToUpdate = orders.stream()
-                .filter(order -> {
-                    OrderUpdateDto dto = dtoMap.get(order.getId());
-                    if (!order.getItemIds().equals(dto.getItemIds())) {
-                        order.setItemIds(dto.getItemIds());
-                        order.setAmount(priceService.countAmount(order.getItemIds()));
-                        return true;
-                    }
-                    return false;
-                })
-                .toList();
-        repository.saveAll(ordersToUpdate);
-        outboxPublisher.publish("update-order", mapper.toDtoList(ordersToUpdate));
+        orders.forEach(order -> {
+            OrderUpdateDto dto = dtoMap.get(order.getId());
+            order.setItemIds(dto.getItemIds());
+            order.setAmount(priceService.countAmount(dto.getItemIds()));
+        });
+        repository.saveAll(orders);
+        outboxPublisher.publish("update-order", mapper.toDtoList(orders));
         return mapper.toDtoList(orders);
     }
 

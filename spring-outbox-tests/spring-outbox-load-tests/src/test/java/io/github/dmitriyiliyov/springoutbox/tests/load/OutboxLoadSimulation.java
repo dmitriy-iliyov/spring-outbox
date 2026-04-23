@@ -13,6 +13,8 @@ import static io.gatling.javaapi.http.HttpDsl.status;
 
 public class OutboxLoadSimulation extends Simulation {
 
+    private static final int USERS = 100;
+
     HttpProtocolBuilder httpProtocol = http
             .baseUrl("http://localhost:8080")
             .acceptHeader("application/json")
@@ -51,12 +53,12 @@ public class OutboxLoadSimulation extends Simulation {
     {
         setUp(
                 createOrderScenario.injectOpen(
-                        rampUsersPerSec(1).to(100).during(Duration.ofSeconds(30)),
-                        constantUsersPerSec(100).during(Duration.ofSeconds(60))
+                        rampUsersPerSec(1).to(USERS).during(Duration.ofSeconds(30)),
+                        constantUsersPerSec(USERS).during(Duration.ofSeconds(60))
                 ),
                 createBatchOrderScenario.injectOpen(
-                        rampUsersPerSec(1).to(100).during(Duration.ofSeconds(30)),
-                        constantUsersPerSec(100).during(Duration.ofSeconds(60))
+                        rampUsersPerSec(1).to(USERS).during(Duration.ofSeconds(30)),
+                        constantUsersPerSec(USERS).during(Duration.ofSeconds(60))
                 )
         ).protocols(httpProtocol);
     }
