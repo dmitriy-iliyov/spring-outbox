@@ -32,8 +32,6 @@ services:
       POSTGRES_PASSWORD: root
       POSTGRES_USER: admin
       POSTGRES_DB: outbox_example
-    volumes:
-      - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -82,6 +80,3 @@ services:
       timeout: 10s
       retries: 20
       start_period: 120s
-
-volumes:
-  pg_data:
