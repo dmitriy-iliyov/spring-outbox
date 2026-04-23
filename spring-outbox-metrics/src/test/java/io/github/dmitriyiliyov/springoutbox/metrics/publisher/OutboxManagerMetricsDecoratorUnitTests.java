@@ -27,7 +27,6 @@ public class OutboxManagerMetricsDecoratorUnitTests {
     OutboxManagerMetricsDecorator tested;
     SimpleMeterRegistry registry;
     Counter processedCounter;
-    Counter failedCounter;
 
     @BeforeEach
     public void initContext() {
@@ -43,10 +42,6 @@ public class OutboxManagerMetricsDecoratorUnitTests {
         processedCounter = registry.get("outbox_events_rate_total")
                 .tag("event_type", "test-event-type")
                 .tag("status", "processed")
-                .counter();
-        failedCounter = registry.get("outbox_events_rate_total")
-                .tag("event_type", "test-event-type")
-                .tag("status", "failed")
                 .counter();
     }
 
@@ -65,7 +60,6 @@ public class OutboxManagerMetricsDecoratorUnitTests {
         // then
         verify(outboxManager).finalizeBatch(eq(events), eq(processedIds), eq(failedIds), eq(5), any());
         assertEquals(2.0, processedCounter.count(), "Processed counter should be incremented by 2");
-        assertEquals(1.0, failedCounter.count(), "Failed counter should be incremented by 1");
     }
 
     @Test
@@ -82,7 +76,6 @@ public class OutboxManagerMetricsDecoratorUnitTests {
         // then
         verify(outboxManager).finalizeBatch(eq(events), eq(processedIds), eq(failedIds), eq(5), any());
         assertEquals(0, processedCounter.count(), "Processed counter should not be incremented");
-        assertEquals(0, failedCounter.count(), "Failed counter should be not incremented");
     }
 
     @Test
@@ -100,7 +93,6 @@ public class OutboxManagerMetricsDecoratorUnitTests {
         // then
         verify(outboxManager).finalizeBatch(eq(events), eq(processedIds), eq(failedIds), eq(5), any());
         assertEquals(0, processedCounter.count(), "Processed counter should not be incremented");
-        assertEquals(0, failedCounter.count(), "Failed counter should be not incremented");
     }
 
     @Test
@@ -115,8 +107,8 @@ public class OutboxManagerMetricsDecoratorUnitTests {
 
         // then
         verify(outboxManager).loadBatch(EventStatus.FAILED, 10);
-        Counter attemptCounter = registry.get("outbox_events_by_type_rate_total")
-                .tag("type", "attempt_move_to_dlq")
+        Counter attemptCounter = registry.get("outbox_events_by_action_type_rate_total")
+                .tag("action_type", "attempt_move_to_dlq")
                 .counter();
         assertEquals(2.0, attemptCounter.count());
     }
@@ -133,8 +125,8 @@ public class OutboxManagerMetricsDecoratorUnitTests {
 
         // then
         verify(outboxManager).recoverStuckBatch(duration, 10);
-        Counter recoveredCounter = registry.get("outbox_events_by_type_rate_total")
-                .tag("type", "recovered")
+        Counter recoveredCounter = registry.get("outbox_events_by_action_type_rate_total")
+                .tag("action_type", "recovered")
                 .counter();
         assertEquals(5.0, recoveredCounter.count());
     }
@@ -151,8 +143,8 @@ public class OutboxManagerMetricsDecoratorUnitTests {
 
         // then
         verify(outboxManager).deleteProcessedBatch(threshold, 20);
-        Counter cleanedCounter = registry.get("outbox_events_by_type_rate_total")
-                .tag("type", "cleaned")
+        Counter cleanedCounter = registry.get("outbox_events_by_action_type_rate_total")
+                .tag("action_type", "cleaned")
                 .counter();
         assertEquals(15.0, cleanedCounter.count());
     }
@@ -169,8 +161,8 @@ public class OutboxManagerMetricsDecoratorUnitTests {
 
         // then
         verify(outboxManager).deleteBatch(ids);
-        Counter successMovedCounter = registry.get("outbox_events_by_type_rate_total")
-                .tag("type", "success_moved_to_dlq")
+        Counter successMovedCounter = registry.get("outbox_events_by_action_type_rate_total")
+                .tag("action_type", "success_moved_to_dlq")
                 .counter();
         assertEquals(1.0, successMovedCounter.count());
     }

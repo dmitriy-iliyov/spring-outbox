@@ -12,16 +12,16 @@ import java.util.stream.Collectors;
 
 public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
 
-    private final Map<AdditionalCounterType, Counter> additionalCounters;
+    private final Map<ActionType, Counter> actionCounters;
     private final OutboxDlqManager delegate;
 
     public OutboxDlqManagerMetricsDecorator(MeterRegistry registry, OutboxDlqManager delegate) {
-        this.additionalCounters = Arrays.stream(AdditionalCounterType.values())
+        this.actionCounters = Arrays.stream(ActionType.values())
                 .collect(Collectors.toMap(
                                 Function.identity(),
                                 type -> registry.counter(
-                                        "outbox_dlq_events_by_type_rate_total",
-                                        "type", type.toString().toLowerCase())
+                                        "outbox_dlq_events_by_action_type_rate_total",
+                                        "action_type", type.toString().toLowerCase())
                         )
                 );
         this.delegate = delegate;
@@ -36,7 +36,7 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
     public List<OutboxDlqEvent> loadAndLockBatch(DlqStatus status, int batchSize) {
         List<OutboxDlqEvent> events = delegate.loadAndLockBatch(status, batchSize);
         if (events != null && !events.isEmpty()) {
-            additionalCounters.get(AdditionalCounterType.ATTEMPT_MOVE_TO_OUTBOX).increment(events.size());
+            actionCounters.get(ActionType.ATTEMPT_MOVE_TO_OUTBOX).increment(events.size());
         }
         return events;
     }
@@ -44,7 +44,7 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
     @Override
     public int deleteBatch(Set<UUID> ids) {
         int deletedCount = delegate.deleteBatch(ids);
-        additionalCounters.get(AdditionalCounterType.SUCCESS_MOVED_TO_OUTBOX).increment(deletedCount);
+        actionCounters.get(ActionType.SUCCESS_MOVED_TO_OUTBOX).increment(deletedCount);
         return deletedCount;
     }
 }

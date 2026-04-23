@@ -111,8 +111,8 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
 
         // then
         Mockito.verify(delegate).loadAndLockBatch(DlqStatus.MOVED, 10);
-        Counter attemptCounter = registry.get("outbox_dlq_events_by_type_rate_total")
-                .tag("type", "attempt_move_to_outbox")
+        Counter attemptCounter = registry.get("outbox_dlq_events_by_action_type_rate_total")
+                .tag("action_type", "attempt_move_to_outbox")
                 .counter();
         Assertions.assertEquals(2.0, attemptCounter.count());
     }
@@ -128,8 +128,8 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
 
         // then
         Mockito.verify(delegate).loadAndLockBatch(DlqStatus.MOVED, 10);
-        Counter attemptCounter = registry.get("outbox_dlq_events_by_type_rate_total")
-                .tag("type", "attempt_move_to_outbox")
+        Counter attemptCounter = registry.get("outbox_dlq_events_by_action_type_rate_total")
+                .tag("action_type", "attempt_move_to_outbox")
                 .counter();
         Assertions.assertEquals(0.0, attemptCounter.count());
     }
@@ -145,8 +145,8 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
 
         // then
         Mockito.verify(delegate).loadAndLockBatch(DlqStatus.MOVED, 10);
-        Counter attemptCounter = registry.get("outbox_dlq_events_by_type_rate_total")
-                .tag("type", "attempt_move_to_outbox")
+        Counter attemptCounter = registry.get("outbox_dlq_events_by_action_type_rate_total")
+                .tag("action_type", "attempt_move_to_outbox")
                 .counter();
         Assertions.assertEquals(0.0, attemptCounter.count());
     }
@@ -163,8 +163,8 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
 
         // then
         Mockito.verify(delegate).deleteBatch(ids);
-        Counter successMovedCounter = registry.get("outbox_dlq_events_by_type_rate_total")
-                .tag("type", "success_moved_to_outbox")
+        Counter successMovedCounter = registry.get("outbox_dlq_events_by_action_type_rate_total")
+                .tag("action_type", "success_moved_to_outbox")
                 .counter();
         Assertions.assertEquals(2.0, successMovedCounter.count());
     }

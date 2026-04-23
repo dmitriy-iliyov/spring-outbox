@@ -14,16 +14,16 @@ import java.util.stream.Collectors;
 
 public class OutboxDlqWebManagerMetricsDecorator implements OutboxDlqWebManager {
 
-    private final Map<AdditionalCounterType, Counter> additionalCounters;
+    private final Map<ActionType, Counter> actionCounters;
     private final OutboxDlqWebManager delegate;
 
     public OutboxDlqWebManagerMetricsDecorator(MeterRegistry registry, OutboxDlqWebManager delegate) {
-        this.additionalCounters = Arrays.stream(AdditionalCounterType.values())
+        this.actionCounters = Arrays.stream(ActionType.values())
                 .collect(Collectors.toMap(
                                 Function.identity(),
                                 type -> registry.counter(
-                                        "outbox_dlq_events_by_type_rate_total",
-                                        "type", type.toString().toLowerCase())
+                                        "outbox_dlq_events_by_action_type_rate_total",
+                                        "action_type", type.toString().toLowerCase())
                         )
                 );
         this.delegate = delegate;
@@ -57,14 +57,14 @@ public class OutboxDlqWebManagerMetricsDecorator implements OutboxDlqWebManager 
     @Override
     public int deleteById(UUID id) {
         int deletedCount = delegate.deleteById(id);
-        additionalCounters.get(AdditionalCounterType.MANUAL_DELETED).increment(deletedCount);
+        actionCounters.get(ActionType.MANUAL_DELETED).increment(deletedCount);
         return deletedCount;
     }
 
     @Override
     public int deleteBatch(Set<UUID> ids) {
         int deletedCount = delegate.deleteBatch(ids);
-        additionalCounters.get(AdditionalCounterType.MANUAL_DELETED).increment(deletedCount);
+        actionCounters.get(ActionType.MANUAL_DELETED).increment(deletedCount);
         return deletedCount;
     }
 }

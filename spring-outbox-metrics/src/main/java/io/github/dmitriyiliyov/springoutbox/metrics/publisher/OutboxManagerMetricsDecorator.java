@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 
 public class OutboxManagerMetricsDecorator implements OutboxManager {
 
-    private static final EventStatus [] STATUSES = new EventStatus[] {EventStatus.PROCESSED, EventStatus.FAILED};
+    private static final EventStatus [] STATUSES = new EventStatus[] {EventStatus.PROCESSED};
     private final OutboxManager delegate;
     private final Map<String, Map<EventStatus, Counter>> counters;
-    private final Map<AdditionalCounterType, Counter> additionalCounters;
+    private final Map<ActionType, Counter> actionCounters;
 
     public OutboxManagerMetricsDecorator(OutboxPublisherPropertiesHolder properties,
                                          MeterRegistry registry,
@@ -37,12 +37,12 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
                                         )
                                 ))
                 ));
-        this.additionalCounters = Arrays.stream(AdditionalCounterType.values())
+        this.actionCounters = Arrays.stream(ActionType.values())
                 .collect(Collectors.toMap(
                         Function.identity(),
                         type -> registry.counter(
-                                "outbox_events_by_type_rate_total",
-                                "type", type.toString().toLowerCase())
+                                "outbox_events_by_action_type_rate_total",
+                                "action_type", type.toString().toLowerCase())
                         )
                 );
         this.delegate = delegate;
@@ -66,7 +66,7 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
     @Override
     public List<OutboxEvent> loadBatch(EventStatus status, int batchSize) {
         List<OutboxEvent> events = delegate.loadBatch(status, batchSize);
-        additionalCounters.get(AdditionalCounterType.ATTEMPT_MOVE_TO_DLQ).increment(events.size());
+        actionCounters.get(ActionType.ATTEMPT_MOVE_TO_DLQ).increment(events.size());
         return events;
     }
 
@@ -81,9 +81,6 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
                 if (processedIds != null) {
                     eventTypeCounter.get(EventStatus.PROCESSED).increment(processedIds.size());
                 }
-                if (failedIds != null) {
-                    eventTypeCounter.get(EventStatus.FAILED).increment(failedIds.size());
-                }
             }
         }
     }
@@ -91,28 +88,28 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
     @Override
     public int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
         int recoveredCount = delegate.recoverStuckBatch(maxBatchProcessingTime, batchSize);
-        additionalCounters.get(AdditionalCounterType.RECOVERED).increment(recoveredCount);
+        actionCounters.get(ActionType.RECOVERED).increment(recoveredCount);
         return recoveredCount;
     }
 
     @Override
     public int deleteProcessedBatch(Instant threshold, int batchSize) {
         int deletedCount = delegate.deleteProcessedBatch(threshold, batchSize);
-        additionalCounters.get(AdditionalCounterType.CLEANED).increment(deletedCount);
+        actionCounters.get(ActionType.CLEANED).increment(deletedCount);
         return deletedCount;
     }
 
     @Override
     public int deleteBatch(Set<UUID> ids) {
         int deletedCount = delegate.deleteBatch(ids);
-        additionalCounters.get(AdditionalCounterType.SUCCESS_MOVED_TO_DLQ).increment(deletedCount);
+        actionCounters.get(ActionType.SUCCESS_MOVED_TO_DLQ).increment(deletedCount);
         return deletedCount;
     }
 
     /**
-     * Defines tags for the {@code outbox_events_by_type_rate_total} metric.
+     * Defines tags for the {@code outbox_events_by_action_type_rate_total} metric.
      */
-    private enum AdditionalCounterType {
+    private enum ActionType {
 
         /**
          * Incremented upon attempt to load and move failed events from the main outbox to the DLQ.

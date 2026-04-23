@@ -141,7 +141,7 @@ public class SimpleOutboxCacheUnitTests {
 
         // when
         Thread.sleep(500);
-        cache.putCountByStatus(TestStatus.PENDING, 20L); // обновляем значение
+        cache.putCountByStatus(TestStatus.PENDING, 20L);
         Long result = cache.getCountByStatus(TestStatus.PENDING);
 
         // then
@@ -157,7 +157,7 @@ public class SimpleOutboxCacheUnitTests {
 
         // when
         Thread.sleep(500);
-        cache.putCountByEventTypeAndStatus("evt", TestStatus.PENDING, 15L); // обновляем значение
+        cache.putCountByEventTypeAndStatus("evt", TestStatus.PENDING, 15L);
         Long result = cache.getCountByEventTypeAndStatus("evt", TestStatus.PENDING);
 
         // then

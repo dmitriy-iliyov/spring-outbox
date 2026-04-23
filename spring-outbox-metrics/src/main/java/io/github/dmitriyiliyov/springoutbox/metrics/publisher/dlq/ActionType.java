@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 
 /**
- * Defines tags for the {@code outbox_dlq_events_by_type_rate_total} metric.
+ * Defines tags for the {@code outbox_dlq_events_by_action_type_rate_total} metric.
  * Used by decorators to track the lifecycle of events within the DLQ.
  */
-public enum AdditionalCounterType {
+public enum ActionType {
 
     /**
      * Incremented upon attempt to move events from the DLQ to the main outbox table.

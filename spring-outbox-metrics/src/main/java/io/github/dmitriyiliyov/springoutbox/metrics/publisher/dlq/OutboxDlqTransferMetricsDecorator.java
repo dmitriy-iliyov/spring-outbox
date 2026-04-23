@@ -17,12 +17,12 @@ public class OutboxDlqTransferMetricsDecorator implements OutboxDlqTransfer {
     }
 
     @Override
-    public void transferToDlq(int batchSize) {
-        timerTo.record(() -> delegate.transferToDlq(batchSize));
+    public int transferToDlq(int batchSize) {
+        return timerTo.record(() -> delegate.transferToDlq(batchSize));
     }
 
     @Override
-    public void transferFromDlq(int batchSize) {
-        timerFrom.record(() -> delegate.transferFromDlq(batchSize));
+    public int transferFromDlq(int batchSize) {
+        return timerFrom.record(() -> delegate.transferFromDlq(batchSize));
     }
 }
