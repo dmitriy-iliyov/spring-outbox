@@ -7,6 +7,9 @@ spring:
       host: outbox-consumer-redis
 server:
   port: 8080
+logging:
+  level:
+    io.github.dmitriyiliyov.springoutbox: debug
 outbox:
   thread-pool-size: 2
   publisher:
@@ -15,7 +18,7 @@ outbox:
     enabled: true
     clean-up:
       enabled: true
-      ttl: 24h
+      ttl: 10m
     cache:
       enabled: true
       cache-name: "outbox:consumed"

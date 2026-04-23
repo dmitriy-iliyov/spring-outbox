@@ -35,81 +35,81 @@ class OutboxDlqWebRepositoryFactoryUnitTests {
     DatabaseMetaData metaData;
 
     @Test
-    @DisplayName("UT generate() when PostgreSQL should return MultiDialectOutboxDlqWebRepository")
-    void generate_whenPostgres_shouldReturnMultiDialectRepository() throws SQLException {
+    @DisplayName("UT create() when PostgreSQL should return MultiDialectOutboxDlqWebRepository")
+    void create_whenPostgres_shouldReturnMultiDialectRepository() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        OutboxDlqWebRepository result = OutboxDlqWebRepositoryFactory.generate(dataSource, jdbcTemplate);
+        OutboxDlqWebRepository result = OutboxDlqWebRepositoryFactory.create(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(MultiDialectOutboxDlqWebRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when MySQL should return MultiDialectOutboxDlqWebRepository")
-    void generate_whenMySql_shouldReturnMultiDialectRepository() throws SQLException {
+    @DisplayName("UT create() when MySQL should return MultiDialectOutboxDlqWebRepository")
+    void create_whenMySql_shouldReturnMultiDialectRepository() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        OutboxDlqWebRepository result = OutboxDlqWebRepositoryFactory.generate(dataSource, jdbcTemplate);
+        OutboxDlqWebRepository result = OutboxDlqWebRepositoryFactory.create(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(MultiDialectOutboxDlqWebRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when Oracle should return OracleOutboxDlqWebRepository")
-    void generate_whenOracle_shouldReturnOracleRepository() throws SQLException {
+    @DisplayName("UT create() when Oracle should return OracleOutboxDlqWebRepository")
+    void create_whenOracle_shouldReturnOracleRepository() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        OutboxDlqWebRepository result = OutboxDlqWebRepositoryFactory.generate(dataSource, jdbcTemplate);
+        OutboxDlqWebRepository result = OutboxDlqWebRepositoryFactory.create(dataSource, jdbcTemplate);
 
         // then
         assertInstanceOf(OracleOutboxDlqWebRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when unsupported DB should throw IAE")
-    void generate_whenUnsupportedDb_shouldThrowIAE() throws SQLException {
+    @DisplayName("UT create() when unsupported DB should throw IAE")
+    void create_whenUnsupportedDb_shouldThrowIAE() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("H2");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxDlqWebRepositoryFactory.generate(dataSource, jdbcTemplate));
+        assertThrows(IllegalArgumentException.class, () -> OutboxDlqWebRepositoryFactory.create(dataSource, jdbcTemplate));
     }
 
     @Test
-    @DisplayName("UT generate() when SQLException should throw RuntimeException")
-    void generate_whenSqlException_shouldThrowRuntimeException() throws SQLException {
+    @DisplayName("UT create() when SQLException should throw RuntimeException")
+    void create_whenSqlException_shouldThrowRuntimeException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
         // when + then
-        assertThrows(RuntimeException.class, () -> OutboxDlqWebRepositoryFactory.generate(dataSource, jdbcTemplate));
+        assertThrows(RuntimeException.class, () -> OutboxDlqWebRepositoryFactory.create(dataSource, jdbcTemplate));
     }
 
     @Test
-    @DisplayName("UT generate() when JdbcTemplate is null should throw IllegalStateException")
-    void generate_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
+    @DisplayName("UT create() when JdbcTemplate is null should throw IllegalStateException")
+    void create_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxDlqWebRepositoryFactory.generate(dataSource, null));
+        assertThrows(IllegalStateException.class, () -> OutboxDlqWebRepositoryFactory.create(dataSource, null));
     }
 }

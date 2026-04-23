@@ -34,19 +34,19 @@ class OutboxSenderFactoryUnitTests {
     ObjectMapper mapper;
 
     @Test
-    @DisplayName("UT generate() when type is null should throw IAE")
-    void generate_whenTypeNull_shouldThrowIAE() {
+    @DisplayName("UT create() when type is null should throw IAE")
+    void create_whenTypeNull_shouldThrowIAE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(null);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and beanName specified should return KafkaOutboxSender")
-    void generate_whenKafkaAndBeanNameSpecified_shouldReturnSender() {
+    @DisplayName("UT create() when type is KAFKA and beanName specified should return KafkaOutboxSender")
+    void create_whenKafkaAndBeanNameSpecified_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -62,15 +62,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and beanName not specified should resolve by type")
-    void generate_whenKafkaAndBeanNameNotSpecified_shouldResolveByType() {
+    @DisplayName("UT create() when type is KAFKA and beanName not specified should resolve by type")
+    void create_whenKafkaAndBeanNameNotSpecified_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -86,15 +86,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and multiple beans found should throw ISE")
-    void generate_whenKafkaAndMultipleBeans_shouldThrowISE() {
+    @DisplayName("UT create() when type is KAFKA and multiple beans found should throw ISE")
+    void create_whenKafkaAndMultipleBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -102,12 +102,12 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBeanNamesForType(KafkaTemplate.class)).thenReturn(new String[]{"kafka1", "kafka2"});
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and no beans found should throw ISE")
-    void generate_whenKafkaAndNoBeans_shouldThrowISE() {
+    @DisplayName("UT create() when type is KAFKA and no beans found should throw ISE")
+    void create_whenKafkaAndNoBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -115,12 +115,12 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBeanNamesForType(KafkaTemplate.class)).thenReturn(new String[]{});
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and bean not found by name should throw IAE")
-    void generate_whenKafkaAndBeanNotFoundByName_shouldThrowIAE() {
+    @DisplayName("UT create() when type is KAFKA and bean not found by name should throw IAE")
+    void create_whenKafkaAndBeanNotFoundByName_shouldThrowIAE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -129,12 +129,12 @@ class OutboxSenderFactoryUnitTests {
         when(context.containsBean("missingBean")).thenReturn(false);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and beanName specified should return RabbitMqOutboxSender")
-    void generate_whenRabbitAndBeanNameSpecified_shouldReturnSender() {
+    @DisplayName("UT create() when type is RABBIT_MQ and beanName specified should return RabbitMqOutboxSender")
+    void create_whenRabbitAndBeanNameSpecified_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -148,15 +148,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("rabbitTemplate", RabbitTemplate.class)).thenReturn(rabbitTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(RabbitMqOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and beanName not specified should resolve by type")
-    void generate_whenRabbitAndBeanNameNotSpecified_shouldResolveByType() {
+    @DisplayName("UT create() when type is RABBIT_MQ and beanName not specified should resolve by type")
+    void create_whenRabbitAndBeanNameNotSpecified_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -170,15 +170,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("rabbitTemplate", RabbitTemplate.class)).thenReturn(rabbitTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(RabbitMqOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and multiple beans found should throw ISE")
-    void generate_whenRabbitAndMultipleBeans_shouldThrowISE() {
+    @DisplayName("UT create() when type is RABBIT_MQ and multiple beans found should throw ISE")
+    void create_whenRabbitAndMultipleBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -186,12 +186,12 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{"rabbit1", "rabbit2"});
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and no beans found should throw ISE")
-    void generate_whenRabbitAndNoBeans_shouldThrowISE() {
+    @DisplayName("UT create() when type is RABBIT_MQ and no beans found should throw ISE")
+    void create_whenRabbitAndNoBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -199,12 +199,12 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{});
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalStateException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and bean not found by name should throw IAE")
-    void generate_whenRabbitAndBeanNotFoundByName_shouldThrowIAE() {
+    @DisplayName("UT create() when type is RABBIT_MQ and bean not found by name should throw IAE")
+    void create_whenRabbitAndBeanNotFoundByName_shouldThrowIAE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -213,12 +213,12 @@ class OutboxSenderFactoryUnitTests {
         when(context.containsBean("missingBean")).thenReturn(false);
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.generate(props, context, mapper));
+        assertThrows(IllegalArgumentException.class, () -> OutboxSenderFactory.create(props, context, mapper));
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and mandatory is false should still return RabbitMqOutboxSender")
-    void generate_whenRabbitAndMandatoryFalse_shouldReturnSender() {
+    @DisplayName("UT create() when type is RABBIT_MQ and mandatory is false should still return RabbitMqOutboxSender")
+    void create_whenRabbitAndMandatoryFalse_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -232,15 +232,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("rabbitTemplate", RabbitTemplate.class)).thenReturn(rabbitTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(RabbitMqOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and acks is not 'all' should still return KafkaOutboxSender")
-    void generate_whenKafkaAndAcksNotAll_shouldReturnSender() {
+    @DisplayName("UT create() when type is KAFKA and acks is not 'all' should still return KafkaOutboxSender")
+    void create_whenKafkaAndAcksNotAll_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -256,15 +256,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and idempotence is false should still return KafkaOutboxSender")
-    void generate_whenKafkaAndIdempotenceFalse_shouldReturnSender() {
+    @DisplayName("UT create() when type is KAFKA and idempotence is false should still return KafkaOutboxSender")
+    void create_whenKafkaAndIdempotenceFalse_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -280,15 +280,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and idempotence is String 'true' should return KafkaOutboxSender")
-    void generate_whenKafkaAndIdempotenceAsStringTrue_shouldReturnSender() {
+    @DisplayName("UT create() when type is KAFKA and idempotence is String 'true' should return KafkaOutboxSender")
+    void create_whenKafkaAndIdempotenceAsStringTrue_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -304,15 +304,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and idempotence is String 'false' should still return KafkaOutboxSender")
-    void generate_whenKafkaAndIdempotenceAsStringFalse_shouldReturnSender() {
+    @DisplayName("UT create() when type is KAFKA and idempotence is String 'false' should still return KafkaOutboxSender")
+    void create_whenKafkaAndIdempotenceAsStringFalse_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -328,15 +328,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is KAFKA and beanName is empty should resolve by type")
-    void generate_whenKafkaAndBeanNameEmpty_shouldResolveByType() {
+    @DisplayName("UT create() when type is KAFKA and beanName is empty should resolve by type")
+    void create_whenKafkaAndBeanNameEmpty_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.KAFKA);
@@ -353,15 +353,15 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("kafkaTemplate", KafkaTemplate.class)).thenReturn(kafkaTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(KafkaOutboxSender.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when type is RABBIT_MQ and beanName is empty should resolve by type")
-    void generate_whenRabbitAndBeanNameEmpty_shouldResolveByType() {
+    @DisplayName("UT create() when type is RABBIT_MQ and beanName is empty should resolve by type")
+    void create_whenRabbitAndBeanNameEmpty_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
         props.setType(SenderType.RABBITMQ);
@@ -376,7 +376,7 @@ class OutboxSenderFactoryUnitTests {
         when(context.getBean("rabbitTemplate", RabbitTemplate.class)).thenReturn(rabbitTemplate);
 
         // when
-        OutboxSender result = OutboxSenderFactory.generate(props, context, mapper);
+        OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
         assertInstanceOf(RabbitMqOutboxSender.class, result);

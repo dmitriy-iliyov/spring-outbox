@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -128,7 +127,6 @@ class DefaultOutboxProcessorUnitTests {
     public void process_whenLoadedEventsIsNull_shouldEarlyReturns() {
         // given
         when(manager.loadBatch(eventType, batchSize)).thenReturn(null);
-        when(clock.instant()).thenReturn(Instant.now());
 
         // when
         tested.process(properties);
@@ -142,7 +140,6 @@ class DefaultOutboxProcessorUnitTests {
     @DisplayName("UT process() when loaded events is empty, should early returns")
     void process_whenLoadedEventsIsEmpty_shouldEarlyReturn() {
         when(manager.loadBatch(eventType, batchSize)).thenReturn(List.of());
-        when(clock.instant()).thenReturn(Instant.now());
 
         tested.process(properties);
 

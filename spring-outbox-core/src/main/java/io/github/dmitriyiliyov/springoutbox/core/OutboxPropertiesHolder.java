@@ -12,7 +12,7 @@ public interface OutboxPropertiesHolder {
     /**
      * Holds properties related to the cleanup of outbox-related data.
      */
-    interface CleanUpPropertiesHolder {
+    interface CleanUpPropertiesHolder extends PollingPropertiesHolder {
 
         /**
          * The TTL for data before it is eligible for cleanup.
@@ -27,15 +27,5 @@ public interface OutboxPropertiesHolder {
          * This controls the transaction size during cleanup to avoid locking the database for too long.
          */
         Integer getBatchSize();
-
-        /**
-         * The initial delay before the first cleanup operation starts after application startup.
-         */
-        Duration getInitialDelay();
-
-        /**
-         * The fixed delay between subsequent cleanup operations.
-         */
-        Duration getFixedDelay();
     }
 }

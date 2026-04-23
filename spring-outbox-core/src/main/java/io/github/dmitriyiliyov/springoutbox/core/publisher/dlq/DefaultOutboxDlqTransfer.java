@@ -34,7 +34,7 @@ public class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
     }
 
     @Override
-    public void transferToDlq(int batchSize) {
+    public int transferToDlq(int batchSize) {
         final List<OutboxEvent> events = new ArrayList<>();
         transactionTemplate.executeWithoutResult(status -> {
             try {
@@ -59,16 +59,18 @@ public class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
             } catch (Exception e) {
                 log.error("Error when handle events after transferring to DLQ", e);
             }
+            return events.size();
         }
+        return 0;
     }
 
     @Override
-    public void transferFromDlq(int batchSize) {
-        transactionTemplate.executeWithoutResult(status -> {
+    public int transferFromDlq(int batchSize) {
+        Integer transferredCount = transactionTemplate.execute(status -> {
             try {
                 List<OutboxDlqEvent> dlqEvents = dlqManager.loadAndLockBatch(DlqStatus.TO_RETRY, batchSize);
                 if (dlqEvents == null || dlqEvents.isEmpty()) {
-                    return;
+                    return 0;
                 }
                 manager.saveBatch(eventMapper.toOutboxEvents(dlqEvents));
                 dlqManager.deleteBatch(
@@ -76,10 +78,12 @@ public class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                                 .map(OutboxDlqEvent::getId)
                                 .collect(Collectors.toSet())
                 );
+                return dlqEvents.size();
             } catch (Exception e) {
                 log.error("Error when transferring events from DLQ to outbox", e);
                 throw e;
             }
         });
+        return transferredCount != null ? transferredCount : 0;
     }
 }

@@ -40,15 +40,15 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     DatabaseMetaData metaData;
 
     @Test
-    @DisplayName("UT generate() when database is postgresql should return PostgreSqlConsumedOutboxRepository")
-    void generate_whenDatabaseIsPostgresql_shouldReturnPostgresRepository() throws Exception {
+    @DisplayName("UT create() when database is postgresql should return PostgreSqlConsumedOutboxRepository")
+    void create_whenDatabaseIsPostgresql_shouldReturnPostgresRepository() throws Exception {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertThat(repository).isInstanceOf(PostgreSqlConsumedOutboxRepository.class);
@@ -60,15 +60,15 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT generate() when database is mysql should return MySqlConsumedOutboxRepository")
-    void generate_whenDatabaseIsMysql_shouldReturnMySqlRepository() throws Exception {
+    @DisplayName("UT create() when database is mysql should return MySqlConsumedOutboxRepository")
+    void create_whenDatabaseIsMysql_shouldReturnMySqlRepository() throws Exception {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertThat(repository).isInstanceOf(MySqlConsumedOutboxRepository.class);
@@ -80,15 +80,15 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT generate() when database is oracle should return OracleConsumedOutboxRepository")
-    void generate_whenDatabaseIsOracle_shouldReturnOracleRepository() throws Exception {
+    @DisplayName("UT create() when database is oracle should return OracleConsumedOutboxRepository")
+    void create_whenDatabaseIsOracle_shouldReturnOracleRepository() throws Exception {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        ConsumedOutboxRepository repository = ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertThat(repository).isInstanceOf(OracleConsumedOutboxRepository.class);
@@ -100,8 +100,8 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT generate() when database is unsupported should throw IllegalArgumentException")
-    void generate_whenDatabaseIsUnsupported_shouldThrow() throws Exception {
+    @DisplayName("UT create() when database is unsupported should throw IllegalArgumentException")
+    void create_whenDatabaseIsUnsupported_shouldThrow() throws Exception {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
@@ -109,7 +109,7 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
 
         // when + then
         assertThrows(IllegalArgumentException.class, () ->
-                ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock)
+                ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock)
         );
 
         verify(dataSource, times(1)).getConnection();
@@ -120,61 +120,61 @@ class ConsumedOutboxRepositoryFactoryUnitTests {
     }
 
     @Test
-    @DisplayName("UT generate() when dataSource is null should throw NPE")
-    void generate_whenDataSourceIsNull_shouldThrowNPE() {
-        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(null, jdbcTemplate, clock));
+    @DisplayName("UT create() when dataSource is null should throw NPE")
+    void create_whenDataSourceIsNull_shouldThrowNPE() {
+        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.create(null, jdbcTemplate, clock));
     }
 
     @Test
-    @DisplayName("UT generate() when jdbcTemplate is null should throw IllegalStateException")
-    void generate_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
+    @DisplayName("UT create() when jdbcTemplate is null should throw IllegalStateException")
+    void create_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, null, clock));
+        assertThrows(IllegalStateException.class, () -> ConsumedOutboxRepositoryFactory.create(dataSource, null, clock));
     }
 
     @Test
-    @DisplayName("UT generate() when clock is null should throw IllegalStateException")
-    void generate_whenClockIsNull_shouldThrowIllegalStateException() throws SQLException {
+    @DisplayName("UT create() when clock is null should throw IllegalStateException")
+    void create_whenClockIsNull_shouldThrowIllegalStateException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, null));
+        assertThrows(IllegalStateException.class, () -> ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, null));
     }
 
     @Test
-    @DisplayName("UT generate() when dataSource and jdbcTemplate is null should throw NPE")
-    void generate_whenDataSourceAndJdbcTemplateIsNull_shouldThrowNPE() {
-        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.generate(null, null, null));
+    @DisplayName("UT create() when dataSource and jdbcTemplate is null should throw NPE")
+    void create_whenDataSourceAndJdbcTemplateIsNull_shouldThrowNPE() {
+        assertThrows(NullPointerException.class, () -> ConsumedOutboxRepositoryFactory.create(null, null, null));
     }
 
     @Test
-    @DisplayName("UT generate() when connection throws should throw Exception")
-    void generate_whenConnectionThrows_shouldThrowException() throws Exception {
+    @DisplayName("UT create() when connection throws should throw Exception")
+    void create_whenConnectionThrows_shouldThrowException() throws Exception {
         // given
         when(dataSource.getConnection()).thenThrow(new SQLException());
 
         // when + then
-        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock));
+        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock));
         verify(dataSource, times(1)).getConnection();
         verifyNoMoreInteractions(dataSource);
     }
 
     @Test
-    @DisplayName("UT generate() when connection throws should throw RuntimeException")
-    void generate_whenConnectionThrows_shouldThrowRuntimeException() throws Exception {
+    @DisplayName("UT create() when connection throws should throw RuntimeException")
+    void create_whenConnectionThrows_shouldThrowRuntimeException() throws Exception {
         // given
         when(dataSource.getConnection()).thenThrow(new RuntimeException());
 
         // when + then
-        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock));
+        assertThrows(RuntimeException.class, () -> ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock));
         verify(dataSource, times(1)).getConnection();
         verifyNoMoreInteractions(dataSource);
     }

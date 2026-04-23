@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.messaging.SpringMessageOutboxEventId
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheObserver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxEventIdResolver;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class OutboxConsumerAutoConfiguration {
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
             Clock clock
     ) {
-        return ConsumedOutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        return ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
     }
 
     @Bean
@@ -172,6 +173,10 @@ public class OutboxConsumerAutoConfiguration {
             @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
             ConsumedOutboxManager manager
     ) {
-        return new ConsumedOutboxCleanUpScheduler(properties.getCleanUp(), executor, manager);
+        return new ConsumedOutboxCleanUpScheduler(
+                properties.getCleanUp(),
+                OutboxScheduleStrategyFactory.create(properties.getCleanUp().getPolling(), executor),
+                manager
+        );
     }
 }

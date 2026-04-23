@@ -1,6 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
+import io.github.dmitriyiliyov.springoutbox.core.Continuable;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,88 +12,132 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxRecoverySchedulerUnitTests {
+public class OutboxRecoverySchedulerUnitTests {
 
     @Mock
-    private OutboxPublisherPropertiesHolder.StuckRecoveryPropertiesHolder properties;
+    OutboxPublisherPropertiesHolder.StuckRecoveryPropertiesHolder properties;
 
     @Mock
-    private ScheduledExecutorService executor;
+    OutboxScheduleStrategy strategy;
 
     @Mock
-    private OutboxManager manager;
+    OutboxManager manager;
 
     @InjectMocks
-    private OutboxRecoveryScheduler scheduler;
+    OutboxRecoveryScheduler tested;
 
-    @Test
-    @DisplayName("UT schedule() should schedule task with correct parameters")
-    void schedule_shouldScheduleTaskWithCorrectParameters() {
-        // given
-        Duration initialDelay = Duration.ofSeconds(10);
-        Duration fixedDelay = Duration.ofMinutes(1);
-        when(properties.getInitialDelay()).thenReturn(initialDelay);
-        when(properties.getFixedDelay()).thenReturn(fixedDelay);
-
-        // when
-        scheduler.schedule();
-
-        // then
-        verify(executor).scheduleWithFixedDelay(
-                any(Runnable.class),
-                eq(10000L),
-                eq(60000L),
-                eq(TimeUnit.MILLISECONDS)
-        );
+    private boolean captureAndRun() {
+        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        verify(strategy).scheduleExecution(captor.capture());
+        return captor.getValue().run();
     }
 
     @Test
-    @DisplayName("UT schedule() task should call manager with correct parameters")
-    void schedule_taskShouldCallManagerWithCorrectParameters() {
-        // given
-        Duration maxProcessingTime = Duration.ofMinutes(5);
-        int batchSize = 100;
-        when(properties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-
+    @DisplayName("UT schedule() should delegate execution to strategy")
+    void schedule_shouldDelegateToStrategy() {
         // when
-        scheduler.schedule();
+        tested.schedule();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-        captor.getValue().run();
+        verify(strategy).scheduleExecution(any());
+    }
 
+    @Test
+    @DisplayName("UT schedule() when recovered count equals batch size, continuable should return true")
+    void schedule_whenRecoveredCountEqualsBatchSize_continuableShouldReturnTrue() {
+        // given
+        int batchSize = 50;
+        Duration maxProcessingTime = Duration.ofMinutes(5);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
+        when(manager.recoverStuckBatch(maxProcessingTime, batchSize)).thenReturn(batchSize);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when recovered count less than batch size, continuable should return false")
+    void schedule_whenRecoveredCountLessThanBatchSize_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        Duration maxProcessingTime = Duration.ofMinutes(5);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
+        when(manager.recoverStuckBatch(maxProcessingTime, batchSize)).thenReturn(batchSize - 1);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when recovered count is zero, continuable should return false")
+    void schedule_whenRecoveredCountIsZero_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        Duration maxProcessingTime = Duration.ofMinutes(5);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
+        when(manager.recoverStuckBatch(maxProcessingTime, batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() should pass maxBatchProcessingTime and batchSize to manager")
+    void schedule_shouldPassCorrectParamsToManager() {
+        // given
+        int batchSize = 100;
+        Duration maxProcessingTime = Duration.ofMinutes(10);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
+        when(manager.recoverStuckBatch(any(), anyInt())).thenReturn(0);
+
+        // when
+        tested.schedule();
+        captureAndRun();
+
+        // then
         verify(manager).recoverStuckBatch(maxProcessingTime, batchSize);
     }
 
     @Test
-    @DisplayName("UT schedule() task should catch exception from manager")
-    void schedule_taskShouldCatchExceptionFromManager() {
+    @DisplayName("UT schedule() when manager throws exception, continuable should return false and not rethrow")
+    void schedule_whenManagerThrows_continuableShouldReturnFalseAndNotRethrow() {
         // given
-        when(properties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getMaxBatchProcessingTime()).thenReturn(Duration.ZERO);
-        when(properties.getBatchSize()).thenReturn(1);
-        doThrow(new RuntimeException("error")).when(manager).recoverStuckBatch(any(), anyInt());
+        int batchSize = 50;
+        Duration maxProcessingTime = Duration.ofMinutes(5);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
+        when(manager.recoverStuckBatch(maxProcessingTime, batchSize))
+                .thenThrow(new RuntimeException("DB error"));
 
         // when
-        scheduler.schedule();
+        tested.schedule();
+        boolean result = assertDoesNotThrow(this::captureAndRun);
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-
-        assertThatCode(() -> captor.getValue().run()).doesNotThrowAnyException();
+        assertFalse(result);
     }
 }

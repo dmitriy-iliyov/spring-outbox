@@ -109,7 +109,7 @@ class OracleConsumedOutboxRepositoryIntegrationTests extends BaseOracleIntegrati
     }
 
     @Test
-    @DisplayName("IT saveIfAbsent(UUID) does not throw on duplicate — catches DuplicateKeyException")
+    @DisplayName("IT saveIfAbsent(UUID) does not throw on duplicate - catches DuplicateKeyException")
     void saveIfAbsent_duplicateId_doesNotThrow() {
         UUID id = UUID.randomUUID();
         repository.saveIfAbsent(id);

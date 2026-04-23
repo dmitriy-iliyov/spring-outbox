@@ -14,8 +14,9 @@ public interface OutboxDlqTransfer {
      * This operation should be atomic.
      *
      * @param batchSize the maximum number of events to transfer in one operation.
+     * @return          the number of actually transferred events.
      */
-    void transferToDlq(int batchSize);
+    int transferToDlq(int batchSize);
 
     /**
      * Transfers a batch of events from the DLQ back to the main outbox for re-processing.
@@ -24,6 +25,7 @@ public interface OutboxDlqTransfer {
      * Their retry count is reset or incremented depending on the strategy.
      *
      * @param batchSize the maximum number of events to transfer in one operation.
-     */
-    void transferFromDlq(int batchSize);
+     * @return          the number of actually transferred events.
+     * */
+    int transferFromDlq(int batchSize);
 }

@@ -19,13 +19,13 @@ public class OutboxConsumerProperties {
     @NestedConfigurationProperty
     private OutboxProperties.MetricsProperties metrics;
 
-    public void init() {
+    public void applyDefaults() {
         if (enabled != null && enabled) {
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
             }
-            cleanUp.init();
+            cleanUp.applyDefaults();
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
@@ -33,7 +33,7 @@ public class OutboxConsumerProperties {
                 cache = new CacheProperties();
                 cache.setEnabled(false);
             }
-            cache.init();
+            cache.applyDefaults();
             if (!cache.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled cache");
             }
@@ -41,22 +41,22 @@ public class OutboxConsumerProperties {
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
-            metrics.init();
+            metrics.applyDefaults();
             log.debug("OutboxConsumerProperties successfully initialized");
         } else {
             enabled = false;
 
             cleanUp = new OutboxProperties.CleanUpProperties();
             cleanUp.setEnabled(false);
-            cleanUp.init();
+            cleanUp.applyDefaults();
 
             cache = new CacheProperties();
             cache.setEnabled(false);
-            cache.init();
+            cache.applyDefaults();
 
             metrics = new OutboxProperties.MetricsProperties();
             metrics.setEnabled(false);
-            metrics.init();
+            metrics.applyDefaults();
         }
     }
 
@@ -107,7 +107,7 @@ public class OutboxConsumerProperties {
         public Boolean enabled;
         public String cacheName;
 
-        public void init() {
+        public void applyDefaults() {
             if (enabled == null || enabled) {
                 enabled = true;
                 Objects.requireNonNull(cacheName, "cacheName cannot be null");

@@ -26,7 +26,7 @@ public class OutboxDlqWebAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnClass(OutboxDlqWebRepository.class)
     public OutboxDlqWebRepository outboxDlqWebRepository(DataSource dataSource, JdbcTemplate jdbcTemplate) {
-        return OutboxDlqWebRepositoryFactory.generate(dataSource, jdbcTemplate);
+        return OutboxDlqWebRepositoryFactory.create(dataSource, jdbcTemplate);
     }
 
     @Bean

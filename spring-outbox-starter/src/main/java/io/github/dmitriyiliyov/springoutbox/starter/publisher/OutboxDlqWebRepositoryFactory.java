@@ -14,6 +14,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Map;
 
+/**
+ * A factory for creating {@link OutboxDlqWebRepository} instances based on the detected database type.
+ * <p>
+ * It supports PostgreSQL, MySQL, and Oracle.
+ */
 public final class OutboxDlqWebRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqWebRepositoryFactory.class);
@@ -25,7 +30,17 @@ public final class OutboxDlqWebRepositoryFactory {
 
     private OutboxDlqWebRepositoryFactory() {}
 
-    public static OutboxDlqWebRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
+    /**
+     * Generates an {@link OutboxDlqWebRepository} instance based on the database product name.
+     *
+     * @param dataSource                the data source to get database metadata.
+     * @param jdbcTemplate              the JDBC template for database operations.
+     * @return                          a configured {@link OutboxDlqWebRepository} instance for the detected database.
+     * @throws IllegalArgumentException if the database type is not supported.
+     * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
+     * @throws RuntimeException         if a database connection cannot be established.
+     */
+    public static OutboxDlqWebRepository create(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         try (Connection conn = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(conn.getMetaData().getDatabaseProductName());
             OutboxDlqWebRepositoryFactory.OutboxDlqWebRepositorySupplier supplier = SUPPORTED_SUPPLIERS.get(databaseType);

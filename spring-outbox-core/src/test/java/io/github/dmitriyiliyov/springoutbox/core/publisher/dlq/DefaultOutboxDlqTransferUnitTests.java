@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Instant;
@@ -18,8 +19,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -51,6 +51,11 @@ public class DefaultOutboxDlqTransferUnitTests {
             action.accept(null);
             return null;
         }).when(transactionTemplate).executeWithoutResult(any());
+
+        lenient().doAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(null);
+        }).when(transactionTemplate).execute(any());
     }
 
     @Test
@@ -148,7 +153,7 @@ public class DefaultOutboxDlqTransferUnitTests {
             return null;
         }).when(transactionTemplate).executeWithoutResult(any());
 
-        // when / then
+        // when + then
         assertThrows(RuntimeException.class, () -> tested.transferToDlq(batchSize));
 
         verify(manager).loadBatch(EventStatus.FAILED, batchSize);
@@ -172,7 +177,7 @@ public class DefaultOutboxDlqTransferUnitTests {
         when(eventMapper.toDlqEvents(anyList())).thenReturn(List.of());
         doThrow(new RuntimeException()).when(handler).handle(anyList());
 
-        // when / then
+        // when + then
         assertDoesNotThrow(() -> tested.transferToDlq(batchSize));
 
         verify(eventMapper).toDlqEvents(anyList());
@@ -285,10 +290,42 @@ public class DefaultOutboxDlqTransferUnitTests {
         when(eventMapper.toOutboxEvents(anyList())).thenReturn(List.of());
         doThrow(new RuntimeException()).when(manager).saveBatch(anyList());
 
-        // when / then
+        // when + then
         assertThrows(RuntimeException.class, () -> tested.transferFromDlq(batchSize));
 
         verify(manager).saveBatch(anyList());
         verify(dlqManager, never()).deleteBatch(anySet());
+    }
+
+    @Test
+    @DisplayName("UT transferFromDlq() when transaction returns null, should return 0")
+    void transferFromDlq_whenTransactionReturnsNull_shouldReturnZero() {
+        // given
+        lenient().doAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return null;
+        }).when(transactionTemplate).execute(any());
+
+        // when
+        int result = tested.transferFromDlq(50);
+
+        // then
+        assertEquals(0, result);
+    }
+
+    @Test
+    @DisplayName("UT transferFromDlq() when transaction returns count, should return it")
+    void transferFromDlq_whenTransactionReturnsCount_shouldReturnIt() {
+        // given
+        lenient().doAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return 3;
+        }).when(transactionTemplate).execute(any());
+
+        // when
+        int result = tested.transferFromDlq(50);
+
+        // then
+        assertEquals(3, result);
     }
 }

@@ -40,9 +40,9 @@ public final class OutboxSenderFactory {
      * @throws IllegalArgumentException if the sender type is not specified or unsupported, or if the required bean is not found.
      * @throws IllegalStateException    if multiple beans of the required template type are found without a specific bean name.
      */
-    public static OutboxSender generate(OutboxPublisherProperties.SenderProperties properties,
-                                        ApplicationContext context,
-                                        ObjectMapper mapper) {
+    public static OutboxSender create(OutboxPublisherProperties.SenderProperties properties,
+                                      ApplicationContext context,
+                                      ObjectMapper mapper) {
         SenderType type = properties.getType();
         if (type == null) {
             throw new IllegalArgumentException(

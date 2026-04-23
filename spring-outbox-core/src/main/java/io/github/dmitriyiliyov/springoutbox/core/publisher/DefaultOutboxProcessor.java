@@ -26,17 +26,16 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
     }
 
     @Override
-    public void process(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties) {
+    public int process(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties) {
         Objects.requireNonNull(properties, "properties cannot be null");
         List<OutboxEvent> events = manager.loadBatch(properties.getEventType(), properties.getBatchSize());
         if (events == null) {
-            log.warn("Outbox events is unexpectedly null, for eventType={}; timestamp={}",
-                    properties.getEventType(), clock.instant());
-            return;
+            log.warn("Outbox events is unexpectedly null, for eventType={}", properties.getEventType());
+            return 0;
         }
         if (events.isEmpty()) {
-            log.info("Outbox events is empty, for eventType={}; timestamp={}", properties.getEventType(), clock.instant());
-            return;
+            log.info("Outbox events is empty, for eventType={}", properties.getEventType());
+            return 0;
         }
         SenderResult result;
         try {
@@ -55,9 +54,12 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
                 result.processedIds(),
                 result.failedIds(),
                 properties.getMaxRetries(),
-                retryCount -> clock.instant().plusSeconds(
-                        (long) Math.pow(properties.backoffMultiplier(), retryCount) * properties.backoffDelay()
-                )
+                retryCount -> {
+                    double currentMultiplier = Math.pow(properties.backoffMultiplier(), retryCount);
+                    return clock.instant()
+                            .plusSeconds((long) currentMultiplier * properties.backoffDelay());
+                }
         );
+        return events.size();
     }
 }

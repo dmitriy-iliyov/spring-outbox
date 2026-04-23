@@ -1,7 +1,5 @@
-package io.github.dmitriyiliyov.springoutbox.starter;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.SenderType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -14,19 +12,19 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() should throw when type is null")
-    public void init_typeNull_shouldThrow() {
+    public void applyDefaults_typeNull_shouldThrow() {
         // given
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(null);
         sender.setBeanName("myBean");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, sender::init);
+        assertThrows(IllegalArgumentException.class, sender::applyDefaults);
     }
 
     @Test
     @DisplayName("UT initialize() with valid type and beanName should assign values")
-    public void init_withValidTypeAndBeanName_shouldAssignValues() {
+    public void applyDefaults_withValidTypeAndBeanName_shouldAssignValues() {
         // given
         SenderType type = SenderType.KAFKA;
         String beanName = "myKafkaBean";
@@ -35,7 +33,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(type);
         sender.setBeanName(beanName);
-        sender.init();
+        sender.applyDefaults();
 
         // then
         assertEquals(type, sender.getType());
@@ -45,7 +43,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
 
     @Test
     @DisplayName("UT initialize() with valid type, beanName and emergencyTimeout should assign values")
-    public void init_validParameters_shouldAssignValues() {
+    public void applyDefaults_validParameters_shouldAssignValues() {
         // given
         SenderType type = SenderType.KAFKA;
         String beanName = "myKafkaBean";
@@ -56,7 +54,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
         sender.setType(type);
         sender.setBeanName(beanName);
         sender.setEmergencyTimeout(emergencyTimeout);
-        sender.init();
+        sender.applyDefaults();
 
         // then
         assertEquals(type, sender.getType());

@@ -80,12 +80,12 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     @Override
     public int updateBatchStatus(Set<UUID> ids, EventStatus newStatus) {
         if (!RepositoryUtils.isIdsValid(ids)) return 0;
-        if (newStatus.equals(EventStatus.FAILED)) {
+        if (EventStatus.FAILED.equals(newStatus)) {
             throw new IllegalArgumentException("Use partiallyUpdateBatch() for update FAILED batch");
         }
         String placeholders = RepositoryUtils.generateIdsPlaceholders(ids);
         String sql;
-        if (newStatus.equals(EventStatus.PROCESSED)) {
+        if (EventStatus.PROCESSED.equals(newStatus)) {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";
         } else {
             sql = "UPDATE outbox_events SET status = ?, updated_at = ? WHERE id IN (" + placeholders + ")";

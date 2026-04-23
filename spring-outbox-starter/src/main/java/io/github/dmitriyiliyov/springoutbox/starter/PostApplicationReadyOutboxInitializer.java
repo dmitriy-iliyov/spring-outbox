@@ -1,6 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import org.slf4j.Logger;
@@ -32,20 +31,10 @@ public class PostApplicationReadyOutboxInitializer {
         log.debug("Outbox successfully initialized with metrics observers {}", metricsMap.keySet());
 
         Map<String, OutboxProperties> propertiesMap = applicationContext.getBeansOfType(OutboxProperties.class);
-        Map<String, ObjectMapper> objectMappers = applicationContext.getBeansOfType(ObjectMapper.class);
         if (propertiesMap.isEmpty()) {
             throw new IllegalStateException("No OutboxProperties.class in application context");
         }
         OutboxProperties properties = propertiesMap.values().stream().findFirst().get();
-        if (!objectMappers.isEmpty()) {
-            try {
-                ObjectMapper mapper = objectMappers.values().stream().findFirst().get();
-                log.debug(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(properties));
-            } catch (Exception e) {
-                log.error("Error when try log outbox properties", e);
-            }
-        } else {
-            log.debug(properties.toString());
-        }
+        log.debug(LogUtils.prettyPrint(properties));
     }
 }

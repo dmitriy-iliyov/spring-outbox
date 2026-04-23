@@ -44,7 +44,7 @@ public final class ConsumedOutboxRepositoryFactory {
      * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
      * @throws RuntimeException         if a database connection cannot be established.
      */
-    public static ConsumedOutboxRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate, Clock clock) {
+    public static ConsumedOutboxRepository create(DataSource dataSource, JdbcTemplate jdbcTemplate, Clock clock) {
         Objects.requireNonNull(dataSource, "dataSource cannot be null");
         try (Connection connection = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(connection.getMetaData().getDatabaseProductName());

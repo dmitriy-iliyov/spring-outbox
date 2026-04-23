@@ -1,6 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
+import io.github.dmitriyiliyov.springoutbox.core.Continuable;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,88 +12,131 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ConsumedOutboxCleanUpSchedulerUnitTests {
+public class ConsumedOutboxCleanUpSchedulerUnitTests {
 
     @Mock
-    private OutboxPropertiesHolder.CleanUpPropertiesHolder properties;
+    OutboxPropertiesHolder.CleanUpPropertiesHolder properties;
 
     @Mock
-    private ScheduledExecutorService executor;
+    OutboxScheduleStrategy strategy;
 
     @Mock
-    private ConsumedOutboxManager manager;
+    ConsumedOutboxManager manager;
 
     @InjectMocks
-    private ConsumedOutboxCleanUpScheduler scheduler;
+    ConsumedOutboxCleanUpScheduler tested;
 
-    @Test
-    @DisplayName("UT schedule() should schedule task with correct parameters")
-    void schedule_shouldScheduleTaskWithCorrectParameters() {
-        // given
-        Duration initialDelay = Duration.ofSeconds(10);
-        Duration fixedDelay = Duration.ofMinutes(1);
-        when(properties.getInitialDelay()).thenReturn(initialDelay);
-        when(properties.getFixedDelay()).thenReturn(fixedDelay);
-
-        // when
-        scheduler.schedule();
-
-        // then
-        verify(executor).scheduleWithFixedDelay(
-                any(Runnable.class),
-                eq(10000L),
-                eq(60000L),
-                eq(TimeUnit.MILLISECONDS)
-        );
+    private boolean captureAndRun() {
+        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        verify(strategy).scheduleExecution(captor.capture());
+        return captor.getValue().run();
     }
 
     @Test
-    @DisplayName("UT schedule() task should call manager with correct parameters")
-    void schedule_taskShouldCallManagerWithCorrectParameters() {
-        // given
-        Duration ttl = Duration.ofHours(24);
-        int batchSize = 100;
-        when(properties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTtl()).thenReturn(ttl);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-
+    @DisplayName("UT schedule() should delegate execution to strategy")
+    void schedule_shouldDelegateToStrategy() {
         // when
-        scheduler.schedule();
+        tested.schedule();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-        captor.getValue().run();
+        verify(strategy).scheduleExecution(any());
+    }
 
+    @Test
+    @DisplayName("UT schedule() when cleaned count equals batch size, continuable should return true")
+    void schedule_whenCleanedCountEqualsBatchSize_continuableShouldReturnTrue() {
+        // given
+        int batchSize = 50;
+        Duration ttl = Duration.ofDays(7);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.cleanBatchByTtl(ttl, batchSize)).thenReturn(batchSize);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when cleaned count less than batch size, continuable should return false")
+    void schedule_whenCleanedCountLessThanBatchSize_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        Duration ttl = Duration.ofDays(7);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.cleanBatchByTtl(ttl, batchSize)).thenReturn(batchSize - 1);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when cleaned count is zero, continuable should return false")
+    void schedule_whenCleanedCountIsZero_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        Duration ttl = Duration.ofDays(7);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.cleanBatchByTtl(ttl, batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() should pass ttl and batchSize from properties to manager")
+    void schedule_shouldPassCorrectParamsToManager() {
+        // given
+        int batchSize = 100;
+        Duration ttl = Duration.ofHours(48);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.cleanBatchByTtl(any(), anyInt())).thenReturn(0);
+
+        // when
+        tested.schedule();
+        captureAndRun();
+
+        // then
         verify(manager).cleanBatchByTtl(ttl, batchSize);
     }
 
     @Test
-    @DisplayName("UT schedule() task should catch exception from manager")
-    void schedule_taskShouldCatchExceptionFromManager() {
+    @DisplayName("UT schedule() when manager throws exception, continuable should return false and not rethrow")
+    void schedule_whenManagerThrows_continuableShouldReturnFalseAndNotRethrow() {
         // given
-        when(properties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTtl()).thenReturn(Duration.ZERO);
-        when(properties.getBatchSize()).thenReturn(1);
-        doThrow(new RuntimeException("error")).when(manager).cleanBatchByTtl(any(), anyInt());
+        int batchSize = 50;
+        Duration ttl = Duration.ofDays(7);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.cleanBatchByTtl(ttl, batchSize)).thenThrow(new RuntimeException("DB error"));
 
         // when
-        scheduler.schedule();
+        tested.schedule();
+        boolean result = assertDoesNotThrow(this::captureAndRun);
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-
-        assertThatCode(() -> captor.getValue().run()).doesNotThrowAnyException();
+        assertFalse(result);
     }
 }

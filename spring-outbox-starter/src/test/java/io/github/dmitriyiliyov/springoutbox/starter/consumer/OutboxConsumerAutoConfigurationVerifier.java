@@ -347,9 +347,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 .withPropertyValues(
                         "outbox.consumer.cache.enabled=true",
                         "outbox.consumer.cache.cache-name=outbox",
-                        "outbox.consumer.clean-up.enabled=true",
-                        "outbox.consumer.clean-up.interval=PT1M",
-                        "outbox.consumer.clean-up.retention=PT24H"
+                        "outbox.consumer.clean-up.enabled=true"
                 )
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();

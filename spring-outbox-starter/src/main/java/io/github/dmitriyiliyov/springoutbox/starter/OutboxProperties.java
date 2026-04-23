@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.PollingPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import jakarta.annotation.PostConstruct;
@@ -28,26 +29,26 @@ public class OutboxProperties implements OutboxPropertiesHolder {
     public OutboxProperties() {}
 
     @PostConstruct
-    public void init() {
+    public void applyDefaults() {
         threadPoolSize = threadPoolSize == null ? DEFAULT_THREAD_POOL_SIZE : threadPoolSize;
 
         if (publisher == null) {
             publisher = new OutboxPublisherProperties();
             publisher.setEnabled(false);
         }
-        publisher.init();
+        publisher.applyDefaults();
 
         if (consumer == null) {
             consumer = new OutboxConsumerProperties();
             consumer.setEnabled(false);
         }
-        consumer.init();
+        consumer.applyDefaults();
 
         if (tables == null) {
             tables = new TablesProperties();
             tables.setAutoCreate(true);
         }
-        tables.init();
+        tables.applyDefaults();
     }
 
     public Integer getThreadPoolSize() {
@@ -94,30 +95,34 @@ public class OutboxProperties implements OutboxPropertiesHolder {
 
     public static final class CleanUpProperties implements CleanUpPropertiesHolder {
 
-        private static final int DEFAULT_BATCH_SIZE = 200;
+        private static final int DEFAULT_BATCH_SIZE = 500;
         private static final Duration DEFAULT_TTL = Duration.ofHours(24);
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofMinutes(2);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofMillis(200);
+        private static final PollingProperties.Defaults POLLING_DEFAULTS = PollingProperties.Defaults.ofAdaptive(
+                PollingType.ADAPTIVE,
+                Duration.ofMinutes(5),
+                Duration.ofSeconds(5),
+                Duration.ofMinutes(1),
+                2.0
+        );
 
         private Boolean enabled;
         private Integer batchSize;
         private Duration ttl;
-        private Duration initialDelay;
-        private Duration fixedDelay;
+        @NestedConfigurationProperty
+        private PollingProperties polling;
 
-        public void init() {
+        public void applyDefaults() {
             if (enabled == null || enabled) {
                 enabled = true;
                 batchSize = (batchSize == null || batchSize <= 0) ? DEFAULT_BATCH_SIZE : batchSize;
                 ttl = (ttl == null) ? DEFAULT_TTL : ttl;
-                initialDelay = (initialDelay == null) ? DEFAULT_INITIAL_DELAY : initialDelay;
-                fixedDelay = (fixedDelay == null) ? DEFAULT_FIXED_DELAY : fixedDelay;
+                polling = polling == null ? new PollingProperties() : polling;
+                polling.applyDefaults(POLLING_DEFAULTS);
             } else {
                 enabled = false;
                 batchSize = 0;
                 ttl = null;
-                initialDelay = null;
-                fixedDelay = null;
+                polling = new PollingProperties();
             }
         }
 
@@ -147,22 +152,37 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             this.ttl = ttl;
         }
 
-        @Override
-        public Duration getInitialDelay() {
-            return initialDelay;
+        public PollingProperties getPolling() {
+            return polling;
         }
 
-        public void setInitialDelay(Duration initialDelay) {
-            this.initialDelay = initialDelay;
+        public void setPolling(PollingProperties polling) {
+            this.polling = polling;
+        }
+
+        @Override
+        public Duration getInitialDelay() {
+            return polling.getInitialDelay();
         }
 
         @Override
         public Duration getFixedDelay() {
-            return fixedDelay;
+            return polling.getFixedDelay();
         }
 
-        public void setFixedDelay(Duration fixedDelay) {
-            this.fixedDelay = fixedDelay;
+        @Override
+        public Duration getMinFixedDelay() {
+            return polling.getMinFixedDelay();
+        }
+
+        @Override
+        public Duration getMaxFixedDelay() {
+            return polling.getMaxFixedDelay();
+        }
+
+        @Override
+        public Double getMultiplier() {
+            return polling.getMultiplier();
         }
 
         @Override
@@ -171,8 +191,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                     "enabled=" + enabled +
                     ", batchSize=" + batchSize +
                     ", ttl=" + ttl +
-                    ", initialDelay=" + initialDelay +
-                    ", fixedDelay=" + fixedDelay +
+                    ", polling=" + polling +
                     '}';
         }
     }
@@ -181,7 +200,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
 
         private Boolean autoCreate;
 
-        public void init() {
+        public void applyDefaults() {
             autoCreate = autoCreate == null || autoCreate;
         }
 
@@ -191,19 +210,6 @@ public class OutboxProperties implements OutboxPropertiesHolder {
 
         public void setAutoCreate(Boolean autoCreate) {
             this.autoCreate = autoCreate;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            TablesProperties that = (TablesProperties) o;
-            return Objects.equals(autoCreate, that.autoCreate);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(autoCreate);
         }
 
         @Override
@@ -236,7 +242,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             this.gauge = gauge;
         }
 
-        public void init() {
+        public void applyDefaults() {
             if (enabled != null && enabled) {
                 enabled = true;
                 if (gauge == null) {
@@ -248,7 +254,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                 gauge = new GaugeProperties();
                 gauge.setEnabled(false);
             }
-            gauge.init();
+            gauge.applyDefaults();
         }
 
         @Override
@@ -281,7 +287,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                 this.cache = cache;
             }
 
-            public void init() {
+            public void applyDefaults() {
                 if (enabled != null && enabled) {
                     enabled = true;
                     if (cache == null) {
@@ -293,7 +299,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                     cache = new CacheProperties();
                     cache.setEnabled(false);
                 }
-                cache.init();
+                cache.applyDefaults();
             }
 
             @Override
@@ -329,7 +335,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                     this.ttls = ttls;
                 }
 
-                public void init() {
+                public void applyDefaults() {
                     if (enabled == null || enabled) {
                         enabled = true;
                         if (ttls == null || ttls.isEmpty() || ttls.size() != DEFAULT_TTLS.size()) {
@@ -348,6 +354,205 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                             ", ttls=" + ttls +
                             '}';
                 }
+            }
+        }
+    }
+
+    public static final class PollingProperties implements PollingPropertiesHolder {
+
+        private PollingType type;
+        private Duration initialDelay;
+        private Duration fixedDelay;
+        private Duration minFixedDelay;
+        private Duration maxFixedDelay;
+        private Double multiplier;
+
+        public void applyDefaults(Defaults defaults) {
+            type = type == null ? defaults.type() : type;
+            initialDelay = initialDelay == null ? defaults.initialDelay() : initialDelay;
+            switch (type) {
+                case FIXED -> {
+                    fixedDelay = fixedDelay == null ? defaults.fixedDelay() : fixedDelay;
+                    minFixedDelay = Duration.ZERO;
+                    maxFixedDelay = Duration.ZERO;
+                    multiplier = Double.NaN;
+                }
+                case ADAPTIVE -> {
+                    minFixedDelay = minFixedDelay == null ? defaults.minFixedDelay() : minFixedDelay;
+                    maxFixedDelay = maxFixedDelay == null ? defaults.maxFixedDelay() : maxFixedDelay;
+                    multiplier = multiplier == null ? defaults.multiplier() : multiplier;
+                    fixedDelay = Duration.ZERO;
+                }
+            }
+            validate();
+        }
+
+        public void validate() {
+            switch (type) {
+                case FIXED -> {
+                    Objects.requireNonNull(initialDelay, "initialDelay cannot be null");
+                    Objects.requireNonNull(fixedDelay, "fixedDelay cannot be null");
+                }
+                case ADAPTIVE -> {
+                    Objects.requireNonNull(type, "type cannot be null");
+                    Objects.requireNonNull(initialDelay, "initialDelay cannot be null");
+                    Objects.requireNonNull(minFixedDelay, "minFixedDelay cannot be null");
+                    Objects.requireNonNull(maxFixedDelay, "maxFixedDelay cannot be null");
+                    if (minFixedDelay.compareTo(maxFixedDelay) > 0) {
+                        throw new IllegalArgumentException("minFixedDelay cannot be greater than maxFixedDelay");
+                    }
+                    Objects.requireNonNull(multiplier, "multiplier cannot be null");
+                    if (multiplier <= 0) {
+                        throw new IllegalArgumentException("multiplier cannot be negative or 0");
+                    }
+                }
+            }
+        }
+
+        public PollingType getType() {
+            return type;
+        }
+
+        public void setType(PollingType type) {
+            this.type = type;
+        }
+
+        @Override
+        public Duration getInitialDelay() {
+            return initialDelay;
+        }
+
+        public void setInitialDelay(Duration initialDelay) {
+            this.initialDelay = initialDelay;
+        }
+
+        @Override
+        public Duration getFixedDelay() {
+            return fixedDelay;
+        }
+
+        public void setFixedDelay(Duration fixedDelay) {
+            this.fixedDelay = fixedDelay;
+        }
+
+        @Override
+        public Duration getMinFixedDelay() {
+            return minFixedDelay;
+        }
+
+        public void setMinFixedDelay(Duration minFixedDelay) {
+            this.minFixedDelay = minFixedDelay;
+        }
+
+        @Override
+        public Duration getMaxFixedDelay() {
+            return maxFixedDelay;
+        }
+
+        public void setMaxFixedDelay(Duration maxFixedDelay) {
+            this.maxFixedDelay = maxFixedDelay;
+        }
+
+        @Override
+        public Double getMultiplier() {
+            return multiplier;
+        }
+
+        public void setMultiplier(Double multiplier) {
+            this.multiplier = multiplier;
+        }
+
+        @Override
+        public String toString() {
+            return "PollingProperties{" +
+                    "type=" + type +
+                    ", initialDelay=" + initialDelay +
+                    ", fixedDelay=" + fixedDelay +
+                    ", minFixedDelay=" + minFixedDelay +
+                    ", maxFixedDelay=" + maxFixedDelay +
+                    ", multiplier=" + multiplier +
+                    '}';
+        }
+
+        public record Defaults(
+                PollingType type,
+                Duration initialDelay,
+                Duration fixedDelay,
+                Duration minFixedDelay,
+                Duration maxFixedDelay,
+                Double multiplier
+        ) {
+
+            public Defaults {
+                validate(type, initialDelay, fixedDelay, minFixedDelay, maxFixedDelay, multiplier);
+            }
+
+            private static void validate(PollingType type, Duration initialDelay, Duration fixedDelay,
+                                         Duration minFixedDelay, Duration maxFixedDelay, Double multiplier) {
+                Objects.requireNonNull(type, "type cannot be null");
+                switch (type) {
+                    case FIXED -> validateForFixed(type, initialDelay, fixedDelay);
+                    case ADAPTIVE -> validateForAdaptive(type, initialDelay, minFixedDelay, maxFixedDelay, multiplier);
+                }
+            }
+
+            private static void validateForAdaptive(PollingType type, Duration initialDelay, Duration minFixedDelay,
+                                                    Duration maxFixedDelay, Double multiplier) {
+                Objects.requireNonNull(type, "type cannot be null");
+                Objects.requireNonNull(initialDelay, "initialDelay cannot be null");
+                Objects.requireNonNull(minFixedDelay, "minFixedDelay cannot be null");
+                Objects.requireNonNull(maxFixedDelay, "maxFixedDelay cannot be null");
+                if (minFixedDelay.compareTo(maxFixedDelay) > 0) {
+                    throw new IllegalArgumentException("minFixedDelay cannot be greater than maxFixedDelay");
+                }
+                Objects.requireNonNull(multiplier, "multiplier cannot be null");
+                if (multiplier <= 0) {
+                    throw new IllegalArgumentException("multiplier cannot be negative or 0");
+                }
+            }
+
+            private static void validateForFixed(PollingType type, Duration initialDelay, Duration fixedDelay) {
+                Objects.requireNonNull(type, "type cannot be null");
+                Objects.requireNonNull(initialDelay, "initialDelay cannot be null");
+                Objects.requireNonNull(fixedDelay, "fixedDelay cannot be null");
+            }
+
+            public static Defaults ofAdaptive(PollingType type, Duration initialDelay, Duration minFixedDelay,
+                                              Duration maxFixedDelay, Double multiplier) {
+                validateForAdaptive(type, initialDelay, minFixedDelay, maxFixedDelay, multiplier);
+                return new Defaults(
+                        type,
+                        initialDelay,
+                        Duration.ZERO,
+                        minFixedDelay,
+                        maxFixedDelay,
+                        multiplier
+                );
+            }
+
+            public static Defaults ofFixed(PollingType type, Duration initialDelay, Duration fixedDelay) {
+                validateForFixed(type, initialDelay, fixedDelay);
+                return new Defaults(
+                        type,
+                        initialDelay,
+                        fixedDelay,
+                        Duration.ZERO,
+                        Duration.ZERO,
+                        Double.NaN
+                );
+            }
+
+            public static Defaults ofPollingProperties(PollingProperties polling) {
+                validate(polling.getType(), polling.getInitialDelay(), polling.getFixedDelay(),
+                        polling.getMinFixedDelay(), polling.getMaxFixedDelay(), polling.getMultiplier());
+                return new Defaults(
+                        polling.getType(),
+                        polling.getInitialDelay(),
+                        polling.getFixedDelay(),
+                        polling.getMinFixedDelay(),
+                        polling.getMaxFixedDelay(),
+                        polling.getMultiplier()
+                );
             }
         }
     }

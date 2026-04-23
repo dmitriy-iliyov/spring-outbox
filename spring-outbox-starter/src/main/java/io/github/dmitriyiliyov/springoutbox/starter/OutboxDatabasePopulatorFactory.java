@@ -53,7 +53,7 @@ public final class OutboxDatabasePopulatorFactory {
      * @throws IllegalStateException if the database type is not supported or a required script supplier is not found.
      * @throws RuntimeException      if a database connection cannot be established.
      */
-    public static DatabasePopulator generate(OutboxProperties properties, DataSource dataSource) {
+    public static DatabasePopulator create(OutboxProperties properties, DataSource dataSource) {
         List<Resource> scripts = new ArrayList<>();
         DatabaseType databaseType;
         try (Connection connection = dataSource.getConnection()) {

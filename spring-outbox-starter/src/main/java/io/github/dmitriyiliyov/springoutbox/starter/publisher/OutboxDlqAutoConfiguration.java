@@ -9,6 +9,7 @@ import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCa
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -35,7 +36,7 @@ public class OutboxDlqAutoConfiguration {
             DataSource dataSource,
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
-        return OutboxDlqRepositoryFactory.generate(dataSource, jdbcTemplate);
+        return OutboxDlqRepositoryFactory.create(dataSource, jdbcTemplate);
     }
 
     @Bean
@@ -118,10 +119,16 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
-    public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService executorService,
+    public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService executor,
                                               OutboxPublisherProperties properties,
                                               OutboxDlqTransfer transfer) {
-        return new OutboxDlqTransferScheduler(properties.getDlq(), executorService, transfer);
+        OutboxPublisherProperties.DlqProperties dlqProperties = properties.getDlq();
+        return new OutboxDlqTransferScheduler(
+                properties.getDlq(),
+                OutboxScheduleStrategyFactory.create(dlqProperties.getTransferTo().getPolling(), executor),
+                OutboxScheduleStrategyFactory.create(dlqProperties.getTransferFrom().getPolling(), executor),
+                transfer
+        );
     }
 
     @Bean

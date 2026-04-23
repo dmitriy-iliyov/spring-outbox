@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -20,7 +21,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
     @NestedConfigurationProperty
     private SenderProperties sender;
     @NestedConfigurationProperty
-    private Defaults defaults;
+    private EventProperties.Defaults defaults;
     private Map<String, EventProperties> events;
     @NestedConfigurationProperty
     private StuckRecoveryProperties stuckRecovery;
@@ -33,17 +34,17 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
     public OutboxPublisherProperties() {}
 
-    public void init() {
+    public void applyDefaults() {
         if (enabled == null || enabled) {
             enabled = true;
 
             if (sender == null) {
                 throw new IllegalArgumentException("sender cannot be null");
             }
-            sender.init();
+            sender.applyDefaults();
 
-            defaults = defaults == null ? new Defaults() : defaults;
-            defaults.init();
+            defaults = defaults == null ? new EventProperties.Defaults() : defaults;
+            defaults.applyDefaults();
 
             if (events == null) {
                 throw new IllegalArgumentException("events cannot be null");
@@ -54,13 +55,13 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             events = applyDefaults(events);
 
             stuckRecovery = stuckRecovery == null ? new StuckRecoveryProperties() : stuckRecovery;
-            stuckRecovery.init();
+            stuckRecovery.applyDefaults();
 
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
             }
-            cleanUp.init();
+            cleanUp.applyDefaults();
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
@@ -69,7 +70,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 dlq = new DlqProperties();
                 dlq.setEnabled(false);
             }
-            dlq.init();
+            dlq.applyDefaults();
             if (!dlq.isEnabled()) {
                 log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
             }
@@ -78,27 +79,27 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
-            metrics.init();
+            metrics.applyDefaults();
             log.debug("OutboxPublisherProperties successfully initialized");
         } else {
             enabled = false;
 
-            defaults = new Defaults();
-            defaults.init();
+            defaults = new EventProperties.Defaults();
+            defaults.applyDefaults();
 
             events = Collections.emptyMap();
 
             cleanUp = new OutboxProperties.CleanUpProperties();
             cleanUp.setEnabled(false);
-            cleanUp.init();
+            cleanUp.applyDefaults();
 
             dlq = new DlqProperties();
             dlq.setEnabled(false);
-            dlq.init();
+            dlq.applyDefaults();
 
             metrics = new OutboxProperties.MetricsProperties();
             metrics.setEnabled(false);
-            metrics.init();
+            metrics.applyDefaults();
         }
     }
 
@@ -118,7 +119,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                         e -> {
                             EventProperties event = e.getValue();
                             event.setEventType(e.getKey());
-                            event.init(defaults);
+                            event.applyDefaults(defaults);
                             return event;
                         }
                 ));
@@ -140,11 +141,11 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         this.sender = sender;
     }
 
-    public OutboxPublisherProperties.Defaults getDefaults() {
+    public OutboxPublisherProperties.EventProperties.Defaults getDefaults() {
         return this.defaults;
     }
 
-    public void setDefaults(Defaults defaults) {
+    public void setDefaults(EventProperties.Defaults defaults) {
         this.defaults = defaults;
     }
 
@@ -226,7 +227,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         private String beanName;
         private Duration emergencyTimeout;
 
-        public void init() {
+        public void applyDefaults() {
             if (type == null) {
                 throw new IllegalArgumentException("senderType cannot be null");
             }
@@ -267,111 +268,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         }
     }
 
-    public static final class Defaults {
-
-        private static final int DEFAULT_BATCH_SIZE = 200;
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofMinutes(5);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofMillis(500);
-        private static final int DEFAULT_MAX_RETRY = 3;
-        private static final BackoffProperties DEFAULT_BACKOFF = new BackoffProperties();
-
-        private Integer batchSize;
-        private Duration initialDelay;
-        private Duration fixedDelay;
-        private Integer maxRetries;
-        @NestedConfigurationProperty
-        private BackoffProperties backoff;
-
-        public Defaults() {
-            this.batchSize = DEFAULT_BATCH_SIZE;
-            this.initialDelay = DEFAULT_INITIAL_DELAY;
-            this.fixedDelay = DEFAULT_FIXED_DELAY;
-            this.maxRetries = DEFAULT_MAX_RETRY;
-            this.backoff = DEFAULT_BACKOFF;
-        }
-
-        public void init() {
-            batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
-            initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
-            fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
-            maxRetries = maxRetries == null || maxRetries < 0 ? DEFAULT_MAX_RETRY : maxRetries;
-            backoff = backoff == null ? DEFAULT_BACKOFF : backoff;
-            backoff.init();
-        }
-
-        public void setBatchSize(Integer batchSize) {
-            this.batchSize = batchSize;
-        }
-
-        public int getBatchSize() {
-            return batchSize;
-        }
-
-        public void setInitialDelay(Duration initialDelay) {
-            this.initialDelay = initialDelay;
-        }
-
-        public Duration getInitialDelay() {
-            return initialDelay;
-        }
-
-        public void setFixedDelay(Duration fixedDelay) {
-            this.fixedDelay = fixedDelay;
-        }
-
-        public Duration getFixedDelay() {
-            return fixedDelay;
-        }
-
-        public void setMaxRetries(Integer maxRetries) {
-            this.maxRetries = maxRetries;
-        }
-
-        public int getMaxRetries() {
-            return maxRetries;
-        }
-
-        public void setBackoff(BackoffProperties backoff) {
-            this.backoff = backoff;
-        }
-
-        public BackoffProperties getBackoff() {
-            return backoff;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Defaults defaults = (Defaults) o;
-            return Objects.equals(batchSize, defaults.batchSize) &&
-                    Objects.equals(initialDelay, defaults.initialDelay) &&
-                    Objects.equals(fixedDelay, defaults.fixedDelay) &&
-                    Objects.equals(maxRetries, defaults.maxRetries) &&
-                    Objects.equals(backoff, defaults.backoff);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(batchSize, initialDelay, fixedDelay, maxRetries, backoff);
-        }
-
-        @Override
-        public String toString() {
-            return "Defaults{" +
-                    "batchSize=" + batchSize +
-                    ", initialDelay=" + initialDelay +
-                    ", fixedDelay=" + fixedDelay +
-                    ", maxRetries=" + maxRetries +
-                    ", backoff=" + backoff +
-                    '}';
-        }
-    }
-
     public static final class BackoffProperties {
-
-        private static final Duration DEFAULT_DELAY = Duration.ofSeconds(10);
-        private static final Double DEFAULT_MULTIPLIER = 3.0;
 
         private Boolean enabled;
         private Duration delay;
@@ -379,22 +276,21 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
         public BackoffProperties() {
             this.enabled = true;
-            this.delay = DEFAULT_DELAY;
-            this.multiplier = DEFAULT_MULTIPLIER;
+            this.delay = Duration.ZERO;
+            this.multiplier = Double.NaN;
         }
 
         public BackoffProperties(Boolean enabled, Duration delay, Double multiplier) {
             this.enabled = enabled;
             this.delay = delay;
             this.multiplier = multiplier;
-            this.init();
         }
 
-        public void init() {
+        public void applyDefaults(Defaults defaults) {
             if (enabled == null || enabled) {
                 enabled = true;
-                delay = delay == null ? DEFAULT_DELAY : delay;
-                multiplier = multiplier == null || multiplier < 1 ? DEFAULT_MULTIPLIER : multiplier;
+                delay = delay == null || delay.isZero() ? defaults.delay() : delay;
+                multiplier = multiplier == null || multiplier < 1 || Double.isNaN(multiplier) ? defaults.multiplier() : multiplier;
             } else {
                 enabled = false;
                 delay = Duration.ofSeconds(0);
@@ -427,27 +323,22 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            BackoffProperties that = (BackoffProperties) o;
-            return Objects.equals(enabled, that.enabled) &&
-                    Objects.equals(delay, that.delay) &&
-                    Objects.equals(multiplier, that.multiplier);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(enabled, delay, multiplier);
-        }
-
-        @Override
         public String toString() {
             return "BackoffProperties{" +
                     "enabled=" + enabled +
                     ", delay=" + delay +
                     ", multiplier=" + multiplier +
                     '}';
+        }
+
+        public record Defaults(
+                Duration delay,
+                Double multiplier
+        ) {
+
+            public static Defaults ofBackoffProperties(BackoffProperties backoff) {
+                return new Defaults(backoff.getDelay(), backoff.getMultiplier());
+            }
         }
     }
 
@@ -456,13 +347,13 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         private String eventType;
         private String topic;
         private Integer batchSize;
-        private Duration initialDelay;
-        private Duration fixedDelay;
+        @NestedConfigurationProperty
+        private OutboxProperties.PollingProperties polling;
         private Integer maxRetries;
         @NestedConfigurationProperty
         private BackoffProperties backoff;
 
-        public void init(Defaults defaults) {
+        public void applyDefaults(Defaults defaults) {
             if (eventType == null) {
                 throw new IllegalArgumentException("eventType cannot be null");
             }
@@ -476,26 +367,16 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 throw new IllegalArgumentException("topic cannot be blank");
             }
             batchSize = batchSize == null ? defaults.getBatchSize() : batchSize;
-            initialDelay = initialDelay == null ? defaults.getInitialDelay() : initialDelay;
-            fixedDelay = fixedDelay == null ? defaults.getFixedDelay() : fixedDelay;
+            polling = polling == null ? defaults.getPolling() : polling;
+            polling.applyDefaults(defaults.getPoolingDefaults());
             maxRetries = maxRetries == null ? defaults.getMaxRetries() : maxRetries;
             if (backoff == null) {
                 backoff = defaults.getBackoff();
             } else if (!backoff.isEnabled()) {
                 backoff = new BackoffProperties();
                 backoff.setEnabled(false);
-            } else {
-                backoff = new BackoffProperties(
-                        true,
-                        backoff.getDelay() == null ?
-                                defaults.getBackoff().getDelay() :
-                                backoff.getDelay(),
-                        backoff.getMultiplier() == null || backoff.getMultiplier() < 1 ?
-                                defaults.getBackoff().getMultiplier() :
-                                backoff.getMultiplier()
-                );
             }
-            backoff.init();
+            backoff.applyDefaults(defaults.getBackoffDefaults());
         }
 
         @Override
@@ -525,22 +406,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.batchSize = batchSize;
         }
 
-        @Override
-        public Duration getInitialDelay() {
-            return initialDelay;
+        public OutboxProperties.PollingProperties getPolling() {
+            return polling;
         }
 
-        public void setInitialDelay(Duration initialDelay) {
-            this.initialDelay = initialDelay;
-        }
-
-        @Override
-        public Duration getFixedDelay() {
-            return fixedDelay;
-        }
-
-        public void setFixedDelay(Duration fixedDelay) {
-            this.fixedDelay = fixedDelay;
+        public void setPolling(OutboxProperties.PollingProperties polling) {
+            this.polling = polling;
         }
 
         @Override
@@ -561,6 +432,31 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         }
 
         @Override
+        public Duration getInitialDelay() {
+            return polling.getInitialDelay();
+        }
+
+        @Override
+        public Duration getFixedDelay() {
+            return polling.getFixedDelay();
+        }
+
+        @Override
+        public Duration getMinFixedDelay() {
+            return polling.getMinFixedDelay();
+        }
+
+        @Override
+        public Duration getMaxFixedDelay() {
+            return polling.getMaxFixedDelay();
+        }
+
+        @Override
+        public Double getMultiplier() {
+            return polling.getMultiplier();
+        }
+
+        @Override
         public Double backoffMultiplier() {
             return backoff.getMultiplier();
         }
@@ -577,15 +473,14 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             return Objects.equals(eventType, that.eventType)
                     && Objects.equals(topic, that.topic)
                     && Objects.equals(batchSize, that.batchSize)
-                    && Objects.equals(initialDelay, that.initialDelay)
-                    && Objects.equals(fixedDelay, that.fixedDelay)
+                    && Objects.equals(polling, that.polling)
                     && Objects.equals(maxRetries, that.maxRetries)
                     && Objects.equals(backoff, that.backoff);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(eventType, topic, batchSize, initialDelay, fixedDelay, maxRetries, backoff);
+            return Objects.hash(eventType, topic, batchSize, polling, maxRetries, backoff);
         }
 
         @Override
@@ -594,11 +489,99 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                     "eventType='" + eventType + '\'' +
                     ", topic='" + topic + '\'' +
                     ", batchSize=" + batchSize +
-                    ", initialDelay=" + initialDelay +
-                    ", fixedDelay=" + fixedDelay +
+                    ", polling=" + polling +
                     ", maxRetries=" + maxRetries +
                     ", backoff=" + backoff +
                     '}';
+        }
+
+        public static final class Defaults {
+
+            private static final int DEFAULT_BATCH_SIZE = 200;
+            private static final OutboxProperties.PollingProperties.Defaults POOLING_DEFAULTS = OutboxProperties.PollingProperties.Defaults.ofAdaptive(
+                    PollingType.ADAPTIVE,
+                    Duration.ofMinutes(5),
+                    Duration.ofMillis(250),
+                    Duration.ofMinutes(1),
+                    1.5
+            );
+            private static final int DEFAULT_MAX_RETRY = 3;
+            private static final BackoffProperties.Defaults BACKOFF_DEFAULTS = new BackoffProperties.Defaults(
+                    Duration.ofSeconds(10), 3.0
+            );
+
+            private Integer batchSize;
+            @NestedConfigurationProperty
+            private OutboxProperties.PollingProperties polling;
+            private Integer maxRetries;
+            @NestedConfigurationProperty
+            private BackoffProperties backoff;
+
+            public Defaults() {
+                batchSize = DEFAULT_BATCH_SIZE;
+                polling = new OutboxProperties.PollingProperties();
+                maxRetries = DEFAULT_MAX_RETRY;
+                backoff = new BackoffProperties();
+            }
+
+            public void applyDefaults() {
+                batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
+                polling = polling == null ? new OutboxProperties.PollingProperties() : polling;
+                polling.applyDefaults(POOLING_DEFAULTS);
+                maxRetries = maxRetries == null || maxRetries < 0 ? DEFAULT_MAX_RETRY : maxRetries;
+                backoff = backoff == null ? new BackoffProperties() : backoff;
+                backoff.applyDefaults(BACKOFF_DEFAULTS);
+            }
+
+            public void setBatchSize(Integer batchSize) {
+                this.batchSize = batchSize;
+            }
+
+            public int getBatchSize() {
+                return batchSize;
+            }
+
+            public OutboxProperties.PollingProperties getPolling() {
+                return polling;
+            }
+
+            public OutboxProperties.PollingProperties.Defaults getPoolingDefaults() {
+                return OutboxProperties.PollingProperties.Defaults.ofPollingProperties(polling);
+            }
+
+            public void setPolling(OutboxProperties.PollingProperties polling) {
+                this.polling = polling;
+            }
+
+            public int getMaxRetries() {
+                return maxRetries;
+            }
+
+            public void setMaxRetries(Integer maxRetries) {
+                this.maxRetries = maxRetries;
+            }
+
+            public BackoffProperties getBackoff() {
+                return backoff;
+            }
+
+            public BackoffProperties.Defaults getBackoffDefaults() {
+                return BackoffProperties.Defaults.ofBackoffProperties(backoff);
+            }
+
+            public void setBackoff(BackoffProperties backoff) {
+                this.backoff = backoff;
+            }
+
+            @Override
+            public String toString() {
+                return "Defaults{" +
+                        "batchSize=" + batchSize +
+                        ", polling=" + polling +
+                        ", maxRetries=" + maxRetries +
+                        ", backoff=" + backoff +
+                        '}';
+            }
         }
     }
 
@@ -606,26 +589,30 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
         private static final int DEFAULT_BATCH_SIZE = 500;
         private static final Duration DEFAULT_MAX_BATCH_PROCESSING_TIME = Duration.ofMinutes(5);
-        private static final Duration DEFAULT_INITIAL_DELAY = Duration.ofMinutes(5);
-        private static final Duration DEFAULT_FIXED_DELAY = Duration.ofSeconds(60);
+        private static final OutboxProperties.PollingProperties.Defaults POLLING_DEFAULTS = OutboxProperties.PollingProperties.Defaults.ofAdaptive(
+                PollingType.ADAPTIVE,
+                Duration.ofMinutes(5),
+                Duration.ofSeconds(1),
+                Duration.ofMinutes(1),
+                4.0
+        );
 
         private Integer batchSize;
         private Duration maxBatchProcessingTime;
-        private Duration initialDelay;
-        private Duration fixedDelay;
+        @NestedConfigurationProperty
+        private OutboxProperties.PollingProperties polling;
 
         public StuckRecoveryProperties() {
             this.batchSize = DEFAULT_BATCH_SIZE;
             this.maxBatchProcessingTime = DEFAULT_MAX_BATCH_PROCESSING_TIME;
-            this.initialDelay = DEFAULT_INITIAL_DELAY;
-            this.fixedDelay = DEFAULT_FIXED_DELAY;
+            this.polling = new OutboxProperties.PollingProperties();
         }
 
-        public void init() {
+        public void applyDefaults() {
             batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
             maxBatchProcessingTime = maxBatchProcessingTime == null ? DEFAULT_MAX_BATCH_PROCESSING_TIME : maxBatchProcessingTime;
-            initialDelay = initialDelay == null ? DEFAULT_INITIAL_DELAY : initialDelay;
-            fixedDelay = fixedDelay == null ? DEFAULT_FIXED_DELAY : fixedDelay;
+            polling = polling == null ? new OutboxProperties.PollingProperties() : polling;
+            polling.applyDefaults(POLLING_DEFAULTS);
         }
 
         @Override
@@ -646,37 +633,37 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.maxBatchProcessingTime = maxBatchProcessingTime;
         }
 
-        @Override
-        public Duration getInitialDelay() {
-            return initialDelay;
+        public OutboxProperties.PollingProperties getPolling() {
+            return polling;
         }
 
-        public void setInitialDelay(Duration initialDelay) {
-            this.initialDelay = initialDelay;
+        public void setPolling(OutboxProperties.PollingProperties polling) {
+            this.polling = polling;
+        }
+
+        @Override
+        public Duration getInitialDelay() {
+            return polling.getInitialDelay();
         }
 
         @Override
         public Duration getFixedDelay() {
-            return fixedDelay;
-        }
-
-        public void setFixedDelay(Duration fixedDelay) {
-            this.fixedDelay = fixedDelay;
+            return polling.getFixedDelay();
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            StuckRecoveryProperties that = (StuckRecoveryProperties) o;
-            return Objects.equals(batchSize, that.batchSize) &&
-                    Objects.equals(initialDelay, that.initialDelay) &&
-                    Objects.equals(fixedDelay, that.fixedDelay);
+        public Duration getMinFixedDelay() {
+            return polling.getMinFixedDelay();
         }
 
         @Override
-        public int hashCode() {
-            return Objects.hash(batchSize, initialDelay, fixedDelay);
+        public Duration getMaxFixedDelay() {
+            return polling.getMaxFixedDelay();
+        }
+
+        @Override
+        public Double getMultiplier() {
+            return polling.getMultiplier();
         }
 
         @Override
@@ -684,50 +671,62 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             return "StuckRecoveryProperties{" +
                     "batchSize=" + batchSize +
                     ", maxBatchProcessingTime=" + maxBatchProcessingTime +
-                    ", initialDelay=" + initialDelay +
-                    ", fixedDelay=" + fixedDelay +
+                    ", polling=" + polling +
                     '}';
         }
     }
 
     public static final class DlqProperties implements DlqPropertiesHolder {
 
-        private static final int DEFAULT_BATCH_SIZE = 500;
-        private static final Duration DEFAULT_TO_INITIAL_DELAY = Duration.ofMinutes(5);
-        private static final Duration DEFAULT_TO_FIXED_DELAY = Duration.ofMinutes(1);
-        private static final Duration DEFAULT_FROM_INITIAL_DELAY = Duration.ofMinutes(5);
-        private static final Duration DEFAULT_FROM_FIXED_DELAY = Duration.ofMinutes(10);
+        private static final Defaults DEFAULTS = new Defaults(
+                500,
+                OutboxProperties.PollingProperties.Defaults.ofAdaptive(
+                        PollingType.ADAPTIVE,
+                        Duration.ofMinutes(5),
+                        Duration.ofSeconds(1),
+                        Duration.ofMinutes(2),
+                        10.0
+                )
+        );
 
         private Boolean enabled;
         private Integer batchSize;
-        private Duration transferToInitialDelay;
-        private Duration transferToFixedDelay;
-        private Duration transferFromInitialDelay;
-        private Duration transferFromFixedDelay;
+        @NestedConfigurationProperty
+        private OutboxProperties.PollingProperties polling;
+        @NestedConfigurationProperty
+        private TransferProperties transferTo;
+        @NestedConfigurationProperty
+        private TransferProperties transferFrom;
         @NestedConfigurationProperty
         private OutboxProperties.MetricsProperties metrics;
 
-        public void init() {
+        public void applyDefaults() {
             if (enabled != null && enabled) {
                 enabled = true;
-                batchSize = batchSize == null || batchSize <= 0 ? DEFAULT_BATCH_SIZE : batchSize;
-                transferToInitialDelay = transferToInitialDelay == null ? DEFAULT_TO_INITIAL_DELAY : transferToInitialDelay;
-                transferToFixedDelay = transferToFixedDelay == null ? DEFAULT_TO_FIXED_DELAY : transferToFixedDelay;
-                transferFromInitialDelay = transferFromInitialDelay == null ? DEFAULT_FROM_INITIAL_DELAY : transferFromInitialDelay;
-                transferFromFixedDelay = transferFromFixedDelay == null ? DEFAULT_FROM_FIXED_DELAY : transferFromFixedDelay;
+
+                batchSize = batchSize == null || batchSize <= 0 ? DEFAULTS.batchSize() : batchSize;
+                polling = polling == null ? new OutboxProperties.PollingProperties() : polling;
+                polling.applyDefaults(DEFAULTS.pollingDefaults());
+
+                Defaults currentDefaults = new Defaults(
+                        batchSize,
+                        OutboxProperties.PollingProperties.Defaults.ofPollingProperties(polling)
+                );
+
+                transferTo = transferTo == null ? new TransferProperties() : transferTo;
+                transferTo.applyDefaults(currentDefaults);
+                transferFrom = transferFrom == null ? new TransferProperties() : transferFrom;
+                transferFrom.applyDefaults(currentDefaults);
             } else {
                 enabled = false;
-                batchSize = 0;
-                transferToInitialDelay = null;
-                transferToFixedDelay = null;
-                transferFromInitialDelay = null;
-                transferFromFixedDelay = null;
+                transferTo = new TransferProperties();
+                transferFrom = new TransferProperties();
             }
             if (metrics == null) {
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
-            metrics.init();
+            metrics.applyDefaults();
         }
 
         public Boolean isEnabled() {
@@ -738,7 +737,6 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.enabled = enabled;
         }
 
-        @Override
         public Integer getBatchSize() {
             return batchSize;
         }
@@ -747,40 +745,30 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.batchSize = batchSize;
         }
 
-        @Override
-        public Duration getTransferToInitialDelay() {
-            return transferToInitialDelay;
+        public OutboxProperties.PollingProperties getPolling() {
+            return polling;
         }
 
-        public void setTransferToInitialDelay(Duration transferToInitialDelay) {
-            this.transferToInitialDelay = transferToInitialDelay;
-        }
-
-        @Override
-        public Duration getTransferToFixedDelay() {
-            return transferToFixedDelay;
-        }
-
-        public void setTransferToFixedDelay(Duration transferToFixedDelay) {
-            this.transferToFixedDelay = transferToFixedDelay;
+        public void setPolling(OutboxProperties.PollingProperties polling) {
+            this.polling = polling;
         }
 
         @Override
-        public Duration getTransferFromInitialDelay() {
-            return transferFromInitialDelay;
+        public TransferProperties getTransferTo() {
+            return transferTo;
         }
 
-        public void setTransferFromInitialDelay(Duration transferFromInitialDelay) {
-            this.transferFromInitialDelay = transferFromInitialDelay;
+        public void setTransferTo(TransferProperties transferTo) {
+            this.transferTo = transferTo;
         }
 
         @Override
-        public Duration getTransferFromFixedDelay() {
-            return transferFromFixedDelay;
+        public TransferProperties getTransferFrom() {
+            return transferFrom;
         }
 
-        public void setTransferFromFixedDelay(Duration transferFromFixedDelay) {
-            this.transferFromFixedDelay = transferFromFixedDelay;
+        public void setTransferFrom(TransferProperties transferFrom) {
+            this.transferFrom = transferFrom;
         }
 
         public OutboxProperties.MetricsProperties getMetrics() {
@@ -795,14 +783,78 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         public String toString() {
             return "DlqProperties{" +
                     "enabled=" + enabled +
-                    ", batchSize=" + batchSize +
-                    ", transferToInitialDelay=" + transferToInitialDelay +
-                    ", transferToFixedDelay=" + transferToFixedDelay +
-                    ", transferFromInitialDelay=" + transferFromInitialDelay +
-                    ", transferFromFixedDelay=" + transferFromFixedDelay +
+                    ", transferTo=" + transferTo +
+                    ", transferFrom=" + transferFrom +
                     ", metrics=" + metrics +
                     '}';
         }
-    }
 
+        public record Defaults(
+                Integer batchSize,
+                OutboxProperties.PollingProperties.Defaults pollingDefaults
+        ) {}
+
+        public static class TransferProperties implements TransferPropertiesHolder {
+
+            private Integer batchSize;
+            @NestedConfigurationProperty
+            private OutboxProperties.PollingProperties polling;
+
+            public void applyDefaults(Defaults defaults) {
+                batchSize = batchSize == null || batchSize <= 0 ? defaults.batchSize() : batchSize;
+                polling = polling == null ? new OutboxProperties.PollingProperties() : polling;
+                polling.applyDefaults(defaults.pollingDefaults());
+            }
+
+            @Override
+            public Integer getBatchSize() {
+                return batchSize;
+            }
+
+            public void setBatchSize(Integer batchSize) {
+                this.batchSize = batchSize;
+            }
+
+            public OutboxProperties.PollingProperties getPolling() {
+                return polling;
+            }
+
+            public void setPolling(OutboxProperties.PollingProperties polling) {
+                this.polling = polling;
+            }
+
+            @Override
+            public Duration getMinFixedDelay() {
+                return polling.getMinFixedDelay();
+            }
+
+            @Override
+            public Duration getMaxFixedDelay() {
+                return polling.getMaxFixedDelay();
+            }
+
+            @Override
+            public Double getMultiplier() {
+                return polling.getMultiplier();
+            }
+
+            @Override
+            public Duration getInitialDelay() {
+                return polling.getInitialDelay();
+            }
+
+            @Override
+            public Duration getFixedDelay() {
+                return polling.getFixedDelay();
+            }
+
+            @Override
+            public String toString() {
+                return "TransferProperties{" +
+                        "batchSize=" + batchSize +
+                        ", polling=" + polling +
+                        '}';
+            }
+        }
+    }
 }

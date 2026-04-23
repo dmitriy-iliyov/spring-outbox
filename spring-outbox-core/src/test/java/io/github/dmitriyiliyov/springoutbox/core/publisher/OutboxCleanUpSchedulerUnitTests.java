@@ -1,6 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
+import io.github.dmitriyiliyov.springoutbox.core.Continuable;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,93 +14,149 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxCleanUpSchedulerUnitTests {
+public class OutboxCleanUpSchedulerUnitTests {
 
     @Mock
-    private OutboxPropertiesHolder.CleanUpPropertiesHolder properties;
+    OutboxPropertiesHolder.CleanUpPropertiesHolder properties;
 
     @Mock
-    private ScheduledExecutorService executor;
+    OutboxScheduleStrategy strategy;
 
     @Mock
-    private OutboxManager manager;
+    OutboxManager manager;
 
     @Mock
-    private Clock clock;
+    Clock clock;
 
     @InjectMocks
-    private OutboxCleanUpScheduler scheduler;
+    OutboxCleanUpScheduler tested;
 
-    @Test
-    @DisplayName("UT schedule() should schedule task with correct parameters")
-    void schedule_shouldScheduleTaskWithCorrectParameters() {
-        // given
-        Duration initialDelay = Duration.ofSeconds(10);
-        Duration fixedDelay = Duration.ofMinutes(1);
-        when(properties.getInitialDelay()).thenReturn(initialDelay);
-        when(properties.getFixedDelay()).thenReturn(fixedDelay);
-
-        // when
-        scheduler.schedule();
-
-        // then
-        verify(executor).scheduleWithFixedDelay(
-                any(Runnable.class),
-                eq(10000L),
-                eq(60000L),
-                eq(TimeUnit.MILLISECONDS)
-        );
+    private boolean captureAndRun() {
+        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        verify(strategy).scheduleExecution(captor.capture());
+        return captor.getValue().run();
     }
 
     @Test
-    @DisplayName("UT schedule() task should call manager with correct parameters")
-    void schedule_taskShouldCallManagerWithCorrectParameters() {
+    @DisplayName("UT schedule() should delegate execution to strategy")
+    void schedule_shouldDelegateToStrategy() {
+        // when
+        tested.schedule();
+
+        // then
+        verify(strategy).scheduleExecution(any());
+    }
+
+    @Test
+    @DisplayName("UT schedule() when deleted count equals batch size, continuable should return true")
+    void schedule_whenDeletedCountEqualsBatchSize_continuableShouldReturnTrue() {
         // given
-        Duration ttl = Duration.ofHours(24);
-        int batchSize = 100;
-        when(properties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
+        int batchSize = 50;
+        Instant now = Instant.parse("2024-01-01T12:00:00Z");
+        Duration ttl = Duration.ofDays(7);
+
+        when(clock.instant()).thenReturn(now);
         when(properties.getTtl()).thenReturn(ttl);
         when(properties.getBatchSize()).thenReturn(batchSize);
-        when(clock.instant()).thenReturn(Instant.now());
+        when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(batchSize);
 
         // when
-        scheduler.schedule();
+        tested.schedule();
+        boolean result = captureAndRun();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-        captor.getValue().run();
-
-        verify(manager).deleteProcessedBatch(any(Instant.class), eq(batchSize));
+        assertTrue(result);
     }
 
     @Test
-    @DisplayName("UT schedule() task should catch exception from manager")
-    void schedule_taskShouldCatchExceptionFromManager() {
+    @DisplayName("UT schedule() when deleted count less than batch size, continuable should return false")
+    void schedule_whenDeletedCountLessThanBatchSize_continuableShouldReturnFalse() {
         // given
-        when(properties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTtl()).thenReturn(Duration.ZERO);
-        when(properties.getBatchSize()).thenReturn(1);
-        when(clock.instant()).thenReturn(Instant.now());
-        doThrow(new RuntimeException("error")).when(manager).deleteProcessedBatch(any(), anyInt());
+        int batchSize = 50;
+        Instant now = Instant.parse("2024-01-01T12:00:00Z");
+        Duration ttl = Duration.ofDays(7);
+
+        when(clock.instant()).thenReturn(now);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(batchSize - 1);
 
         // when
-        scheduler.schedule();
+        tested.schedule();
+        boolean result = captureAndRun();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
+        assertFalse(result);
+    }
 
-        assertThatCode(() -> captor.getValue().run()).doesNotThrowAnyException();
+    @Test
+    @DisplayName("UT schedule() when deleted count is zero, continuable should return false")
+    void schedule_whenDeletedCountIsZero_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        Instant now = Instant.parse("2024-01-01T12:00:00Z");
+        Duration ttl = Duration.ofDays(7);
+
+        when(clock.instant()).thenReturn(now);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() should pass threshold computed from clock and ttl to manager")
+    void schedule_shouldPassCorrectThresholdToManager() {
+        // given
+        int batchSize = 100;
+        Instant now = Instant.parse("2024-06-15T10:00:00Z");
+        Duration ttl = Duration.ofHours(48);
+        Instant expectedThreshold = now.minus(ttl);
+
+        when(clock.instant()).thenReturn(now);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(manager.deleteProcessedBatch(any(), anyInt())).thenReturn(0);
+
+        // when
+        tested.schedule();
+        captureAndRun();
+
+        // then
+        verify(manager).deleteProcessedBatch(expectedThreshold, batchSize);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when manager throws exception, continuable should return false and not rethrow")
+    void schedule_whenManagerThrows_continuableShouldReturnFalseAndNotRethrow() {
+        // given
+        Instant now = Instant.parse("2024-01-01T12:00:00Z");
+        Duration ttl = Duration.ofDays(7);
+
+        when(clock.instant()).thenReturn(now);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(properties.getBatchSize()).thenReturn(50);
+        when(manager.deleteProcessedBatch(any(), anyInt())).thenThrow(new RuntimeException("DB error"));
+
+        // when
+        tested.schedule();
+        boolean result = assertDoesNotThrow(this::captureAndRun);
+
+        // then
+        assertFalse(result);
     }
 }

@@ -49,7 +49,7 @@ public class DefaultOutboxDlqWebManager implements OutboxDlqWebManager {
     @Override
     public void updateStatus(UUID id, DlqStatus status) {
         OutboxDlqEvent event = repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
-        if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
+        if (DlqStatus.IN_PROCESS.equals(event.getDlqStatus())) {
             log.debug("Update requested, but event is in 'IN_PROCESS' status; update impossible");
             throw new OutboxDlqEventInProcessException(event.getId());
         }
@@ -72,7 +72,7 @@ public class DefaultOutboxDlqWebManager implements OutboxDlqWebManager {
         OutboxDlqEvent event = repository.findById(id).orElseThrow(
                 () -> new OutboxDlqEventNotFoundException(id)
         );
-        if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
+        if (DlqStatus.IN_PROCESS.equals(event.getDlqStatus())) {
             log.debug("Delete requested, but event is in 'IN_PROCESS' status; delete impossible");
             throw new OutboxDlqEventInProcessException(event.getId());
         }
@@ -102,7 +102,7 @@ public class DefaultOutboxDlqWebManager implements OutboxDlqWebManager {
             throw new OutboxDlqEventBatchNotFoundException(ids);
         }
         for (OutboxDlqEvent event: events) {
-            if (event.getDlqStatus().equals(DlqStatus.IN_PROCESS)) {
+            if (DlqStatus.IN_PROCESS.equals(event.getDlqStatus())) {
                 log.debug("Some of events is in 'IN_PROCESS' status; operation impossible");
                 throw new OutboxDlqEventInProcessException(event.getId());
             }

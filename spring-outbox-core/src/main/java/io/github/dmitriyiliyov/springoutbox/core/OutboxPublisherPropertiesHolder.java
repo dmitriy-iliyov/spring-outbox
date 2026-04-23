@@ -30,7 +30,7 @@ public interface OutboxPublisherPropertiesHolder {
      * <p>
      * Stuck events are those that remain in the {@code IN_PROCESS} state for too long, usually due to a crash.
      */
-    interface StuckRecoveryPropertiesHolder {
+    interface StuckRecoveryPropertiesHolder extends PollingPropertiesHolder {
 
         /**
          * The maximum time a batch can be in processing before being considered stuck.
@@ -43,37 +43,17 @@ public interface OutboxPublisherPropertiesHolder {
          * The number of stuck events to recover in one batch.
          */
         Integer getBatchSize();
-
-        /**
-         * The initial delay before the first stuck recovery operation.
-         */
-        Duration getInitialDelay();
-
-        /**
-         * The fixed delay between subsequent stuck recovery operations.
-         */
-        Duration getFixedDelay();
     }
 
     /**
      * Holds properties specific to a particular outbox event type.
      */
-    interface EventPropertiesHolder {
+    interface EventPropertiesHolder extends PollingPropertiesHolder {
 
         /**
          * The type of the event.
          */
         String getEventType();
-
-        /**
-         * The initial delay before the first processing of this event type.
-         */
-        Duration getInitialDelay();
-
-        /**
-         * The fixed delay between subsequent processing operations for this event type.
-         */
-        Duration getFixedDelay();
 
         /**
          * The number of events to process in one batch for this event type.
@@ -109,36 +89,28 @@ public interface OutboxPublisherPropertiesHolder {
     interface DlqPropertiesHolder {
 
         /**
-         * The number of DLQ events to process in one batch.
+         * Generic properties for transferring events to or from the DLQ.
          */
-        Integer getBatchSize();
+        interface TransferPropertiesHolder extends PollingPropertiesHolder {
+            
+            /**
+             * The number of events to process in one batch.
+             */
+            Integer getBatchSize();
+        }
 
         /**
-         * The initial delay before the first transfer of events to the DLQ.
-         *
-         * @return the initial delay for transfer to DLQ.
+         * Properties governing the transfer of failed events to the DLQ.
+         * <p>
+         * Applies when an event has exceeded its maximum retry attempts.
          */
-        Duration getTransferToInitialDelay();
+        TransferPropertiesHolder getTransferTo();
 
         /**
-         * The fixed delay between subsequent transfers of events to the DLQ.
-         *
-         * @return the fixed delay for transfer to DLQ.
+         * Properties governing the transfer of events from the DLQ back to the regular outbox.
+         * <p>
+         * Applies when manually triggering a retry for DLQ events.
          */
-        Duration getTransferToFixedDelay();
-
-        /**
-         * The initial delay before the first transfer of events from the DLQ (for retry).
-         *
-         * @return the initial delay for transfer from DLQ.
-         */
-        Duration getTransferFromInitialDelay();
-
-        /**
-         * The fixed delay between subsequent transfers of events from the DLQ (for retry).
-         *
-         * @return the fixed delay for transfer from DLQ.
-         */
-        Duration getTransferFromFixedDelay();
+        TransferPropertiesHolder getTransferFrom();
     }
 }

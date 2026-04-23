@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.BeanNameUtils;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -151,10 +152,19 @@ class OutboxPublisherAutoConfigurationUnitTests {
     @Test
     @DisplayName("UT outboxSchedulersInitializer should register publisher and recovery schedulers when cleanup is disabled")
     void shouldRegisterPublisherAndRecoverySchedulers() {
+        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
+        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
+
         when(mockedPublisherProperties.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
         when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
+        when(eventPropertiesHolder.getPolling()).thenReturn(mockPollingProperties);
+
         when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(false);
         when(factory.containsBean(anyString())).thenReturn(false);
+
+        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
+        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
+        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class)) {
             beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
@@ -178,6 +188,11 @@ class OutboxPublisherAutoConfigurationUnitTests {
         when(mockedPublisherProperties.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
         when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
         when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(false);
+        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
+        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
+        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
+        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
+        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class)) {
             beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
@@ -201,7 +216,16 @@ class OutboxPublisherAutoConfigurationUnitTests {
     void shouldRegisterCleanUpSchedulerWhenEnabled() {
         when(mockedPublisherProperties.getEvents()).thenReturn(Map.of());
         when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(true);
-        when(mockedPublisherProperties.getCleanUp()).thenReturn(mock(OutboxProperties.CleanUpProperties.class));
+        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
+        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
+
+        OutboxProperties.CleanUpProperties mockCleanUpProperties = mock(OutboxProperties.CleanUpProperties.class);
+        when(mockCleanUpProperties.getPolling()).thenReturn(mockPollingProperties);
+        when(mockedPublisherProperties.getCleanUp()).thenReturn(mockCleanUpProperties);
+
+        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
+        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
+        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
                 mockedPublisherProperties, executor, processor, manager, clock, factory
@@ -219,6 +243,11 @@ class OutboxPublisherAutoConfigurationUnitTests {
         when(mockedPublisherProperties.getEvents()).thenReturn(Map.of());
         when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(true);
         when(mockedPublisherProperties.getCleanUp()).thenReturn(null);
+        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
+        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
+        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
+        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
+        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
                 mockedPublisherProperties, executor, processor, manager, clock, factory

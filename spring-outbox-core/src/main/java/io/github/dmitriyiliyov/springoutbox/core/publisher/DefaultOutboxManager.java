@@ -121,16 +121,14 @@ public class DefaultOutboxManager implements OutboxManager {
     @Transactional
     @Override
     public int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
-        int recoverSize = repository.updateBatchStatusByStatusAndThreshold(
+        int recoveredCount = repository.updateBatchStatusByStatusAndThreshold(
                 EventStatus.IN_PROCESS,
                 clock.instant().minusSeconds(maxBatchProcessingTime.toSeconds()),
                 batchSize,
                 EventStatus.PENDING
         );
-        if (recoverSize > 0) {
-            log.warn("Stuck events batch recovered, recoveredSize={}; batchSize={} ", recoverSize, batchSize);
-        }
-        return recoverSize;
+        log.info("Stuck events batch recovered, recoveredCount={}; batchSize={} ", recoveredCount, batchSize);
+        return recoveredCount;
     }
 
     @Transactional

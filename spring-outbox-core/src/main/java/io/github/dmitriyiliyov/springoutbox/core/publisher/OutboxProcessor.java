@@ -23,7 +23,8 @@ public interface OutboxProcessor {
      *
      * @param properties configuration for the event type being processed,
      *                   including batch size, retry limits, and backoff settings.
+     * @return           the number of processed events.
      * @throws NullPointerException if {@code properties} is null.
      */
-    void process(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties);
+    int process(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties);
 }

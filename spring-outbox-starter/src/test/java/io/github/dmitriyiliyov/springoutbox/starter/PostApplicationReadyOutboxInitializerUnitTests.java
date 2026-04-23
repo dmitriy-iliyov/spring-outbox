@@ -1,8 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +35,6 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
         when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
         when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(ObjectMapper.class)).thenReturn(Map.of());
 
         // when + then
         assertThrows(IllegalStateException.class, () -> initializer.init());
@@ -58,7 +54,6 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         ));
         when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
         when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
-        when(context.getBeansOfType(ObjectMapper.class)).thenReturn(Map.of());
 
         // when
         initializer.init();
@@ -77,7 +72,6 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
         when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
         when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
-        when(context.getBeansOfType(ObjectMapper.class)).thenReturn(Map.of());
 
         // when + then
         initializer.init();
@@ -97,7 +91,6 @@ class PostApplicationReadyOutboxInitializerUnitTests {
                 "metrics2", metrics2
         ));
         when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
-        when(context.getBeansOfType(ObjectMapper.class)).thenReturn(Map.of());
 
         // when
         initializer.init();
@@ -105,49 +98,5 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         // then
         verify(metrics1).register();
         verify(metrics2).register();
-    }
-
-    @Test
-    @DisplayName("UT init() when ObjectMapper present should use it to log properties")
-    void init_whenObjectMapperPresent_shouldUseMapperToLogProperties() throws Exception {
-        // given
-        OutboxProperties properties = mock(OutboxProperties.class);
-        ObjectMapper mapper = mock(ObjectMapper.class);
-        ObjectWriter writer = mock(ObjectWriter.class);
-
-        when(mapper.writerWithDefaultPrettyPrinter()).thenReturn(writer);
-        when(writer.writeValueAsString(properties)).thenReturn("{}");
-
-        when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
-        when(context.getBeansOfType(ObjectMapper.class)).thenReturn(Map.of("objectMapper", mapper));
-
-        // when
-        initializer.init();
-
-        // then
-        verify(mapper).writerWithDefaultPrettyPrinter();
-        verify(writer).writeValueAsString(properties);
-    }
-
-    @Test
-    @DisplayName("UT init() when ObjectMapper throws should not rethrow exception")
-    void init_whenObjectMapperThrows_shouldNotRethrow() throws Exception {
-        // given
-        OutboxProperties properties = mock(OutboxProperties.class);
-        ObjectMapper mapper = mock(ObjectMapper.class);
-        ObjectWriter writer = mock(ObjectWriter.class);
-
-        when(mapper.writerWithDefaultPrettyPrinter()).thenReturn(writer);
-        when(writer.writeValueAsString(any())).thenThrow(new JsonProcessingException("serialization error") {});
-
-        when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
-        when(context.getBeansOfType(ObjectMapper.class)).thenReturn(Map.of("objectMapper", mapper));
-
-        // when + then
-        initializer.init();
     }
 }

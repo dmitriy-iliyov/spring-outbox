@@ -51,7 +51,7 @@ public final class OutboxDlqRepositoryFactory {
      * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
      * @throws RuntimeException         if a database connection cannot be established.
      */
-    public static OutboxDlqRepository generate(DataSource dataSource, JdbcTemplate jdbcTemplate) {
+    public static OutboxDlqRepository create(DataSource dataSource, JdbcTemplate jdbcTemplate) {
         try (Connection conn = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(conn.getMetaData().getDatabaseProductName());
             Function<JdbcTemplate, OutboxDlqRepository> supplier = SUPPORTED_SUPPLIERS.get(databaseType);

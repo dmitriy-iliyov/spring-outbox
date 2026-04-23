@@ -20,14 +20,19 @@ spring:
 logging:
   level:
     root: info
+    io.github.dmitriyiliyov.springoutbox: debug
 outbox:
   thread-pool-size: 7
   tables:
     auto-create: true
   publisher:
     defaults:
-      batch-size: 100
-      initial-delay: 30s
+      batch-size: 200
+      polling:
+        initial-delay: 30s
+        min-fixed-delay: 250ms
+        max-fixed-delay: 1m
+        multiplier: 5.0
       max-retries: 3
       backoff:
         delay: 1m
@@ -36,20 +41,31 @@ outbox:
       enabled: true
       batch-size: 500
       ttl: 10m
-      initial-delay: 2m
-      fixed-delay: 500ms
+      polling:
+        type: adaptive
+        initial-delay: 30s
+        min-fixed-delay: 200ms
+        max-fixed-delay: 1m
+        multiplier: 2.0
     stuck-recovery:
       batch-size: 500
-      initial-delay: 2m
-      fixed-delay: 5s
+      polling:
+        type: adaptive
+        initial-delay: 30s
+        min-fixed-delay: 1s
+        max-fixed-delay: 5m
+        multiplier: 2.0
     dlq:
       enabled: true
-      batch-size: 200
-      transfer-to-initial-delay: 2m
-      transfer-to-fixed-delay: 1m
-      transfer-from-initial-delay: 2m
-      transfer-from-fixed-delay: 10m
+      batch-size: 500
+      polling:
+        type: adaptive
+        initial-delay: 30s
+        min-fixed-delay: 5s
+        max-fixed-delay: 1m
+        multiplier: 2.0
       metrics:
+        enabled: true
         gauge:
           enabled: true
           cache:

@@ -15,27 +15,20 @@ Each event type is handled independently, and events are processed in parallel u
 This approach ensures reliable event publication without relying on database log-based CDC solutions, making it suitable for environments where simplicity, portability, and explicit control over event processing are preferred.
 
 ## Key Features
-- **Atomic persistence** - event storage within business transactions.
-- **Adaptive pooling** - dynamically adjusts polling interval based on workload for optimal database efficiency.
-- **At-least-once delivery** - with configurable retry policies with backoff.
-- **Exactly-once delivery** - achieved through an idempotent consumer, implementation provided by the library.
-- **Dead Letter Queue** - storage events when all retries are exhausted, with REST API support.
-- **Background service** - automatic stuck event recovery, cleanup processed or consumed events.
-- **Observability** - Micrometer metrics out of the box.
+- **Atomic persistence** - events are stored within the same business transaction, ensuring consistency.
+- **Adaptive polling** - dynamically adjusts the polling interval based on workload to optimize database usage.
+- **Flexible polling configuration** - allows customization of polling intervals, retry policies, and backoff strategies per event type.
+- **At-least-once delivery** - guarantees delivery with configurable retries and backoff policies.
+- **Effectively-once processing** - achieved via an idempotent consumer implementation provided by the library.
+- **Dead Letter Queue** - stores events that fail after all retry attempts, with REST API support for management.
+- **Background service** - handles recovery of stuck events and cleanup of processed or consumed events automatically.
+- **Observability** - provides out-of-the-box metrics integration via Micrometer
 
 ## Supported Infrastructure
 
-**Databases:**
-- PostgreSQL 16+
-- MySQL 8+
-- Oracle Database 23+
-
-**Message Brokers:**
-- Apache Kafka 3.7+
-- RabbitMQ 3.12+
-
-**Cache Storage (optional for caching):**
-- Redis 7+
+- **Databases:** PostgreSQL 16+, MySQL 8+, Oracle 23+.
+- **Message Brokers:** Apache Kafka 3.7+, RabbitMQ 3.12+.
+- **Cache Storage (optional for caching):** Redis 7+.
 
 ## Limitations
 - **Horizontal scaling** - performance degradation may occur when reaching a certain number of instances due to `SKIP LOCKED` - based concurrent polling mechanism. The optimal number of instances depends on the number of event types and database load.
@@ -214,7 +207,7 @@ public class ExampleRabbitListener {
       ExampleDto dto = objectMapper.readValue(message.getBody(), ExampleDto.class);
       outboxConsumer.consume(
             message, () -> log.info("Some business operation with payload {}", dto)
-        );
+      );
     }
 }
 ```
@@ -263,6 +256,14 @@ To enable parallel event processing across multiple application instances, the l
 - Performance degrades as the number of instances increases due to longer search times for available event batches
 - Event processing order cannot be guaranteed
 
+The library provides two polling strategies: `fixed` and `adaptive`.
+
+The `fixed` strategy uses a constant delay between polling iterations, making it predictable and easier to reason about under stable workloads. 
+
+The `adaptive` strategy dynamically adjusts the delay between polling iterations using exponential backoff. When no events are available, the delay increases (up to `max-fixed-delay`) to reduce unnecessary database load. As soon as events are detected, the delay is reset to `min-fixed-delay`, allowing the system to react quickly to new workload.
+
+Detailed polling configuration options are available [here](#polling).
+
 ---
 
 ### Delivery Semantics
@@ -283,7 +284,7 @@ More details about the state machine [here](#event-state-machine).
 #### Exactly-Once
 This semantic is achievable only when using the idempotent consumer, which deduplicates messages based on event identifiers generated when the event is initially saved at the beginning of its lifecycle.
 
-In reality, the term "Exactly-Once" is not entirely accurate and should be understood as "Effectively-Exactly-Once", since the library cannot guarantee deduplication within the broker itself.
+In reality, the term "Exactly-Once" is not entirely accurate and should be understood as "Effectively-Once", since the library cannot guarantee deduplication within the broker itself.
 
 ---
 
@@ -551,11 +552,11 @@ Caching can be disabled via metrics configuration.
 
 **Counters**
 
-| Metric Name                            | Description                     | Tags                                                                     |
-|:---------------------------------------|:--------------------------------|:-------------------------------------------------------------------------|
-| `outbox_events_rate_total`             | Processed or failed events rate | `event_type`, <br/>`status={processed, failed}`                          |
-| `outbox_events_by_type_rate_total`     | Internal lifecycle events rate  | `type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`   |
-| `outbox_dlq_events_by_type_rate_total` | DLQ operational events rate     | `type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
+| Metric Name                                   | Description                     | Tags                                                                            |
+|:----------------------------------------------|:--------------------------------|:--------------------------------------------------------------------------------|
+| `outbox_events_rate_total`                    | Processed or failed events rate | `event_type`, <br/>`status={processed}`                                         |
+| `outbox_events_by_action_type_rate_total`     | Internal lifecycle events rate  | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`   |
+| `outbox_dlq_events_by_action_type_rate_total` | DLQ operational events rate     | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
 
 **Timers**
 
@@ -610,6 +611,42 @@ outbox:
 | `emergency-timeout` | Maximum time to wait for a send operation    | `120s`                                                |
 
 ---
+
+#### Polling
+Library provides two polling types: `fixed` and `adaptive`.
+
+Properties block for `adaptive` polling should look like this:
+```yaml
+polling: 
+  type: adaptive
+  initial-delay: 300s
+  min-fixed-delay: 1s
+  max-fixed-delay: 1m
+  multiplier: 2.0
+```
+
+Properties block for `fixed` polling should look like this:
+
+```yaml
+polling: 
+  type: fixed
+  initial-delay: 300s
+  fixed-delay: 2s
+```
+
+| Property          | Description                                                            |
+|-------------------|------------------------------------------------------------------------|
+| `type`            | Polling type (`fixed` or `adaptive`)                                   |
+| `initial-delay`   | Delay before first polling starts                                      |
+| `fixed-delay`     | Fixed delay between polling iterations (used for `fixed` polling type) |
+| `min-fixed-delay` | Min delay between polling iterations                                   |
+| `max-fixed-delay` | Max delay between polling iterations                                   |
+| `multiplier`      | Multiplier for exponential backoff between polling iterations          |
+
+> [!NOTE]
+> Polling does not have global defaults. Each property group—such as defaults, current event, cleanup, stuck recovery, and DLQ transfers—has its own polling default values. 
+---
+
 #### Defaults & Events
 
 The `defaults` section defines default values that apply to all events unless overridden in individual event configuration.
@@ -617,24 +654,32 @@ The `defaults` section defines default values that apply to all events unless ov
 outbox:
   publisher:
     defaults:
-      batch-size: 50
-      initial-delay: 300s
-      fixed-delay: 2s
+      batch-size: 200
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 250ms
+        max-fixed-delay: 1m
+        multiplier: 1.5
       max-retries: 3
       backoff:
         enabled: true
         delay: 10s
         multiplier: 3.0
 ```
-| Property             | Description                                 | Default |
-|----------------------|---------------------------------------------|:-------:|
-| `batch-size`         | Number of events to process per iteration   |  `200`  |
-| `initial-delay`      | Delay before first polling starts           | `300s`  |
-| `fixed-delay`        | Delay between polling iterations            | `500ms` |
-| `max-retries`        | Maximum retry attempts before moving to DLQ |   `3`   |
-| `backoff.enabled`    | Enable exponential backoff for retries      | `true`  |
-| `backoff.delay`      | Initial backoff delay                       |  `10s`  |
-| `backoff.multiplier` | Multiplier for exponential backoff          |  `3.0`  |
+
+| Property                  | Description                                                                                                          |  Default   |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------|:----------:|
+| `batch-size`              | Number of events to process per iteration                                                                            |   `200`    |
+| `polling.type`            | Polling type (`fixed` or `adaptive`)                                                                                 | `adaptive` |
+| `polling.initial-delay`   | Delay before first polling starts                                                                                    |    `5m`    |
+| `polling.min-fixed-delay` | Min delay between polling iterations                                                                                 |  `250ms`   |
+| `polling.max-fixed-delay` | Max delay between polling iterations                                                                                 |    `1m`    |
+| `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                        |   `1.5`    |
+| `max-retries`             | Maximum retry attempts before moving to DLQ                                                                          |    `3`     |
+| `backoff.enabled`         | Enable exponential backoff for retries                                                                               |   `true`   |
+| `backoff.delay`           | Initial backoff delay                                                                                                |   `10s`    |
+| `backoff.multiplier`      | Multiplier for exponential backoff                                                                                   |   `3.0`    |
 
 Individual event configurations override defaults for specific event types.
 Apache Kafka example:
@@ -644,8 +689,9 @@ outbox:
     events:
       create-order:
         topic: orders
-        batch-size: 200
-        fixed-delay: 200ms
+        batch-size: 500
+        polling:
+          min-fixed-delay: 1s
         max-retries: 2
         backoff:
           delay: 5s
@@ -654,14 +700,19 @@ outbox:
       update-order:
         topic: orders
         batch-size: 200
-        fixed-delay: 250ms
+        polling:
+          type: fixed
+          initial-delay: 10m
+          fixed-delay: 250ms
         backoff:
           enabled: false  # Use fixed delay instead
 
       delete-order:
-        topic: orders-exchange
+        topic: orders
         batch-size: 500
-        fixed-delay: 1m
+        polling:
+          max-fixed-delay: 5m
+          multiplier: 5.0
 ```
 | Property | Description                                           |
 |----------|-------------------------------------------------------|
@@ -671,19 +722,35 @@ All other parameters same as `defaults` section, but override defaults for this 
 
 RabbitMQ example:
 ```yaml
+outbox:
+  publisher:
     events:
       create-order:
         topic: orders-exchange
-        batch-size: 200
-        fixed-delay: 200ms
+        batch-size: 500
+        polling:
+          min-fixed-delay: 1s
+        max-retries: 2
+        backoff:
+          delay: 5s
+          multiplier: 2.0
+
       update-order:
         topic: orders-exchange
         batch-size: 200
-        fixed-delay: 250ms
+        polling:
+          type: fixed
+          initial-delay: 10m
+          fixed-delay: 250ms
+        backoff:
+          enabled: false  # Use fixed delay instead
+      
       delete-order:
         topic: orders-exchange
         batch-size: 500
-        fixed-delay: 1m
+        polling:
+          max-fixed-delay: 5m
+          multiplier: 5.0
 ```
 
 **Example with inheritance from `defaults`:**
@@ -691,22 +758,34 @@ RabbitMQ example:
 outbox:
   publisher:
     defaults:
-      batch-size: 100
-      fixed-delay: 1s
-      max-retries: 3.0
+      batch-size: 200
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 1m
+        multiplier: 1.5
+      max-retries: 3
+      backoff:
+        enabled: true
+        delay: 10s
+        multiplier: 3.0
     
     events:
       high-priority:
         topic: events
-        fixed-delay: 1s  # Override: faster polling
-        # Inherits: batch-size=50, max-retries=3
+        min-fixed-delay: 250ms  # Override: faster polling
+        # Inherits: batch-size=200, other polling settings, max-retries=3, backoff 
       
       low-priority:
         topic: events
-        fixed-delay: 10s  # Override: slower polling
+        polling:
+          min-fixed-delay: 10s  # Override: slower polling
+          max-fixed-delay: 5m
+          multiplier: 2.0
         backoff:
           enabled: false  # Override: disable backoff
-        # Inherits: batch-size=50, max-retries=3
+          # Inherits: batch-size=200, other polling settings, max-retries=3
 ```
 ---
 
@@ -717,17 +796,23 @@ outbox:
     stuck-recovery:
       batch-size: 500
       max-batch-processing-time: 300s
-      initial-delay: 300s
-      fixed-delay: 60s
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 1m
+        multiplier: 4.0
 ```
 
-| Property                    | Description                                                                                              | Default |
-|-----------------------------|----------------------------------------------------------------------------------------------------------|:-------:|
-| `batch-size`                | Number of stuck events to recover per iteration                                                          |  `500`  |
-| `max-batch-processing-time` | Time threshold for detecting stuck events (events in `IN_PROCESS` longer than this are considered stuck) | `300s`  |
-| `initial-delay`             | Delay before first recovery run                                                                          | `300s`  |
-| `fixed-delay`               | Delay between recovery runs                                                                              |  `60s`  |
-
+| Property                    | Description                                                                                                          |  Default   |
+|-----------------------------|----------------------------------------------------------------------------------------------------------------------|:----------:|
+| `batch-size`                | Number of stuck events to recover per iteration                                                                      |   `500`    |
+| `max-batch-processing-time` | Time threshold for detecting stuck events (events in `IN_PROCESS` longer than this are considered stuck)             |   `300s`   |
+| `polling.type`              | Polling type (`fixed` or `adaptive`)                                                                                 | `adaptive` |
+| `polling.initial-delay`     | Delay before first polling starts                                                                                    |    `5m`    |
+| `polling.min-fixed-delay`   | Min delay between polling iterations                                                                                 |    `1s`    |
+| `polling.max-fixed-delay`   | Max delay between polling iterations                                                                                 |    `1m`    |
+| `polling.multiplier`        | Multiplier for exponential backoff between polling iterations                                                        |   `4.0`    |
 ---
 
 #### Dead Letter Queue
@@ -735,28 +820,61 @@ outbox:
 outbox:
   publisher:
     dlq:
-      enabled: true
+      enabled: true  
       batch-size: 500
-      transfer-to-initial-delay: 300s
-      transfer-to-fixed-delay: 60s
-      transfer-from-initial-delay: 300s
-      transfer-from-fixed-delay: 600s
-      metrics:
-        enabled: true
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 2m
+        multiplier: 10.0
+      transfer-to:
+        # All properties inherit from section above
+      transfer-from:
+        # All properties inherit from section above
 ```
+DLQ has shared section with `batch-size`, `polling`. Values from this section will be used in `transfer-to` and `transfer-from` as defaults.
 > [!WARNING]
 > When disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`.
 
-| Property                      | Description                                      | Default |
-|-------------------------------|--------------------------------------------------|:-------:|
-| `enabled`                     | Enable DLQ functionality                         | `false` |
-| `batch-size`                  | Number of events to transfer per iteration       |  `500`  |
-| `transfer-to-initial-delay`   | Delay before first transfer to DLQ               | `300s`  |
-| `transfer-to-fixed-delay`     | Delay between transfers to DLQ                   |  `60s`  |
-| `transfer-from-initial-delay` | Delay before first transfer from DLQ to outbox   | `300s`  |
-| `transfer-from-fixed-delay`   | Delay between transfers from DLQ to outbox       | `600s`  |
-| `metrics.enabled`             | Enable metrics collection, more [here](#metrics) | `false` |
+| Property                  | Description                                                                                                          |  Default   |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------|:----------:|
+| `enabled`                 | Enable DLQ functionality                                                                                             |  `false`   |
+| `batch-size`              | Number of events to transfer per iteration                                                                           |   `500`    |
+| `polling.type`            | Polling type (`fixed` or `adaptive`)                                                                                 | `adaptive` |
+| `polling.initial-delay`   | Delay before first polling starts                                                                                    |    `5m`    |
+| `polling.min-fixed-delay` | Min delay between polling iterations                                                                                 |    `1s`    |
+| `polling.max-fixed-delay` | Max delay between polling iterations                                                                                 |    `2m`    |
+| `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                        |   `10.0`   |
+| `transfer-to`             | Section for specifying settings for transferring events from the outbox to the DLQ                                   |     —      |
+| `transfer-from`           | Section for specifying settings for transferring events from the DLQ to the outbox                                   |     —      |
+| `metrics.enabled`         | Enable metrics collection, more [here](#metrics)                                                                     |  `false`   |
 
+**Override example**: 
+```yaml
+outbox:
+  publisher:
+    dlq:
+      enabled: true  
+      batch-size: 500
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 2m
+        multiplier: 10.0
+      transfer-to:
+        pooling:
+          multiplier: 2.5
+      # Inherits: batch-size=500, other polling settings except multiplier
+      transfer-from:
+        batch-size: 1000
+        pooling:
+          type: fixed
+          initial-delay: 5m
+          fixed-delay: 1m
+        # Nothing inherits
+```
 ---
 
 #### Cleanup
@@ -765,22 +883,29 @@ outbox:
   publisher:
     clean-up:
       enabled: true
-      batch-size: 200
+      batch-size: 500
       ttl: 24h
-      initial-delay: 120s
-      fixed-delay: 200ms
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 5s
+        max-fixed-delay: 1m
+        multiplier: 2.0
 ```
 
 > [!WARNING]
 > When disabled, processed events will accumulate indefinitely.
 
-| Property        | Description                                                                          | Default |
-|-----------------|--------------------------------------------------------------------------------------|:-------:|
-| `enabled`       | Enable automatic cleanup of processed events                                         | `true`  |
-| `batch-size`    | Number of events to delete per iteration                                             |  `200`  |
-| `ttl`           | TTL for processed events. Events with `PROCESSED` status older than this are deleted |  `24h`  |
-| `initial-delay` | Delay before first cleanup run                                                       | `120s`  |
-| `fixed-delay`   | Delay between cleanup runs                                                           | `200ms` |
+| Property                  | Description                                                                                                          |  Default   |
+|---------------------------|----------------------------------------------------------------------------------------------------------------------|:----------:|
+| `enabled`                 | Enable automatic cleanup of processed events                                                                         |   `true`   |
+| `batch-size`              | Number of events to delete per iteration                                                                             |   `500`    |
+| `ttl`                     | TTL for processed events. Events with `PROCESSED` status older than this are deleted                                 |   `24h`    |
+| `polling.type`            | Polling type (`fixed` or `adaptive`)                                                                                 | `adaptive` |
+| `polling.initial-delay`   | Delay before first polling starts                                                                                    |    `5m`    |
+| `polling.min-fixed-delay` | Min delay between polling iterations                                                                                 |    `5s`    |
+| `polling.max-fixed-delay` | Max delay between polling iterations                                                                                 |    `1m`    |
+| `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                        |   `2.0`    |
 
 ---
 
@@ -819,10 +944,14 @@ outbox:
   consumer:
     clean-up:
       enabled: true
-      batch-size: 200
+      batch-size: 500
       ttl: 24h
-      initial-delay: 120s
-      fixed-delay: 200ms
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 5s
+        max-fixed-delay: 1m
+        multiplier: 2.0
 ```
 All parameters same as [Publisher Cleanup](#cleanup-2).
 
@@ -910,9 +1039,13 @@ outbox:
       emergency-timeout: 120s
 
     defaults:
-      batch-size: 100
-      initial-delay: 30s
-      fixed-delay: 2s
+      batch-size: 200
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 250ms
+        max-fixed-delay: 1m
+        multiplier: 1.5
       max-retries: 3
       backoff:
         enabled: true
@@ -920,41 +1053,42 @@ outbox:
         multiplier: 3.0
     
     events:
-      order-created:
-        topic: orders
-        batch-size: 100
-        fixed-delay: 1s
-      order-updated:
-        topic: orders
-        batch-size: 50
-        fixed-delay: 1s
-      order-deleted:
-        topic: orders
-        batch-size: 50
-        fixed-delay: 10s
-        backoff:
-          enabled: false
+      # Your events with specific polling, retry, backoff values 
     
     stuck-recovery:
-      batch-size: 100
+      batch-size: 500
       max-batch-processing-time: 300s
-      initial-delay: 120s
-      fixed-delay: 1800s
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 1m
+        multiplier: 4.0
     
     clean-up:
       enabled: true
       batch-size: 200
       ttl: 24h
-      initial-delay: 120s
-      fixed-delay: 200ms
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 500ms
+        max-fixed-delay: 1m
+        multiplier: 2.0
     
     dlq:
       enabled: true
       batch-size: 500
-      transfer-to-initial-delay: 120s
-      transfer-to-fixed-delay: 60s
-      transfer-from-initial-delay: 120s
-      transfer-from-fixed-delay: 600s
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 2m
+        multiplier: 10.0
+      transfer-to:
+        # Specific to DLQ polling settings if necessary
+      transfer-from:
+        # Specific from DLQ polling settings if necessary
       metrics:
         enabled: true
         gauge:
@@ -1016,8 +1150,12 @@ outbox:
       enabled: true
       batch-size: 200
       ttl: 24h
-      initial-delay: 120s
-      fixed-delay: 200ms
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 500ms
+        max-fixed-delay: 1m
+        multiplier: 2.0
     cache:
       enabled: true
       cache-name: "outbox:consumed"

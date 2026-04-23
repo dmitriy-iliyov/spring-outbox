@@ -14,6 +14,7 @@ import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.BeanNameUtils;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +58,7 @@ public class OutboxPublisherAutoConfiguration {
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
             Clock clock
     ) {
-        return OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        return OutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
     }
 
     @Bean
@@ -104,7 +105,7 @@ public class OutboxPublisherAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public OutboxSender outboxSender(ApplicationContext context) {
-        return OutboxSenderFactory.generate(properties.getSender(), context, mapper);
+        return OutboxSenderFactory.create(properties.getSender(), context, mapper);
     }
 
     @Bean
@@ -125,10 +126,17 @@ public class OutboxPublisherAutoConfiguration {
         return () -> {
             log.debug("Start initialize schedulers beans");
             log.debug(manager.getClass().getName());
-            for (OutboxPublisherProperties.EventPropertiesHolder event : publisherProperties.getEvents().values()) {
+            for (OutboxPublisherProperties.EventProperties event : publisherProperties.getEvents().values()) {
                 String beanName = BeanNameUtils.toBeanName(event.getEventType(), "OutboxPublisherScheduler");
                 if (!factory.containsBean(beanName)) {
-                    factory.registerSingleton(beanName, new OutboxPollingScheduler(event, executor, processor));
+                    factory.registerSingleton(
+                            beanName,
+                            new OutboxPollingScheduler(
+                                    event,
+                                    OutboxScheduleStrategyFactory.create(event.getPolling(), executor),
+                                    processor
+                            )
+                    );
                     log.debug("Created bean with beanName {}", beanName);
                 }
             }
@@ -136,7 +144,14 @@ public class OutboxPublisherAutoConfiguration {
             String recoverySchedulerBeanName = "outboxRecoveryScheduler";
             factory.registerSingleton(
                     recoverySchedulerBeanName,
-                    new OutboxRecoveryScheduler(publisherProperties.getStuckRecovery(), executor, manager)
+                    new OutboxRecoveryScheduler(
+                            publisherProperties.getStuckRecovery(),
+                            OutboxScheduleStrategyFactory.create(
+                                    publisherProperties.getStuckRecovery().getPolling(),
+                                    executor
+                            ),
+                            manager
+                    )
             );
             log.debug("Created bean with beanName {}", recoverySchedulerBeanName);
 
@@ -148,7 +163,12 @@ public class OutboxPublisherAutoConfiguration {
                 String cleanUpSchedulerBeanName = "outboxCleanUpScheduler";
                 factory.registerSingleton(
                         cleanUpSchedulerBeanName,
-                        new OutboxCleanUpScheduler(cleanUpProperties, executor, manager, clock)
+                        new OutboxCleanUpScheduler(
+                                cleanUpProperties,
+                                OutboxScheduleStrategyFactory.create(cleanUpProperties.getPolling(), executor),
+                                clock,
+                                manager
+                        )
                 );
                 log.debug("Created bean with beanName {}", cleanUpSchedulerBeanName);
             }

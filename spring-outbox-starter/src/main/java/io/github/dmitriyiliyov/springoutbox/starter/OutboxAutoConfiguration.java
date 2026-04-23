@@ -42,7 +42,7 @@ public class OutboxAutoConfiguration {
         DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
         dataSourceInitializer.setEnabled(true);
         dataSourceInitializer.setDataSource(dataSource);
-        dataSourceInitializer.setDatabasePopulator(OutboxDatabasePopulatorFactory.generate(properties, dataSource));
+        dataSourceInitializer.setDatabasePopulator(OutboxDatabasePopulatorFactory.create(properties, dataSource));
         return dataSourceInitializer;
     }
 

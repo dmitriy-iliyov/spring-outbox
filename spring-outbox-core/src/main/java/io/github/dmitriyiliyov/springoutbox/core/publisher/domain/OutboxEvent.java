@@ -16,32 +16,9 @@ public class OutboxEvent {
     protected Instant createdAt;
     protected Instant updatedAt;
 
-    public OutboxEvent(UUID id,
-                       String eventType,
-                       String payloadType,
-                       String payload,
-                       Instant createdAt) {
-        this.id = id;
-        this.status = EventStatus.PENDING;
-        this.eventType = eventType;
-        this.payloadType = payloadType;
-        this.payload = payload;
-        this.retryCount = -1;
-        this.nextRetryAt = createdAt;
-        this.createdAt = createdAt;
-        this.updatedAt = createdAt;
-    }
-
-    public OutboxEvent(UUID id,
-                       EventStatus status,
-                       String eventType,
-                       String payloadType,
-                       String payload,
-                       int retryCount,
-                       Instant nextRetryAt,
-                       Instant createdAt,
-                       Instant updatedAt) {
-        this.id = id;
+    public OutboxEvent(UUID id, EventStatus status, String eventType, String payloadType, String payload,
+                       int retryCount, Instant nextRetryAt, Instant createdAt, Instant updatedAt) {
+        this.id = Objects.requireNonNull(id, "id cannot be null");
         this.status = status;
         this.eventType = eventType;
         this.payloadType = payloadType;
@@ -52,18 +29,10 @@ public class OutboxEvent {
         this.updatedAt = updatedAt;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OutboxEvent that = (OutboxEvent) o;
-        return Objects.equals(id, that.id);
+    public OutboxEvent(UUID id, String eventType, String payloadType, String payload, Instant createdAt) {
+        this(id, EventStatus.PENDING, eventType, payloadType, payload, -1, createdAt, createdAt, createdAt);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
-    }
 
     public UUID getId() {
         return id;
@@ -107,5 +76,18 @@ public class OutboxEvent {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OutboxEvent that = (OutboxEvent) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

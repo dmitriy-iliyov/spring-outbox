@@ -1,42 +1,39 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public final class OutboxPollingScheduler implements OutboxScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPollingScheduler.class);
 
-    private final OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties;
-    private final ScheduledExecutorService executor;
+    private final OutboxPublisherPropertiesHolder.EventPropertiesHolder properties;
     private final OutboxProcessor processor;
+    private final OutboxScheduleStrategy strategy;
 
-    public OutboxPollingScheduler(OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties, ScheduledExecutorService executor,
+    public OutboxPollingScheduler(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties,
+                                  OutboxScheduleStrategy strategy,
                                   OutboxProcessor processor) {
-        this.eventProperties = eventProperties;
-        this.executor = executor;
+        this.properties = properties;
         this.processor = processor;
+        this.strategy = strategy;
     }
 
     @Override
     public void schedule() {
-        executor.scheduleWithFixedDelay(
-                () -> {
-                    try {
-                        log.debug("Start processing {} outbox events", eventProperties.getEventType());
-                        processor.process(eventProperties);
-                    } catch (Exception e) {
-                        log.error("Error process outbox events for type={}", eventProperties.getEventType(), e);
-                    }
-                },
-                eventProperties.getInitialDelay().toMillis(),
-                eventProperties.getFixedDelay().toMillis(),
-                TimeUnit.MILLISECONDS
-        );
+        strategy.scheduleExecution(() -> {
+            int batchSize = properties.getBatchSize();
+            int processedCount = 0;
+            try {
+                log.debug("Start processing {} outbox events", properties.getEventType());
+                processedCount = processor.process(properties);
+            } catch (Exception e) {
+                log.error("Error process outbox events for type={}", properties.getEventType(), e);
+            }
+            return processedCount == batchSize;
+        });
     }
 }

@@ -41,7 +41,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 90s
 
   outbox-producer-mysql:
     container_name: outbox-producer-mysql
@@ -61,7 +61,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s
+      start_period: 90s
 
   outbox-producer-oracle:
     container_name: outbox-producer-oracle

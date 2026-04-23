@@ -40,93 +40,93 @@ class OutboxRepositoryFactoryUnitTests {
     DatabaseMetaData metaData;
 
     @Test
-    @DisplayName("UT generate() when PostgreSQL should return PostgreSqlOutboxRepository")
-    void generate_whenPostgres_shouldReturnPostgreSqlRepository() throws SQLException {
+    @DisplayName("UT create() when PostgreSQL should return PostgreSqlOutboxRepository")
+    void create_whenPostgres_shouldReturnPostgreSqlRepository() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        OutboxRepository result = OutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertInstanceOf(PostgreSqlOutboxRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when MySQL should return MySqlOutboxRepository")
-    void generate_whenMySql_shouldReturnMySqlRepository() throws SQLException {
+    @DisplayName("UT create() when MySQL should return MySqlOutboxRepository")
+    void create_whenMySql_shouldReturnMySqlRepository() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        OutboxRepository result = OutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertInstanceOf(MySqlOutboxRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when Oracle should return OracleOutboxRepository")
-    void generate_whenOracle_shouldReturnOracleRepository() throws SQLException {
+    @DisplayName("UT create() when Oracle should return OracleOutboxRepository")
+    void create_whenOracle_shouldReturnOracleRepository() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        OutboxRepository result = OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock);
+        OutboxRepository result = OutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertInstanceOf(OracleOutboxRepository.class, result);
     }
 
     @Test
-    @DisplayName("UT generate() when unsupported DB should throw IAE")
-    void generate_whenUnsupportedDb_shouldThrowIAE() throws SQLException {
+    @DisplayName("UT create() when unsupported DB should throw IAE")
+    void create_whenUnsupportedDb_shouldThrowIAE() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("H2");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock));
+        assertThrows(IllegalArgumentException.class, () -> OutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock));
     }
 
     @Test
-    @DisplayName("UT generate() when SQLException should throw RuntimeException")
-    void generate_whenSqlException_shouldThrowRuntimeException() throws SQLException {
+    @DisplayName("UT create() when SQLException should throw RuntimeException")
+    void create_whenSqlException_shouldThrowRuntimeException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
         // when + then
-        assertThrows(RuntimeException.class, () -> OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, clock));
+        assertThrows(RuntimeException.class, () -> OutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock));
     }
 
     @Test
-    @DisplayName("UT generate() when JdbcTemplate is null should throw IllegalStateException")
-    void generate_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
+    @DisplayName("UT create() when JdbcTemplate is null should throw IllegalStateException")
+    void create_whenJdbcTemplateIsNull_shouldThrowIllegalStateException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxRepositoryFactory.generate(dataSource, null, clock));
+        assertThrows(IllegalStateException.class, () -> OutboxRepositoryFactory.create(dataSource, null, clock));
     }
 
     @Test
-    @DisplayName("UT generate() when Clock is null should throw IllegalStateException")
-    void generate_whenClockIsNull_shouldThrowIllegalStateException() throws SQLException {
+    @DisplayName("UT create() when Clock is null should throw IllegalStateException")
+    void create_whenClockIsNull_shouldThrowIllegalStateException() throws SQLException {
         // given
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxRepositoryFactory.generate(dataSource, jdbcTemplate, null));
+        assertThrows(IllegalStateException.class, () -> OutboxRepositoryFactory.create(dataSource, jdbcTemplate, null));
     }
 }

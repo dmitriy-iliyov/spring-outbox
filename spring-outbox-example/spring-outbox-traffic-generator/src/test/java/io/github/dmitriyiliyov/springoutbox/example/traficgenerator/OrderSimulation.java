@@ -21,12 +21,12 @@ public class OrderSimulation extends Simulation {
     private static final int PORT = intProp("targetPort", 8080);
     private static final String ROOT = prop("targetRoot", "/api/orders");
 
-    private static final int USERS = intProp("users", 10);
+    private static final int USERS = intProp("users", 100);
     private static final int BATCH_SIZE = intProp("batchSize", 10);
     private static final int DURATION = intProp("durationSec", 60);
 
-    private static final int MIN_WAIT_MS = intProp("minWaitMs", 5);
-    private static final int MAX_WAIT_MS = intProp("maxWaitMs", 50);
+    private static final int MIN_WAIT_MS = intProp("minWaitMs", 1);
+    private static final int MAX_WAIT_MS = intProp("maxWaitMs", 2);
 
     private final HttpProtocolBuilder httpProtocol = http
             .baseUrl(PROTOCOL + "://" + HOST + ":" + PORT)
@@ -85,39 +85,14 @@ public class OrderSimulation extends Simulation {
                             .check(jsonPath("$.id").ofLong().saveAs("singleId"))
             )
             .pause(MIN_WAIT_MS, MAX_WAIT_MS)
-            .exec(http("POST batch orders")
-                            .post(ROOT + "/batch")
-                            .body(StringBody(s -> createBatchBody(BATCH_SIZE))).asJson()
-                            .check(status().is(201))
-                            .check(jsonPath("$[*].id").ofList().saveAs("batchIds"))
-            )
-            .pause(MIN_WAIT_MS, MAX_WAIT_MS)
             .exec(http("PATCH single order")
                             .patch(ROOT + "/#{singleId}")
                             .body(StringBody(s -> updateBody())).asJson()
                             .check(status().is(200))
             )
             .pause(MIN_WAIT_MS, MAX_WAIT_MS)
-            .exec(s -> s.set("updateBatchBody",
-                    s.contains("batchIds") ? updateBatchBody(s.getList("batchIds")) : "[]"
-            ))
-            .exec(http("PATCH batch orders")
-                            .patch(ROOT + "/batch")
-                            .body(StringBody(s -> s.getString("updateBatchBody"))).asJson()
-                            .check(status().is(200))
-            )
-            .pause(MIN_WAIT_MS, MAX_WAIT_MS)
             .exec(http("DELETE single order")
                             .delete(ROOT + "/#{singleId}")
-                            .check(status().is(204))
-            )
-            .pause(MIN_WAIT_MS, MAX_WAIT_MS)
-            .exec(s -> s.set("deleteBatchBody",
-                    s.contains("batchIds") ? deleteBatchBody(s.getList("batchIds")) : "[]"
-            ))
-            .exec(http("DELETE batch orders")
-                            .delete(ROOT + "/batch")
-                            .body(StringBody(s -> s.getString("deleteBatchBody"))).asJson()
                             .check(status().is(204))
             );
     {

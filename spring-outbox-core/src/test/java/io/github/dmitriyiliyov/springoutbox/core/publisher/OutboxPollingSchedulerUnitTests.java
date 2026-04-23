@@ -1,6 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
+import io.github.dmitriyiliyov.springoutbox.core.Continuable;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -9,85 +11,117 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxPollingSchedulerUnitTests {
+public class OutboxPollingSchedulerUnitTests {
 
     @Mock
-    private OutboxPublisherPropertiesHolder.EventPropertiesHolder eventProperties;
+    OutboxPublisherPropertiesHolder.EventPropertiesHolder properties;
 
     @Mock
-    private ScheduledExecutorService executor;
+    OutboxScheduleStrategy strategy;
 
     @Mock
-    private OutboxProcessor processor;
+    OutboxProcessor processor;
 
     @InjectMocks
-    private OutboxPollingScheduler scheduler;
+    OutboxPollingScheduler tested;
 
-    @Test
-    @DisplayName("UT schedule() should schedule task with correct parameters")
-    void schedule_shouldScheduleTaskWithCorrectParameters() {
-        // given
-        Duration initialDelay = Duration.ofSeconds(10);
-        Duration fixedDelay = Duration.ofMinutes(1);
-        when(eventProperties.getInitialDelay()).thenReturn(initialDelay);
-        when(eventProperties.getFixedDelay()).thenReturn(fixedDelay);
-
-        // when
-        scheduler.schedule();
-
-        // then
-        verify(executor).scheduleWithFixedDelay(
-                any(Runnable.class),
-                eq(10000L),
-                eq(60000L),
-                eq(TimeUnit.MILLISECONDS)
-        );
+    private boolean captureAndRun() {
+        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        verify(strategy).scheduleExecution(captor.capture());
+        return captor.getValue().run();
     }
 
     @Test
-    @DisplayName("UT schedule() task should call processor with correct parameters")
-    void schedule_taskShouldCallProcessorWithCorrectParameters() {
-        // given
-        when(eventProperties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(eventProperties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(eventProperties.getEventType()).thenReturn("test-event");
-
+    @DisplayName("UT schedule() should delegate execution to strategy")
+    void schedule_shouldDelegateToStrategy() {
         // when
-        scheduler.schedule();
+        tested.schedule();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-        captor.getValue().run();
-
-        verify(processor).process(eventProperties);
+        verify(strategy).scheduleExecution(any());
     }
 
     @Test
-    @DisplayName("UT schedule() task should catch exception from processor")
-    void schedule_taskShouldCatchExceptionFromProcessor() {
+    @DisplayName("UT schedule() when processed count equals batch size, continuable should return true")
+    void schedule_whenProcessedCountEqualsBatchSize_continuableShouldReturnTrue() {
         // given
-        when(eventProperties.getInitialDelay()).thenReturn(Duration.ZERO);
-        when(eventProperties.getFixedDelay()).thenReturn(Duration.ZERO);
-        when(eventProperties.getEventType()).thenReturn("test-event");
-        doThrow(new RuntimeException("error")).when(processor).process(any());
+        int batchSize = 50;
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(processor.process(properties)).thenReturn(batchSize);
 
         // when
-        scheduler.schedule();
+        tested.schedule();
+        boolean result = captureAndRun();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
+        assertTrue(result);
+    }
 
-        assertThatCode(() -> captor.getValue().run()).doesNotThrowAnyException();
+    @Test
+    @DisplayName("UT schedule() when processed count less than batch size, continuable should return false")
+    void schedule_whenProcessedCountLessThanBatchSize_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(processor.process(properties)).thenReturn(batchSize - 1);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when processed count is zero, continuable should return false")
+    void schedule_whenProcessedCountIsZero_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(processor.process(properties)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() should pass properties to processor")
+    void schedule_shouldPassPropertiesToProcessor() {
+        // given
+        when(properties.getBatchSize()).thenReturn(50);
+        when(processor.process(properties)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        captureAndRun();
+
+        // then
+        verify(processor).process(properties);
+    }
+
+    @Test
+    @DisplayName("UT schedule() when processor throws exception, continuable should return false and not rethrow")
+    void schedule_whenProcessorThrows_continuableShouldReturnFalseAndNotRethrow() {
+        // given
+        when(properties.getBatchSize()).thenReturn(50);
+        when(processor.process(properties)).thenThrow(new RuntimeException("DB error"));
+
+        // when
+        tested.schedule();
+        boolean result = assertDoesNotThrow(this::captureAndRun);
+
+        // then
+        assertFalse(result);
     }
 }

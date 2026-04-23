@@ -1,118 +1,250 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
+import io.github.dmitriyiliyov.springoutbox.core.Continuable;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.mockito.ArgumentMatchers.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxDlqTransferSchedulerUnitTests {
+public class OutboxDlqTransferSchedulerUnitTests {
 
     @Mock
-    private OutboxPublisherPropertiesHolder.DlqPropertiesHolder properties;
+    OutboxPublisherPropertiesHolder.DlqPropertiesHolder properties;
 
     @Mock
-    private ScheduledExecutorService executor;
+    OutboxPublisherPropertiesHolder.DlqPropertiesHolder.TransferPropertiesHolder transferToProperties;
 
     @Mock
-    private OutboxDlqTransfer transfer;
+    OutboxPublisherPropertiesHolder.DlqPropertiesHolder.TransferPropertiesHolder transferFromProperties;
 
-    @InjectMocks
-    private OutboxDlqTransferScheduler scheduler;
+    @Mock
+    OutboxScheduleStrategy transferToStrategy;
 
-    @Test
-    @DisplayName("UT schedule() should schedule two tasks with correct parameters")
-    void schedule_shouldScheduleTwoTasksWithCorrectParameters() {
-        // given
-        Duration toInitialDelay = Duration.ofSeconds(10);
-        Duration toFixedDelay = Duration.ofMinutes(1);
-        Duration fromInitialDelay = Duration.ofSeconds(20);
-        Duration fromFixedDelay = Duration.ofMinutes(2);
+    @Mock
+    OutboxScheduleStrategy transferFromStrategy;
 
-        when(properties.getTransferToInitialDelay()).thenReturn(toInitialDelay);
-        when(properties.getTransferToFixedDelay()).thenReturn(toFixedDelay);
-        when(properties.getTransferFromInitialDelay()).thenReturn(fromInitialDelay);
-        when(properties.getTransferFromFixedDelay()).thenReturn(fromFixedDelay);
+    @Mock
+    OutboxDlqTransfer transfer;
 
-        // when
-        scheduler.schedule();
+    OutboxDlqTransferScheduler tested;
 
-        // then
-        verify(executor).scheduleWithFixedDelay(
-                any(Runnable.class),
-                eq(10000L),
-                eq(60000L),
-                eq(TimeUnit.MILLISECONDS)
-        );
-        verify(executor).scheduleWithFixedDelay(
-                any(Runnable.class),
-                eq(20000L),
-                eq(120000L),
-                eq(TimeUnit.MILLISECONDS)
-        );
+    @BeforeEach
+    void setUp() {
+        tested = new OutboxDlqTransferScheduler(properties, transferToStrategy, transferFromStrategy, transfer);
+    }
+
+    private Continuable captureTransferTo() {
+        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        verify(transferToStrategy).scheduleExecution(captor.capture());
+        return captor.getValue();
+    }
+
+    private Continuable captureTransferFrom() {
+        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        verify(transferFromStrategy).scheduleExecution(captor.capture());
+        return captor.getValue();
     }
 
     @Test
-    @DisplayName("UT schedule() tasks should call transfer with correct parameters")
-    void schedule_tasksShouldCallTransferWithCorrectParameters() {
-        // given
-        int batchSize = 100;
-        when(properties.getTransferToInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTransferToFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTransferFromInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTransferFromFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-
+    @DisplayName("UT schedule() should delegate to both strategies")
+    void schedule_shouldDelegateToBothStrategies() {
         // when
-        scheduler.schedule();
+        tested.schedule();
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor, times(2)).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-        List<Runnable> tasks = captor.getAllValues();
+        verify(transferToStrategy).scheduleExecution(any());
+        verify(transferFromStrategy).scheduleExecution(any());
+    }
 
-        // Execute both tasks
-        tasks.forEach(Runnable::run);
+    @Test
+    @DisplayName("UT schedule() transferTo when transferred count equals batch size, continuable should return true")
+    void schedule_transferTo_whenTransferredCountEqualsBatchSize_continuableShouldReturnTrue() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferTo()).thenReturn(transferToProperties);
+        when(transferToProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferToDlq(batchSize)).thenReturn(batchSize);
 
+        // when
+        tested.schedule();
+        boolean result = captureTransferTo().run();
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferTo when transferred count less than batch size, continuable should return false")
+    void schedule_transferTo_whenTransferredCountLessThanBatchSize_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferTo()).thenReturn(transferToProperties);
+        when(transferToProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferToDlq(batchSize)).thenReturn(batchSize - 1);
+
+        // when
+        tested.schedule();
+        boolean result = captureTransferTo().run();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferTo when transferred count is zero, continuable should return false")
+    void schedule_transferTo_whenTransferredCountIsZero_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferTo()).thenReturn(transferToProperties);
+        when(transferToProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferToDlq(batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        boolean result = captureTransferTo().run();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferTo should pass batchSize from properties to transfer")
+    void schedule_transferTo_shouldPassBatchSizeToTransfer() {
+        // given
+        int batchSize = 100;
+        when(properties.getTransferTo()).thenReturn(transferToProperties);
+        when(transferToProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferToDlq(batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        captureTransferTo().run();
+
+        // then
         verify(transfer).transferToDlq(batchSize);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferTo when transfer throws exception, continuable should return false and not rethrow")
+    void schedule_transferTo_whenTransferThrows_continuableShouldReturnFalseAndNotRethrow() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferTo()).thenReturn(transferToProperties);
+        when(transferToProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferToDlq(batchSize)).thenThrow(new RuntimeException("DB error"));
+
+        // when
+        tested.schedule();
+        boolean result = assertDoesNotThrow(() -> captureTransferTo().run());
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferFrom when transferred count equals batch size, continuable should return true")
+    void schedule_transferFrom_whenTransferredCountEqualsBatchSize_continuableShouldReturnTrue() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferFrom()).thenReturn(transferFromProperties);
+        when(transferFromProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferFromDlq(batchSize)).thenReturn(batchSize);
+
+        // when
+        tested.schedule();
+        boolean result = captureTransferFrom().run();
+
+        // then
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferFrom when transferred count less than batch size, continuable should return false")
+    void schedule_transferFrom_whenTransferredCountLessThanBatchSize_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferFrom()).thenReturn(transferFromProperties);
+        when(transferFromProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferFromDlq(batchSize)).thenReturn(batchSize - 1);
+
+        // when
+        tested.schedule();
+        boolean result = captureTransferFrom().run();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferFrom when transferred count is zero, continuable should return false")
+    void schedule_transferFrom_whenTransferredCountIsZero_continuableShouldReturnFalse() {
+        // given
+        int batchSize = 50;
+        when(properties.getTransferFrom()).thenReturn(transferFromProperties);
+        when(transferFromProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferFromDlq(batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        boolean result = captureTransferFrom().run();
+
+        // then
+        assertFalse(result);
+    }
+
+    @Test
+    @DisplayName("UT schedule() transferFrom should pass batchSize from properties to transfer")
+    void schedule_transferFrom_shouldPassBatchSizeToTransfer() {
+        // given
+        int batchSize = 100;
+        when(properties.getTransferFrom()).thenReturn(transferFromProperties);
+        when(transferFromProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferFromDlq(batchSize)).thenReturn(0);
+
+        // when
+        tested.schedule();
+        captureTransferFrom().run();
+
+        // then
         verify(transfer).transferFromDlq(batchSize);
     }
 
     @Test
-    @DisplayName("UT schedule() tasks should catch exception from transfer")
-    void schedule_tasksShouldCatchExceptionFromTransfer() {
+    @DisplayName("UT schedule() transferFrom when transfer throws exception, continuable should return false and not rethrow")
+    void schedule_transferFrom_whenTransferThrows_continuableShouldReturnFalseAndNotRethrow() {
         // given
-        when(properties.getTransferToInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTransferToFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTransferFromInitialDelay()).thenReturn(Duration.ZERO);
-        when(properties.getTransferFromFixedDelay()).thenReturn(Duration.ZERO);
-        when(properties.getBatchSize()).thenReturn(1);
-        doThrow(new RuntimeException("error")).when(transfer).transferToDlq(anyInt());
-        doThrow(new RuntimeException("error")).when(transfer).transferFromDlq(anyInt());
+        int batchSize = 50;
+        when(properties.getTransferFrom()).thenReturn(transferFromProperties);
+        when(transferFromProperties.getBatchSize()).thenReturn(batchSize);
+        when(transfer.transferFromDlq(batchSize)).thenThrow(new RuntimeException("DB error"));
 
         // when
-        scheduler.schedule();
+        tested.schedule();
+        boolean result = assertDoesNotThrow(() -> captureTransferFrom().run());
 
         // then
-        ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);
-        verify(executor, times(2)).scheduleWithFixedDelay(captor.capture(), anyLong(), anyLong(), any());
-        List<Runnable> tasks = captor.getAllValues();
+        assertFalse(result);
+    }
 
-        tasks.forEach(task ->
-                assertThatCode(task::run).doesNotThrowAnyException()
-        );
+    @Test
+    @DisplayName("UT schedule() transferTo and transferFrom should use independent strategies")
+    void schedule_transferToAndTransferFrom_shouldUseIndependentStrategies() {
+        // when
+        tested.schedule();
+
+        // then
+        verify(transferToStrategy, times(1)).scheduleExecution(any());
+        verify(transferFromStrategy, times(1)).scheduleExecution(any());
+        verifyNoMoreInteractions(transferToStrategy, transferFromStrategy);
     }
 }
