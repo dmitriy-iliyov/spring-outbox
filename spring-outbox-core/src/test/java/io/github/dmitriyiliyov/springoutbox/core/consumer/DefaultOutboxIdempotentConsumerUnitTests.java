@@ -149,7 +149,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         Consumer<List<String>> operation = mock(Consumer.class);
 
         when(resolvingManager.resolve(messages)).thenReturn(messageMap);
-        when(consumedOutboxManager.filterConsumed(any())).thenReturn(Set.of());
+        when(consumedOutboxManager.filterOutUnconsumed(any())).thenReturn(Set.of());
         doAnswer(invocation -> {
             Consumer<?> callback = invocation.getArgument(0);
             callback.accept(null);
@@ -162,7 +162,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         // then
         verify(resolvingManager).resolve(messages);
         verify(transactionTemplate).executeWithoutResult(any());
-        verify(consumedOutboxManager).filterConsumed(Set.of(id1, id2));
+        verify(consumedOutboxManager).filterOutUnconsumed(Set.of(id1, id2));
 
         ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
         verify(operation).accept(captor.capture());
@@ -182,7 +182,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         Consumer<List<String>> operation = mock(Consumer.class);
 
         when(resolvingManager.resolve(messages)).thenReturn(messageMap);
-        when(consumedOutboxManager.filterConsumed(any())).thenReturn(Set.of(id1, id2));
+        when(consumedOutboxManager.filterOutUnconsumed(any())).thenReturn(Set.of(id1, id2));
         doAnswer(invocation -> {
             Consumer<?> callback = invocation.getArgument(0);
             callback.accept(null);
@@ -195,7 +195,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         // then
         verify(resolvingManager).resolve(messages);
         verify(transactionTemplate).executeWithoutResult(any());
-        verify(consumedOutboxManager).filterConsumed(any());
+        verify(consumedOutboxManager).filterOutUnconsumed(any());
         verify(operation, never()).accept(any());
     }
 
@@ -214,7 +214,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         Consumer<List<String>> operation = mock(Consumer.class);
 
         when(resolvingManager.resolve(messages)).thenReturn(messageMap);
-        when(consumedOutboxManager.filterConsumed(any())).thenReturn(Set.of(id1));
+        when(consumedOutboxManager.filterOutUnconsumed(any())).thenReturn(Set.of(id1));
         doAnswer(invocation -> {
             Consumer<?> callback = invocation.getArgument(0);
             callback.accept(null);
@@ -227,7 +227,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         // then
         verify(resolvingManager).resolve(messages);
         verify(transactionTemplate).executeWithoutResult(any());
-        verify(consumedOutboxManager).filterConsumed(any());
+        verify(consumedOutboxManager).filterOutUnconsumed(any());
         ArgumentCaptor<List<String>> captor = ArgumentCaptor.forClass(List.class);
         verify(operation).accept(captor.capture());
         assertThat(captor.getValue()).containsExactlyInAnyOrder(msg2, msg3);
@@ -242,7 +242,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         Consumer<List<String>> operation = mock(Consumer.class);
 
         when(resolvingManager.resolve(messages)).thenReturn(messageMap);
-        when(consumedOutboxManager.filterConsumed(any())).thenReturn(Set.of());
+        when(consumedOutboxManager.filterOutUnconsumed(any())).thenReturn(Set.of());
         doAnswer(invocation -> {
             Consumer<?> callback = invocation.getArgument(0);
             callback.accept(null);
@@ -270,7 +270,7 @@ class DefaultOutboxIdempotentConsumerUnitTests {
         Consumer<List<String>> operation = mock(Consumer.class);
 
         when(resolvingManager.resolve(messages)).thenReturn(messageMap);
-        when(consumedOutboxManager.filterConsumed(any())).thenReturn(Set.of());
+        when(consumedOutboxManager.filterOutUnconsumed(any())).thenReturn(Set.of());
         doThrow(exception).when(operation).accept(any());
         doAnswer(invocation -> {
             Consumer<?> callback = invocation.getArgument(0);

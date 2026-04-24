@@ -18,14 +18,12 @@ public interface ConsumedOutboxManager {
     boolean isConsumed(UUID id);
 
     /**
-     * Filters out already consumed IDs, returning only unconsumed ones.
-     * The name refers to the filtering operation applied to consumed records,
-     * not to the content of the returned set.
+     * Save only unconsumed events, return already consumed.
      *
      * @param ids the set of event IDs to filter.
-     * @return    a subset of unconsumed event IDs.
+     * @return    a subset of consumed event IDs.
      */
-    Set<UUID> filterConsumed(Set<UUID> ids);
+    Set<UUID> filterOutUnconsumed(Set<UUID> ids);
 
     /**
      * Cleans up (deletes) consumed event records that have exceeded their TTL.

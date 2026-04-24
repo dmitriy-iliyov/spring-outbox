@@ -34,8 +34,8 @@ public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxMana
     }
 
     @Override
-    public Set<UUID> filterConsumed(Set<UUID> ids) {
-        Set<UUID> alreadyConsumed = delegate.filterConsumed(ids);
+    public Set<UUID> filterOutUnconsumed(Set<UUID> ids) {
+        Set<UUID> alreadyConsumed = delegate.filterOutUnconsumed(ids);
         double currentDuplicates = alreadyConsumed.size();
         rejectedDuplicates.increment(currentDuplicates);
         consumed.increment(ids.size() - currentDuplicates);

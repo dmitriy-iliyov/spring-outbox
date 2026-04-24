@@ -88,6 +88,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -111,6 +112,7 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

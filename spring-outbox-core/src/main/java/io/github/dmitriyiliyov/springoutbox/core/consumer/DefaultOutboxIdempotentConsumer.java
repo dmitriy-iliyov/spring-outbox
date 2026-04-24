@@ -43,7 +43,7 @@ public class DefaultOutboxIdempotentConsumer implements OutboxIdempotentConsumer
         Map<UUID, T> messageMap = resolvingManager.resolve(messages);
         try {
             transactionTemplate.executeWithoutResult(status -> {
-                Set<UUID> alreadyConsumedIds = consumedOutboxManager.filterConsumed(messageMap.keySet());
+                Set<UUID> alreadyConsumedIds = consumedOutboxManager.filterOutUnconsumed(messageMap.keySet());
                 alreadyConsumedIds.forEach(messageMap::remove);
                 if (!messageMap.isEmpty()) {
                     operation.accept(new ArrayList<>(messageMap.values()));

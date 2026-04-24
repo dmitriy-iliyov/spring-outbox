@@ -69,7 +69,7 @@ class DefaultConsumedOutboxManagerUnitTests {
 
     @Test
     @DisplayName("UT filterConsumed() when all events not consumed should return empty set")
-    void filterConsumed_whenAllEventsNotConsumed_shouldReturnEmptySet() {
+    void filterConsumed_whenAllEventsNotOutUnconsumed_shouldReturnEmptySet() {
         // given
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
@@ -78,7 +78,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of(id1, id2, id3));
 
         // when
-        Set<UUID> result = manager.filterConsumed(ids);
+        Set<UUID> result = manager.filterOutUnconsumed(ids);
 
         // then
         assertThat(result).isEmpty();
@@ -87,7 +87,7 @@ class DefaultConsumedOutboxManagerUnitTests {
 
     @Test
     @DisplayName("UT filterConsumed() when all events consumed should return all ids")
-    void filterConsumed_whenAllEventsConsumed_shouldReturnAllIds() {
+    void filterConsumed_whenAllEventsOutUnconsumed_shouldReturnAllIds() {
         // given
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
@@ -95,7 +95,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of());
 
         // when
-        Set<UUID> result = manager.filterConsumed(ids);
+        Set<UUID> result = manager.filterOutUnconsumed(ids);
 
         // then
         assertThat(result).containsExactlyInAnyOrder(id1, id2);
@@ -104,7 +104,7 @@ class DefaultConsumedOutboxManagerUnitTests {
 
     @Test
     @DisplayName("UT filterConsumed() when some events consumed should return consumed ids")
-    void filterConsumed_whenSomeEventsConsumed_shouldReturnConsumedIds() {
+    void filterConsumed_whenSomeEventsConsumed_shouldReturnOutUnconsumedIds() {
         // given
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
@@ -113,7 +113,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of(id1));
 
         // when
-        Set<UUID> result = manager.filterConsumed(ids);
+        Set<UUID> result = manager.filterOutUnconsumed(ids);
 
         // then
         assertThat(result).containsExactlyInAnyOrder(id2, id3);
@@ -122,13 +122,13 @@ class DefaultConsumedOutboxManagerUnitTests {
 
     @Test
     @DisplayName("UT filterConsumed() with empty set should return empty set")
-    void filterConsumed_withEmptySet_shouldReturnEmptySet() {
+    void filterOutUnconsumed_withEmptySet_shouldReturnEmptySet() {
         // given
         Set<UUID> ids = Set.of();
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of());
 
         // when
-        Set<UUID> result = manager.filterConsumed(ids);
+        Set<UUID> result = manager.filterOutUnconsumed(ids);
 
         // then
         assertThat(result).isEmpty();

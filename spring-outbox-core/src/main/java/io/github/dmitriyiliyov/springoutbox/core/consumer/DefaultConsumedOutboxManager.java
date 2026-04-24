@@ -28,7 +28,7 @@ public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
 
     @Transactional
     @Override
-    public Set<UUID> filterConsumed(Set<UUID> ids) {
+    public Set<UUID> filterOutUnconsumed(Set<UUID> ids) {
         Set<UUID> nonExistedIds = repository.saveIfAbsent(ids);
         return ids.stream()
                 .filter(id -> !nonExistedIds.contains(id))

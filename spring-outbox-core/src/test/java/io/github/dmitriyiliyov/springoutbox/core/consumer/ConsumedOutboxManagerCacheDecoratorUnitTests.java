@@ -165,42 +165,42 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
 
     @Test
     @DisplayName("UT filterConsumed() should delegate to underlying manager")
-    void filterConsumed_shouldDelegateToUnderlyingManager() {
+    void filterOutUnconsumed_shouldDelegateToUnderlyingManager() {
         // given
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         Set<UUID> ids = Set.of(id1, id2);
         Set<UUID> expectedResult = Set.of(id1);
         String cacheName = "test-cache";
-        when(delegate.filterConsumed(ids)).thenReturn(expectedResult);
+        when(delegate.filterOutUnconsumed(ids)).thenReturn(expectedResult);
 
         decorator = new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheName, delegate, cacheObserver);
 
         // when
-        Set<UUID> result = decorator.filterConsumed(ids);
+        Set<UUID> result = decorator.filterOutUnconsumed(ids);
 
         // then
         assertThat(result).isEqualTo(expectedResult);
-        verify(delegate).filterConsumed(ids);
+        verify(delegate).filterOutUnconsumed(ids);
     }
 
     @Test
     @DisplayName("UT filterConsumed() with empty set should delegate")
-    void filterConsumed_withEmptySet_shouldDelegate() {
+    void filterOutUnconsumed_withEmptySet_shouldDelegate() {
         // given
         Set<UUID> ids = Set.of();
         Set<UUID> expectedResult = Set.of();
         String cacheName = "test-cache";
-        when(delegate.filterConsumed(ids)).thenReturn(expectedResult);
+        when(delegate.filterOutUnconsumed(ids)).thenReturn(expectedResult);
 
         decorator = new ConsumedOutboxManagerCacheDecorator(cacheManager, cacheName, delegate, cacheObserver);
 
         // when
-        Set<UUID> result = decorator.filterConsumed(ids);
+        Set<UUID> result = decorator.filterOutUnconsumed(ids);
 
         // then
         assertThat(result).isEmpty();
-        verify(delegate).filterConsumed(ids);
+        verify(delegate).filterOutUnconsumed(ids);
     }
 
     @Test

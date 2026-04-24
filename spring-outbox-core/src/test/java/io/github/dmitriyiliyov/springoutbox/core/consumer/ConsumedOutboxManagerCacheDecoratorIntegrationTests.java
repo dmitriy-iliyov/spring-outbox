@@ -144,28 +144,28 @@ class ConsumedOutboxManagerCacheDecoratorIntegrationTests extends BaseRedisInteg
 
     @Test
     @DisplayName("IT filterConsumed() delegates to underlying manager without caching")
-    void filterConsumed_delegatesToUnderlyingManager() {
+    void filterOutUnconsumed_delegatesToUnderlyingManager() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         Set<UUID> ids = Set.of(id1, id2);
-        when(delegate.filterConsumed(ids)).thenReturn(Set.of(id1));
+        when(delegate.filterOutUnconsumed(ids)).thenReturn(Set.of(id1));
 
-        Set<UUID> result = decorator.filterConsumed(ids);
+        Set<UUID> result = decorator.filterOutUnconsumed(ids);
 
         assertThat(result).containsOnly(id1);
-        verify(delegate, times(1)).filterConsumed(ids);
+        verify(delegate, times(1)).filterOutUnconsumed(ids);
     }
 
     @Test
     @DisplayName("IT filterConsumed() called twice - calls delegate both times (no caching)")
-    void filterConsumed_calledTwice_callsDelegateBothTimes() {
+    void filterOutUnconsumed_calledTwice_callsDelegateBothTimes() {
         Set<UUID> ids = Set.of(UUID.randomUUID());
-        when(delegate.filterConsumed(ids)).thenReturn(Set.of());
+        when(delegate.filterOutUnconsumed(ids)).thenReturn(Set.of());
 
-        decorator.filterConsumed(ids);
-        decorator.filterConsumed(ids);
+        decorator.filterOutUnconsumed(ids);
+        decorator.filterOutUnconsumed(ids);
 
-        verify(delegate, times(2)).filterConsumed(ids);
+        verify(delegate, times(2)).filterOutUnconsumed(ids);
     }
 
     @Test

@@ -53,8 +53,8 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
     }
 
     @Override
-    public Set<UUID> filterConsumed(Set<UUID> ids) {
-        return delegate.filterConsumed(ids);
+    public Set<UUID> filterOutUnconsumed(Set<UUID> ids) {
+        return delegate.filterOutUnconsumed(ids);
     }
 
     @Override
