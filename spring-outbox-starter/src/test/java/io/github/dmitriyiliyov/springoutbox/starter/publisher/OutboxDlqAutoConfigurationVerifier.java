@@ -1,11 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.DlqStatusQueryConverter;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqController;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqControllerAdvice;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
-import io.github.dmitriyiliyov.springoutbox.web.DlqStatusQueryConverter;
-import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqController;
-import io.github.dmitriyiliyov.springoutbox.web.OutboxDlqControllerAdvice;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurations;

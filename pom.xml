@@ -41,7 +41,7 @@
 
     <modules>
         <module>spring-outbox-core</module>
-        <module>spring-outbox-web</module>
+        <module>spring-outbox-dlq-api</module>
         <module>spring-outbox-aop</module>
         <module>spring-outbox-kafka</module>
         <module>spring-outbox-rabbit</module>

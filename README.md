@@ -66,11 +66,11 @@ For RabbitMQ:
       <version>1.1.0</version>
   </dependency>
 ```
-You can also add `spring-outbox-web` for enable REST API for manual DLQ managing, read more [here](#dlq-rest-api).
+You can also add `spring-outbox-dlq-api` for enable REST API for manual DLQ managing, read more [here](#dlq-rest-api).
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-web</artifactId>
+      <artifactId>spring-outbox-dlq-api</artifactId>
       <version>1.1.0</version>
   </dependency>
 ```
@@ -97,7 +97,7 @@ public class PublisherRunner {
 outbox:
   publisher:
     sender:
-      type: kafka    # or rabbitmq
+      type: kafka    # or rabbit
     events:
       create-example-event:
         topic: "example-events"
@@ -340,7 +340,7 @@ All methods for saving simultaneously with a business event are annotated with `
 #### Retry Policy
 An exponential backoff is supported where the delay increases exponentially with each retry, the next retry attempt is calculated using the following formula:
 
-`next_retry_at = initial_delay * (multiplier ^ retry_attempt)`
+`next_retry_at = delay * (multiplier ^ retry_attempt)`
 
 Example: 10s -> 30s -> 90s -> 270s...
 
@@ -357,7 +357,7 @@ Detailed configuration options are available [here](#stuck-event-recovery-1).
 
 #### Dead Letter Queue
 
-The Dead Letter Queue (DLQ) is implemented using the database. As described above, events are automatically moved to the DLQ once they are marked with the `FAILED` status after the maximum number of retry attempts is exceeded.
+The Dead Letter Queue is implemented using the database. As described above, events are automatically moved to the DLQ once they are marked with the `FAILED` status after the maximum number of retry attempts is exceeded.
 
 Events placed into the DLQ must be **manually reviewed**. After review, an event can be marked as either `TO_RETRY` or `RESOLVED`.  
 To support this workflow, the library provides a **REST API** for DLQ management with the following capabilities.
@@ -552,11 +552,11 @@ Caching can be disabled via metrics configuration.
 
 **Counters**
 
-| Metric Name                                   | Description                     | Tags                                                                            |
-|:----------------------------------------------|:--------------------------------|:--------------------------------------------------------------------------------|
-| `outbox_events_rate_total`                    | Processed or failed events rate | `event_type`, <br/>`status={processed}`                                         |
-| `outbox_events_by_action_type_rate_total`     | Internal lifecycle events rate  | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`   |
-| `outbox_dlq_events_by_action_type_rate_total` | DLQ operational events rate     | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
+| Metric Name                                   | Description                    | Tags                                                                            |
+|:----------------------------------------------|:-------------------------------|:--------------------------------------------------------------------------------|
+| `outbox_events_rate_total`                    | Processed events rate          | `event_type`, <br/>`status={processed}`                                         |
+| `outbox_events_by_action_type_rate_total`     | Internal lifecycle events rate | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`   |
+| `outbox_dlq_events_by_action_type_rate_total` | DLQ operational events rate    | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
 
 **Timers**
 
@@ -573,12 +573,19 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 
 **Counters**
 
-| Metric Name                    | Description                              | Tags                                                                  |
-|:-------------------------------|:-----------------------------------------|:----------------------------------------------------------------------|
-| `consumed_outbox_events_total` | Number of consumed outbox events by type | `type={duplicated, consumed, cleaned, failed, cache-hit, cache-miss}` |
+| Metric Name                          | Description                                        | Tags                                                    |
+|:-------------------------------------|:---------------------------------------------------|:--------------------------------------------------------|
+| `consumed_outbox_events_total`       | Number of consumed outbox events by specific type  | `type={rejected_duplicates, consumed, cleaned, failed}` |
+| `consumed_outbox_cache_action_total` | Number of hit/miss in consumed outbox events cache | `action_type={hit, miss}`                               |
 
 ## Configuration
 ### Global
+When calculating the thread pool size, it's important to account for all background system processes. 
+
+Publisher requires three threads for its background operations (stuck event recovery, DLQ transfers and cleanup), 
+plus one additional thread for each configured event type. Therefore, the recommended number of threads is `3 + n`, where `n` is the number of event types.
+
+Consumer side requires only one thread for cleanup as background operation, the number of threads is `1`.
 
 ```yaml
 outbox:
@@ -606,16 +613,16 @@ outbox:
 
 | Property            | Description                                  | Default                                               |
 |---------------------|----------------------------------------------|:------------------------------------------------------|
-| `type`              | Message broker type (`kafka` or `rabbitmq`)  | —                                                     |
+| `type`              | Message broker type (`kafka` or `rabbit`)    | —                                                     |
 | `bean-name`         | Custom sender bean name for multiple senders | Try resolving by Java type according to `sender.type` |
 | `emergency-timeout` | Maximum time to wait for a send operation    | `120s`                                                |
 
 ---
 
 #### Polling
-Library provides two polling types: `fixed` and `adaptive`.
+The library provides two polling types: `fixed` and `adaptive`.
 
-Properties block for `adaptive` polling should look like this:
+The properties block for `adaptive` polling looks like this:
 ```yaml
 polling: 
   type: adaptive
@@ -625,8 +632,7 @@ polling:
   multiplier: 2.0
 ```
 
-Properties block for `fixed` polling should look like this:
-
+And for `fixed` polling, it looks like this:
 ```yaml
 polling: 
   type: fixed

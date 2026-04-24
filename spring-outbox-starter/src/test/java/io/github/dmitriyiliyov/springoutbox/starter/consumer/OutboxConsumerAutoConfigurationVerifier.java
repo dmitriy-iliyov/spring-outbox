@@ -88,7 +88,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(OutboxIdempotentConsumerMetricsDecorator.class);
 
                     assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("rabbitMqOutboxEventIdResolver");
+                    assertThat(ctx).hasBean("rabbitOutboxEventIdResolver");
                     assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
@@ -179,7 +179,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
 
     public void shouldRegisterRabbitMqEventIdResolver() {
         getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("rabbitMqOutboxEventIdResolver")
+                assertThat(ctx).hasBean("rabbitOutboxEventIdResolver")
         );
     }
 
@@ -335,7 +335,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(DefaultOutboxIdempotentConsumer.class);
 
                     assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("rabbitMqOutboxEventIdResolver");
+                    assertThat(ctx).hasBean("rabbitOutboxEventIdResolver");
                     assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
@@ -369,7 +369,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(DefaultOutboxIdempotentConsumer.class);
 
                     assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("rabbitMqOutboxEventIdResolver");
+                    assertThat(ctx).hasBean("rabbitOutboxEventIdResolver");
                     assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
