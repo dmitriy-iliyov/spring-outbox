@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdExtractor;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,9 +14,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.stream.Stream;
 
-public class RabbitMqJdbcConsumerIntegrationTests extends BaseRabbitIntegrationTests {
+public class RabbitJdbcConsumerIntegrationTests extends BaseRabbitIntegrationTests {
 
-    private final RabbitMqConsumerIntegrationVerifier verifier;
+    private final RabbitConsumerIntegrationVerifier verifier;
 
     static Stream<Arguments> batchSizeArguments() {
         return Stream.of(
@@ -24,13 +24,13 @@ public class RabbitMqJdbcConsumerIntegrationTests extends BaseRabbitIntegrationT
         );
     }
 
-    public RabbitMqJdbcConsumerIntegrationTests(
+    public RabbitJdbcConsumerIntegrationTests(
             RabbitTemplate testRabbitTemplate,
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
-            @Qualifier("rabbitMqJdbcFaultyConsumerBusinessService") RabbitMqConsumerFaultyBusinessService rabbitMqFaultyJdbcConsumerBusinessService,
+            @Qualifier("rabbitMqJdbcFaultyConsumerBusinessService") RabbitConsumerFaultyBusinessService rabbitMqFaultyJdbcConsumerBusinessService,
             IdExtractor idExtractor
     ) {
-        this.verifier = new RabbitMqConsumerIntegrationVerifier(
+        this.verifier = new RabbitConsumerIntegrationVerifier(
                 testRabbitTemplate,
                 jdbcTemplate,
                 idExtractor,

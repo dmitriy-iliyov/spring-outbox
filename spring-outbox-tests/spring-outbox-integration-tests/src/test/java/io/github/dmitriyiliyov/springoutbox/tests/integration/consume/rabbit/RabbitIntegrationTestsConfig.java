@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
@@ -20,9 +20,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.RabbitMQContainer;
 
 @TestConfiguration
-public class RabbitMqIntegrationTestsConfig {
+public class RabbitIntegrationTestsConfig {
 
-    private static final RabbitMQContainer RABBIT = RabbitMqTestContainerSingleton.INSTANCE;
+    private static final RabbitMQContainer RABBIT = RabbitTestContainerSingleton.INSTANCE;
 
     @Bean
     public ConnectionFactory testRabbitConnectionFactory() {
@@ -46,22 +46,22 @@ public class RabbitMqIntegrationTestsConfig {
 
     @Bean
     public Queue testOutboxSingleQueue() {
-        return QueueBuilder.durable(RabbitMqConsumerBusinessService.SINGLE_QUEUE).build();
+        return QueueBuilder.durable(RabbitConsumerBusinessService.SINGLE_QUEUE).build();
     }
 
     @Bean
     public Queue testOutboxBatchQueue() {
-        return QueueBuilder.durable(RabbitMqConsumerBusinessService.BATCH_QUEUE).build();
+        return QueueBuilder.durable(RabbitConsumerBusinessService.BATCH_QUEUE).build();
     }
 
     @Bean
     public Queue testOutboxSingleFailingQueue() {
-        return QueueBuilder.durable(RabbitMqConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE).build();
+        return QueueBuilder.durable(RabbitConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE).build();
     }
 
     @Bean
     public Queue testOutboxBatchFailingQueue() {
-        return QueueBuilder.durable(RabbitMqConsumerFaultyBusinessService.BATCH_FAILING_QUEUE).build();
+        return QueueBuilder.durable(RabbitConsumerFaultyBusinessService.BATCH_FAILING_QUEUE).build();
     }
 
     @Bean
@@ -89,7 +89,7 @@ public class RabbitMqIntegrationTestsConfig {
     }
 
     @Bean
-    public RabbitMqConsumerBusinessService.MessageConverter testRabbitMessageConverter() {
+    public RabbitConsumerBusinessService.MessageConverter testRabbitMessageConverter() {
         ObjectMapper mapper = new ObjectMapper();
         return message -> {
             try {
@@ -101,12 +101,12 @@ public class RabbitMqIntegrationTestsConfig {
     }
 
     @Bean
-    public RabbitMqConsumerBusinessService rabbitMqJdbcConsumerBusinessService(
+    public RabbitConsumerBusinessService rabbitMqJdbcConsumerBusinessService(
             OutboxIdempotentConsumer outboxIdempotentConsumer,
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
-            RabbitMqConsumerBusinessService.MessageConverter testRabbitMessageConverter
+            RabbitConsumerBusinessService.MessageConverter testRabbitMessageConverter
     ) {
-        return new RabbitMqConsumerBusinessService(
+        return new RabbitConsumerBusinessService(
                 outboxIdempotentConsumer,
                 new JdbcConsumerBusinessRepository(jdbcTemplate, id -> id),
                 testRabbitMessageConverter
@@ -114,12 +114,12 @@ public class RabbitMqIntegrationTestsConfig {
     }
 
     @Bean
-    public RabbitMqConsumerBusinessService rabbitMqJpaConsumerBusinessService(
+    public RabbitConsumerBusinessService rabbitMqJpaConsumerBusinessService(
             OutboxIdempotentConsumer outboxIdempotentConsumer,
             @Qualifier("jpaConsumerBusinessRepositoryProxy") ConsumerBusinessRepository repository,
-            RabbitMqConsumerBusinessService.MessageConverter testRabbitMessageConverter
+            RabbitConsumerBusinessService.MessageConverter testRabbitMessageConverter
     ) {
-        return new RabbitMqConsumerBusinessService(
+        return new RabbitConsumerBusinessService(
                 outboxIdempotentConsumer,
                 repository,
                 testRabbitMessageConverter
@@ -127,12 +127,12 @@ public class RabbitMqIntegrationTestsConfig {
     }
 
     @Bean
-    public RabbitMqConsumerFaultyBusinessService rabbitMqJdbcFaultyConsumerBusinessService(
+    public RabbitConsumerFaultyBusinessService rabbitMqJdbcFaultyConsumerBusinessService(
             OutboxIdempotentConsumer outboxIdempotentConsumer,
             @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
-            RabbitMqConsumerBusinessService.MessageConverter testRabbitMessageConverter
+            RabbitConsumerBusinessService.MessageConverter testRabbitMessageConverter
     ) {
-        return new RabbitMqConsumerFaultyBusinessService(
+        return new RabbitConsumerFaultyBusinessService(
                 outboxIdempotentConsumer,
                 new JdbcConsumerBusinessRepository(jdbcTemplate, id -> id),
                 testRabbitMessageConverter
@@ -140,12 +140,12 @@ public class RabbitMqIntegrationTestsConfig {
     }
 
     @Bean
-    public RabbitMqConsumerFaultyBusinessService rabbitMqJpaFaultyConsumerBusinessService(
+    public RabbitConsumerFaultyBusinessService rabbitMqJpaFaultyConsumerBusinessService(
             OutboxIdempotentConsumer outboxIdempotentConsumer,
             @Qualifier("jpaConsumerBusinessRepositoryProxy") ConsumerBusinessRepository repository,
-            RabbitMqConsumerBusinessService.MessageConverter testRabbitMessageConverter
+            RabbitConsumerBusinessService.MessageConverter testRabbitMessageConverter
     ) {
-        return new RabbitMqConsumerFaultyBusinessService(
+        return new RabbitConsumerFaultyBusinessService(
                 outboxIdempotentConsumer,
                 repository,
                 testRabbitMessageConverter

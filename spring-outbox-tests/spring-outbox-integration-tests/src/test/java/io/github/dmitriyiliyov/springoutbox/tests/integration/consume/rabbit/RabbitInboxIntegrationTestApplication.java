@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import io.github.dmitriyiliyov.springoutbox.starter.EnableOutbox;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.ClockConfig;
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @SpringBootApplication(
         scanBasePackages = {
                 "io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared",
-                "io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq",
+                "io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit",
                 "io.github.dmitriyiliyov.springoutbox.tests.integration.domain"
         }
 )
@@ -24,7 +24,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableRabbit
 @Import({
         InboxIntegrationTestsConfig.class,
-        RabbitMqIntegrationTestsConfig.class,
+        RabbitIntegrationTestsConfig.class,
         ClockConfig.class
 })
 public class RabbitInboxIntegrationTestApplication {

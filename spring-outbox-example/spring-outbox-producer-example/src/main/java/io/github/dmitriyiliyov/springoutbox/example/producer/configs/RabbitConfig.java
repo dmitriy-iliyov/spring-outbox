@@ -12,15 +12,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbitmq")
+@ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbit")
 @Configuration
 @Slf4j
-public class RabbitMqConfig {
+public class RabbitConfig {
 
     @Bean
     public ConnectionFactory connectionFactory() {
         CachingConnectionFactory factory = new CachingConnectionFactory();
-        factory.setHost("outbox-rabbitmq");
+        factory.setHost("outbox-rabbit");
         factory.setPort(5672);
         factory.setUsername("guest");
         factory.setPassword("guest");

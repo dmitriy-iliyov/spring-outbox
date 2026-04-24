@@ -7,7 +7,7 @@ import org.springframework.amqp.core.Message;
 import java.util.Map;
 import java.util.UUID;
 
-public class RabbitMqOutboxEventIdResolver implements OutboxEventIdResolver<Message> {
+public class RabbitOutboxEventIdResolver implements OutboxEventIdResolver<Message> {
 
     @Override
     public UUID resolve(Message rawMessage) {

@@ -8,9 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-@Profile("rabbitmq")
+@Profile("rabbit")
 @Configuration
-public class RabbitMqConfig {
+public class RabbitConfig {
 
     @Value("${spring.rabbitmq.host}")
     public String host;

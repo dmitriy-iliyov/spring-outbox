@@ -1,8 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import org.testcontainers.containers.RabbitMQContainer;
 
-public class RabbitMqTestContainerSingleton {
+public class RabbitTestContainerSingleton {
 
     public static final RabbitMQContainer INSTANCE;
 
@@ -12,5 +12,5 @@ public class RabbitMqTestContainerSingleton {
         INSTANCE.start();
     }
 
-    private RabbitMqTestContainerSingleton() {}
+    private RabbitTestContainerSingleton() {}
 }

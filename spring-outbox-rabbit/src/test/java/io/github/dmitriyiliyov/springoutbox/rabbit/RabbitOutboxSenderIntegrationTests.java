@@ -38,10 +38,10 @@ import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = RabbitMqOutboxSenderIntegrationTests.RabbitTestConfig.class)
+@SpringBootTest(classes = RabbitOutboxSenderIntegrationTests.RabbitTestConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 @ActiveProfiles("rabbit-it")
-class RabbitMqOutboxSenderIntegrationTests {
+class RabbitOutboxSenderIntegrationTests {
 
     private static final String EXCHANGE = "integration-test-exchange";
     private static final String QUEUE = "integration-test-queue";
@@ -68,11 +68,11 @@ class RabbitMqOutboxSenderIntegrationTests {
     @Autowired
     private RabbitAdmin rabbitAdmin;
 
-    private RabbitMqOutboxSender sender;
+    private RabbitOutboxSender sender;
 
     @BeforeEach
     void setUp() {
-        sender = new RabbitMqOutboxSender(rabbitTemplate, 5L);
+        sender = new RabbitOutboxSender(rabbitTemplate, 5L);
 
         DirectExchange exchange = new DirectExchange(EXCHANGE, true, false);
         Queue queue = new Queue(QUEUE, true);

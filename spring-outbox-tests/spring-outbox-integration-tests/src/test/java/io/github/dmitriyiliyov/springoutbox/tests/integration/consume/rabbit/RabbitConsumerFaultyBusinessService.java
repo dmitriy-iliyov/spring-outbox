@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared.ConsumerBusinessRepository;
@@ -9,19 +9,19 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RabbitMqConsumerFaultyBusinessService {
+public class RabbitConsumerFaultyBusinessService {
 
     public static final String SINGLE_FAILING_QUEUE = "test.outbox.single.failing";
     public static final String BATCH_FAILING_QUEUE  = "test.outbox.batch.failing";
 
     private final OutboxIdempotentConsumer outboxConsumer;
     private final ConsumerBusinessRepository repository;
-    private final RabbitMqConsumerBusinessService.MessageConverter converter;
+    private final RabbitConsumerBusinessService.MessageConverter converter;
     private final AtomicBoolean shouldFail = new AtomicBoolean(true);
 
-    public RabbitMqConsumerFaultyBusinessService(OutboxIdempotentConsumer outboxConsumer,
-                                                 ConsumerBusinessRepository repository,
-                                                 RabbitMqConsumerBusinessService.MessageConverter converter) {
+    public RabbitConsumerFaultyBusinessService(OutboxIdempotentConsumer outboxConsumer,
+                                               ConsumerBusinessRepository repository,
+                                               RabbitConsumerBusinessService.MessageConverter converter) {
         this.outboxConsumer = outboxConsumer;
         this.repository = repository;
         this.converter = converter;

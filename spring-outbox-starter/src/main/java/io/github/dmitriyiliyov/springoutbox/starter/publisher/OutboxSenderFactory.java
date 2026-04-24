@@ -3,7 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxSender;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxSender;
-import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxSender;
+import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
@@ -25,7 +25,7 @@ public final class OutboxSenderFactory {
     private static final Logger log = LoggerFactory.getLogger(OutboxSenderFactory.class);
     private static final Map<SenderType, OutboxSenderSupplier> SUPPORTED_BROKERS = Map.of(
             SenderType.KAFKA, new KafkaOutboxSenderSupplier(),
-            SenderType.RABBITMQ, new RabbitMqOutboxSenderSupplier()
+            SenderType.RABBIT, new RabbitOutboxSenderSupplier()
     );
 
     private OutboxSenderFactory() {}
@@ -117,7 +117,7 @@ public final class OutboxSenderFactory {
         }
     }
 
-    private static class RabbitMqOutboxSenderSupplier implements OutboxSenderSupplier {
+    private static class RabbitOutboxSenderSupplier implements OutboxSenderSupplier {
 
         @Override
         public OutboxSender supply(OutboxPublisherProperties.SenderProperties properties,
@@ -154,7 +154,7 @@ public final class OutboxSenderFactory {
                 log.error("RabbitTemplate '{}' mandatory flag is false. " +
                         "ReturnedMessage will not be received. You should set mandatory=true for at-least-once", beanName);
             }
-            return new RabbitMqOutboxSender(rabbitTemplate, properties.getEmergencyTimeout().toSeconds());
+            return new RabbitOutboxSender(rabbitTemplate, properties.getEmergencyTimeout().toSeconds());
         }
     }
 }

@@ -1,7 +1,7 @@
 outbox:
   publisher:
     sender:
-      type: rabbitmq
+      type: rabbit
     events:
       create-order:
         topic: orders-exchange

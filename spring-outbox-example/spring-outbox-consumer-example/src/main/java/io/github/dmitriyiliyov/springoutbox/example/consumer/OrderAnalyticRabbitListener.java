@@ -15,11 +15,11 @@ import org.springframework.stereotype.Component;
 import java.util.Map;
 import java.util.function.Consumer;
 
-@Profile("rabbitmq")
+@Profile("rabbit")
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class OrderAnalyticRabbitMqListener {
+public class OrderAnalyticRabbitListener {
 
     private final OutboxIdempotentConsumer outboxConsumer;
     private final ObjectMapper mapper;

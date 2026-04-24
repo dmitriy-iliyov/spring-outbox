@@ -14,9 +14,9 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class RabbitMqOutboxEventIdResolverUnitTests {
+class RabbitOutboxEventIdResolverUnitTests {
 
-    private final RabbitMqOutboxEventIdResolver resolver = new RabbitMqOutboxEventIdResolver();
+    private final RabbitOutboxEventIdResolver resolver = new RabbitOutboxEventIdResolver();
 
     @Test
     @DisplayName("UT resolve() should return UUID from headers if UUID type")

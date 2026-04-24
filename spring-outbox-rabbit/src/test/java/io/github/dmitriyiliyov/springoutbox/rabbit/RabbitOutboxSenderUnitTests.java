@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class RabbitMqOutboxSenderUnitTests {
+class RabbitOutboxSenderUnitTests {
 
     private static final String EXCHANGE = "test-exchange";
     private static final long TIMEOUT_SECONDS = 5;
@@ -42,7 +42,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Mock
     private Channel channel;
 
-    private RabbitMqOutboxSender rabbitMqOutboxSender;
+    private RabbitOutboxSender rabbitOutboxSender;
 
     @BeforeAll
     static void beforeAll() {
@@ -56,7 +56,7 @@ class RabbitMqOutboxSenderUnitTests {
 
     @BeforeEach
     void setUp() {
-        rabbitMqOutboxSender = new RabbitMqOutboxSender(rabbitTemplate, TIMEOUT_SECONDS);
+        rabbitOutboxSender = new RabbitOutboxSender(rabbitTemplate, TIMEOUT_SECONDS);
 
         doAnswer(invocation -> {
             ChannelCallback<Void> callback = invocation.getArgument(0);
@@ -67,7 +67,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when events is null, should return empty sender result")
     void sendEvents_withNullEvents_shouldReturnEmptyResult() {
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, null);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, null);
 
         assertThat(result.processedIds()).isEmpty();
         assertThat(result.failedIds()).isEmpty();
@@ -77,7 +77,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when events is empty, should return empty sender result")
     void sendEvents_withEmptyEvents_shouldReturnEmptyResult() {
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, Collections.emptyList());
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, Collections.emptyList());
 
         assertThat(result.processedIds()).isEmpty();
         assertThat(result.failedIds()).isEmpty();
@@ -107,7 +107,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         verify(channel, times(2)).basicPublish(eq(EXCHANGE), anyString(), anyBoolean(), any(AMQP.BasicProperties.class), any(byte[].class));
         assertThat(result.processedIds()).containsExactlyInAnyOrder(event1.getId(), event2.getId());
@@ -136,7 +136,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.processedIds()).containsExactlyInAnyOrder(event1.getId(), event2.getId());
         assertThat(result.failedIds()).isEmpty();
@@ -165,7 +165,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.failedIds()).containsExactlyInAnyOrder(event1.getId(), event2.getId());
         assertThat(result.processedIds()).isEmpty();
@@ -193,7 +193,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.failedIds()).containsExactlyInAnyOrder(event1.getId(), event2.getId());
         assertThat(result.processedIds()).isEmpty();
@@ -222,7 +222,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.processedIds()).containsExactly(event1.getId());
         assertThat(result.failedIds()).containsExactly(event2.getId());
@@ -253,7 +253,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.processedIds()).containsExactly(event1.getId());
         assertThat(result.failedIds()).containsExactly(event2.getId());
@@ -267,7 +267,7 @@ class RabbitMqOutboxSenderUnitTests {
 
         doThrow(new AmqpException("Connection failed")).when(rabbitTemplate).execute(any(ChannelCallback.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.failedIds()).containsExactlyInAnyOrder(event1.getId());
         assertThat(result.processedIds()).isEmpty();
@@ -276,7 +276,7 @@ class RabbitMqOutboxSenderUnitTests {
     @Test
     @DisplayName("UT sendEvents(), when timeout expires before all confirms, should mark unconfirmed events as failed")
     void sendEvents_shouldMarkUnconfirmedAsFailedOnTimeout() throws Exception {
-        rabbitMqOutboxSender = new RabbitMqOutboxSender(rabbitTemplate, 1);
+        rabbitOutboxSender = new RabbitOutboxSender(rabbitTemplate, 1);
         OutboxEvent event1 = new OutboxEvent(UUID.randomUUID(), "type1", null, "payload1", Instant.now());
         OutboxEvent event2 = new OutboxEvent(UUID.randomUUID(), "type2", null, "payload2", Instant.now());
         List<OutboxEvent> events = List.of(event1, event2);
@@ -296,7 +296,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, events);
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, events);
 
         assertThat(result.processedIds()).containsExactly(event1.getId());
         assertThat(result.failedIds()).containsExactly(event2.getId());
@@ -322,7 +322,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, List.of(event));
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, List.of(event));
 
         assertThat(result.processedIds()).containsExactly(event.getId());
         assertThat(result.failedIds()).isEmpty();
@@ -349,7 +349,7 @@ class RabbitMqOutboxSenderUnitTests {
             return null;
         }).when(channel).addConfirmListener(any(ConfirmListener.class));
 
-        SenderResult result = rabbitMqOutboxSender.sendEvents(EXCHANGE, List.of(event));
+        SenderResult result = rabbitOutboxSender.sendEvents(EXCHANGE, List.of(event));
 
         assertThat(result.processedIds()).containsExactly(event.getId());
         assertThat(result.failedIds()).isEmpty();

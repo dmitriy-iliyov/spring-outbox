@@ -6,7 +6,7 @@ import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.messaging.SpringMessageOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheObserver;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
-import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxEventIdResolver;
+import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
@@ -141,8 +141,8 @@ public class OutboxConsumerAutoConfiguration {
 
     @Bean
     @ConditionalOnClass(name = "org.springframework.amqp.core.Message")
-    public OutboxEventIdResolver<?> rabbitMqOutboxEventIdResolver() {
-        return new RabbitMqOutboxEventIdResolver();
+    public OutboxEventIdResolver<?> rabbitOutboxEventIdResolver() {
+        return new RabbitOutboxEventIdResolver();
     }
 
     @Bean

@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxHeaders;
@@ -17,7 +17,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class RabbitMqConsumerIntegrationVerifier {
+public class RabbitConsumerIntegrationVerifier {
 
     private static final Duration AWAIT_AT_MOST = Duration.ofSeconds(15);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(200);
@@ -26,13 +26,13 @@ public class RabbitMqConsumerIntegrationVerifier {
     private final RabbitTemplate rabbitTemplate;
     private final JdbcTemplate jdbcTemplate;
     private final IdExtractor idExtractor;
-    private final RabbitMqConsumerFaultyBusinessService faultyService;
+    private final RabbitConsumerFaultyBusinessService faultyService;
     private final ObjectMapper objectMapper;
 
-    public RabbitMqConsumerIntegrationVerifier(RabbitTemplate rabbitTemplate,
-                                               JdbcTemplate jdbcTemplate,
-                                               IdExtractor idExtractor,
-                                               RabbitMqConsumerFaultyBusinessService faultyService) {
+    public RabbitConsumerIntegrationVerifier(RabbitTemplate rabbitTemplate,
+                                             JdbcTemplate jdbcTemplate,
+                                             IdExtractor idExtractor,
+                                             RabbitConsumerFaultyBusinessService faultyService) {
         this.rabbitTemplate = rabbitTemplate;
         this.jdbcTemplate = jdbcTemplate;
         this.idExtractor = idExtractor;
@@ -213,22 +213,22 @@ public class RabbitMqConsumerIntegrationVerifier {
     }
 
     private void sendSingle(UUID eventId, UUID verifyId) {
-        rabbitTemplate.send(RabbitMqConsumerBusinessService.SINGLE_QUEUE, buildMessage(eventId, verifyId));
+        rabbitTemplate.send(RabbitConsumerBusinessService.SINGLE_QUEUE, buildMessage(eventId, verifyId));
     }
 
     private void sendBatch(List<UUID> eventIds, List<UUID> verifyIds) {
         for (int i = 0; i < eventIds.size(); i++) {
-            rabbitTemplate.send(RabbitMqConsumerBusinessService.BATCH_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
+            rabbitTemplate.send(RabbitConsumerBusinessService.BATCH_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
         }
     }
 
     private void sendToFailingQueue(UUID eventId, UUID verifyId) {
-        rabbitTemplate.send(RabbitMqConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE, buildMessage(eventId, verifyId));
+        rabbitTemplate.send(RabbitConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE, buildMessage(eventId, verifyId));
     }
 
     private void sendBatchToFailingQueue(List<UUID> eventIds, List<UUID> verifyIds) {
         for (int i = 0; i < eventIds.size(); i++) {
-            rabbitTemplate.send(RabbitMqConsumerFaultyBusinessService.BATCH_FAILING_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
+            rabbitTemplate.send(RabbitConsumerFaultyBusinessService.BATCH_FAILING_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
         }
     }
 

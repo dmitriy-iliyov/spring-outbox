@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 public enum SenderType {
-    KAFKA, RABBITMQ;
+    KAFKA, RABBIT;
 
     public static SenderType fromString(String value) {
         if (value == null || value.isBlank()) {

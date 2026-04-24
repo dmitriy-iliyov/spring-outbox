@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbitmq;
+package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared.ConsumerBusinessRepository;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public class RabbitMqConsumerBusinessService {
+public class RabbitConsumerBusinessService {
 
     public static final String SINGLE_QUEUE = "test.outbox.single";
     public static final String BATCH_QUEUE  = "test.outbox.batch";
@@ -18,9 +18,9 @@ public class RabbitMqConsumerBusinessService {
     private final ConsumerBusinessRepository repository;
     private final MessageConverter converter;
 
-    public RabbitMqConsumerBusinessService(OutboxIdempotentConsumer outboxConsumer,
-                                           ConsumerBusinessRepository repository,
-                                           MessageConverter converter) {
+    public RabbitConsumerBusinessService(OutboxIdempotentConsumer outboxConsumer,
+                                         ConsumerBusinessRepository repository,
+                                         MessageConverter converter) {
         this.outboxConsumer = outboxConsumer;
         this.repository = repository;
         this.converter = converter;

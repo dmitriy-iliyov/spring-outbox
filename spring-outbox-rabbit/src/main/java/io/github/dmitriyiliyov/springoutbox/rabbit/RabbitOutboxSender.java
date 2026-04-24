@@ -18,14 +18,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-public class RabbitMqOutboxSender implements OutboxSender {
+public class RabbitOutboxSender implements OutboxSender {
 
-    private static final Logger log = LoggerFactory.getLogger(RabbitMqOutboxSender.class);
+    private static final Logger log = LoggerFactory.getLogger(RabbitOutboxSender.class);
 
     private final RabbitTemplate rabbitTemplate;
     private final long emergencyTimeout;
 
-    public RabbitMqOutboxSender(RabbitTemplate rabbitTemplate, long emergencyTimeout) {
+    public RabbitOutboxSender(RabbitTemplate rabbitTemplate, long emergencyTimeout) {
         this.rabbitTemplate = rabbitTemplate;
         this.emergencyTimeout = emergencyTimeout;
     }
@@ -78,7 +78,10 @@ public class RabbitMqOutboxSender implements OutboxSender {
             }
         } catch (Exception e) {
             failedIds.addAll(events.stream().map(OutboxEvent::getId).collect(Collectors.toSet()));
-            log.error("Error when sending batch of events to exchange={} ", exchange, e);
+            log.error(
+                    "Error when preparing batch of '{}' events to send in exchange={}, mark whole batch as failed",
+                    events.getFirst().getEventType(), exchange, e
+            );
         }
         return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
     }

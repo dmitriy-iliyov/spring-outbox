@@ -3,7 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxSender;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxSender;
-import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitMqOutboxSender;
+import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxSender;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -137,7 +137,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndBeanNameSpecified_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
         props.setBeanName("rabbitTemplate");
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
@@ -151,7 +151,7 @@ class OutboxSenderFactoryUnitTests {
         OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
-        assertInstanceOf(RabbitMqOutboxSender.class, result);
+        assertInstanceOf(RabbitOutboxSender.class, result);
     }
 
     @Test
@@ -159,7 +159,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndBeanNameNotSpecified_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
         RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
@@ -173,7 +173,7 @@ class OutboxSenderFactoryUnitTests {
         OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
-        assertInstanceOf(RabbitMqOutboxSender.class, result);
+        assertInstanceOf(RabbitOutboxSender.class, result);
     }
 
     @Test
@@ -181,7 +181,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndMultipleBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
 
         when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{"rabbit1", "rabbit2"});
 
@@ -194,7 +194,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndNoBeans_shouldThrowISE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
 
         when(context.getBeanNamesForType(RabbitTemplate.class)).thenReturn(new String[]{});
 
@@ -207,7 +207,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndBeanNotFoundByName_shouldThrowIAE() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
         props.setBeanName("missingBean");
 
         when(context.containsBean("missingBean")).thenReturn(false);
@@ -221,7 +221,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndMandatoryFalse_shouldReturnSender() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
         props.setBeanName("rabbitTemplate");
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
@@ -235,7 +235,7 @@ class OutboxSenderFactoryUnitTests {
         OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
-        assertInstanceOf(RabbitMqOutboxSender.class, result);
+        assertInstanceOf(RabbitOutboxSender.class, result);
     }
 
     @Test
@@ -364,7 +364,7 @@ class OutboxSenderFactoryUnitTests {
     void create_whenRabbitAndBeanNameEmpty_shouldResolveByType() {
         // given
         OutboxPublisherProperties.SenderProperties props = new OutboxPublisherProperties.SenderProperties();
-        props.setType(SenderType.RABBITMQ);
+        props.setType(SenderType.RABBIT);
         props.setBeanName("");
         props.setEmergencyTimeout(Duration.ofSeconds(10));
 
@@ -379,6 +379,6 @@ class OutboxSenderFactoryUnitTests {
         OutboxSender result = OutboxSenderFactory.create(props, context, mapper);
 
         // then
-        assertInstanceOf(RabbitMqOutboxSender.class, result);
+        assertInstanceOf(RabbitOutboxSender.class, result);
     }
 }

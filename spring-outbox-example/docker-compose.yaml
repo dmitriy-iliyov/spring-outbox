@@ -151,10 +151,10 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
-  outbox-rabbitmq:
-    container_name: outbox-rabbitmq
+  outbox-rabbit:
+    container_name: outbox-rabbit
     image: rabbitmq:3-management
-    profiles: [ "rabbitmq" ]
+    profiles: [ "rabbit" ]
     ports:
       - "5672:5672"
       - "15672:15672"
