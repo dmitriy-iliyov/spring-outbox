@@ -167,7 +167,7 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "outboxDlqMetrics")
     @ConditionalOnProperty(
             prefix = "outbox.publisher.dlq.metrics",
             name = "enabled",

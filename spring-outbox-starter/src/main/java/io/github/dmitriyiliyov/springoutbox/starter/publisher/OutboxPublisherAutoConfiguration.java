@@ -238,7 +238,7 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "outboxMetrics")
     @ConditionalOnProperty(
             prefix = "outbox.publisher.metrics",
             name = "enabled",

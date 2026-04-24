@@ -47,7 +47,6 @@ public class OutboxDlqWebAutoConfiguration {
     public OutboxDlqWebManager outboxDlqWebManagerMetricsDecorator(OutboxDlqWebManager manager,
                                                                    MeterRegistry registry) {
         return new OutboxDlqWebManagerMetricsDecorator(registry, manager);
-
     }
 
     @Bean
