@@ -10,8 +10,8 @@ public class MetricsConsumedOutboxCacheObserver implements ConsumedOutboxCacheOb
     private final Counter misses;
 
     public MetricsConsumedOutboxCacheObserver(MeterRegistry registry) {
-        this.hits = registry.counter("consumed_outbox_events_total", "type", "cache-hit");
-        this.misses = registry.counter("consumed_outbox_events_total", "type", "cache-miss");
+        this.hits = registry.counter("consumed_outbox_cache_action_total", "action_type", "hit");
+        this.misses = registry.counter("consumed_outbox_cache_action_total", "action_type", "miss");
     }
 
     @Override

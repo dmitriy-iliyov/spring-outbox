@@ -10,13 +10,13 @@ import java.util.UUID;
 
 public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxManager {
 
-    private final Counter duplicated;
+    private final Counter rejectedDuplicates;
     private final Counter consumed;
     private final Counter cleaned;
     private final ConsumedOutboxManager delegate;
 
     public ConsumedOutboxManagerMetricsDecorator(MeterRegistry registry, ConsumedOutboxManager delegate) {
-        this.duplicated = registry.counter("consumed_outbox_events_total", "type", "duplicated");
+        this.rejectedDuplicates = registry.counter("consumed_outbox_events_total", "type", "rejected_duplicates");
         this.consumed = registry.counter("consumed_outbox_events_total", "type", "consumed");
         this.cleaned = registry.counter("consumed_outbox_events_total", "type", "cleaned");
         this.delegate = delegate;
@@ -26,7 +26,7 @@ public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxMana
     public boolean isConsumed(UUID id) {
         boolean isConsumed = delegate.isConsumed(id);
         if (isConsumed) {
-            duplicated.increment();
+            rejectedDuplicates.increment();
         } else {
             consumed.increment();
         }
@@ -37,7 +37,7 @@ public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxMana
     public Set<UUID> filterConsumed(Set<UUID> ids) {
         Set<UUID> alreadyConsumed = delegate.filterConsumed(ids);
         double currentDuplicates = alreadyConsumed.size();
-        duplicated.increment(currentDuplicates);
+        rejectedDuplicates.increment(currentDuplicates);
         consumed.increment(ids.size() - currentDuplicates);
         return alreadyConsumed;
     }

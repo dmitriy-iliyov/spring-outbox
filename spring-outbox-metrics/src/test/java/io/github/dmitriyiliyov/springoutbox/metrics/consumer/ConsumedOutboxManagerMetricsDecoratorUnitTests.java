@@ -39,7 +39,7 @@ class ConsumedOutboxManagerMetricsDecoratorUnitTests {
 
     @BeforeEach
     void setUp() {
-        Mockito.when(registry.counter(ArgumentMatchers.eq("consumed_outbox_events_total"), ArgumentMatchers.eq("type"), ArgumentMatchers.eq("duplicated")))
+        Mockito.when(registry.counter(ArgumentMatchers.eq("consumed_outbox_events_total"), ArgumentMatchers.eq("type"), ArgumentMatchers.eq("rejected_duplicates")))
                 .thenReturn(duplicatedCounter);
         Mockito.when(registry.counter(ArgumentMatchers.eq("consumed_outbox_events_total"), ArgumentMatchers.eq("type"), ArgumentMatchers.eq("consumed")))
                 .thenReturn(consumedCounter);

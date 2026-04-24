@@ -30,8 +30,8 @@ class MetricsConsumedOutboxCacheObserverUnitTests {
 
     @BeforeEach
     void setUp() {
-        when(registry.counter(anyString(), eq("type"), eq("cache-hit"))).thenReturn(hitsCounter);
-        when(registry.counter(anyString(), eq("type"), eq("cache-miss"))).thenReturn(missesCounter);
+        when(registry.counter(anyString(), eq("action_type"), eq("hit"))).thenReturn(hitsCounter);
+        when(registry.counter(anyString(), eq("action_type"), eq("miss"))).thenReturn(missesCounter);
         observer = new MetricsConsumedOutboxCacheObserver(registry);
     }
 
