@@ -22,7 +22,7 @@ This approach ensures reliable event publication without relying on database log
 - **Effectively-once processing** - achieved via an idempotent consumer implementation provided by the library.
 - **Dead Letter Queue** - stores events that fail after all retry attempts, with REST API support for management.
 - **Background service** - handles recovery of stuck events and cleanup of processed or consumed events automatically.
-- **Observability** - provides out-of-the-box metrics integration via Micrometer
+- **Observability** - provides out-of-the-box metrics integration via Micrometer.
 
 ## Supported Infrastructure
 
@@ -158,7 +158,7 @@ public class ConsumerRunner {
 }
 ```
 
-6. Minimal YAML config ():
+6. Minimal YAML config:
 > [!NOTE]
 > Cleanup and cache enable by default.
 

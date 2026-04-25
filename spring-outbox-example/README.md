@@ -16,7 +16,6 @@ The project demonstrates:
 - atomicity between business operations and event publishing
 - idempotent message consumption
 - single-message and batch processing
-- controlled load generation
 - basic observability with Prometheus and Grafana
 
 ## Architecture Overview
@@ -54,9 +53,8 @@ The system consists of three main components:
 2. Producer:
 - persists business data 
 - writes domain events to the outbox table
-4. A background publisher sends events to Kafka
+4. A background publisher sends events to Kafka/Rabbit
 5. Consumer processes events idempotently
-6. Metrics are available in Prometheus and Grafana
 
 ## Run
 From the project root:
@@ -68,13 +66,13 @@ docker compose build
 2. Run
 - with Apache Kafka:
 ```bash
-COMPOSE_PROFILES=kafka,postgres docker compose up
+COMPOSE_PROFILES=kafka,postgres,test docker compose up
 ```
 
 - with RabbitMQ:
 ```bash
-COMPOSE_PROFILES=rabbitmq,postgres docker compose up
+COMPOSE_PROFILES=rabbit,postgres,test docker compose up
 ```
 
 > [!NOTE]
-> For test with other db use `mysql` ot `oracle`, and for enable traffic generator use `test` as `COMPOSE_PROFILES`
+> For test with other database use `mysql` or `oracle`. The profile `test` using for enable traffic generator and observability container.  
