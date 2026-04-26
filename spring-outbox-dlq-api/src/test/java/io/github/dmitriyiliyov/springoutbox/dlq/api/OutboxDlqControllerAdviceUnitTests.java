@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -56,16 +55,15 @@ class OutboxDlqControllerAdviceUnitTests {
         Exception ex = new Exception("Unexpected error");
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleException(ex, request);
+        ProblemDetail problemDetail = tested.handleException(ex, request);
 
         // then
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/unexpected"), body.getType());
-        assertEquals("Internal Server Error", body.getTitle());
-        assertEquals("Unexpected error", body.getDetail());
-        assertEquals("/test/uri", body.getProperties().get("path"));
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/unexpected"), problemDetail.getType());
+        assertEquals("Internal Server Error", problemDetail.getTitle());
+        assertEquals("Unexpected error", problemDetail.getDetail());
+        assertEquals("/test/uri", problemDetail.getProperties().get("path"));
     }
 
     @Test
@@ -76,15 +74,14 @@ class OutboxDlqControllerAdviceUnitTests {
         when(ex.getDetail()).thenReturn("Resource not found");
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleNotFoundException(ex, request);
+        ProblemDetail problemDetail = tested.handleNotFoundException(ex, request);
 
         // then
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/not-found"), body.getType());
-        assertEquals("Not Found", body.getTitle());
-        assertEquals("Resource not found", body.getDetail());
+        assertEquals(HttpStatus.NOT_FOUND.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/not-found"), problemDetail.getType());
+        assertEquals("Not Found", problemDetail.getTitle());
+        assertEquals("Resource not found", problemDetail.getDetail());
     }
 
     @Test
@@ -95,15 +92,14 @@ class OutboxDlqControllerAdviceUnitTests {
         when(ex.getDetail()).thenReturn("Bad request detail");
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleNotFoundException(ex, request);
+        ProblemDetail problemDetail = tested.handleNotFoundException(ex, request);
 
         // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/bad-request"), body.getType());
-        assertEquals("Bad Request", body.getTitle());
-        assertEquals("Bad request detail", body.getDetail());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/bad-request"), problemDetail.getType());
+        assertEquals("Bad Request", problemDetail.getTitle());
+        assertEquals("Bad request detail", problemDetail.getDetail());
     }
 
     @Test
@@ -116,14 +112,13 @@ class OutboxDlqControllerAdviceUnitTests {
         MethodArgumentNotValidException ex = new MethodArgumentNotValidException(null, bindingResult);
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleValidationExceptions(ex, request);
+        ProblemDetail problemDetail = tested.handleValidationExceptions(ex, request);
 
         // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/validation"), body.getType());
-        List<Map<String, String>> errors = (List<Map<String, String>>) body.getProperties().get("errors");
+        assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/validation"), problemDetail.getType());
+        List<Map<String, String>> errors = (List<Map<String, String>>) problemDetail.getProperties().get("errors");
         assertEquals(1, errors.size());
         assertEquals("field", errors.get(0).get("field"));
         assertEquals("defaultMessage", errors.get(0).get("message"));
@@ -139,14 +134,13 @@ class OutboxDlqControllerAdviceUnitTests {
         BindException ex = new BindException(bindingResult);
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleValidationExceptions(ex, request);
+        ProblemDetail problemDetail = tested.handleValidationExceptions(ex, request);
 
         // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/validation"), body.getType());
-        List<Map<String, String>> errors = (List<Map<String, String>>) body.getProperties().get("errors");
+        assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/validation"), problemDetail.getType());
+        List<Map<String, String>> errors = (List<Map<String, String>>) problemDetail.getProperties().get("errors");
         assertEquals(1, errors.size());
         assertEquals("field", errors.get(0).get("field"));
         assertEquals("defaultMessage", errors.get(0).get("message"));
@@ -164,14 +158,13 @@ class OutboxDlqControllerAdviceUnitTests {
         ConstraintViolationException ex = new ConstraintViolationException(Set.of(violation));
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleConstraintViolation(ex, request);
+        ProblemDetail problemDetail = tested.handleConstraintViolation(ex, request);
 
         // then
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/validation/constraint-violation"), body.getType());
-        List<Map<String, String>> errors = (List<Map<String, String>>) body.getProperties().get("errors");
+        assertEquals(HttpStatus.BAD_REQUEST.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/validation/constraint-violation"), problemDetail.getType());
+        List<Map<String, String>> errors = (List<Map<String, String>>) problemDetail.getProperties().get("errors");
         assertEquals(1, errors.size());
         assertEquals("prop", errors.get(0).get("property"));
         assertEquals("violation message", errors.get(0).get("message"));
@@ -186,14 +179,13 @@ class OutboxDlqControllerAdviceUnitTests {
         when(ex.getMostSpecificCause()).thenReturn(cause);
 
         // when
-        ResponseEntity<ProblemDetail> response = tested.handleDatabaseError(ex, request);
+        ProblemDetail problemDetail = tested.handleDatabaseError(ex, request);
 
         // then
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        ProblemDetail body = response.getBody();
-        assertNotNull(body);
-        assertEquals(URI.create("/errors/outbox/database"), body.getType());
-        assertEquals("Database Access Error", body.getTitle());
-        assertEquals("A database operation failed: Connection refused", body.getDetail());
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), problemDetail.getStatus());
+        assertNotNull(problemDetail);
+        assertEquals(URI.create("/errors/outbox/database"), problemDetail.getType());
+        assertEquals("Database Access Error", problemDetail.getTitle());
+        assertEquals("A database operation failed: Connection refused", problemDetail.getDetail());
     }
 }

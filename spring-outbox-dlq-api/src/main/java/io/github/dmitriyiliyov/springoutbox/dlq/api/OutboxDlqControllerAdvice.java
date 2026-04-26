@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -24,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-@RestControllerAdvice(basePackageClasses = {OutboxDlqController.class})
+@RestControllerAdvice(basePackageClasses = OutboxDlqController.class)
 public class OutboxDlqControllerAdvice {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqControllerAdvice.class);
@@ -36,9 +35,9 @@ public class OutboxDlqControllerAdvice {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ProblemDetail> handleException(Exception e, HttpServletRequest request) {
+    public ProblemDetail handleException(Exception e, HttpServletRequest request) {
         log.error("Unexpected error: {}", request.getRequestURI(), e);
-        ProblemDetail problemDetail = createProblemDetail(
+        return createProblemDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "/errors/outbox/unexpected",
                 "Internal Server Error",
@@ -46,14 +45,11 @@ public class OutboxDlqControllerAdvice {
                 request.getRequestURI(),
                 clock.instant()
         );
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(problemDetail);
     }
 
     @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<ProblemDetail> handleNotFoundException(NotFoundException e, HttpServletRequest request) {
-        ProblemDetail problemDetail = createProblemDetail(
+    public ProblemDetail handleNotFoundException(NotFoundException e, HttpServletRequest request) {
+        return createProblemDetail(
                 HttpStatus.NOT_FOUND,
                 "/errors/outbox/not-found",
                 "Not Found",
@@ -61,14 +57,11 @@ public class OutboxDlqControllerAdvice {
                 request.getRequestURI(),
                 clock.instant()
         );
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(problemDetail);
     }
 
     @ExceptionHandler(BadRequestException.class)
-    public ResponseEntity<ProblemDetail> handleNotFoundException(BadRequestException e, HttpServletRequest request) {
-        ProblemDetail problemDetail = createProblemDetail(
+    public ProblemDetail handleNotFoundException(BadRequestException e, HttpServletRequest request) {
+        return createProblemDetail(
                 HttpStatus.BAD_REQUEST,
                 "/errors/outbox/bad-request",
                 "Bad Request",
@@ -76,13 +69,10 @@ public class OutboxDlqControllerAdvice {
                 request.getRequestURI(),
                 clock.instant()
         );
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(problemDetail);
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class, MethodArgumentTypeMismatchException.class})
-    public ResponseEntity<ProblemDetail> handleValidationExceptions(Exception e, HttpServletRequest request) {
+    public ProblemDetail handleValidationExceptions(Exception e, HttpServletRequest request) {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.BAD_REQUEST,
                 "/errors/outbox/validation",
@@ -118,13 +108,11 @@ public class OutboxDlqControllerAdvice {
             }
         }
         problemDetail.setProperty("errors", errors);
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(problemDetail);
+        return problemDetail;
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ProblemDetail> handleConstraintViolation(ConstraintViolationException e, HttpServletRequest request) {
+    public ProblemDetail handleConstraintViolation(ConstraintViolationException e, HttpServletRequest request) {
         ProblemDetail problemDetail = createProblemDetail(
                 HttpStatus.BAD_REQUEST,
                 "/errors/outbox/validation/constraint-violation",
@@ -138,15 +126,13 @@ public class OutboxDlqControllerAdvice {
                 .toList();
 
         problemDetail.setProperty("errors", violations);
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(problemDetail);
+        return problemDetail;
     }
 
     @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<ProblemDetail> handleDatabaseError(DataAccessException e, HttpServletRequest request) {
+    public ProblemDetail handleDatabaseError(DataAccessException e, HttpServletRequest request) {
         log.error("DLQ database error: {}", request.getRequestURI(), e);
-        ProblemDetail problemDetail = createProblemDetail(
+        return createProblemDetail(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "/errors/outbox/database",
                 "Database Access Error",
@@ -154,9 +140,6 @@ public class OutboxDlqControllerAdvice {
                 request.getRequestURI(),
                 clock.instant()
         );
-        return ResponseEntity
-                .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(problemDetail);
     }
 
     private ProblemDetail createProblemDetail(HttpStatus httpStatus,
