@@ -244,44 +244,6 @@ class OutboxPropertiesDlqPublisherPropertiesUnitTests {
     }
 
     @Nested
-    @DisplayName("Metrics Initialization Tests")
-    class MetricsInitializationTests {
-
-        @Test
-        @DisplayName("UT applyDefaults() when metrics is null should initialize disabled metrics")
-        void applyDefaults_whenMetricsNull_shouldInitDisabledMetrics() {
-            // given
-            OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
-            dlq.setMetrics(null);
-
-            // when
-            dlq.applyDefaults();
-
-            // then
-            assertThat(dlq.getMetrics()).isNotNull();
-            assertThat(dlq.getMetrics().isEnabled()).isFalse();
-        }
-
-        @Test
-        @DisplayName("UT applyDefaults() when metrics provided should preserve instance and apply metrics defaults")
-        void applyDefaults_whenMetricsProvided_shouldPreserveAndApplyDefaults() {
-            // given
-            OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
-            OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-            metrics.setEnabled(true);
-            dlq.setMetrics(metrics);
-
-            // when
-            dlq.applyDefaults();
-
-            // then
-            assertThat(dlq.getMetrics()).isSameAs(metrics);
-            assertThat(dlq.getMetrics().isEnabled()).isTrue();
-            assertThat(dlq.getMetrics().getGauge()).isNotNull();
-        }
-    }
-
-    @Nested
     @DisplayName("TransferProperties Delegation and General Utility Tests")
     class DelegationAndUtilityTests {
 

@@ -8,6 +8,8 @@ import io.github.dmitriyiliyov.springoutbox.tests.integration.publish.aop.AopBus
 import io.github.dmitriyiliyov.springoutbox.tests.integration.publish.manual.ManualBusinessService;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdExtractor;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdPreparer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -88,5 +90,10 @@ public class OutboxIntegrationTestsConfig {
         when(producerFactory.getConfigurationProperties()).thenReturn(Map.of());
         when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
         return kafkaTemplate;
+    }
+
+    @Bean
+    public MeterRegistry simpleMeterRegistry() {
+        return new SimpleMeterRegistry();
     }
 }

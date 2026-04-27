@@ -697,8 +697,6 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         private TransferProperties transferTo;
         @NestedConfigurationProperty
         private TransferProperties transferFrom;
-        @NestedConfigurationProperty
-        private OutboxProperties.MetricsProperties metrics;
 
         public void applyDefaults() {
             if (enabled != null && enabled) {
@@ -722,11 +720,6 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 transferTo = new TransferProperties();
                 transferFrom = new TransferProperties();
             }
-            if (metrics == null) {
-                metrics = new OutboxProperties.MetricsProperties();
-                metrics.setEnabled(false);
-            }
-            metrics.applyDefaults();
         }
 
         public Boolean isEnabled() {
@@ -771,21 +764,12 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.transferFrom = transferFrom;
         }
 
-        public OutboxProperties.MetricsProperties getMetrics() {
-            return metrics;
-        }
-
-        public void setMetrics(OutboxProperties.MetricsProperties metrics) {
-            this.metrics = metrics;
-        }
-
         @Override
         public String toString() {
             return "DlqProperties{" +
                     "enabled=" + enabled +
                     ", transferTo=" + transferTo +
                     ", transferFrom=" + transferFrom +
-                    ", metrics=" + metrics +
                     '}';
         }
 

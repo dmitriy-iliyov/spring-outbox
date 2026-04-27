@@ -25,4 +25,4 @@ outbox:
     cache:
       enabled: false
     metrics:
-      enabled: false
+      enabled: true

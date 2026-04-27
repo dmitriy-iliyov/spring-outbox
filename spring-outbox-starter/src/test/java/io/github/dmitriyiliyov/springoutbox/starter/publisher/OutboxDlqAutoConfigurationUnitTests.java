@@ -47,7 +47,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         gauge.getCache().setEnabled(true);
         metrics.setGauge(gauge);
 
-        dlq.setMetrics(metrics);
+        props.setMetrics(metrics);
 
         // when + then
         assertThatThrownBy(() -> config.outboxDlqCache(props))
@@ -69,7 +69,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         gauge.getCache().setTtls(List.of(Duration.ofSeconds(1)));
         metrics.setGauge(gauge);
         props.setDlq(new OutboxPublisherProperties.DlqProperties());
-        props.getDlq().setMetrics(metrics);
+        props.setMetrics(metrics);
 
         // when + then
         assertThatThrownBy(() -> config.outboxDlqCache(props))
@@ -86,7 +86,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
         metrics.setEnabled(true);
         metrics.setGauge(null);
-        dlq.setMetrics(metrics);
+        props.setMetrics(metrics);
         props.setDlq(dlq);
 
         // when
@@ -107,7 +107,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(false);
         metrics.setGauge(gauge);
-        dlq.setMetrics(metrics);
+        props.setMetrics(metrics);
         props.setDlq(dlq);
 
         // when
@@ -134,7 +134,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         cacheProps.setTtls(List.of(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(3)));
         gauge.setCache(cacheProps);
         metrics.setGauge(gauge);
-        dlq.setMetrics(metrics);
+        props.setMetrics(metrics);
         props.setDlq(dlq);
 
         // when

@@ -64,12 +64,6 @@ outbox:
         min-fixed-delay: 5s
         max-fixed-delay: 1m
         multiplier: 2.0
-      metrics:
-        enabled: true
-        gauge:
-          enabled: true
-          cache:
-            ttls: [60s, 60s, 60s]
     metrics:
       enabled: true
       gauge:

@@ -854,7 +854,6 @@ DLQ has shared section with `batch-size`, `polling`. Values from this section wi
 | `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                        |   `10.0`   |
 | `transfer-to`             | Section for specifying settings for transferring events from the outbox to the DLQ                                   |     —      |
 | `transfer-from`           | Section for specifying settings for transferring events from the DLQ to the outbox                                   |     —      |
-| `metrics.enabled`         | Enable metrics collection, more [here](#metrics)                                                                     |  `false`   |
 
 **Override example**: 
 ```yaml
@@ -1022,10 +1021,6 @@ outbox:
         topic: my.topic
     dlq:
       enabled: true
-      metrics:
-        enabled: true
-        gauge:
-          enabled: true
     metrics:
       enabled: true
       gauge:
@@ -1095,12 +1090,6 @@ outbox:
         # Specific to DLQ polling settings if necessary
       transfer-from:
         # Specific from DLQ polling settings if necessary
-      metrics:
-        enabled: true
-        gauge:
-          enabled: true
-          cache:
-            ttls: [60s, 60s, 60s]
     metrics:
       enabled: true
       gauge:          

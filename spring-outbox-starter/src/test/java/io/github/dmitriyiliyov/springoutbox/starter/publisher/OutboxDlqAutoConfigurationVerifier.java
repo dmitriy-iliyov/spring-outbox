@@ -4,7 +4,10 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.DlqStatusQueryConverter;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqController;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqControllerAdvice;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetrics;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetricsRepository;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetricsService;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -103,24 +106,23 @@ public class OutboxDlqAutoConfigurationVerifier {
     public void shouldRegisterOutboxDlqTransfer() {
         getBaseContextRunner().run(ctx -> {
             assertThat(ctx).hasSingleBean(OutboxDlqTransfer.class);
-            assertThat(ctx).doesNotHaveBean(OutboxDlqTransferMetricsDecorator.class);
         });
     }
 
     public void shouldRegisterOutboxDlqScheduler() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("outboxDlqScheduler")
-        );
+        getBaseContextRunner().run(ctx -> {
+            assertThat(ctx).hasBean("outboxDlqTransferToScheduler");
+            assertThat(ctx).hasBean("outboxDlqTransferFromScheduler");
+        });
     }
 
     public void shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled() {
         getBaseContextRunner()
                 .withPropertyValues(
-                        "outbox.publisher.dlq.metrics.enabled=true",
-                        "outbox.publisher.dlq.metrics.gauge.enabled=true"
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=true"
                 )
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(OutboxDlqTransferMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqManagerMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqMetricsRepository.class);
@@ -131,11 +133,10 @@ public class OutboxDlqAutoConfigurationVerifier {
     public void shouldRegisteredMetricsRelatedBeans_whenGaugeUnabled() {
         getBaseContextRunner()
                 .withPropertyValues(
-                        "outbox.publisher.dlq.metrics.enabled=true",
-                        "outbox.publisher.dlq.metrics.gauge.enabled=false"
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=false"
                 )
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(OutboxDlqTransferMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsRepository.class);
@@ -146,10 +147,9 @@ public class OutboxDlqAutoConfigurationVerifier {
     public void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
         getBaseContextRunner()
                 .withPropertyValues(
-                        "outbox.publisher.dlq.metrics.enabled=true"
+                        "outbox.publisher.metrics.enabled=true"
                 )
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(OutboxDlqTransferMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsRepository.class);
@@ -190,7 +190,8 @@ public class OutboxDlqAutoConfigurationVerifier {
                 .withBean("customOutboxDlqTransfer", OutboxDlqTransfer.class, () -> org.mockito.Mockito.mock(OutboxDlqTransfer.class))
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(OutboxDlqTransfer.class);
-                    assertThat(ctx).hasBean("customOutboxDlqTransfer");
+                    assertThat(ctx).hasBean("outboxDlqTransferToScheduler");
+                    assertThat(ctx).hasBean("outboxDlqTransferFromScheduler");
                     assertThat(ctx).doesNotHaveBean(DefaultOutboxDlqTransfer.class);
                 });
     }
@@ -206,23 +207,12 @@ public class OutboxDlqAutoConfigurationVerifier {
 
     public void shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled() {
         getBaseContextRunner()
-                .withPropertyValues("outbox.publisher.dlq.metrics.enabled=true")
+                .withPropertyValues("outbox.publisher.metrics.enabled=true")
                 .run(ctx -> {
                     assertThat(ctx).hasBean("outboxDlqManager");
                     assertThat(ctx).hasBean("outboxDlqManagerMetricsDecorator");
                     OutboxDlqManager primary = ctx.getBean(OutboxDlqManager.class);
                     assertThat(primary).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
-                });
-    }
-
-    public void shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled() {
-        getBaseContextRunner()
-                .withPropertyValues("outbox.publisher.dlq.metrics.enabled=true")
-                .run(ctx -> {
-                    assertThat(ctx).hasBean("outboxDlqTransfer");
-                    assertThat(ctx).hasBean("outboxDlqTransferMetricsDecorator");
-                    OutboxDlqTransfer primary = ctx.getBean(OutboxDlqTransfer.class);
-                    assertThat(primary).isInstanceOf(OutboxDlqTransferMetricsDecorator.class);
                 });
     }
 
@@ -233,7 +223,8 @@ public class OutboxDlqAutoConfigurationVerifier {
 
                     assertThat(ctx).hasSingleBean(OutboxDlqRepository.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqHandler.class);
-                    assertThat(ctx).hasBean("outboxDlqScheduler");
+                    assertThat(ctx).hasBean("outboxDlqTransferToScheduler");
+                    assertThat(ctx).hasBean("outboxDlqTransferFromScheduler");
 
                     assertThat(ctx).hasSingleBean(OutboxDlqManager.class);
                     OutboxDlqManager primary = ctx.getBean(OutboxDlqManager.class);
@@ -248,7 +239,6 @@ public class OutboxDlqAutoConfigurationVerifier {
                     assertThat(ctx).doesNotHaveBean(OutboxDlqControllerAdvice.class);
 
                     assertThat(ctx).doesNotHaveBean(OutboxDlqManagerMetricsDecorator.class);
-                    assertThat(ctx).doesNotHaveBean(OutboxDlqTransferMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsRepository.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetrics.class);
@@ -258,19 +248,20 @@ public class OutboxDlqAutoConfigurationVerifier {
     public void shouldLoadFullConfiguration_whenAllFeaturesEnabled() {
         getBaseContextRunner()
                 .withPropertyValues(
-                        "outbox.publisher.dlq.metrics.enabled=true",
-                        "outbox.publisher.dlq.metrics.gauge.enabled=true",
-                        "outbox.publisher.dlq.metrics.gauge.cache.enabled=true",
-                        "outbox.publisher.dlq.metrics.gauge.cache.ttls[0]=PT10S",
-                        "outbox.publisher.dlq.metrics.gauge.cache.ttls[1]=PT30S",
-                        "outbox.publisher.dlq.metrics.gauge.cache.ttls[2]=PT60S"
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=true",
+                        "outbox.publisher.metrics.gauge.cache.enabled=true",
+                        "outbox.publisher.metrics.gauge.cache.ttls[0]=PT10S",
+                        "outbox.publisher.metrics.gauge.cache.ttls[1]=PT30S",
+                        "outbox.publisher.metrics.gauge.cache.ttls[2]=PT60S"
                 )
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
 
                     assertThat(ctx).hasSingleBean(OutboxDlqRepository.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqHandler.class);
-                    assertThat(ctx).hasBean("outboxDlqScheduler");
+                    assertThat(ctx).hasBean("outboxDlqTransferToScheduler");
+                    assertThat(ctx).hasBean("outboxDlqTransferFromScheduler");
 
                     assertThat(ctx).hasBean("outboxDlqManager");
                     assertThat(ctx).hasBean("outboxDlqManagerMetricsDecorator");
@@ -278,9 +269,6 @@ public class OutboxDlqAutoConfigurationVerifier {
                     assertThat(primaryManager).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
 
                     assertThat(ctx).hasBean("outboxDlqTransfer");
-                    assertThat(ctx).hasBean("outboxDlqTransferMetricsDecorator");
-                    OutboxDlqTransfer primaryTransfer = ctx.getBean(OutboxDlqTransfer.class);
-                    assertThat(primaryTransfer).isInstanceOf(OutboxDlqTransferMetricsDecorator.class);
 
                     assertThat(ctx).hasSingleBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).hasSingleBean(OutboxDlqMetricsRepository.class);
@@ -291,8 +279,8 @@ public class OutboxDlqAutoConfigurationVerifier {
     public void shouldLoadConfiguration_whenMetricsEnabledButGaugeDisabled() {
         getBaseContextRunner()
                 .withPropertyValues(
-                        "outbox.publisher.dlq.metrics.enabled=true",
-                        "outbox.publisher.dlq.metrics.gauge.enabled=false"
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.metrics.gauge.enabled=false"
                 )
                 .run(ctx -> {
                     assertThat(ctx).hasNotFailed();
@@ -300,8 +288,7 @@ public class OutboxDlqAutoConfigurationVerifier {
                     OutboxDlqManager primaryManager = ctx.getBean(OutboxDlqManager.class);
                     assertThat(primaryManager).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
 
-                    OutboxDlqTransfer primaryTransfer = ctx.getBean(OutboxDlqTransfer.class);
-                    assertThat(primaryTransfer).isInstanceOf(OutboxDlqTransferMetricsDecorator.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqTransfer.class);
 
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsRepository.class);

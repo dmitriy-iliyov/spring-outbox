@@ -127,10 +127,4 @@ class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
     void shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled() {
         verifier.shouldRegisterDlqManagerDecorator_asPrimary_whenMetricsEnabled();
     }
-
-    @Test
-    @DisplayName("IT should register OutboxDlqTransferMetricsDecorator as primary when metrics enabled")
-    void shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled() {
-        verifier.shouldRegisterDlqTransferDecorator_asPrimary_whenMetricsEnabled();
-    }
 }

@@ -21,3 +21,11 @@ outbox:
     events:
       business-event:
         topic: business-event
+    dlq:
+      enabled: true
+    metrics:
+      enabled: true
+      gauge:
+        enabled: true
+        cache:
+          enabled: true

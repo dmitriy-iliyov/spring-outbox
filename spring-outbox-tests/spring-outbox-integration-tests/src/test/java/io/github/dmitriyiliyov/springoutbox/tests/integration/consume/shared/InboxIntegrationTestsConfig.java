@@ -3,6 +3,8 @@ package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.*;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdExtractor;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdPreparer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -42,5 +44,10 @@ public class InboxIntegrationTestsConfig {
             IdPreparer idPreparer
     ) {
         return new JdbcConsumerBusinessRepository(jdbcTemplate, idPreparer);
+    }
+
+    @Bean
+    public MeterRegistry simpleMeterRegistry() {
+        return new SimpleMeterRegistry();
     }
 }

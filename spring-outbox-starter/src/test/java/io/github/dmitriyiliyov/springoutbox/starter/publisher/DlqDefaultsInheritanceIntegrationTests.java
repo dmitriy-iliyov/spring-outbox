@@ -65,7 +65,6 @@ public class DlqDefaultsInheritanceIntegrationTests {
                 .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
                         "outbox.tables.auto-create=false",
-                        "outbox.publisher.enabled=true",
                         "outbox.publisher.sender.type=kafka",
                         "outbox.publisher.events.my-event.topic=my.topic"
                 );
@@ -162,21 +161,6 @@ public class DlqDefaultsInheritanceIntegrationTests {
                     assertThat(transferFrom.getPolling().getMinFixedDelay()).isZero();
                     assertThat(transferFrom.getPolling().getMaxFixedDelay()).isZero();
                     assertThat(transferFrom.getPolling().getMultiplier()).isNaN();
-                });
-    }
-
-    @Test
-    @DisplayName("IT DLQ should respect global metrics enabled property")
-    void dlqMetrics_respectsOverride() {
-        getDlqPropertiesRunner()
-                .withPropertyValues(
-                        "outbox.publisher.dlq.metrics.enabled=true"
-                )
-                .run(context -> {
-                    assertThat(context).hasNotFailed();
-
-                    OutboxProperties properties = context.getBean(OutboxProperties.class);
-                    assertThat(properties.getPublisher().getDlq().getMetrics().isEnabled()).isTrue();
                 });
     }
 

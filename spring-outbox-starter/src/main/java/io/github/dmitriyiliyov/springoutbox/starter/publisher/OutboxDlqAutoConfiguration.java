@@ -1,15 +1,19 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.starter.ContinuableTaskDecoratorSupplier;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyListenerSupplier;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -42,7 +46,7 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public OutboxCache<DlqStatus> outboxDlqCache(OutboxPublisherProperties properties) {
-        OutboxProperties.MetricsProperties metricsProperties = properties.getDlq().getMetrics();
+        OutboxProperties.MetricsProperties metricsProperties = properties.getMetrics();
         if (metricsProperties != null && metricsProperties.isEnabled()) {
             OutboxProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
             if (gaugeProperties != null && gaugeProperties.isEnabled()) {
@@ -74,7 +78,7 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @Primary
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics",
+            prefix = "outbox.publisher.metrics",
             name = "enabled",
             havingValue = "true"
     )
@@ -107,39 +111,59 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
-    @Primary
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxDlqTransfer outboxDlqTransferMetricsDecorator(OutboxDlqTransfer transfer,
-                                                               MeterRegistry registry) {
-        return new OutboxDlqTransferMetricsDecorator(registry, transfer);
+    public OutboxScheduler outboxDlqTransferToScheduler(ScheduledExecutorService executor,
+                                                        OutboxPublisherProperties properties,
+                                                        OutboxDlqTransfer transfer,
+                                                        OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+                                                        ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
+        OutboxPublisherProperties.DlqProperties dlqProperties = properties.getDlq();
+        String taskType = MetricsTaskType.TRANSFER_TO_DLQ.getValue();
+        OutboxScheduleStrategy scheduleStrategy = OutboxScheduleStrategyFactory.create(
+                taskType,
+                dlqProperties.getTransferTo().getPolling(),
+                executor,
+                scheduleStrategyListenerSupplier
+        );
+        return new OutboxDlqTransferScheduler(
+                () -> properties.getDlq().getTransferTo(),
+                scheduleStrategy,
+                transfer::transferToDlq,
+                continuableTaskDecoratorSupplier.supply(MetricsTaskType.TRANSFER_TO_DLQ.getValue()),
+                OutboxDlqTransferScheduler.LogMessage.transferTo()
+        );
     }
 
     @Bean
-    public OutboxScheduler outboxDlqScheduler(ScheduledExecutorService executor,
-                                              OutboxPublisherProperties properties,
-                                              OutboxDlqTransfer transfer) {
+    public OutboxScheduler outboxDlqTransferFromScheduler(ScheduledExecutorService executor,
+                                                          OutboxPublisherProperties properties,
+                                                          OutboxDlqTransfer transfer,
+                                                          OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+                                                          ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
         OutboxPublisherProperties.DlqProperties dlqProperties = properties.getDlq();
+        OutboxScheduleStrategy scheduleStrategy = OutboxScheduleStrategyFactory.create(
+                MetricsTaskType.TRANSFER_FROM_DLQ.getValue(),
+                dlqProperties.getTransferFrom().getPolling(),
+                executor,
+                scheduleStrategyListenerSupplier
+        );
         return new OutboxDlqTransferScheduler(
-                properties.getDlq(),
-                OutboxScheduleStrategyFactory.create(dlqProperties.getTransferTo().getPolling(), executor),
-                OutboxScheduleStrategyFactory.create(dlqProperties.getTransferFrom().getPolling(), executor),
-                transfer
+                () -> properties.getDlq().getTransferFrom(),
+                scheduleStrategy,
+                transfer::transferFromDlq,
+                continuableTaskDecoratorSupplier.supply(MetricsTaskType.TRANSFER_FROM_DLQ.getValue()),
+                OutboxDlqTransferScheduler.LogMessage.transferFrom()
         );
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics",
+            prefix = "outbox.publisher.metrics",
             name = "enabled",
             havingValue = "true"
     )
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics.gauge",
+            prefix = "outbox.publisher.metrics.gauge",
             name = "enabled",
             havingValue = "true"
     )
@@ -152,12 +176,12 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics",
+            prefix = "outbox.publisher.metrics",
             name = "enabled",
             havingValue = "true"
     )
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics.gauge",
+            prefix = "outbox.publisher.metrics.gauge",
             name = "enabled",
             havingValue = "true"
     )
@@ -169,12 +193,12 @@ public class OutboxDlqAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(name = "outboxDlqMetrics")
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics",
+            prefix = "outbox.publisher.metrics",
             name = "enabled",
             havingValue = "true"
     )
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics.gauge",
+            prefix = "outbox.publisher.metrics.gauge",
             name = "enabled",
             havingValue = "true"
     )
