@@ -77,8 +77,7 @@ You can also add `spring-outbox-dlq-api` for enable REST API for manual DLQ mana
 
 2. Enable starter on publisher side:
 ```java
-@SpringBootApplication
-@EnableJpaRepositories
+@SpringBootApplication 
 @EnableTransactionManagement
 @EnableKafka
 @EnableOutbox
@@ -145,7 +144,6 @@ public class ExampleService {
 5. Enable starter on consumer side:
 ```java
 @SpringBootApplication
-@EnableJpaRepositories
 @EnableTransactionManagement
 @EnableKafka
 @EnableCaching
@@ -321,7 +319,7 @@ Events transition through the following states:
 ```text
 PENDING → IN_PROCESS → PROCESSED (future cleanup)
                ↓
-             FAILED (after max retries exhausted)
+             FAILED (after max retries exhausted, future transfer to DLQ)
 ```
 - `PENDING`: event created and waiting to be polled
 - `IN_PROCESS`: event currently being processed by a publisher instance, if the publisher crashes, the event will remain in this state. This is an intermediate state that signals that an event has been accepted for processing by a worker. All workers except for [stuck event recovery](#stuck-event-recovery) do not work with this status. The state is assigned after a transaction locks a row in the database via FOR UPDATE.
@@ -334,6 +332,20 @@ PENDING → IN_PROCESS → PROCESSED (future cleanup)
 The library ensures atomic storage of outbox events within the same database transaction as business entity modifications. This guarantees that either both the business change and the event are saved, or neither is saved, preventing inconsistencies between the database and message broker.
 
 All methods for saving simultaneously with a business event are annotated with `@Transactional(propagation = Propagation.MANDATORY)`, which means that the transaction is mandatory and is opened by the client code.
+
+---
+
+#### Serialization
+
+The library uses Jackson-based serialization by default, but if necessary, you can define your own by implementing `OutboxSerializer`:
+```java
+public interface OutboxSerializer {
+    
+    <T> OutboxEvent serialize(String eventType, T event);
+    
+    <T> List<OutboxEvent> serialize(String eventType, List<T> rowEvents);
+}
+```
 
 ---
 
@@ -451,7 +463,7 @@ The library uses `CacheManager` from the application context. Cache configuratio
 
 ---
 
-##### Event Headers
+#### Event Headers
 
 > [!IMPORTANT]
 > The library uses message headers to pass event metadata for idempotency checks and routing.
@@ -534,36 +546,40 @@ The automatic cleanup strategy for consumed events is identical to the publisher
 ## Observability
 ### Publisher
 
+> [!NOTE]
+> The term 'tasks' encompasses both internal outbox background processes and actual event processing.
+
 **Gauges**
 
-| Metric Name                                  | Description                             | Tags                                                      |
-|:---------------------------------------------|:----------------------------------------|:----------------------------------------------------------|
-| `outbox_events`                              | Total number of outbox events           | —                                                         |
-| `outbox_events_by_status`                    | Number of outbox events by status       | `status={pending, in_process}`                            |
-| `outbox_events_by_event_type_and_status`     | Number of outbox events by type         | `event_type`, <br/>`status={pending, in_process}`         |
-| `outbox_dlq_events`                          | Total number of events in DLQ           | —                                                         |
-| `outbox_dlq_events_by_status`                | Number of DLQ events by status          | `status={moved, in_process, to_retry}`                    |
-| `outbox_dlq_events_by_event_type_and_status` | Number of DLQ events by type and status | `event_type`, <br/>`status={moved, in_process, to_retry}` |
+| Metric Name                                  | Description                             | Tags                                                                                                                     |
+|:---------------------------------------------|:----------------------------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| `outbox_events`                              | Total number of outbox events           | —                                                                                                                        |
+| `outbox_events_by_status`                    | Number of outbox events by status       | `status={pending, in_process}`                                                                                           |
+| `outbox_events_by_event_type_and_status`     | Number of outbox events by type         | `event_type`, <br/>`status={pending, in_process}`                                                                        |
+| `outbox_dlq_events`                          | Total number of events in DLQ           | —                                                                                                                        |
+| `outbox_dlq_events_by_status`                | Number of DLQ events by status          | `status={moved, in_process, to_retry}`                                                                                   |
+| `outbox_dlq_events_by_event_type_and_status` | Number of DLQ events by type and status | `event_type`, <br/>`status={moved, in_process, to_retry}`                                                                |
+| `outbox_polling_delay_milliseconds`          | Current delay between tasks execution   | `task_type={clean-up-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq}` or declared event type |
 
-All gauges execute `COUNT` queries against the database and therefore reflect the **exact number of events at the current moment**.
+All event related gauges execute `COUNT` queries against the database and therefore reflect the **exact number of events at the current moment**.
 
 To avoid excessive database load caused by Prometheus scraping, gauge values are **cached by default**.
 Caching can be disabled via metrics configuration.
 
 **Counters**
 
-| Metric Name                                   | Description                    | Tags                                                                            |
-|:----------------------------------------------|:-------------------------------|:--------------------------------------------------------------------------------|
-| `outbox_events_rate_total`                    | Processed events rate          | `event_type`, <br/>`status={processed}`                                         |
-| `outbox_events_by_action_type_rate_total`     | Internal lifecycle events rate | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`   |
-| `outbox_dlq_events_by_action_type_rate_total` | DLQ operational events rate    | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}` |
+| Metric Name                                                                                                                      | Description                    | Tags                                                                                                                     |
+|:---------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| `outbox_events_rate_total`                                                                                                       | Processed events rate          | `event_type`, <br/>`status={processed}`                                                                                  |
+| `outbox_events_by_action_type_rate_total`                                                                                        | Internal lifecycle events rate | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`                                            |
+| `outbox_dlq_events_by_action_type_rate_total`                                                                                    | DLQ operational events rate    | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}`                                          |
+| `outbox_started_tasks_total`<br/>`outbox_skipped_tasks_total`<br/>`outbox_succeeded_tasks_total`<br/>`outbox_failed_tasks_total` | Rate of task execution states  | `task_type={clean-up-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq}` or declared event type |
 
 **Timers**
 
-| Metric Name                         | Description                                         |
-|:------------------------------------|:----------------------------------------------------|
-| `outbox_dlq_transfer_to_duration`   | Duration of batch transfers from outbox to DLQ      |
-| `outbox_dlq_transfer_from_duration` | Duration of batch transfers from DLQ back to outbox |
+| Metric Name                       | Description                 | Tags                                                                                                                     |
+|:----------------------------------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------|
+| `outbox_task_processing_duration` | Duration of task processing | `task_type={clean-up-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq}` or declared event type |
 
 These timers help identify performance bottlenecks during bulk recovery or DLQ reprocessing operations.
 
@@ -571,12 +587,26 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 
 ### Consumer
 
+**Gauges**
+
+| Metric Name                         | Description                           | Tags                                   |
+|:------------------------------------|:--------------------------------------|:---------------------------------------|
+| `outbox_polling_delay_milliseconds` | Current delay between tasks execution | `task_type={clean-up-consumed-events}` |
+
+
 **Counters**
 
-| Metric Name                          | Description                                        | Tags                                                    |
-|:-------------------------------------|:---------------------------------------------------|:--------------------------------------------------------|
-| `consumed_outbox_events_total`       | Number of consumed outbox events by specific type  | `type={rejected_duplicates, consumed, cleaned, failed}` |
-| `consumed_outbox_cache_action_total` | Number of hit/miss in consumed outbox events cache | `action_type={hit, miss}`                               |
+| Metric Name                                                                                                                      | Description                                        | Tags                                                    |
+|:---------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------|:--------------------------------------------------------|
+| `consumed_outbox_events_total`                                                                                                   | Number of consumed outbox events by specific type  | `type={rejected_duplicates, consumed, cleaned, failed}` |
+| `consumed_outbox_cache_action_total`                                                                                             | Number of hit/miss in consumed outbox events cache | `action_type={hit, miss}`                               |
+| `outbox_started_tasks_total`<br/>`outbox_skipped_tasks_total`<br/>`outbox_succeeded_tasks_total`<br/>`outbox_failed_tasks_total` | Rate of task execution states                      | `task_type={clean-up-consumed-events}`                  |
+
+**Timers**
+
+| Metric Name                       | Description                 | Tags                                   |
+|:----------------------------------|:----------------------------|:---------------------------------------|
+| `outbox_task_processing_duration` | Duration of task processing | `task_type={clean-up-consumed-events}` |
 
 ## Configuration
 ### Global
@@ -620,9 +650,9 @@ outbox:
 ---
 
 #### Polling
-The library provides two polling types: `fixed` and `adaptive`.
+The library supports two polling strategies: `fixed` and `adaptive`.
 
-The properties block for `adaptive` polling looks like this:
+Example configuration for `adaptive` polling:
 ```yaml
 polling: 
   type: adaptive
@@ -632,7 +662,7 @@ polling:
   multiplier: 2.0
 ```
 
-And for `fixed` polling, it looks like this:
+Example configuration for `fixed` polling:
 ```yaml
 polling: 
   type: fixed
@@ -650,7 +680,7 @@ polling:
 | `multiplier`      | Multiplier for exponential backoff between polling iterations          |
 
 > [!NOTE]
-> Polling does not have global defaults. Each property group—such as defaults, current event, cleanup, stuck recovery, and DLQ transfers—has its own polling default values. 
+> Polling does not have global defaults. Each property group-such as defaults, current event, cleanup, stuck recovery, and DLQ transfers-has its own polling default values. 
 ---
 
 #### Defaults & Events
@@ -688,6 +718,7 @@ outbox:
 | `backoff.multiplier`      | Multiplier for exponential backoff                                                                                   |   `3.0`    |
 
 Individual event configurations override defaults for specific event types.
+
 Apache Kafka example:
 ```yaml
 outbox:
@@ -993,6 +1024,8 @@ outbox:
 | Property          | Description               |  Default  |
 |-------------------|---------------------------|:---------:|
 | `metrics.enabled` | Enable metrics collection |  `false`  |
+
+---
 
 ### Examples
 #### Producer-Only
