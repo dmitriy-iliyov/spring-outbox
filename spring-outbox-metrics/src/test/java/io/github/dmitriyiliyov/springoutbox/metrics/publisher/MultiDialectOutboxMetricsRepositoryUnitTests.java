@@ -97,4 +97,36 @@ class MultiDialectOutboxMetricsRepositoryUnitTests {
         // then
         assertThat(result).isEqualTo(expectedCount);
     }
+
+    @Test
+    @DisplayName("UT countByStatus() should handle null result")
+    void countByStatus_shouldHandleNullResult() {
+        EventStatus status = EventStatus.PENDING;
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_events WHERE status = ?",
+                Long.class,
+                status.name())
+        ).thenReturn(null);
+
+        long result = repository.countByStatus(status);
+
+        assertThat(result).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("UT countByEventTypeAndStatus() should handle null result")
+    void countByEventTypeAndStatus_shouldHandleNullResult() {
+        String eventType = "test-event";
+        EventStatus status = EventStatus.PENDING;
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_events WHERE event_type = ? AND status = ?",
+                Long.class,
+                eventType,
+                status.name())
+        ).thenReturn(null);
+
+        long result = repository.countByEventTypeAndStatus(eventType, status);
+
+        assertThat(result).isEqualTo(0L);
+    }
 }

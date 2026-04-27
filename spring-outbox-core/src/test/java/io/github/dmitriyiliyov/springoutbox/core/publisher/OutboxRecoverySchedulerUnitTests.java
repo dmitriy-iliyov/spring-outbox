@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.Continuable;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
@@ -31,11 +33,14 @@ public class OutboxRecoverySchedulerUnitTests {
     @Mock
     OutboxManager manager;
 
+    @Mock
+    ContinuableTaskDecorator decorator;
+
     @InjectMocks
     OutboxRecoveryScheduler tested;
 
     private boolean captureAndRun() {
-        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        ArgumentCaptor<ContinuableTask> captor = ArgumentCaptor.forClass(ContinuableTask.class);
         verify(strategy).scheduleExecution(captor.capture());
         return captor.getValue().run();
     }
@@ -43,6 +48,8 @@ public class OutboxRecoverySchedulerUnitTests {
     @Test
     @DisplayName("UT schedule() should delegate execution to strategy")
     void schedule_shouldDelegateToStrategy() {
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+
         // when
         tested.schedule();
 
@@ -59,6 +66,7 @@ public class OutboxRecoverySchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
         when(manager.recoverStuckBatch(maxProcessingTime, batchSize)).thenReturn(batchSize);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -77,6 +85,7 @@ public class OutboxRecoverySchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
         when(manager.recoverStuckBatch(maxProcessingTime, batchSize)).thenReturn(batchSize - 1);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -95,6 +104,7 @@ public class OutboxRecoverySchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
         when(manager.recoverStuckBatch(maxProcessingTime, batchSize)).thenReturn(0);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -113,6 +123,7 @@ public class OutboxRecoverySchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
         when(manager.recoverStuckBatch(any(), anyInt())).thenReturn(0);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -132,6 +143,7 @@ public class OutboxRecoverySchedulerUnitTests {
         when(properties.getMaxBatchProcessingTime()).thenReturn(maxProcessingTime);
         when(manager.recoverStuckBatch(maxProcessingTime, batchSize))
                 .thenThrow(new RuntimeException("DB error"));
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();

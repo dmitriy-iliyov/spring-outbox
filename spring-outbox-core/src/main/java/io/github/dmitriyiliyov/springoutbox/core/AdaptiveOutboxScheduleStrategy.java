@@ -15,6 +15,7 @@ public class AdaptiveOutboxScheduleStrategy implements OutboxScheduleStrategy {
 
     private final AdaptivePollingPropertiesHolder properties;
     private final ScheduledExecutorService executor;
+    private final OutboxScheduleStrategyListener listener;
     private final long minFixedDelay;
     private final long maxFixedDelay;
     private final double multiplier;
@@ -22,23 +23,26 @@ public class AdaptiveOutboxScheduleStrategy implements OutboxScheduleStrategy {
     private final AtomicBoolean taskInProcess;
 
     public AdaptiveOutboxScheduleStrategy(AdaptivePollingPropertiesHolder properties,
-                                          ScheduledExecutorService executor) {
+                                          ScheduledExecutorService executor,
+                                          OutboxScheduleStrategyListener listener) {
         this.properties = properties;
         this.executor = executor;
         this.minFixedDelay = properties.getMinFixedDelay().toMillis();
         this.maxFixedDelay = properties.getMaxFixedDelay().toMillis();
         this.multiplier = properties.getMultiplier();
+        this.listener = listener;
         this.currentDelay = new AtomicLong(minFixedDelay);
         this.taskInProcess = new AtomicBoolean(false);
     }
 
     @Override
-    public void scheduleExecution(Continuable task) {
+    public void scheduleExecution(ContinuableTask task) {
         scheduleNext(task, properties.getInitialDelay().toMillis());
     }
 
-    private void scheduleNext(Continuable task, long delay) {
+    private void scheduleNext(ContinuableTask task, long delay) {
         if (executor.isShutdown() || !taskInProcess.compareAndSet(false, true)) {
+            listener.onExecutionSkipped();
             return;
         }
         try {
@@ -59,18 +63,23 @@ public class AdaptiveOutboxScheduleStrategy implements OutboxScheduleStrategy {
         }
     }
 
-    private void executeTask(Continuable task) {
+    private void executeTask(ContinuableTask task) {
         boolean shouldContinue = false;
+        listener.onExecutionStarted();
         try {
             shouldContinue = task.run();
+            listener.onExecutionSucceeded();
         } catch (Throwable t) {
+            listener.onExecutionFailed();
             log.error("Exception while executing task", t);
         } finally {
             if (shouldContinue) {
                 currentDelay.set(minFixedDelay);
+                listener.onDelayChanged(minFixedDelay);
             } else {
-                currentDelay.updateAndGet(d -> Math.min((long) (multiplier * d), maxFixedDelay));
-                log.debug("Schedule strategy adapted, current delay is %dms".formatted(currentDelay.get()));
+                long delay = currentDelay.updateAndGet(d -> Math.min((long) (multiplier * d), maxFixedDelay));
+                listener.onDelayChanged(delay);
+                log.debug("Schedule strategy adapted, current delay is %dms".formatted(delay));
             }
             taskInProcess.set(false);
             if (!executor.isShutdown()) {

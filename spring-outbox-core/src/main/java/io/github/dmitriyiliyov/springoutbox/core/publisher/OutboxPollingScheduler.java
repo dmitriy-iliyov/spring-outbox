@@ -1,8 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,18 +11,21 @@ public final class OutboxPollingScheduler implements OutboxScheduler {
     private final OutboxPublisherPropertiesHolder.EventPropertiesHolder properties;
     private final OutboxProcessor processor;
     private final OutboxScheduleStrategy strategy;
+    private final ContinuableTaskDecorator continuableTaskDecorator;
 
     public OutboxPollingScheduler(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties,
                                   OutboxScheduleStrategy strategy,
-                                  OutboxProcessor processor) {
+                                  OutboxProcessor processor,
+                                  ContinuableTaskDecorator continuableTaskDecorator) {
         this.properties = properties;
-        this.processor = processor;
         this.strategy = strategy;
+        this.processor = processor;
+        this.continuableTaskDecorator = continuableTaskDecorator;
     }
 
     @Override
     public void schedule() {
-        strategy.scheduleExecution(() -> {
+        ContinuableTask task = () -> {
             int batchSize = properties.getBatchSize();
             int processedCount = 0;
             try {
@@ -34,6 +35,7 @@ public final class OutboxPollingScheduler implements OutboxScheduler {
                 log.error("Error process outbox events for type={}", properties.getEventType(), e);
             }
             return processedCount == batchSize;
-        });
+        };
+        strategy.scheduleExecution(continuableTaskDecorator.decorate(task));
     }
 }

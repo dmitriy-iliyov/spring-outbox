@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.Continuable;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +17,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
@@ -36,11 +38,14 @@ public class OutboxCleanUpSchedulerUnitTests {
     @Mock
     Clock clock;
 
+    @Mock
+    ContinuableTaskDecorator decorator;
+
     @InjectMocks
     OutboxCleanUpScheduler tested;
 
     private boolean captureAndRun() {
-        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        ArgumentCaptor<ContinuableTask> captor = ArgumentCaptor.forClass(ContinuableTask.class);
         verify(strategy).scheduleExecution(captor.capture());
         return captor.getValue().run();
     }
@@ -68,6 +73,8 @@ public class OutboxCleanUpSchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(batchSize);
 
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+
         // when
         tested.schedule();
         boolean result = captureAndRun();
@@ -89,6 +96,8 @@ public class OutboxCleanUpSchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(batchSize - 1);
 
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+
         // when
         tested.schedule();
         boolean result = captureAndRun();
@@ -109,6 +118,8 @@ public class OutboxCleanUpSchedulerUnitTests {
         when(properties.getTtl()).thenReturn(ttl);
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(0);
+
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -132,6 +143,8 @@ public class OutboxCleanUpSchedulerUnitTests {
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(manager.deleteProcessedBatch(any(), anyInt())).thenReturn(0);
 
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+
         // when
         tested.schedule();
         captureAndRun();
@@ -151,6 +164,8 @@ public class OutboxCleanUpSchedulerUnitTests {
         when(properties.getTtl()).thenReturn(ttl);
         when(properties.getBatchSize()).thenReturn(50);
         when(manager.deleteProcessedBatch(any(), anyInt())).thenThrow(new RuntimeException("DB error"));
+
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();

@@ -17,10 +17,10 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
     private final String cacheName;
     private final CacheManager cacheManager;
     private final ConsumedOutboxManager delegate;
-    private final ConsumedOutboxCacheObserver cacheObserver;
+    private final ConsumedOutboxCacheListener cacheListener;
 
     public ConsumedOutboxManagerCacheDecorator(CacheManager cacheManager, String cacheName, ConsumedOutboxManager delegate,
-                                               ConsumedOutboxCacheObserver cacheObserver) {
+                                               ConsumedOutboxCacheListener cacheListener) {
         Objects.requireNonNull(cacheName, "cacheName cannot be null");
         if (cacheName.isBlank()) {
             throw new IllegalArgumentException("cacheName cannot be empty or blank");
@@ -28,7 +28,7 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
         this.cacheName = cacheName;
         this.cacheManager = cacheManager;
         this.delegate = delegate;
-        this.cacheObserver = cacheObserver;
+        this.cacheListener = cacheListener;
     }
 
     @Override
@@ -38,14 +38,14 @@ public class ConsumedOutboxManagerCacheDecorator implements ConsumedOutboxManage
         if (cache != null) {
             isConsumed = cache.get(id.toString(), String.class) != null;
             if (isConsumed) {
-                cacheObserver.onHit();
+                cacheListener.onHit();
                 return isConsumed;
             }
         } else {
             log.warn("Cache for outbox with name %s not found".formatted(cacheName));
         }
         isConsumed = delegate.isConsumed(id);
-        cacheObserver.onMiss();
+        cacheListener.onMiss();
         if (cache != null) {
             cache.put(id.toString(), "");
         }

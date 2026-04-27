@@ -30,7 +30,7 @@ class ConsumedOutboxManagerCacheDecoratorUnitTests {
     private ConsumedOutboxManager delegate;
 
     @Mock
-    private ConsumedOutboxCacheObserver cacheObserver;
+    private ConsumedOutboxCacheListener cacheObserver;
 
     private ConsumedOutboxManagerCacheDecorator decorator;
 

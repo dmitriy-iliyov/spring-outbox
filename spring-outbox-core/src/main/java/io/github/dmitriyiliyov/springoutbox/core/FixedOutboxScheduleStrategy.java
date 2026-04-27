@@ -12,20 +12,27 @@ public class FixedOutboxScheduleStrategy implements OutboxScheduleStrategy {
 
     private final FixedPollingPropertiesHolder properties;
     private final ScheduledExecutorService executor;
+    private final OutboxScheduleStrategyListener listener;
 
     public FixedOutboxScheduleStrategy(FixedPollingPropertiesHolder properties,
-                                       ScheduledExecutorService executor) {
+                                       ScheduledExecutorService executor,
+                                       OutboxScheduleStrategyListener listener) {
         this.properties = properties;
         this.executor = executor;
+        this.listener = listener;
     }
 
     @Override
-    public void scheduleExecution(Continuable task) {
+    public void scheduleExecution(ContinuableTask task) {
+        listener.onDelayChanged(properties.getFixedDelay().toMillis());
         executor.scheduleWithFixedDelay(
                 () -> {
+                    listener.onExecutionStarted();
                     try {
                         task.run();
+                        listener.onExecutionSucceeded();
                     } catch (Throwable t) {
+                        listener.onExecutionFailed();
                         log.error("Exception in scheduled execution", t);
                     }
                 },

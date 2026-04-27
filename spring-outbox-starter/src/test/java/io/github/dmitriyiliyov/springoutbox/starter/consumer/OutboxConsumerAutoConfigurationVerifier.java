@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheListener;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -77,6 +78,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(DefaultOutboxIdempotentConsumer.class);
                     assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerMetricsDecorator.class);
+                    assertThat(ctx).hasSingleBean(MetricsConsumedOutboxCacheListener.class);
 
                     assertThat(ctx).hasSingleBean(ConsumedOutboxManagerCacheDecoratorSupplier.class);
                     assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);

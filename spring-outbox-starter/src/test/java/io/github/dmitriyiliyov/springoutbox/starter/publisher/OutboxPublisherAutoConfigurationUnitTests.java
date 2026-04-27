@@ -5,9 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.starter.BeanNameUtils;
-import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
+import io.github.dmitriyiliyov.springoutbox.starter.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,6 +53,12 @@ class OutboxPublisherAutoConfigurationUnitTests {
 
     @Mock
     private OutboxPublisherProperties.EventProperties eventPropertiesHolder;
+
+    @Mock
+    private OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier;
+
+    @Mock
+    private ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier;
 
     @BeforeEach
     void setUp() {
@@ -171,7 +175,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
                     .thenReturn("testEventOutboxPublisherScheduler");
 
             SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    mockedPublisherProperties, executor, processor, manager, clock, factory
+                    mockedPublisherProperties, executor, processor, manager, clock, factory,
+                    scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
             );
 
             initializer.afterSingletonsInstantiated();
@@ -201,7 +206,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
             when(factory.containsBean("testEventOutboxPublisherScheduler")).thenReturn(true);
 
             SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    mockedPublisherProperties, executor, processor, manager, clock, factory
+                    mockedPublisherProperties, executor, processor, manager, clock, factory,
+                    scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
             );
 
             initializer.afterSingletonsInstantiated();
@@ -228,7 +234,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
         when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                mockedPublisherProperties, executor, processor, manager, clock, factory
+                mockedPublisherProperties, executor, processor, manager, clock, factory,
+                scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
         );
 
         initializer.afterSingletonsInstantiated();
@@ -250,7 +257,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
         when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                mockedPublisherProperties, executor, processor, manager, clock, factory
+                mockedPublisherProperties, executor, processor, manager, clock, factory,
+                scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
         );
 
         assertThatThrownBy(initializer::afterSingletonsInstantiated)

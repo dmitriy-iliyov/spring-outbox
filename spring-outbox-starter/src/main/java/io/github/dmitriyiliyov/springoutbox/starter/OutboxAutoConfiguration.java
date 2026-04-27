@@ -2,12 +2,14 @@ package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
@@ -50,6 +52,32 @@ public class OutboxAutoConfiguration {
     @ConditionalOnMissingBean(name = "outboxJdbcTemplate")
     public JdbcTemplate outboxJdbcTemplate(DataSource dataSource) {
         return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public OutboxScheduleStrategyListenerSupplier outboxScheduleStrategyListenerSupplier() {
+        return new NoopOutboxScheduleStrategyListenerSupplier();
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnAnyMetricsEnabled
+    public OutboxScheduleStrategyListenerSupplier metricsOutboxScheduleStrategyListenerSupplier(MeterRegistry registry) {
+        return new MetricsOutboxScheduleStrategyListenerSupplier(registry);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier() {
+        return new NoopContinuableTaskDecoratorSupplier();
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnAnyMetricsEnabled
+    public ContinuableTaskDecoratorSupplier metricsContinuableTaskDecoratorSupplier(MeterRegistry registry) {
+        return new ContinuableTaskTimeMeasureDecoratorSupplier(registry);
     }
 
     @Bean(destroyMethod = "shutdown")

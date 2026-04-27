@@ -1,15 +1,15 @@
 package io.github.dmitriyiliyov.springoutbox.metrics.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxCacheObserver;
+import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxCacheListener;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-public class MetricsConsumedOutboxCacheObserver implements ConsumedOutboxCacheObserver {
+public class MetricsConsumedOutboxCacheListener implements ConsumedOutboxCacheListener {
 
     private final Counter hits;
     private final Counter misses;
 
-    public MetricsConsumedOutboxCacheObserver(MeterRegistry registry) {
+    public MetricsConsumedOutboxCacheListener(MeterRegistry registry) {
         this.hits = registry.counter("consumed_outbox_cache_action_total", "action_type", "hit");
         this.misses = registry.counter("consumed_outbox_cache_action_total", "action_type", "miss");
     }

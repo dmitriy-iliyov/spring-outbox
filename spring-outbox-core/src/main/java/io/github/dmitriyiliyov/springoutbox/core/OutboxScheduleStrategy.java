@@ -7,5 +7,5 @@ public interface OutboxScheduleStrategy {
      *
      * @param task the task to be scheduled. Its execution continues as long as it returns {@code true}.
      */
-    void scheduleExecution(Continuable task);
+    void scheduleExecution(ContinuableTask task);
 }

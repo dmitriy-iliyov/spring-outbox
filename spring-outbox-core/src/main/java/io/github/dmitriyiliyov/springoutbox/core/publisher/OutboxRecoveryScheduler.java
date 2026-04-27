@@ -1,9 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,18 +12,21 @@ public final class OutboxRecoveryScheduler implements OutboxScheduler {
     private final OutboxPublisherPropertiesHolder.StuckRecoveryPropertiesHolder properties;
     private final OutboxScheduleStrategy strategy;
     private final OutboxManager manager;
+    private final ContinuableTaskDecorator continuableTaskDecorator;
 
     public OutboxRecoveryScheduler(OutboxPublisherPropertiesHolder.StuckRecoveryPropertiesHolder properties,
                                    OutboxScheduleStrategy strategy,
-                                   OutboxManager manager) {
+                                   OutboxManager manager,
+                                   ContinuableTaskDecorator continuableTaskDecorator) {
         this.properties = properties;
         this.strategy = strategy;
         this.manager = manager;
+        this.continuableTaskDecorator = continuableTaskDecorator;
     }
 
     @Override
     public void schedule() {
-        strategy.scheduleExecution(() -> {
+        ContinuableTask continuableTask = () -> {
             int batchSize = properties.getBatchSize();
             int recoveredCount = 0;
             try {
@@ -35,6 +36,7 @@ public final class OutboxRecoveryScheduler implements OutboxScheduler {
                 log.error("Error process recover stuck outbox events", e);
             }
             return recoveredCount == batchSize;
-        });
+        };
+        strategy.scheduleExecution(continuableTaskDecorator.decorate(continuableTask));
     }
 }

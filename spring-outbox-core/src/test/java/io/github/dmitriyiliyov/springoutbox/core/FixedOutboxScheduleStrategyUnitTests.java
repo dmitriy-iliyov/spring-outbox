@@ -27,7 +27,10 @@ public class FixedOutboxScheduleStrategyUnitTests {
     ScheduledExecutorService executor;
 
     @Mock
-    Continuable task;
+    ContinuableTask task;
+
+    @Mock
+    OutboxScheduleStrategyListener listener;
 
     @InjectMocks
     FixedOutboxScheduleStrategy tested;
@@ -50,6 +53,7 @@ public class FixedOutboxScheduleStrategyUnitTests {
 
         // then
         verify(executor).scheduleWithFixedDelay(any(Runnable.class), anyLong(), anyLong(), any(TimeUnit.class));
+        verify(listener).onDelayChanged(nullable(Long.class));
     }
 
     @Test
@@ -71,6 +75,7 @@ public class FixedOutboxScheduleStrategyUnitTests {
                 eq(fixedDelay.toMillis()),
                 eq(TimeUnit.MILLISECONDS)
         );
+        verify(listener).onDelayChanged(nullable(Long.class));
     }
 
     @Test
@@ -86,6 +91,7 @@ public class FixedOutboxScheduleStrategyUnitTests {
 
         // then
         verify(task).run();
+        verify(listener).onDelayChanged(nullable(Long.class));
     }
 
     @Test
@@ -102,6 +108,7 @@ public class FixedOutboxScheduleStrategyUnitTests {
 
         // then
         assertDoesNotThrow(runnable::run);
+        verify(listener).onDelayChanged(nullable(Long.class));
     }
 
     @Test
@@ -118,6 +125,7 @@ public class FixedOutboxScheduleStrategyUnitTests {
 
         // then
         assertDoesNotThrow(runnable::run);
+        verify(listener).onDelayChanged(nullable(Long.class));
     }
 
     @Test
@@ -132,5 +140,6 @@ public class FixedOutboxScheduleStrategyUnitTests {
 
         // then
         verify(executor).scheduleWithFixedDelay(any(), anyLong(), anyLong(), eq(TimeUnit.MILLISECONDS));
+        verify(listener).onDelayChanged(nullable(Long.class));
     }
 }

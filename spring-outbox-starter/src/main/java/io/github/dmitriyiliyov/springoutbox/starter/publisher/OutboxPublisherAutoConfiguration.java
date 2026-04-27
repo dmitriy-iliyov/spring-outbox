@@ -3,18 +3,19 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidV7Generator;
+import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.starter.BeanNameUtils;
-import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
-import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
+import io.github.dmitriyiliyov.springoutbox.starter.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,59 +122,109 @@ public class OutboxPublisherAutoConfiguration {
             OutboxProcessor processor,
             OutboxManager manager,
             Clock clock,
-            ConfigurableListableBeanFactory factory
+            ConfigurableListableBeanFactory factory,
+            OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+            ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier
     ) {
         return () -> {
             log.debug("Start initialize schedulers beans");
-            log.debug(manager.getClass().getName());
+
+            // register event processing schedulers
             for (OutboxPublisherProperties.EventProperties event : publisherProperties.getEvents().values()) {
                 String beanName = BeanNameUtils.toBeanName(event.getEventType(), "OutboxPublisherScheduler");
                 if (!factory.containsBean(beanName)) {
-                    factory.registerSingleton(
-                            beanName,
-                            new OutboxPollingScheduler(
-                                    event,
-                                    OutboxScheduleStrategyFactory.create(event.getPolling(), executor),
-                                    processor
-                            )
+                    registerOutboxPollingScheduler(
+                            factory, beanName, event, executor, scheduleStrategyListenerSupplier, processor,
+                            continuableTaskDecoratorSupplier
                     );
                     log.debug("Created bean with beanName {}", beanName);
                 }
             }
 
-            String recoverySchedulerBeanName = "outboxRecoveryScheduler";
-            factory.registerSingleton(
-                    recoverySchedulerBeanName,
-                    new OutboxRecoveryScheduler(
-                            publisherProperties.getStuckRecovery(),
-                            OutboxScheduleStrategyFactory.create(
-                                    publisherProperties.getStuckRecovery().getPolling(),
-                                    executor
-                            ),
-                            manager
-                    )
+            // register stuck event recovery scheduler
+            String recoverySchedulerBeanName = BeanName.STUCK_RECOVERY_SCHEDULER.getName();
+            registerOutboxRecoveryScheduler(
+                    factory, recoverySchedulerBeanName, publisherProperties.getStuckRecovery(), executor,
+                    scheduleStrategyListenerSupplier, manager, continuableTaskDecoratorSupplier
             );
             log.debug("Created bean with beanName {}", recoverySchedulerBeanName);
 
+            // register clean up scheduler
             if (publisherProperties.isCleanUpEnabled()) {
                 OutboxProperties.CleanUpProperties cleanUpProperties = publisherProperties.getCleanUp();
                 if (cleanUpProperties == null) {
                     throw new IllegalStateException("OutboxProperties.CleanUpProperties is null");
                 }
-                String cleanUpSchedulerBeanName = "outboxCleanUpScheduler";
-                factory.registerSingleton(
-                        cleanUpSchedulerBeanName,
-                        new OutboxCleanUpScheduler(
-                                cleanUpProperties,
-                                OutboxScheduleStrategyFactory.create(cleanUpProperties.getPolling(), executor),
-                                clock,
-                                manager
-                        )
+                String cleanUpSchedulerBeanName = BeanName.CLEANUP_SCHEDULER.getName();
+                registerOutboxCleanUpScheduler(
+                        factory, cleanUpSchedulerBeanName, cleanUpProperties, executor, scheduleStrategyListenerSupplier,
+                        clock, manager, continuableTaskDecoratorSupplier
                 );
                 log.debug("Created bean with beanName {}", cleanUpSchedulerBeanName);
             }
             log.debug("Schedulers beans successfully initialized");
         };
+    }
+    
+    private void registerOutboxPollingScheduler(ConfigurableListableBeanFactory factory,
+                                                String beanName,
+                                                OutboxPublisherProperties.EventProperties event,
+                                                ScheduledExecutorService executor,
+                                                OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+                                                OutboxProcessor processor,
+                                                ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(
+                event.getEventType(),
+                event.getPolling(),
+                executor,
+                scheduleStrategyListenerSupplier
+        );
+        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(event.getEventType());
+        factory.registerSingleton(
+                beanName,
+                new OutboxPollingScheduler(event, strategy, processor, continuableTaskDecorator)
+        );
+    }
+    
+    private void registerOutboxRecoveryScheduler(ConfigurableListableBeanFactory factory,
+                                                 String beanName,
+                                                 OutboxPublisherProperties.StuckRecoveryProperties recoveryProperties,
+                                                 ScheduledExecutorService executor,
+                                                 OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+                                                 OutboxManager manager,
+                                                 ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(
+                MetricsTaskType.STUCK_RECOVERY.getValue(),
+                recoveryProperties.getPolling(),
+                executor,
+                scheduleStrategyListenerSupplier
+        );
+        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(MetricsTaskType.STUCK_RECOVERY.getValue());
+        factory.registerSingleton(
+                beanName,
+                new OutboxRecoveryScheduler(recoveryProperties, strategy, manager, continuableTaskDecorator)
+        );
+    }
+
+    private void registerOutboxCleanUpScheduler(ConfigurableListableBeanFactory factory,
+                                                String cleanUpSchedulerBeanName,
+                                                OutboxProperties.CleanUpProperties cleanUpProperties,
+                                                ScheduledExecutorService executor,
+                                                OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+                                                Clock clock,
+                                                OutboxManager manager,
+                                                ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(
+                MetricsTaskType.PUBLISHER_CLEANUP.getValue(),
+                cleanUpProperties.getPolling(),
+                executor,
+                scheduleStrategyListenerSupplier
+        );
+        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(MetricsTaskType.PUBLISHER_CLEANUP.getValue());
+        factory.registerSingleton(
+                cleanUpSchedulerBeanName,
+                new OutboxCleanUpScheduler(cleanUpProperties, strategy, clock, manager, continuableTaskDecorator)
+        );
     }
 
     @Bean

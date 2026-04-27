@@ -1,8 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,20 +15,23 @@ public final class OutboxCleanUpScheduler implements OutboxScheduler {
     private final OutboxScheduleStrategy strategy;
     private final Clock clock;
     private final OutboxManager manager;
+    private final ContinuableTaskDecorator continuableTaskDecorator;
 
     public OutboxCleanUpScheduler(OutboxPropertiesHolder.CleanUpPropertiesHolder cleanupProperties,
                                   OutboxScheduleStrategy strategy,
                                   Clock clock,
-                                  OutboxManager manager) {
+                                  OutboxManager manager,
+                                  ContinuableTaskDecorator continuableTaskDecorator) {
         this.properties = cleanupProperties;
         this.strategy = strategy;
         this.clock = clock;
         this.manager = manager;
+        this.continuableTaskDecorator = continuableTaskDecorator;
     }
 
     @Override
     public void schedule() {
-        strategy.scheduleExecution(() -> {
+        ContinuableTask task = () -> {
             int batchSize = properties.getBatchSize();
             int deletedCount = 0;
             try {
@@ -41,6 +42,7 @@ public final class OutboxCleanUpScheduler implements OutboxScheduler {
                 log.error("Error process clean up outbox", e);
             }
             return deletedCount == batchSize;
-        });
+        };
+        strategy.scheduleExecution(continuableTaskDecorator.decorate(task));
     }
 }

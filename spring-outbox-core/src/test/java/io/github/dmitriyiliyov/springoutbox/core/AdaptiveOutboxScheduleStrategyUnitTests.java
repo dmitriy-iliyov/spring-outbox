@@ -20,10 +20,20 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AdaptiveOutboxScheduleStrategyUnitTests {
 
-    @Mock private AdaptivePollingPropertiesHolder properties;
-    @Mock private ScheduledExecutorService executor;
-    @Mock private Continuable task;
-    @Mock private ScheduledFuture<?> scheduledFuture;
+    @Mock
+    private AdaptivePollingPropertiesHolder properties;
+
+    @Mock
+    private ScheduledExecutorService executor;
+
+    @Mock
+    private OutboxScheduleStrategyListener listener;
+
+    @Mock
+    private ContinuableTask task;
+
+    @Mock
+    private ScheduledFuture<?> scheduledFuture;
 
     private AdaptiveOutboxScheduleStrategy strategy;
 
@@ -38,7 +48,7 @@ class AdaptiveOutboxScheduleStrategyUnitTests {
         when(properties.getMaxFixedDelay()).thenReturn(Duration.ofMillis(MAX_DELAY));
         when(properties.getInitialDelay()).thenReturn(Duration.ofMillis(INITIAL_DELAY));
         when(properties.getMultiplier()).thenReturn(MULTIPLIER);
-        strategy = new AdaptiveOutboxScheduleStrategy(properties, executor);
+        strategy = new AdaptiveOutboxScheduleStrategy(properties, executor, listener);
     }
 
     @Test

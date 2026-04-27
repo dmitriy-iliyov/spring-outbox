@@ -1,6 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.core.Continuable;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
@@ -12,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -28,11 +30,14 @@ public class OutboxPollingSchedulerUnitTests {
     @Mock
     OutboxProcessor processor;
 
+    @Mock
+    ContinuableTaskDecorator decorator;
+
     @InjectMocks
     OutboxPollingScheduler tested;
 
     private boolean captureAndRun() {
-        ArgumentCaptor<Continuable> captor = ArgumentCaptor.forClass(Continuable.class);
+        ArgumentCaptor<ContinuableTask> captor = ArgumentCaptor.forClass(ContinuableTask.class);
         verify(strategy).scheduleExecution(captor.capture());
         return captor.getValue().run();
     }
@@ -54,6 +59,7 @@ public class OutboxPollingSchedulerUnitTests {
         int batchSize = 50;
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(processor.process(properties)).thenReturn(batchSize);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -70,6 +76,7 @@ public class OutboxPollingSchedulerUnitTests {
         int batchSize = 50;
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(processor.process(properties)).thenReturn(batchSize - 1);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -86,6 +93,7 @@ public class OutboxPollingSchedulerUnitTests {
         int batchSize = 50;
         when(properties.getBatchSize()).thenReturn(batchSize);
         when(processor.process(properties)).thenReturn(0);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -101,6 +109,7 @@ public class OutboxPollingSchedulerUnitTests {
         // given
         when(properties.getBatchSize()).thenReturn(50);
         when(processor.process(properties)).thenReturn(0);
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();
@@ -116,6 +125,7 @@ public class OutboxPollingSchedulerUnitTests {
         // given
         when(properties.getBatchSize()).thenReturn(50);
         when(processor.process(properties)).thenThrow(new RuntimeException("DB error"));
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
 
         // when
         tested.schedule();

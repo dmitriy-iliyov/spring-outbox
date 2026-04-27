@@ -4,10 +4,13 @@ import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.messaging.SpringMessageOutboxEventIdResolver;
-import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheObserver;
+import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
+import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheListener;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxEventIdResolver;
+import io.github.dmitriyiliyov.springoutbox.starter.ContinuableTaskDecoratorSupplier;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyListenerSupplier;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +65,8 @@ public class OutboxConsumerAutoConfiguration {
             name = "enabled",
             havingValue = "true"
     )
-    public ConsumedOutboxCacheObserver metricsConsumedOutboxCacheObserver(MeterRegistry registry) {
-        return new MetricsConsumedOutboxCacheObserver(registry);
+    public ConsumedOutboxCacheListener metricsConsumedOutboxCacheListener(MeterRegistry registry) {
+        return new MetricsConsumedOutboxCacheListener(registry);
     }
 
     @Bean
@@ -73,8 +76,8 @@ public class OutboxConsumerAutoConfiguration {
             havingValue = "false",
             matchIfMissing = true
     )
-    public ConsumedOutboxCacheObserver noopConsumedOutboxCacheObserver() {
-        return NoopConsumedOutboxCacheObserver.INSTANCE;
+    public ConsumedOutboxCacheListener noopConsumedOutboxCacheListener() {
+        return ConsumedOutboxCacheListener.NOOP;
     }
 
     @Bean
@@ -86,12 +89,12 @@ public class OutboxConsumerAutoConfiguration {
     )
     public ConsumedOutboxManagerDecoratorSupplier consumedOutboxManagerCacheDecoratorFactory(
             CacheManager cacheManager,
-            ConsumedOutboxCacheObserver cacheObserver
+            ConsumedOutboxCacheListener cacheListener
     ) {
         return new ConsumedOutboxManagerCacheDecoratorSupplier(
                 cacheManager,
                 properties.getCache().getCacheName(),
-                cacheObserver
+                cacheListener
         );
     }
 
@@ -171,12 +174,20 @@ public class OutboxConsumerAutoConfiguration {
     @ConditionalOnProperty(prefix = "outbox.consumer.clean-up", name = "enabled", havingValue = "true")
     public OutboxScheduler consumedOutboxCleanUpScheduler(
             @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
-            ConsumedOutboxManager manager
+            ConsumedOutboxManager manager,
+            OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
+            ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier
     ) {
         return new ConsumedOutboxCleanUpScheduler(
                 properties.getCleanUp(),
-                OutboxScheduleStrategyFactory.create(properties.getCleanUp().getPolling(), executor),
-                manager
+                OutboxScheduleStrategyFactory.create(
+                        MetricsTaskType.CONSUMER_CLEANUP.getValue(),
+                        properties.getCleanUp().getPolling(),
+                        executor,
+                        scheduleStrategyListenerSupplier
+                ),
+                manager,
+                continuableTaskDecoratorSupplier.supply(MetricsTaskType.CONSUMER_CLEANUP.getValue())
         );
     }
 }

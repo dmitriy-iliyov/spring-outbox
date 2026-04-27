@@ -81,4 +81,49 @@ class MultiDialectOutboxDlqMetricsRepositoryUnitTests {
         // then
         assertThat(result).isEqualTo(expectedCount);
     }
+
+    @Test
+    @DisplayName("UT count() should handle null result")
+    void count_shouldHandleNullResult() {
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_dlq_events",
+                Long.class)
+        ).thenReturn(null);
+
+        long result = repository.count();
+
+        assertThat(result).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("UT countByStatus() should handle null result")
+    void countByStatus_shouldHandleNullResult() {
+        DlqStatus status = DlqStatus.MOVED;
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_dlq_events WHERE dlq_status = ?",
+                Long.class,
+                status.name())
+        ).thenReturn(null);
+
+        long result = repository.countByStatus(status);
+
+        assertThat(result).isEqualTo(0L);
+    }
+
+    @Test
+    @DisplayName("UT countByEventTypeAndStatus() should handle null result")
+    void countByEventTypeAndStatus_shouldHandleNullResult() {
+        String eventType = "test-event";
+        DlqStatus status = DlqStatus.MOVED;
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_dlq_events WHERE event_type = ? AND dlq_status = ?",
+                Long.class,
+                eventType,
+                status.name())
+        ).thenReturn(null);
+
+        long result = repository.countByEventTypeAndStatus(eventType, status);
+
+        assertThat(result).isEqualTo(0L);
+    }
 }

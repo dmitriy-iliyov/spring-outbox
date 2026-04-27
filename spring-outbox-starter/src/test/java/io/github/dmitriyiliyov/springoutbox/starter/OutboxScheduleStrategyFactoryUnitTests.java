@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 public class OutboxScheduleStrategyFactoryUnitTests {
 
@@ -20,10 +21,10 @@ public class OutboxScheduleStrategyFactoryUnitTests {
         // given
         OutboxProperties.PollingProperties properties = new OutboxProperties.PollingProperties();
         properties.setType(PollingType.FIXED);
-        ScheduledExecutorService executorMock = Mockito.mock(ScheduledExecutorService.class);
+        ScheduledExecutorService executorMock = mock(ScheduledExecutorService.class);
 
         // when
-        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(properties, executorMock);
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create("taskType", properties, executorMock, mock(OutboxScheduleStrategyListenerSupplier.class));
 
         // then
         assertNotNull(strategy);
@@ -42,10 +43,10 @@ public class OutboxScheduleStrategyFactoryUnitTests {
         properties.setMaxFixedDelay(Duration.ofSeconds(10));
         properties.setMultiplier(2.0);
         
-        ScheduledExecutorService executorMock = Mockito.mock(ScheduledExecutorService.class);
+        ScheduledExecutorService executorMock = mock(ScheduledExecutorService.class);
 
         // when
-        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(properties, executorMock);
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create("taskType", properties, executorMock, mock(OutboxScheduleStrategyListenerSupplier.class));
 
         // then
         assertNotNull(strategy);
@@ -59,11 +60,11 @@ public class OutboxScheduleStrategyFactoryUnitTests {
         // given
         OutboxProperties.PollingProperties properties = new OutboxProperties.PollingProperties();
         properties.setType(null);
-        ScheduledExecutorService executorMock = Mockito.mock(ScheduledExecutorService.class);
+        ScheduledExecutorService executorMock = mock(ScheduledExecutorService.class);
 
         // when
         IllegalStateException e = assertThrows(IllegalStateException.class,
-                () -> OutboxScheduleStrategyFactory.create(properties, executorMock));
+                () -> OutboxScheduleStrategyFactory.create("taskType", properties, executorMock, mock(OutboxScheduleStrategyListenerSupplier.class)));
 
         // then
         assertEquals("Reached unreachable branch during creating OutboxScheduleStrategy", e.getMessage());
