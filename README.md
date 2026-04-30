@@ -19,7 +19,7 @@ This approach ensures reliable event publication without relying on database log
 - **Adaptive polling** - dynamically adjusts the polling interval based on workload to optimize database usage.
 - **Flexible polling configuration** - allows customization of polling intervals, retry policies, and backoff strategies per event type.
 - **At-least-once delivery** - guarantees delivery with configurable retries and backoff policies.
-- **Effectively-once processing** - achieved via an idempotent consumer implementation provided by the library.
+- **Effectively-once delivery** - achieved via an idempotent consumer implementation provided by the library.
 - **Dead Letter Queue** - stores events that fail after all retry attempts, with REST API support for management.
 - **Background service** - handles recovery of stuck events and cleanup of processed or consumed events automatically.
 - **Observability** - provides out-of-the-box metrics integration via Micrometer.
@@ -304,13 +304,12 @@ public interface OutboxPublisher {
 @Documented
 public @interface OutboxPublish {
   String eventType();
-  @Language("SpEL")
   String payload() default "#result";
 }
 ```
 Both approaches require specifying the eventType in accordance with the YAML configuration and support saving events in batches.
 When using the annotation-based approach, the payload can be derived from method parameters or the return value and is configured via SpEL expressions (e.g. by referencing a parameter name).
-More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-publisher-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/publisher/OrderService.java).
+More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-producer-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/producer/OrderService.java).
 
 ---
 
@@ -414,15 +413,15 @@ The Dead Letter Queue provides a REST API for managing events that have failed d
 > [!WARNING]
 > You should secure DLQ REST API paths.
 
-| Method                                                | Path                           | Params                                                        | Request Body                                | Description                                                                   |
-|:------------------------------------------------------|:-------------------------------|:--------------------------------------------------------------|:--------------------------------------------|-------------------------------------------------------------------------------|
-| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                           | Get DLQ event by ID                                                           |
-| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/batch` | status: DlqStatus, <br/>batchNumber: int, <br/>batchSize: int | —                                           | Get batch of DLQ events                                                       |
-| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/count` | status: DlqStatus                                             | —                                           | Get the number of DLQ events by status, count all if the parameter is missing |
-| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | status: DlqStatus                           | Update single DLQ event status                                                |
-| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/batch` | —                                                             | ids: Set&lt;UUID&gt;,<br/>status: DlqStatus | Update batch DLQ events status                                                |
-| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/{id}`  | id: UUID                                                      | —                                           | Delete single DLQ event                                                       |
-| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/batch` | —                                                             | ids: Set&lt;UUID&gt;                        | Delete batch of DLQ events                                                    |
+| Method                                                | Path                           | Params                                                                                | Request Body                                                         | Description                                                                                           |
+|:------------------------------------------------------|:-------------------------------|:--------------------------------------------------------------------------------------|:---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/{id}`  | id: UUID                                                                              | —                                                                    | Get DLQ event by ID                                                                                   |
+| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/batch` | status: DlqStatus, <br/>eventType: String, <br/>batchNumber: int, <br/>batchSize: int | —                                                                    | Get batch of DLQ events by status or eventType, returnig without sort all if the parameter is missing |
+| ![GET](https://img.shields.io/badge/GET-4CAF50)       | `/api/outbox-dlq/events/count` | status: DlqStatus, <br/>eventType: String                                             | —                                                                    | Get the number of DLQ by status or eventType, count all if the parameter is missing                   |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/{id}`  | id: UUID                                                                              | status: DlqStatus                                                    | Update single DLQ event status                                                                        |
+| ![PATCH](https://img.shields.io/badge/PATCH-9C27B0)   | `/api/outbox-dlq/events/batch` | —                                                                                     | ids: Set&lt;UUID&gt;, <br/>eventType: String, <br/>status: DlqStatus | Update batch DLQ events status by status or eventType, not both                                       |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/{id}`  | id: UUID                                                                              | —                                                                    | Delete single DLQ event                                                                               |
+| ![DELETE](https://img.shields.io/badge/DELETE-F44336) | `/api/outbox-dlq/events/batch` | —                                                                                     | ids: Set&lt;UUID&gt;, <br/>eventType: String                         | Delete batch of DLQ events by status or eventType, not both                                           |
 
 Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
 

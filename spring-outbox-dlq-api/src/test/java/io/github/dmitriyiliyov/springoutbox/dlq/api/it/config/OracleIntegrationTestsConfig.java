@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.dlq.api.it.config;
 
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OracleOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiRepository;
@@ -13,6 +13,7 @@ import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
+import java.time.Clock;
 
 @TestConfiguration
 @Profile("oracle-it")
@@ -38,7 +39,7 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqApiRepository oracleOutboxDlqWebRepository(DataSource dataSource) {
-        return new OracleOutboxDlqApiRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    public OutboxDlqApiRepository oracleOutboxDlqWebRepository(DataSource dataSource, Clock clock) {
+        return new OracleOutboxDlqApiRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesResultSetMapper(), clock);
     }
 }

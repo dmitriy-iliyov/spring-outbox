@@ -21,10 +21,10 @@ import java.util.UUID;
 @RequestMapping("/api/outbox-dlq/events")
 public class OutboxDlqController {
 
-    private final OutboxDlqApiManager manager;
+    private final OutboxDlqApiService service;
 
-    public OutboxDlqController(OutboxDlqApiManager manager) {
-        this.manager = manager;
+    public OutboxDlqController(OutboxDlqApiService service) {
+        this.service = service;
     }
 
     @Operation(summary = "Get event by id")
@@ -36,10 +36,10 @@ public class OutboxDlqController {
     @GetMapping("/{id}")
     public OutboxDlqEvent get(@Parameter(description = "Id of the DLQ event", required = true)
                               @PathVariable("id") UUID id) {
-        return manager.findById(id);
+        return service.findById(id);
     }
 
-    @Operation(summary = "Get events by DLQ status with pagination")
+    @Operation(summary = "DLQ events pagination by status and/or event type (paginating of all events if no parameters are provided")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200", description = "Event batch successfully retrieved",
@@ -48,10 +48,10 @@ public class OutboxDlqController {
     })
     @GetMapping("/batch")
     public List<OutboxDlqEvent> getBatch(@ModelAttribute @Valid BatchRequest request) {
-        return manager.findBatch(request);
+        return service.findBatch(request);
     }
 
-    @Operation(summary = "Count DLQ events by status")
+    @Operation(summary = "Count DLQ events by status and/or event type (counts all events if no parameters are provided)")
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200", description = "Event count successfully retrieved",
@@ -59,9 +59,11 @@ public class OutboxDlqController {
             )
     })
     @GetMapping("/count")
-    public Long getCount(@Parameter(description = "DLQ event status to count events")
-                         @RequestParam(value = "status", required = false) DlqStatus status) {
-        return manager.count(status);
+    public Long getCount(@Parameter(description = "DLQ event status to processedCount events")
+                         @RequestParam(value = "status", required = false) DlqStatus status,
+                         @Parameter(description = "Event type to processedCount events")
+                         @RequestParam(value = "eventType", required = false) String eventType) {
+        return service.count(status, eventType);
     }
 
     @Operation(summary = "Update event's DLQ status")
@@ -74,17 +76,20 @@ public class OutboxDlqController {
     public void updateStatus(@Parameter(description = "Id of the DLQ event to update", required = true)
                              @PathVariable("id") UUID id,
                              @RequestBody @Valid DlqStatusDto dto) {
-        manager.updateStatus(id, dto.status());
+        service.updateStatus(id, dto.status());
     }
 
-    @Operation(summary = "Update DLQ status for multiple events by ids")
+    @Operation(summary = "Update DLQ status for multiple events by ids or event type")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Event batch successfully updated")
+            @ApiResponse(
+                    responseCode = "200", description = "Event batch successfully updated",
+                    content = @Content(schema = @Schema(implementation = BatchModificationResponse.class))
+            )
     })
     @PatchMapping("/batch")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateBatchStatus(@RequestBody @Valid BatchUpdateRequest request) {
-        manager.updateBatchStatus(request);
+    @ResponseStatus(HttpStatus.OK)
+    public BatchModificationResponse updateBatchStatus(@RequestBody @Valid BatchUpdateRequest request) {
+        return service.updateBatchStatus(request);
     }
 
     @Operation(summary = "Delete event by id")
@@ -96,16 +101,19 @@ public class OutboxDlqController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@Parameter(description = "Id of the DLQ event to delete", required = true)
                        @PathVariable("id") UUID id) {
-        manager.deleteById(id);
+        service.deleteById(id);
     }
 
-    @Operation(summary = "Delete multiple events by ids")
+    @Operation(summary = "Delete multiple events by ids or event type")
     @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Event batch successfully deleted")
+            @ApiResponse(
+                    responseCode = "204", description = "Event batch successfully deleted",
+                    content = @Content(schema = @Schema(implementation = BatchModificationResponse.class))
+            )
     })
     @DeleteMapping("/batch")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteBatch(@RequestBody @Valid DeleteBatchRequest request) {
-        manager.deleteBatch(request.ids());
+    @ResponseStatus(HttpStatus.OK)
+    public BatchModificationResponse deleteBatch(@RequestBody @Valid BatchDeleteRequest request) {
+        return service.deleteBatch(request);
     }
 }

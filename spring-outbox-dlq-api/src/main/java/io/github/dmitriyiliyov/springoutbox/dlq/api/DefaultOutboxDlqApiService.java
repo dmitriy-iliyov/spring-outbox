@@ -2,7 +2,6 @@ package io.github.dmitriyiliyov.springoutbox.dlq.api;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventBatchNotFoundException;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventInProcessException;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventNotFoundException;
 import org.slf4j.Logger;
@@ -11,17 +10,15 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
-public class DefaultOutboxDlqApiManager implements OutboxDlqApiManager {
+public class DefaultOutboxDlqApiService implements OutboxDlqApiService {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultOutboxDlqApiManager.class);
+    private static final Logger log = LoggerFactory.getLogger(DefaultOutboxDlqApiService.class);
 
     private final OutboxDlqApiRepository repository;
 
-    public DefaultOutboxDlqApiManager(OutboxDlqApiRepository repository) {
+    public DefaultOutboxDlqApiService(OutboxDlqApiRepository repository) {
         this.repository = repository;
     }
 
@@ -34,15 +31,20 @@ public class DefaultOutboxDlqApiManager implements OutboxDlqApiManager {
     @Transactional(readOnly = true)
     @Override
     public List<OutboxDlqEvent> findBatch(BatchRequest request) {
-        return repository.findBatchByStatus(request.status(), request.batchNumber(), request.batchSize());
+        DlqFilter filter = DlqFilter.builder()
+                .status(request.status())
+                .eventType(request.eventType())
+                .build();
+        return repository.findBatch(filter, request.batchNumber(), request.batchSize());
     }
 
     @Override
-    public long count(DlqStatus status) {
-        if (status == null) {
-            return repository.count();
-        }
-        return repository.countByStatus(status);
+    public long count(DlqStatus status, String eventType) {
+        DlqFilter filter = DlqFilter.builder()
+                .status(status)
+                .eventType(eventType)
+                .build();
+        return repository.count(filter);
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
@@ -56,14 +58,19 @@ public class DefaultOutboxDlqApiManager implements OutboxDlqApiManager {
         repository.updateStatus(id, status);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     @Override
-    public void updateBatchStatus(BatchUpdateRequest request) {
-        if (request.ids() == null || request.ids().isEmpty()) {
-            return;
+    public BatchModificationResponse updateBatchStatus(BatchUpdateRequest request) {
+        DlqFilter filter = DlqFilter.builder()
+                .status(request.status())
+                .eventType(request.eventType())
+                .ids(request.ids())
+                .build();
+        int updatedCount = repository.updateBatchStatus(filter, DlqStatus.IN_PROCESS);
+        if (request.hasValidIds()) {
+            return BatchModificationResponse.ofUpdate(request.ids().size(), updatedCount);
         }
-        checkEventsAvailability(request.ids());
-        repository.updateBatchStatus(request.ids(), request.status());
+        return BatchModificationResponse.ofUpdate(updatedCount);
     }
 
     @Transactional(isolation = Isolation.REPEATABLE_READ)
@@ -81,31 +88,15 @@ public class DefaultOutboxDlqApiManager implements OutboxDlqApiManager {
 
     @Transactional
     @Override
-    public int deleteBatch(Set<UUID> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return 0;
+    public BatchModificationResponse deleteBatch(BatchDeleteRequest request) {
+        DlqFilter filter = DlqFilter.builder()
+                .eventType(request.eventType())
+                .ids(request.ids())
+                .build();
+        int deletedCount = repository.deleteBatch(filter, DlqStatus.IN_PROCESS);
+        if (request.hasValidIds()) {
+            return BatchModificationResponse.ofDelete(request.ids().size(), deletedCount);
         }
-        checkEventsAvailability(ids);
-        return repository.deleteBatch(ids);
-    }
-
-    private void checkEventsAvailability(Set<UUID> ids) {
-        List<OutboxDlqEvent> events = repository.findBatch(ids);
-        if (events == null || events.isEmpty()) {
-            throw new OutboxDlqEventBatchNotFoundException(ids);
-        }
-        if (events.size() != ids.size()) {
-            Set<UUID> foundIds = events.stream()
-                    .map(OutboxDlqEvent::getId)
-                    .collect(Collectors.toSet());
-            ids.removeAll(foundIds);
-            throw new OutboxDlqEventBatchNotFoundException(ids);
-        }
-        for (OutboxDlqEvent event: events) {
-            if (DlqStatus.IN_PROCESS.equals(event.getDlqStatus())) {
-                log.debug("Some of events is in 'IN_PROCESS' status; operation impossible");
-                throw new OutboxDlqEventInProcessException(event.getId());
-            }
-        }
+        return BatchModificationResponse.ofDelete(deletedCount);
     }
 }

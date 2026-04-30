@@ -5,9 +5,15 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Repository abstraction for accessing and modifying DLQ events.
+ * <p>
+ * Implementations (such as {@link PostgreSqlOutboxDlqApiRepository}, {@link OracleOutboxDlqApiRepository}
+ * and {@link MySqlOutboxDlqApiRepository}) are expected to perform direct persistence operations
+ * without enforcing business-level validations.
+ */
 public interface OutboxDlqApiRepository {
 
     /**
@@ -19,39 +25,24 @@ public interface OutboxDlqApiRepository {
     Optional<OutboxDlqEvent> findById(UUID id);
 
     /**
-     * Finds a batch of DLQ events by their IDs.
-     * <p>
-     * Returns an empty list if the set is null or empty.
-     * Only events that actually exist are returned - no exception is thrown for missing IDs.
-     *
-     * @param ids the set of event IDs to find.
-     * @return    a list of found DLQ events; may be smaller than {@code ids} if some do not exist.
-     */
-    List<OutboxDlqEvent> findBatch(Set<UUID> ids);
-
-    /**
      * Finds a batch of DLQ events by their status with pagination.
      * <p>
-     * Results are ordered by {@code moved_at} ascending.
+     * Results are ordered by {@code moved_at} and {@code id} ascending.
      *
-     * @param status      the status of the events to find.
-     * @param batchNumber the page number (1-based).
+     * @param filter      the filter criteria to apply.
+     * @param batchNumber the page number (0-based).
      * @param batchSize   the number of events per page.
      * @return            a list of DLQ events for the specified page; empty list if none found.
      */
-    List<OutboxDlqEvent> findBatchByStatus(DlqStatus status, int batchNumber, int batchSize);
+    List<OutboxDlqEvent> findBatch(DlqFilter filter, int batchNumber, int batchSize);
 
     /**
-     * Count all events.
-     */
-    long count();
-
-    /**
-     * Count events by status.
+     * Counts events matching the given filter.
      *
-     * @param status the status of the event to count.
+     * @param filter the filter criteria to apply.
+     * @return       the total number of matching DLQ events.
      */
-    long countByStatus(DlqStatus status);
+    long count(DlqFilter filter);
 
     /**
      * Updates the status of a single DLQ event.
@@ -64,15 +55,16 @@ public interface OutboxDlqApiRepository {
     void updateStatus(UUID id, DlqStatus status);
 
     /**
-     * Updates the status for a batch of DLQ events.
+     * Updates the status for a batch of DLQ events based on the provided filter.
      * <p>
-     * Does nothing if the set is null or empty.
-     * IDs that do not correspond to existing events are silently ignored.
+     * Does nothing if the filter criteria result in no matches.
+     * Events currently in {@code forbiddenStatus} are excluded from the update.
      *
-     * @param ids    the IDs of the events to update.
-     * @param status the new status to set.
+     * @param filter          the filter criteria defining which events to update.
+     * @param forbiddenStatus the status that prevents an event from being updated.
+     * @return                the number of actually updated events.
      */
-    void updateBatchStatus(Set<UUID> ids, DlqStatus status);
+    int updateBatchStatus(DlqFilter filter, DlqStatus forbiddenStatus);
 
     /**
      * Deletes a single DLQ event by its ID.
@@ -83,13 +75,14 @@ public interface OutboxDlqApiRepository {
     int deleteById(UUID id);
 
     /**
-     * Deletes a batch of DLQ events by their IDs.
+     * Deletes a batch of DLQ events based on the provided filter.
      * <p>
-     * Does nothing and returns 0 if the set is null or empty.
-     * IDs that do not correspond to existing events are silently ignored.
+     * Does nothing and returns 0 if the filter criteria result in no matches.
+     * Events currently in {@code forbiddenStatus} are excluded from deletion.
      *
-     * @param ids the set of event IDs to delete.
-     * @return    the number of actually deleted events.
+     * @param filter          the filter criteria defining which events to delete.
+     * @param forbiddenStatus the status that prevents an event from being deleted.
+     * @return                the number of actually deleted events.
      */
-    int deleteBatch(Set<UUID> ids);
+    int deleteBatch(DlqFilter filter, DlqStatus forbiddenStatus);
 }

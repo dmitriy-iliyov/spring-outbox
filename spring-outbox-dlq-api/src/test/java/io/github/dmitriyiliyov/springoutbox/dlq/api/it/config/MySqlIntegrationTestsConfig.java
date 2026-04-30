@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.springoutbox.dlq.api.it.config;
 
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.MultiDialectOutboxDlqApiRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.MySqlOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiRepository;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +14,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 
 @TestConfiguration
 @Profile("mysql-it")
@@ -35,8 +36,8 @@ public class MySqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqApiRepository mysqlOutboxDlqWebRepository(DataSource dataSource) {
-        return new MultiDialectOutboxDlqApiRepository(new JdbcTemplate(dataSource), new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    public OutboxDlqApiRepository mysqlOutboxDlqWebRepository(DataSource dataSource, Clock clock) {
+        return new MySqlOutboxDlqApiRepository(new JdbcTemplate(dataSource), new MySqlIdHelper(), new DefaultBytesResultSetMapper(), clock);
     }
 
     @Bean

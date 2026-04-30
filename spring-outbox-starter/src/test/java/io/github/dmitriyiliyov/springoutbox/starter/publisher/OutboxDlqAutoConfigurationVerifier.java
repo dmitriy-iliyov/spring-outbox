@@ -1,9 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.DlqStatusQueryConverter;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqController;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqControllerAdvice;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetricsRepository;
@@ -48,6 +46,7 @@ public class OutboxDlqAutoConfigurationVerifier {
                         OutboxAutoConfiguration.class,
                         OutboxPublisherAutoConfiguration.class,
                         OutboxDlqAutoConfiguration.class,
+                        OutboxDlqApiAutoConfiguration.class,
                         KafkaAutoConfiguration.class
                 ))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
@@ -234,9 +233,11 @@ public class OutboxDlqAutoConfigurationVerifier {
                     OutboxDlqTransfer transfer = ctx.getBean(OutboxDlqTransfer.class);
                     assertThat(transfer).isInstanceOf(DefaultOutboxDlqTransfer.class);
 
-                    assertThat(ctx).doesNotHaveBean(OutboxDlqController.class);
-                    assertThat(ctx).doesNotHaveBean(DlqStatusQueryConverter.class);
-                    assertThat(ctx).doesNotHaveBean(OutboxDlqControllerAdvice.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqController.class);
+                    assertThat(ctx).hasSingleBean(DlqStatusQueryConverter.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqControllerAdvice.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqApiService.class);
+                    assertThat(ctx).hasSingleBean(OutboxDlqApiRepository.class);
 
                     assertThat(ctx).doesNotHaveBean(OutboxDlqManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);
@@ -265,6 +266,8 @@ public class OutboxDlqAutoConfigurationVerifier {
 
                     assertThat(ctx).hasBean("outboxDlqManager");
                     assertThat(ctx).hasBean("outboxDlqManagerMetricsDecorator");
+                    assertThat(ctx).hasBean("outboxDlqApiServiceMetricsDecorator");
+
                     OutboxDlqManager primaryManager = ctx.getBean(OutboxDlqManager.class);
                     assertThat(primaryManager).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
 
@@ -288,6 +291,7 @@ public class OutboxDlqAutoConfigurationVerifier {
                     OutboxDlqManager primaryManager = ctx.getBean(OutboxDlqManager.class);
                     assertThat(primaryManager).isInstanceOf(OutboxDlqManagerMetricsDecorator.class);
 
+                    assertThat(ctx).hasBean("outboxDlqApiServiceMetricsDecorator");
                     assertThat(ctx).hasSingleBean(OutboxDlqTransfer.class);
 
                     assertThat(ctx).doesNotHaveBean(OutboxDlqMetricsService.class);

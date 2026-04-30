@@ -2,9 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.BatchRequest;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.BatchUpdateRequest;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiManager;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -23,10 +20,10 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxDlqApiManagerMetricsDecoratorUnitTests {
+class OutboxDlqApiServiceMetricsDecoratorUnitTests {
 
     @Mock
-    private OutboxDlqApiManager delegate;
+    private OutboxDlqApiService delegate;
 
     @Mock
     private MeterRegistry meterRegistry;
@@ -34,12 +31,12 @@ class OutboxDlqApiManagerMetricsDecoratorUnitTests {
     @Mock
     private Counter mockCounter;
 
-    private OutboxDlqApiManagerMetricsDecorator tested;
+    private OutboxDlqApiServiceMetricsDecorator tested;
 
     @BeforeEach
     void setUp() {
         when(meterRegistry.counter(anyString(), anyString(), anyString())).thenReturn(mockCounter);
-        tested = new OutboxDlqApiManagerMetricsDecorator(meterRegistry, delegate);
+        tested = new OutboxDlqApiServiceMetricsDecorator(meterRegistry, delegate);
     }
 
     @Test
@@ -74,12 +71,13 @@ class OutboxDlqApiManagerMetricsDecoratorUnitTests {
     @DisplayName("UT count() should strictly delegate call")
     void count_shouldDelegate() {
         DlqStatus status = DlqStatus.MOVED;
-        when(delegate.count(status)).thenReturn(42L);
+        String eventType = "TEST_EVENT";
+        when(delegate.count(status, eventType)).thenReturn(42L);
 
-        long actualCount = tested.count(status);
+        long actualCount = tested.count(status, eventType);
 
         assertEquals(42L, actualCount);
-        verify(delegate).count(status);
+        verify(delegate).count(status, eventType);
         verifyNoInteractions(mockCounter);
     }
 
@@ -99,9 +97,12 @@ class OutboxDlqApiManagerMetricsDecoratorUnitTests {
     @DisplayName("UT updateBatchStatus() should strictly delegate call")
     void updateBatchStatus_shouldDelegate() {
         BatchUpdateRequest request = mock(BatchUpdateRequest.class);
+        BatchModificationResponse expectedResponse = mock(BatchModificationResponse.class);
+        when(delegate.updateBatchStatus(request)).thenReturn(expectedResponse);
 
-        tested.updateBatchStatus(request);
+        BatchModificationResponse actualResponse = tested.updateBatchStatus(request);
 
+        assertEquals(expectedResponse, actualResponse);
         verify(delegate).updateBatchStatus(request);
         verifyNoInteractions(mockCounter);
     }
@@ -123,28 +124,33 @@ class OutboxDlqApiManagerMetricsDecoratorUnitTests {
     @Test
     @DisplayName("UT deleteBatch() should delegate and increment manual deleted counter by deleted amount")
     void deleteBatch_shouldDelegateAndIncrementCounter() {
-        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID());
+        BatchDeleteRequest request = mock(BatchDeleteRequest.class);
+        BatchModificationResponse mockResponse = mock(BatchModificationResponse.class);
         int expectedDeletedCount = 2;
-        when(delegate.deleteBatch(ids)).thenReturn(expectedDeletedCount);
 
-        int actualDeletedCount = tested.deleteBatch(ids);
+        when(mockResponse.processedCount()).thenReturn(expectedDeletedCount);
+        when(delegate.deleteBatch(request)).thenReturn(mockResponse);
 
-        assertEquals(expectedDeletedCount, actualDeletedCount);
-        verify(delegate).deleteBatch(ids);
+        BatchModificationResponse actualResponse = tested.deleteBatch(request);
+
+        assertEquals(mockResponse, actualResponse);
+        verify(delegate).deleteBatch(request);
         verify(mockCounter).increment((double) expectedDeletedCount);
     }
 
     @Test
     @DisplayName("UT deleteBatch() when nothing deleted should increment counter by 0")
     void deleteBatch_whenNothingDeleted_shouldIncrementCounterByZero() {
-        Set<UUID> ids = Set.of(UUID.randomUUID());
-        int expectedDeletedCount = 0;
-        when(delegate.deleteBatch(ids)).thenReturn(expectedDeletedCount);
+        BatchDeleteRequest request = mock(BatchDeleteRequest.class);
+        BatchModificationResponse mockResponse = mock(BatchModificationResponse.class);
+        long expectedDeletedCount = 0;
 
-        int actualDeletedCount = tested.deleteBatch(ids);
+        when(delegate.deleteBatch(request)).thenReturn(mockResponse);
 
-        assertEquals(expectedDeletedCount, actualDeletedCount);
-        verify(delegate).deleteBatch(ids);
+        BatchModificationResponse actualResponse = tested.deleteBatch(request);
+
+        assertEquals(mockResponse, actualResponse);
+        verify(delegate).deleteBatch(request);
         verify(mockCounter).increment(0.0);
     }
 }

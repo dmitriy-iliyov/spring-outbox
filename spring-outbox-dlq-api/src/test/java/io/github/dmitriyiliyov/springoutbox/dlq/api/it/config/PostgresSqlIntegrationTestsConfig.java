@@ -2,8 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.dlq.api.it.config;
 
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.PostgreSqlIdHelper;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.MultiDialectOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.PostgreSqlOutboxDlqApiRepository;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
@@ -14,6 +14,7 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 
 @TestConfiguration
 @Profile("postgres-it")
@@ -41,7 +42,7 @@ public class PostgresSqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqApiRepository postgresOutboxDlqWebRepository(DataSource dataSource) {
-        return new MultiDialectOutboxDlqApiRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper());
+    public OutboxDlqApiRepository postgresOutboxDlqWebRepository(DataSource dataSource, Clock clock) {
+        return new PostgreSqlOutboxDlqApiRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper(), clock);
     }
 }

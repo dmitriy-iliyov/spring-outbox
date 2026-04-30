@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqApiManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqApiServiceMetricsDecorator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -48,7 +48,7 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
         contextRunner
                 .withPropertyValues(
                         "outbox.publisher.dlq.enabled=true",
-                        "outbox.publisher.dlq.metrics.enabled=false"
+                        "outbox.publisher.metrics.enabled=false"
                 )
                 .run(context -> {
                     assertThat(context).hasSingleBean(OutboxDlqApiRepository.class);
@@ -56,9 +56,9 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
                     assertThat(context).hasSingleBean(DlqStatusQueryConverter.class);
                     assertThat(context).hasSingleBean(OutboxDlqControllerAdvice.class);
 
-                    assertThat(context.getBean(OutboxDlqApiManager.class))
-                            .isExactlyInstanceOf(DefaultOutboxDlqApiManager.class);
-                    assertThat(context).doesNotHaveBean(OutboxDlqApiManagerMetricsDecorator.class);
+                    assertThat(context.getBean(OutboxDlqApiService.class))
+                            .isExactlyInstanceOf(DefaultOutboxDlqApiService.class);
+                    assertThat(context).doesNotHaveBean(OutboxDlqApiServiceMetricsDecorator.class);
                 });
     }
 
@@ -68,13 +68,13 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
         contextRunner
                 .withPropertyValues(
                         "outbox.publisher.dlq.enabled=true",
-                        "outbox.publisher.dlq.metrics.enabled=true"
+                        "outbox.publisher.metrics.enabled=true"
                 )
                 .run(context -> {
-                    assertThat(context).hasBean("outboxDlqWebManager");
-                    assertThat(context).hasBean("outboxDlqWebManagerMetricsDecorator");
-                    assertThat(context.getBean(OutboxDlqApiManager.class))
-                            .isInstanceOf(OutboxDlqApiManagerMetricsDecorator.class);
+                    assertThat(context).hasBean("outboxDlqApiService");
+                    assertThat(context).hasBean("outboxDlqApiServiceMetricsDecorator");
+                    assertThat(context.getBean(OutboxDlqApiService.class))
+                            .isInstanceOf(OutboxDlqApiServiceMetricsDecorator.class);
                 });
     }
 
@@ -84,9 +84,9 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
         contextRunner
                 .withPropertyValues("outbox.publisher.dlq.enabled=true")
                 .run(context -> {
-                    assertThat(context).doesNotHaveBean(OutboxDlqApiManagerMetricsDecorator.class);
-                    assertThat(context.getBean(OutboxDlqApiManager.class))
-                            .isExactlyInstanceOf(DefaultOutboxDlqApiManager.class);
+                    assertThat(context).doesNotHaveBean(OutboxDlqApiServiceMetricsDecorator.class);
+                    assertThat(context.getBean(OutboxDlqApiService.class))
+                            .isExactlyInstanceOf(DefaultOutboxDlqApiService.class);
                 });
     }
 
@@ -110,8 +110,8 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
                 .withPropertyValues("outbox.publisher.dlq.enabled=true")
                 .withUserConfiguration(CustomManagerConfiguration.class)
                 .run(context -> {
-                    assertThat(context).hasSingleBean(OutboxDlqApiManager.class);
-                    assertThat(context.getBean(OutboxDlqApiManager.class))
+                    assertThat(context).hasSingleBean(OutboxDlqApiService.class);
+                    assertThat(context.getBean(OutboxDlqApiService.class))
                             .isSameAs(context.getBean("customManager"));
                 });
     }
@@ -157,7 +157,7 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
 
     private void assertNoBeans(AssertableApplicationContext context) {
         assertThat(context).doesNotHaveBean(OutboxDlqApiRepository.class);
-        assertThat(context).doesNotHaveBean(OutboxDlqApiManager.class);
+        assertThat(context).doesNotHaveBean(OutboxDlqApiService.class);
         assertThat(context).doesNotHaveBean(OutboxDlqController.class);
         assertThat(context).doesNotHaveBean(DlqStatusQueryConverter.class);
         assertThat(context).doesNotHaveBean(OutboxDlqControllerAdvice.class);
@@ -200,8 +200,8 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
     @Configuration
     static class CustomManagerConfiguration {
         @Bean
-        OutboxDlqApiManager customManager() {
-            return mock(OutboxDlqApiManager.class);
+        OutboxDlqApiService customManager() {
+            return mock(OutboxDlqApiService.class);
         }
     }
 

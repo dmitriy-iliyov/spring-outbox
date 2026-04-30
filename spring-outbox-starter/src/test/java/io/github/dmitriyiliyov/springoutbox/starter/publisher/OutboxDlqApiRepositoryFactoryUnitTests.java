@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import io.github.dmitriyiliyov.springoutbox.dlq.api.MultiDialectOutboxDlqApiRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.AbstractOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OracleOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +14,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.Clock;
 
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,6 +28,9 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
 
     @Mock
     JdbcTemplate jdbcTemplate;
+
+    @Mock
+    Clock clock;
 
     @Mock
     Connection connection;
@@ -43,10 +47,10 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when
-        OutboxDlqApiRepository result = OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate);
+        OutboxDlqApiRepository result = OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
-        assertInstanceOf(MultiDialectOutboxDlqApiRepository.class, result);
+        assertInstanceOf(AbstractOutboxDlqApiRepository.class, result);
     }
 
     @Test
@@ -58,10 +62,10 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("MySQL");
 
         // when
-        OutboxDlqApiRepository result = OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate);
+        OutboxDlqApiRepository result = OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
-        assertInstanceOf(MultiDialectOutboxDlqApiRepository.class, result);
+        assertInstanceOf(AbstractOutboxDlqApiRepository.class, result);
     }
 
     @Test
@@ -73,7 +77,7 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("Oracle");
 
         // when
-        OutboxDlqApiRepository result = OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate);
+        OutboxDlqApiRepository result = OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock);
 
         // then
         assertInstanceOf(OracleOutboxDlqApiRepository.class, result);
@@ -88,7 +92,7 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("H2");
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate));
+        assertThrows(IllegalArgumentException.class, () -> OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock));
     }
 
     @Test
@@ -98,7 +102,7 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
         when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
         // when + then
-        assertThrows(RuntimeException.class, () -> OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate));
+        assertThrows(RuntimeException.class, () -> OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock));
     }
 
     @Test
@@ -110,6 +114,6 @@ class OutboxDlqApiRepositoryFactoryUnitTests {
         when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
 
         // when + then
-        assertThrows(IllegalStateException.class, () -> OutboxDlqApiRepositoryFactory.create(dataSource, null));
+        assertThrows(IllegalStateException.class, () -> OutboxDlqApiRepositoryFactory.create(dataSource, null, clock));
     }
 }

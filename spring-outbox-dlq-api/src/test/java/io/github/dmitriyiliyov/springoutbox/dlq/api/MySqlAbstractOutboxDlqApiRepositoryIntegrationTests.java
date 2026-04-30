@@ -1,36 +1,27 @@
 package io.github.dmitriyiliyov.springoutbox.dlq.api;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
 import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
-import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.it.BaseOracleIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.it.BaseMySqlIntegrationTests;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.IntStream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 @Transactional
-class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegrationTests {
+class MySqlAbstractOutboxDlqApiRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
 
-    private final OutboxDlqApiRepository repository;
     private final MultiDialectOutboxDlqApiRepositoryVerifier delegate;
 
-    public OracleOutboxDlqApiRepositoryIntegrationTests(
-            @Qualifier("oracleOutboxDlqWebRepository") OutboxDlqApiRepository repository,
-            @Qualifier("oracleJdbcTemplate") JdbcTemplate jdbcTemplate
+    MySqlAbstractOutboxDlqApiRepositoryIntegrationTests(
+            @Autowired OutboxDlqApiRepository repository,
+            @Autowired JdbcTemplate jdbcTemplate
     ) {
-        this.repository = repository;
         this.delegate = new MultiDialectOutboxDlqApiRepositoryVerifier(
                 repository,
                 jdbcTemplate,
-                new OracleSqlIdHelper(),
+                new MySqlIdHelper(),
                 new DefaultBytesResultSetMapper()
         );
     }
@@ -42,13 +33,13 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     }
 
     @Test
-    @DisplayName("IT findBatch() should return only matching status")
+    @DisplayName("IT findBatch() should return only events matching status")
     void findBatch_returnsOnlyMatchingStatus() {
         delegate.findBatch_byStatus_returnsOnlyMatchingStatus();
     }
 
     @Test
-    @DisplayName("IT findBatch() with pagination should not overlap pages")
+    @DisplayName("IT findBatch() pagination pages do not overlap")
     void findBatch_pagination_page1AndPage2DoNotOverlap() {
         delegate.findBatch_pagination_page1AndPage2DoNotOverlap();
     }
@@ -60,77 +51,19 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     }
 
     @Test
-    @DisplayName("IT findBatch() should be ordered by movedAt")
+    @DisplayName("IT findBatch() should return ordered by movedAt")
     void findBatch_orderedByMovedAt() {
         delegate.findBatch_orderedByMovedAt();
     }
 
     @Test
-    @DisplayName("IT findBatch() Oracle pagination returns correct page sizes")
-    void findBatch_oraclePagination_correctPageSizes() {
-        delegate.saveBatch(
-                IntStream.range(0, 7)
-                        .mapToObj(i -> delegate.buildEvent(DlqStatus.MOVED))
-                        .toList()
-        );
-
-        DlqFilter filter = DlqFilter.builder().status(DlqStatus.MOVED).build();
-
-        List<OutboxDlqEvent> page1 = repository.findBatch(filter, 0, 3);
-        List<OutboxDlqEvent> page2 = repository.findBatch(filter, 1, 3);
-        List<OutboxDlqEvent> page3 = repository.findBatch(filter, 2, 3);
-
-        assertThat(page1).hasSize(3);
-        assertThat(page2).hasSize(3);
-        assertThat(page3).hasSize(1);
-    }
-
-    @Test
-    @DisplayName("IT findBatch() Oracle pagination pages do not overlap")
-    void findBatch_oraclePagination_noDuplicatesAcrossPages() {
-        delegate.saveBatch(
-                IntStream.range(0, 6)
-                        .mapToObj(i -> delegate.buildEvent(DlqStatus.MOVED))
-                        .toList()
-        );
-
-        DlqFilter filter = DlqFilter.builder().status(DlqStatus.MOVED).build();
-
-        List<OutboxDlqEvent> page1 = repository.findBatch(filter, 0, 3);
-        List<OutboxDlqEvent> page2 = repository.findBatch(filter, 1, 3);
-
-        assertThat(page1).extracting(OutboxDlqEvent::getId)
-                .doesNotContainAnyElementsOf(
-                        page2.stream().map(OutboxDlqEvent::getId).toList()
-                );
-    }
-
-    @Test
-    @DisplayName("IT findBatch() by eventType should return only matching type")
-    void findBatch_byEventType_returnsOnlyMatchingType() {
-        delegate.findBatch_byEventType_returnsOnlyMatchingType();
-    }
-
-    @Test
-    @DisplayName("IT findBatch() by status and eventType should return only matching events")
-    void findBatch_byStatusAndEventType_returnsOnlyMatching() {
-        delegate.findBatch_byStatusAndEventType_returnsOnlyMatching();
-    }
-
-    @Test
-    @DisplayName("IT findBatch() without filters should return all events")
-    void findBatch_noFilters_returnsAll() {
-        delegate.findBatch_noFilters_returnsAll();
-    }
-
-    @Test
-    @DisplayName("IT count() when table is empty should return 0")
+    @DisplayName("IT count() on empty table should return 0")
     void count_emptyTable_returnsZero() {
         delegate.count_emptyTable_returnsZero();
     }
 
     @Test
-    @DisplayName("IT count() when table has events should return total count")
+    @DisplayName("IT count() with events should return total count")
     void count_withEvents_returnsTotalCount() {
         delegate.count_withEvents_returnsTotalCount();
     }
@@ -142,7 +75,7 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     }
 
     @Test
-    @DisplayName("IT count() by status when matches exist should return only matching count")
+    @DisplayName("IT count() should return count only for matching status")
     void count_byStatus_withMatches_returnsOnlyMatchingCount() {
         delegate.count_byStatus_withMatches_returnsOnlyMatchingCount();
     }
@@ -154,7 +87,7 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     }
 
     @Test
-    @DisplayName("IT count() by eventType when matches exist should return only matching count")
+    @DisplayName("IT count() should return count only for matching type")
     void count_byEventType_withMatches_returnsOnlyMatchingCount() {
         delegate.count_byEventType_withMatches_returnsOnlyMatchingCount();
     }
@@ -166,13 +99,13 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     }
 
     @Test
-    @DisplayName("IT count() by status and eventType when matches exist should return only matching count")
+    @DisplayName("IT count() should return count only for exact match of status and eventType")
     void count_byStatusAndEventType_withMatches_returnsOnlyMatchingCount() {
         delegate.count_byStatusAndEventType_withMatches_returnsOnlyMatchingCount();
     }
 
     @Test
-    @DisplayName("IT updateStatus() for existing event should change status")
+    @DisplayName("IT updateStatus() for existing event should update status")
     void updateStatus_existingEvent_statusChanged() {
         delegate.updateStatus_existingEvent_statusChanged();
     }
@@ -220,19 +153,19 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     }
 
     @Test
-    @DisplayName("IT deleteById() for existing event should delete and return one")
+    @DisplayName("IT deleteById() existing event should delete and return 1")
     void deleteById_existingEvent_deletedAndReturnsOne() {
         delegate.deleteById_existingEvent_deletedAndReturnsOne();
     }
 
     @Test
-    @DisplayName("IT deleteById() for not existing id should return zero")
+    @DisplayName("IT deleteById() not existing id should return 0")
     void deleteById_notExisting_returnsZero() {
         delegate.deleteById_notExisting_returnsZero();
     }
 
     @Test
-    @DisplayName("IT deleteBatch() for existing ids should delete and return count")
+    @DisplayName("IT deleteBatch() existing ids should delete and return count")
     void deleteBatch_existingIds_deletedAndReturnsCount() {
         delegate.deleteBatch_existingIds_deletedAndReturnsCount();
     }
@@ -271,6 +204,24 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     @DisplayName("IT findById() for existing id should return event")
     void findById_existingId_returnsEvent() {
         delegate.findById_existingId_returnsEvent();
+    }
+
+    @Test
+    @DisplayName("IT findBatch() by eventType should return only matching type")
+    void findBatch_byEventType_returnsOnlyMatchingType() {
+        delegate.findBatch_byEventType_returnsOnlyMatchingType();
+    }
+
+    @Test
+    @DisplayName("IT findBatch() by status and eventType should return only matching events")
+    void findBatch_byStatusAndEventType_returnsOnlyMatching() {
+        delegate.findBatch_byStatusAndEventType_returnsOnlyMatching();
+    }
+
+    @Test
+    @DisplayName("IT findBatch() without filters should return all events")
+    void findBatch_noFilters_returnsAll() {
+        delegate.findBatch_noFilters_returnsAll();
     }
 
     @Test

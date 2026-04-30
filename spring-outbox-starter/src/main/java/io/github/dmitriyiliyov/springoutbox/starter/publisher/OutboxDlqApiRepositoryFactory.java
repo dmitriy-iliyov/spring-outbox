@@ -1,9 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.utils.*;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.MultiDialectOutboxDlqApiRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.MySqlOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OracleOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiRepository;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.PostgreSqlOutboxDlqApiRepository;
 import io.github.dmitriyiliyov.springoutbox.starter.DatabaseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.time.Clock;
 import java.util.Map;
 
 /**
@@ -22,10 +24,10 @@ import java.util.Map;
 public final class OutboxDlqApiRepositoryFactory {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqApiRepositoryFactory.class);
-    private static final Map<DatabaseType, OutboxDlqApiRepositoryFactory.OutboxDlqWebRepositorySupplier> SUPPORTED_SUPPLIERS = Map.of(
-            DatabaseType.POSTGRESQL, new OutboxDlqApiRepositoryFactory.PostgreSqlOutboxDlqWebRepositorySupplier(),
-            DatabaseType.MYSQL, new OutboxDlqApiRepositoryFactory.MySqlOutboxDlqWebRepositorySupplier(),
-            DatabaseType.ORACLE, new OutboxDlqApiRepositoryFactory.OracleOutboxDlqWebRepositorySupplier()
+    private static final Map<DatabaseType, OutboxDlqApiRepositorySupplier> SUPPORTED_SUPPLIERS = Map.of(
+            DatabaseType.POSTGRESQL, new PostgreSqlOutboxDlqApiRepositorySupplier(),
+            DatabaseType.MYSQL, new MySqlOutboxDlqApiRepositorySupplier(),
+            DatabaseType.ORACLE, new OracleOutboxDlqApiRepositorySupplier()
     );
 
     private OutboxDlqApiRepositoryFactory() {}
@@ -40,17 +42,17 @@ public final class OutboxDlqApiRepositoryFactory {
      * @throws IllegalStateException    if the {@link JdbcTemplate} is null.
      * @throws RuntimeException         if a database connection cannot be established.
      */
-    public static OutboxDlqApiRepository create(DataSource dataSource, JdbcTemplate jdbcTemplate) {
+    public static OutboxDlqApiRepository create(DataSource dataSource, JdbcTemplate jdbcTemplate, Clock clock) {
         try (Connection conn = dataSource.getConnection()) {
             DatabaseType databaseType = DatabaseType.fromString(conn.getMetaData().getDatabaseProductName());
-            OutboxDlqApiRepositoryFactory.OutboxDlqWebRepositorySupplier supplier = SUPPORTED_SUPPLIERS.get(databaseType);
+            OutboxDlqApiRepositorySupplier supplier = SUPPORTED_SUPPLIERS.get(databaseType);
             if (supplier != null) {
                 if (jdbcTemplate == null) {
                     throw new IllegalStateException("JdbcTemplate is null");
                 }
-                return supplier.supply(jdbcTemplate);
+                return supplier.supply(jdbcTemplate, clock);
             } else {
-                throw new IllegalArgumentException("Supplier for OutboxDlqWebRepository is null for databaseType=" + databaseType);
+                throw new IllegalArgumentException("Supplier for OutboxDlqApiRepository is null for databaseType=" + databaseType);
             }
         } catch (SQLException e) {
             log.error("Error when connecting to dataSource, ", e);
@@ -59,42 +61,45 @@ public final class OutboxDlqApiRepositoryFactory {
     }
 
     @FunctionalInterface
-    public interface OutboxDlqWebRepositorySupplier {
-        OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate);
+    public interface OutboxDlqApiRepositorySupplier {
+        OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate, Clock clock);
     }
 
-    public static class PostgreSqlOutboxDlqWebRepositorySupplier implements OutboxDlqWebRepositorySupplier {
+    public static class PostgreSqlOutboxDlqApiRepositorySupplier implements OutboxDlqApiRepositorySupplier {
 
         @Override
-        public OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate) {
-            return new MultiDialectOutboxDlqApiRepository(
+        public OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate, Clock clock) {
+            return new PostgreSqlOutboxDlqApiRepository(
                     jdbcTemplate,
                     new PostgreSqlIdHelper(),
-                    new DefaultResultSetMapper()
+                    new DefaultResultSetMapper(),
+                    clock
             );
         }
     }
 
-    public static class MySqlOutboxDlqWebRepositorySupplier implements OutboxDlqWebRepositorySupplier {
+    public static class MySqlOutboxDlqApiRepositorySupplier implements OutboxDlqApiRepositorySupplier {
 
         @Override
-        public OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate) {
-            return new MultiDialectOutboxDlqApiRepository(
+        public OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate, Clock clock) {
+            return new MySqlOutboxDlqApiRepository(
                     jdbcTemplate,
                     new MySqlIdHelper(),
-                    new DefaultBytesSqlResultSetMapper()
+                    new DefaultBytesResultSetMapper(),
+                    clock
             );
         }
     }
 
-    public static class OracleOutboxDlqWebRepositorySupplier implements OutboxDlqWebRepositorySupplier {
+    public static class OracleOutboxDlqApiRepositorySupplier implements OutboxDlqApiRepositorySupplier {
 
         @Override
-        public OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate) {
+        public OutboxDlqApiRepository supply(JdbcTemplate jdbcTemplate, Clock clock) {
             return new OracleOutboxDlqApiRepository(
                     jdbcTemplate,
                     new OracleSqlIdHelper(),
-                    new DefaultBytesSqlResultSetMapper()
+                    new DefaultBytesResultSetMapper(),
+                    clock
             );
         }
     }

@@ -4,18 +4,23 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 @Schema(description = "Batch get request for DLQ events")
 public record BatchRequest(
 
         @Schema(
+                description = "Type of events to filter",
+                example = "event-type",
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
+        )
+        String eventType,
+
+        @Schema(
                 description = "Status to filter events",
                 example = "MOVED",
-                requiredMode = Schema.RequiredMode.REQUIRED
+                requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        @NotNull(message = "Status cannot be null")
         DlqStatus status,
 
         @Schema(description = "Zero-based batch index (pagination offset in batches)", example = "1")

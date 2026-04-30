@@ -2,22 +2,23 @@ package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqEvent;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.BatchRequest;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.BatchUpdateRequest;
-import io.github.dmitriyiliyov.springoutbox.dlq.api.OutboxDlqApiManager;
+import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class OutboxDlqApiManagerMetricsDecorator implements OutboxDlqApiManager {
+public class OutboxDlqApiServiceMetricsDecorator implements OutboxDlqApiService {
 
     private final Map<ActionType, Counter> actionCounters;
-    private final OutboxDlqApiManager delegate;
+    private final OutboxDlqApiService delegate;
 
-    public OutboxDlqApiManagerMetricsDecorator(MeterRegistry registry, OutboxDlqApiManager delegate) {
+    public OutboxDlqApiServiceMetricsDecorator(MeterRegistry registry, OutboxDlqApiService delegate) {
         this.actionCounters = Arrays.stream(ActionType.values())
                 .collect(Collectors.toMap(
                                 Function.identity(),
@@ -40,8 +41,8 @@ public class OutboxDlqApiManagerMetricsDecorator implements OutboxDlqApiManager 
     }
 
     @Override
-    public long count(DlqStatus status) {
-        return delegate.count(status);
+    public long count(DlqStatus status, String eventType) {
+        return delegate.count(status, eventType);
     }
 
     @Override
@@ -50,8 +51,8 @@ public class OutboxDlqApiManagerMetricsDecorator implements OutboxDlqApiManager 
     }
 
     @Override
-    public void updateBatchStatus(BatchUpdateRequest request) {
-        delegate.updateBatchStatus(request);
+    public BatchModificationResponse updateBatchStatus(BatchUpdateRequest request) {
+        return delegate.updateBatchStatus(request);
     }
 
     @Override
@@ -62,9 +63,9 @@ public class OutboxDlqApiManagerMetricsDecorator implements OutboxDlqApiManager 
     }
 
     @Override
-    public int deleteBatch(Set<UUID> ids) {
-        int deletedCount = delegate.deleteBatch(ids);
-        actionCounters.get(ActionType.MANUAL_DELETED).increment(deletedCount);
-        return deletedCount;
+    public BatchModificationResponse deleteBatch(BatchDeleteRequest request) {
+        BatchModificationResponse response = delegate.deleteBatch(request);
+        actionCounters.get(ActionType.MANUAL_DELETED).increment(response.processedCount());
+        return response;
     }
 }

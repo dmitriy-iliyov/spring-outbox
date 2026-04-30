@@ -1,19 +1,17 @@
 package io.github.dmitriyiliyov.springoutbox.dlq.api;
 
-import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.Set;
 import java.util.UUID;
 
-@Schema(description = "Batch update request for DLQ events")
-public record BatchUpdateRequest(
+@Schema(description = "Batch delete request for DLQ events")
+public record BatchDeleteRequest(
 
         @Schema(
-                description = "List of event ids to update",
+                description = "List of event ids to delete",
                 example = "[\"550e8400-e29b-41d4-a716-446655440000\", \"550e8400-e29b-41d4-a716-446655440001\"]",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED,
                 maximum = "1000"
@@ -22,19 +20,11 @@ public record BatchUpdateRequest(
         Set<UUID> ids,
 
         @Schema(
-                description = "Type of events to update",
+                description = "Type of events to delete",
                 example = "event-type",
                 requiredMode = Schema.RequiredMode.NOT_REQUIRED
         )
-        String eventType,
-
-        @Schema(
-                description = "New status to assign to all specified events",
-                example = "RESOLVED",
-                requiredMode = Schema.RequiredMode.REQUIRED
-        )
-        @NotNull(message = "Status cannot be null")
-        DlqStatus status
+        String eventType
 
 ) {
         @AssertTrue(message = "Either ids or eventType must be provided, but not both")

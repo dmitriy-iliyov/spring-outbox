@@ -84,8 +84,8 @@ class ConsumedOutboxManagerMetricsDecoratorUnitTests {
     }
 
     @Test
-    @DisplayName("UT filterConsumed() when no duplicates should increment consumed counter with total count")
-    void filterConsumed_whenNoDuplicates_shouldIncrementOutUnconsumedCounterWithTotalCount() {
+    @DisplayName("UT filterOutUnconsumed() when no duplicates should increment consumed counter with total count")
+    void filterOutUnconsumed_whenNoDuplicates_shouldIncrementOutUnconsumedCounterWithTotalCount() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         Set<UUID> alreadyConsumed = Set.of();
@@ -102,7 +102,7 @@ class ConsumedOutboxManagerMetricsDecoratorUnitTests {
     }
 
     @Test
-    @DisplayName("UT filterConsumed() when all duplicates should increment duplicated counter with total count")
+    @DisplayName("UT filterOutUnconsumed() when all duplicates should increment duplicated counter with total count")
     void filterOutUnconsumed_whenAllDuplicates_shouldIncrementDuplicatedCounterWithTotalCount() {
         // given
         UUID id1 = UUID.randomUUID();
@@ -122,7 +122,7 @@ class ConsumedOutboxManagerMetricsDecoratorUnitTests {
     }
 
     @Test
-    @DisplayName("UT filterConsumed() when partial duplicates should increment both counters correctly")
+    @DisplayName("UT filterOutUnconsumed() when partial duplicates should increment both counters correctly")
     void filterOutUnconsumed_whenPartialDuplicates_shouldIncrementBothCountersCorrectly() {
         // given
         UUID id1 = UUID.randomUUID();
@@ -143,7 +143,7 @@ class ConsumedOutboxManagerMetricsDecoratorUnitTests {
     }
 
     @Test
-    @DisplayName("UT filterConsumed() when empty set should not increment any counter")
+    @DisplayName("UT filterOutUnconsumed() when empty set should not increment any counter")
     void filterOutUnconsumed_whenEmptySet_shouldNotIncrementAnyCounter() {
         // given
         Set<UUID> ids = Set.of();

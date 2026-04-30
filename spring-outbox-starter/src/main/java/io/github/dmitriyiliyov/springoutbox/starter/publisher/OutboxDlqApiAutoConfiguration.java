@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqApiManagerMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqApiServiceMetricsDecorator;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,36 +25,36 @@ public class OutboxDlqApiAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(OutboxDlqApiRepository.class)
-    public OutboxDlqApiRepository outboxDlqWebRepository(DataSource dataSource, JdbcTemplate jdbcTemplate) {
-        return OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate);
+    public OutboxDlqApiRepository outboxDlqApiRepository(DataSource dataSource, JdbcTemplate jdbcTemplate, Clock clock) {
+        return OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnClass(OutboxDlqApiManager.class)
-    public OutboxDlqApiManager outboxDlqWebManager(OutboxDlqApiRepository repository) {
-        return new DefaultOutboxDlqApiManager(repository);
+    @ConditionalOnClass(OutboxDlqApiService.class)
+    public OutboxDlqApiService outboxDlqApiService(OutboxDlqApiRepository repository) {
+        return new DefaultOutboxDlqApiService(repository);
     }
 
     @Bean
     @Primary
-    @ConditionalOnClass(OutboxDlqApiManager.class)
+    @ConditionalOnClass(OutboxDlqApiService.class)
     @ConditionalOnProperty(
-            prefix = "outbox.publisher.dlq.metrics",
+            prefix = "outbox.publisher.metrics",
             name = "enabled",
             havingValue = "true"
     )
-    public OutboxDlqApiManager outboxDlqWebManagerMetricsDecorator(OutboxDlqApiManager manager,
+    public OutboxDlqApiService outboxDlqApiServiceMetricsDecorator(OutboxDlqApiService service,
                                                                    MeterRegistry registry) {
-        return new OutboxDlqApiManagerMetricsDecorator(registry, manager);
+        return new OutboxDlqApiServiceMetricsDecorator(registry, service);
     }
 
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(OutboxDlqController.class)
-    public OutboxDlqController outboxDlqController(OutboxDlqApiManager manager) {
+    public OutboxDlqController outboxDlqController(OutboxDlqApiService service) {
         log.warn("Outbox DLQ API is exposed at '/api/outbox-dlq/events' path should be secured");
-        return new OutboxDlqController(manager);
+        return new OutboxDlqController(service);
     }
 
     @Bean

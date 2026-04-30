@@ -19,5 +19,10 @@ public enum ActionType {
     /**
      * Manual deletion of events from the DLQ throw the REST API.
      */
-    MANUAL_DELETED;
+    MANUAL_DELETED,
+
+    /**
+     * Incremented when resolved events are deleted from the DLQ.
+     */
+    CLEANED;
 }

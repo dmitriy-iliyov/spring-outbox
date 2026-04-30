@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -167,5 +168,25 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
                 .tag("action_type", "success_moved_to_outbox")
                 .counter();
         Assertions.assertEquals(2.0, successMovedCounter.count());
+    }
+
+    @Test
+    @DisplayName("UT deleteResolvedBatch() should increment cleaned counter")
+    void deleteResolvedBatch_shouldIncrementCleanedCounter() {
+        // given
+        Instant threshold = Instant.now();
+        int batchSize = 100;
+        int deletedCount = 15;
+        Mockito.when(delegate.deleteResolvedBatch(threshold, batchSize)).thenReturn(deletedCount);
+
+        // when
+        tested.deleteResolvedBatch(threshold, batchSize);
+
+        // then
+        Mockito.verify(delegate).deleteResolvedBatch(threshold, batchSize);
+        Counter cleanedCounter = registry.get("outbox_dlq_events_by_action_type_rate_total")
+                .tag("action_type", "cleaned")
+                .counter();
+        Assertions.assertEquals((double) deletedCount, cleanedCounter.count());
     }
 }
