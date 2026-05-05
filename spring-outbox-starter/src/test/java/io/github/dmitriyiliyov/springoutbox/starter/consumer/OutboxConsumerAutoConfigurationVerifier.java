@@ -225,6 +225,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasNotFailed();
                     JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
                     jdbcTemplate.execute("SELECT 1 FROM outbox_consumed_events WHERE 1=0");
+                    jdbcTemplate.execute("SELECT 1 FROM outbox_jobs WHERE 1=0");
                 });
     }
 

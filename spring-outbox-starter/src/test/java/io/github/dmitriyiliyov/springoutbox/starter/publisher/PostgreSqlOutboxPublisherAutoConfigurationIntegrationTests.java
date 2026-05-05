@@ -181,4 +181,22 @@ class PostgreSqlOutboxPublisherAutoConfigurationIntegrationTests {
     void shouldRegisterPublisherScheduler_withMetricsDecoratorAsManager() {
         verifier.shouldRegisterPublisherScheduler_withMetricsDecoratorAsManager();
     }
+
+    @Test
+    @DisplayName("IT should not register duplicate OutboxCache when custom bean provided")
+    void shouldNotRegisterOutboxCache_whenCustomBeanProvided() {
+        verifier.shouldNotRegisterOutboxCache_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxJobCreateCommand when clean-up enabled")
+    void shouldRegisterCleanUpJobCreateCommand_whenEnabled() {
+        verifier.shouldRegisterCleanUpJobCreateCommand_whenEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should not register OutboxJobCreateCommand when clean-up disabled")
+    void shouldNotRegisterCleanUpJobCreateCommand_whenDisabled() {
+        verifier.shouldNotRegisterCleanUpJobCreateCommand_whenDisabled();
+    }
 }

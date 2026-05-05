@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherAutoConfiguration;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxDlqAutoConfiguration;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +25,7 @@ import java.time.Clock;
 import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class OnAnyMetricsEnabledConditionIntegrationTests {
 
@@ -50,9 +51,9 @@ class OnAnyMetricsEnabledConditionIntegrationTests {
                 .withUserConfiguration(TestConfiguration.class)
                 .withBean(DataSource.class, () -> {
                     try {
-                        DataSource mockDataSource = Mockito.mock(DataSource.class);
-                        Connection mockConnection = Mockito.mock(Connection.class);
-                        DatabaseMetaData mockMetaData = Mockito.mock(DatabaseMetaData.class);
+                        DataSource mockDataSource = mock(DataSource.class);
+                        Connection mockConnection = mock(Connection.class);
+                        DatabaseMetaData mockMetaData = mock(DatabaseMetaData.class);
                         Mockito.when(mockDataSource.getConnection()).thenReturn(mockConnection);
                         Mockito.when(mockConnection.getMetaData()).thenReturn(mockMetaData);
                         Mockito.when(mockMetaData.getDatabaseProductName()).thenReturn("PostgreSQL");
@@ -62,16 +63,20 @@ class OnAnyMetricsEnabledConditionIntegrationTests {
                     }
                 })
                 .withBean(KafkaTemplate.class, () -> {
-                    KafkaTemplate<String, Object> mockTemplate = Mockito.mock(KafkaTemplate.class);
-                    ProducerFactory<String, Object> mockFactory = Mockito.mock(ProducerFactory.class);
+                    KafkaTemplate<String, Object> mockTemplate = mock(KafkaTemplate.class);
+                    ProducerFactory<String, Object> mockFactory = mock(ProducerFactory.class);
                     Mockito.when(mockTemplate.getProducerFactory()).thenReturn(mockFactory);
                     Mockito.when(mockFactory.getConfigurationProperties()).thenReturn(Collections.emptyMap());
                     return mockTemplate;
                 })
-                .withBean(TransactionTemplate.class, () -> Mockito.mock(TransactionTemplate.class))
+                .withBean(TransactionTemplate.class, () -> mock(TransactionTemplate.class))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
                 .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
+                        "spring.datasource.url=jdbc:postgresql://outbox-producer-postgresql:5432/outbox_example",
+                        "spring.datasource.driver-class-name=org.postgresql.Driver",
+                        "spring.datasource.username=admin",
+                        "spring.datasource.password=root",
                         "outbox.tables.auto-create=false",
                         "outbox.publisher.sender.type=kafka",
                         "outbox.publisher.events.my-event.topic=my.topic"

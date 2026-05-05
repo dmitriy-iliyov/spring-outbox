@@ -10,7 +10,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OutboxPropertiesUnitTests {
 
@@ -134,7 +136,7 @@ class OutboxPropertiesUnitTests {
     void applyDefaults_whenTablesProvided_shouldPreserve() {
         // given
         OutboxProperties props = new OutboxProperties();
-        OutboxProperties.TablesProperties tables = new OutboxProperties.TablesProperties();
+        TablesProperties tables = new TablesProperties();
         tables.setAutoCreate(false);
         props.setTables(tables);
 
@@ -165,7 +167,7 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT CleanUpProperties applyDefaults() should initialize defaults when enabled true or null")
     void cleanUp_init_whenEnabledNullOrTrue_shouldApplyDefaultsDefaults() {
         // given
-        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        CleanUpProperties cleanUp = new CleanUpProperties();
         cleanUp.setEnabled(true);
         cleanUp.setBatchSize(null);
         cleanUp.setTtl(null);
@@ -190,12 +192,12 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT CleanUpProperties applyDefaults() when enabled false should reset values")
     void cleanUp_applyDefaults_whenDisabled_shouldResetValues() {
         // given
-        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        CleanUpProperties cleanUp = new CleanUpProperties();
         cleanUp.setEnabled(false);
         cleanUp.setBatchSize(50);
         cleanUp.setTtl(Duration.ofMinutes(5));
 
-        OutboxProperties.PollingProperties polling = new OutboxProperties.PollingProperties();
+        PollingProperties polling = new PollingProperties();
         polling.setType(PollingType.FIXED);
         polling.setInitialDelay(Duration.ofSeconds(1));
         polling.setFixedDelay(Duration.ofSeconds(1));
@@ -217,7 +219,7 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT CleanUpProperties applyDefaults() when enabled null should default enabled true")
     void cleanUp_applyDefaults_whenEnabledNull_shouldEnable() {
         // given
-        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        CleanUpProperties cleanUp = new CleanUpProperties();
         cleanUp.setEnabled(null);
 
         // when
@@ -231,7 +233,7 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT CleanUpProperties applyDefaults() when batchSize negative should reset to default")
     void cleanUp_applyDefaults_whenBatchSizeNegative_shouldReset() {
         // given
-        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        CleanUpProperties cleanUp = new CleanUpProperties();
         cleanUp.setEnabled(true);
         cleanUp.setBatchSize(-10);
 
@@ -246,7 +248,7 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT TablesProperties applyDefaults() when autoCreate null should default true")
     void tables_applyDefaults_whenAutoCreateNull_shouldDefaultTrue() {
         // given
-        OutboxProperties.TablesProperties tables = new OutboxProperties.TablesProperties();
+        TablesProperties tables = new TablesProperties();
         tables.setAutoCreate(null);
 
         // when
@@ -260,7 +262,7 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT TablesProperties applyDefaults() when autoCreate false should preserve false")
     void tables_applyDefaults_whenAutoCreateFalse_shouldPreserve() {
         // given
-        OutboxProperties.TablesProperties tables = new OutboxProperties.TablesProperties();
+        TablesProperties tables = new TablesProperties();
         tables.setAutoCreate(false);
 
         // when
@@ -274,7 +276,7 @@ class OutboxPropertiesUnitTests {
     @DisplayName("UT CleanUpProperties applyDefaults() when batchSize <= 0 should reset to default")
     void cleanUp_applyDefaults_whenBatchSizeZero_shouldDefaultTo200() {
         // given
-        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        CleanUpProperties cleanUp = new CleanUpProperties();
         cleanUp.setEnabled(true);
         cleanUp.setBatchSize(0);
 
@@ -300,7 +302,7 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT MetricsProperties applyDefaults() when enabled true should enable gauge with defaults")
     void metrics_applyDefaults_whenEnabledTrue_shouldEnableGaugeWithDefaults() {
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        MetricsProperties metrics = new MetricsProperties();
         metrics.setEnabled(true);
         metrics.setGauge(null);
 
@@ -314,7 +316,7 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT MetricsProperties applyDefaults() when enabled false should disable gauge")
     void metrics_applyDefaults_whenEnabledFalse_shouldDisableGauge() {
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        MetricsProperties metrics = new MetricsProperties();
         metrics.setEnabled(false);
 
         metrics.applyDefaults();
@@ -327,7 +329,7 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT MetricsProperties applyDefaults() when enabled null should disable metrics")
     void metrics_applyDefaults_whenEnabledNull_shouldDisable() {
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        MetricsProperties metrics = new MetricsProperties();
         metrics.setEnabled(null);
 
         metrics.applyDefaults();
@@ -339,9 +341,9 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT MetricsProperties applyDefaults() when enabled true and gauge provided should preserve gauge")
     void metrics_applyDefaults_whenEnabledTrueAndGaugeProvided_shouldPreserveGauge() {
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        MetricsProperties metrics = new MetricsProperties();
         metrics.setEnabled(true);
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        MetricsProperties.GaugeProperties gauge = new MetricsProperties.GaugeProperties();
         gauge.setEnabled(true);
         metrics.setGauge(gauge);
 
@@ -355,7 +357,7 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT GaugeProperties applyDefaults() when enabled true and cache null should init cache with defaults")
     void gauge_init_whenEnabledTrueAndCacheNull_shouldApplyDefaultsCacheDefaults() {
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        MetricsProperties.GaugeProperties gauge = new MetricsProperties.GaugeProperties();
         gauge.setEnabled(true);
         gauge.setCache(null);
 
@@ -369,7 +371,7 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT GaugeProperties applyDefaults() when enabled false should disable cache")
     void gauge_applyDefaults_whenEnabledFalse_shouldDisableCache() {
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        MetricsProperties.GaugeProperties gauge = new MetricsProperties.GaugeProperties();
         gauge.setEnabled(false);
 
         gauge.applyDefaults();
@@ -382,7 +384,7 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT GaugeProperties applyDefaults() when enabled null should disable gauge and cache")
     void gauge_applyDefaults_whenEnabledNull_shouldDisable() {
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        MetricsProperties.GaugeProperties gauge = new MetricsProperties.GaugeProperties();
         gauge.setEnabled(null);
 
         gauge.applyDefaults();
@@ -394,10 +396,10 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT GaugeProperties applyDefaults() when enabled true and cache provided should preserve cache")
     void gauge_applyDefaults_whenEnabledTrueAndCacheProvided_shouldPreserveCache() {
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        MetricsProperties.GaugeProperties gauge = new MetricsProperties.GaugeProperties();
         gauge.setEnabled(true);
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(true);
         gauge.setCache(cache);
 
@@ -410,8 +412,8 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CacheProperties applyDefaults() when enabled true and ttls null should use default ttls")
     void cache_applyDefaults_whenEnabledTrueAndTtlsNull_shouldUseDefaults() {
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(true);
         cache.setTtls(null);
 
@@ -425,8 +427,8 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CacheProperties applyDefaults() when enabled true and ttls empty should use default ttls")
     void cache_applyDefaults_whenEnabledTrueAndTtlsEmpty_shouldUseDefaults() {
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(true);
         cache.setTtls(List.of());
 
@@ -438,8 +440,8 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CacheProperties applyDefaults() when enabled true and ttls wrong size should use default ttls")
     void cache_applyDefaults_whenEnabledTrueAndTtlsWrongSize_shouldUseDefaults() {
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(true);
         cache.setTtls(List.of(Duration.ofSeconds(10)));
 
@@ -452,8 +454,8 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CacheProperties applyDefaults() when enabled true and ttls correct size should preserve ttls")
     void cache_applyDefaults_whenEnabledTrueAndTtlsCorrectSize_shouldPreserveTtls() {
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(true);
         List<Duration> custom = List.of(Duration.ofSeconds(10), Duration.ofSeconds(20), Duration.ofSeconds(30));
         cache.setTtls(custom);
@@ -466,8 +468,8 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CacheProperties applyDefaults() when enabled false should return empty ttls")
     void cache_applyDefaults_whenEnabledFalse_shouldReturnEmptyTtls() {
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(false);
         cache.setTtls(List.of(Duration.ofSeconds(10), Duration.ofSeconds(20), Duration.ofSeconds(30)));
 
@@ -480,8 +482,8 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CacheProperties applyDefaults() when enabled null should enable and use default ttls")
     void cache_applyDefaults_whenEnabledNull_shouldEnableAndUseDefaults() {
-        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cache =
-                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        MetricsProperties.GaugeProperties.CacheProperties cache =
+                new MetricsProperties.GaugeProperties.CacheProperties();
         cache.setEnabled(null);
 
         cache.applyDefaults();
@@ -493,12 +495,12 @@ class OutboxPropertiesUnitTests {
     @Test
     @DisplayName("UT CleanUpProperties applyDefaults() when custom valid values provided should preserve them")
     void cleanUp_applyDefaults_whenCustomValuesProvided_shouldPreserve() {
-        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        CleanUpProperties cleanUp = new CleanUpProperties();
         cleanUp.setEnabled(true);
         cleanUp.setBatchSize(50);
         cleanUp.setTtl(Duration.ofMinutes(30));
 
-        OutboxProperties.PollingProperties polling = new OutboxProperties.PollingProperties();
+        PollingProperties polling = new PollingProperties();
         polling.setType(PollingType.FIXED);
         polling.setInitialDelay(Duration.ofSeconds(10));
         polling.setFixedDelay(Duration.ofSeconds(3));
@@ -514,5 +516,104 @@ class OutboxPropertiesUnitTests {
         assertThat(cleanUp.getMinFixedDelay()).isEqualTo(Duration.ZERO);
         assertThat(cleanUp.getMaxFixedDelay()).isEqualTo(Duration.ZERO);
         assertThat(cleanUp.getMultiplier()).isNaN();
+    }
+
+    @Test
+    @DisplayName("UT should initialize with default values")
+    void shouldInitializeWithDefaultValues() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+
+        assertThat(properties.getLockAtLeastFor()).isEqualTo(Duration.ofSeconds(1));
+        assertThat(properties.getLockAtMostFor()).isEqualTo(Duration.ofMinutes(1));
+        assertThat(properties.isResolveByPollingProperties()).isTrue();
+    }
+
+    @Test
+    @DisplayName("UT applyDefaults should set durations to ZERO when resolveByPollingProperties is true")
+    void applyDefaults_whenResolveByPollingPropertiesIsTrue_shouldSetDurationsToZero() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+        properties.setLockAtLeastFor(Duration.ofSeconds(10));
+        properties.setLockAtMostFor(Duration.ofSeconds(20));
+        properties.setResolveByPollingProperties(true);
+
+        properties.applyDefaults();
+
+        assertThat(properties.getLockAtLeastFor()).isEqualTo(Duration.ZERO);
+        assertThat(properties.getLockAtMostFor()).isEqualTo(Duration.ZERO);
+    }
+
+    @Test
+    @DisplayName("UT applyDefaults should keep durations when resolveByPollingProperties is false")
+    void applyDefaults_whenResolveByPollingPropertiesIsFalse_shouldKeepDurations() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+        properties.setLockAtLeastFor(Duration.ofSeconds(10));
+        properties.setLockAtMostFor(Duration.ofSeconds(20));
+        properties.setResolveByPollingProperties(false);
+
+        properties.applyDefaults();
+
+        assertThat(properties.getLockAtLeastFor()).isEqualTo(Duration.ofSeconds(10));
+        assertThat(properties.getLockAtMostFor()).isEqualTo(Duration.ofSeconds(20));
+    }
+
+    @Test
+    @DisplayName("UT applyDefaults should throw NPE when lockAtLeastFor is null")
+    void applyDefaults_whenLockAtLeastForIsNull_shouldThrowNullPointerException() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+        properties.setLockAtLeastFor(null);
+
+        assertThatThrownBy(properties::applyDefaults)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("lockAtLeastFor cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT applyDefaults should throw NPE when lockAtMostFor is null")
+    void applyDefaults_whenLockAtMostForIsNull_shouldThrowNullPointerException() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+        properties.setLockAtMostFor(null);
+
+        assertThatThrownBy(properties::applyDefaults)
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("lockAtMostFor cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT applyDefaults should throw NPE when resolveByPollingProperties is null due to unboxing")
+    void applyDefaults_whenResolveByPollingPropertiesIsNull_shouldThrowNullPointerException() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+        properties.setResolveByPollingProperties(null);
+
+        assertThatThrownBy(properties::applyDefaults)
+                .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("UT setters and getters should work correctly")
+    void settersAndGettersShouldWork() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+
+        properties.setLockAtLeastFor(Duration.ofSeconds(5));
+        properties.setLockAtMostFor(Duration.ofSeconds(15));
+        properties.setResolveByPollingProperties(false);
+
+        assertThat(properties.getLockAtLeastFor()).isEqualTo(Duration.ofSeconds(5));
+        assertThat(properties.getLockAtMostFor()).isEqualTo(Duration.ofSeconds(15));
+        assertThat(properties.isResolveByPollingProperties()).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT toString should return formatted string")
+    void toStringShouldReturnFormattedString() {
+        DistributedLockProperties properties = new DistributedLockProperties();
+        properties.setLockAtLeastFor(Duration.ofSeconds(2));
+        properties.setLockAtMostFor(Duration.ofSeconds(5));
+        properties.setResolveByPollingProperties(false);
+
+        String result = properties.toString();
+
+        assertThat(result).contains("lockAtLeastFor=PT2S");
+        assertThat(result).contains("lockAtMostFor=PT5S");
+        assertThat(result).contains("resolveByPollingProperties=false");
     }
 }

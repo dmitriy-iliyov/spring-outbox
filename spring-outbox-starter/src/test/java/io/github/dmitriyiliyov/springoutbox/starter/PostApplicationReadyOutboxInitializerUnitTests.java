@@ -2,43 +2,22 @@ package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationContext;
 
-import java.util.Map;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class PostApplicationReadyOutboxInitializerUnitTests {
 
     @Mock
-    ApplicationContext context;
-
-    PostApplicationReadyOutboxInitializer initializer;
-
-    @BeforeEach
-    void setUp() {
-        initializer = new PostApplicationReadyOutboxInitializer(context);
-    }
-
-    @Test
-    @DisplayName("UT init() when no OutboxProperties in context should throw ISE")
-    void init_whenNoOutboxProperties_shouldThrowISE() {
-        // given
-        when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of());
-
-        // when + then
-        assertThrows(IllegalStateException.class, () -> initializer.init());
-    }
+    OutboxProperties properties;
 
     @Test
     @DisplayName("UT init() when schedulers present should call schedule on each")
@@ -46,14 +25,10 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         // given
         OutboxScheduler scheduler1 = mock(OutboxScheduler.class);
         OutboxScheduler scheduler2 = mock(OutboxScheduler.class);
-        OutboxProperties properties = mock(OutboxProperties.class);
 
-        when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of(
-                "scheduler1", scheduler1,
-                "scheduler2", scheduler2
-        ));
-        when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
+        PostApplicationReadyOutboxInitializer initializer = new PostApplicationReadyOutboxInitializer(
+                properties, List.of(), List.of(scheduler1, scheduler2)
+        );
 
         // when
         initializer.init();
@@ -67,13 +42,11 @@ class PostApplicationReadyOutboxInitializerUnitTests {
     @DisplayName("UT init() when no schedulers present should not throw")
     void init_whenNoSchedulers_shouldNotThrow() {
         // given
-        OutboxProperties properties = mock(OutboxProperties.class);
+        PostApplicationReadyOutboxInitializer initializer = new PostApplicationReadyOutboxInitializer(
+                properties, List.of(), List.of()
+        );
 
-        when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
-
-        // when + then
+        // when + then (no exception is thrown)
         initializer.init();
     }
 
@@ -83,14 +56,10 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         // given
         OutboxMetrics metrics1 = mock(OutboxMetrics.class);
         OutboxMetrics metrics2 = mock(OutboxMetrics.class);
-        OutboxProperties properties = mock(OutboxProperties.class);
 
-        when(context.getBeansOfType(OutboxScheduler.class)).thenReturn(Map.of());
-        when(context.getBeansOfType(OutboxMetrics.class)).thenReturn(Map.of(
-                "metrics1", metrics1,
-                "metrics2", metrics2
-        ));
-        when(context.getBeansOfType(OutboxProperties.class)).thenReturn(Map.of("outboxProperties", properties));
+        PostApplicationReadyOutboxInitializer initializer = new PostApplicationReadyOutboxInitializer(
+                properties, List.of(metrics1, metrics2), List.of()
+        );
 
         // when
         initializer.init();

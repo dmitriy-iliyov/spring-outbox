@@ -223,8 +223,8 @@ class OutboxPublisherAutoConfigurationUnitTests {
     }
 
     @Test
-    @DisplayName("UT cleanUpOutboxScheduler creates OutboxCleanUpScheduler")
-    void cleanUpOutboxScheduler_createsScheduler(@Mock OutboxProperties outboxProperties,
+    @DisplayName("UT outboxCleanUpScheduler creates OutboxCleanUpScheduler")
+    void outboxCleanUpScheduler_createsScheduler(@Mock OutboxProperties outboxProperties,
                                                  @Mock OutboxManager manager,
                                                  @Mock DistributedLockRepository lockRepository) {
         OutboxProperties.CleanUpProperties cleanUpProperties = mock(OutboxProperties.CleanUpProperties.class);
@@ -237,7 +237,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
             strategyFactory.when(() -> OutboxScheduleStrategyFactory.create(any(), any(), any(), any()))
                     .thenReturn(mock(OutboxScheduleStrategy.class));
 
-            OutboxScheduler scheduler = config.cleanUpOutboxScheduler(
+            OutboxScheduler scheduler = config.outboxCleanUpScheduler(
                     outboxProperties, executor, scheduleStrategyListenerSupplier, manager, lockRepository, continuableTaskDecoratorSupplier
             );
 

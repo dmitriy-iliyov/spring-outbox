@@ -4,8 +4,8 @@ import org.springframework.context.annotation.Conditional;
 
 import java.lang.annotation.*;
 
-@Target({ElementType.METHOD, ElementType.TYPE})
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Conditional(OnAnyMetricsEnabledCondition.class)
+@Conditional(OnAnyCleanUpEnabledCondition.class)
 @Documented
-public @interface ConditionalOnAnyMetricsEnabled { }
+public @interface ConditionalOnAnyCleanUpEnabled { }

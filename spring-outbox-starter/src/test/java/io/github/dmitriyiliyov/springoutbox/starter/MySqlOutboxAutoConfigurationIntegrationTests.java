@@ -16,74 +16,152 @@ public class MySqlOutboxAutoConfigurationIntegrationTests {
             );
 
     @Test
-    @DisplayName("IT should register OutboxPublisherProperties bean")
-    void shouldRegisterOutboxPublisherPropertiesBean() {
-        verifier.shouldRegisterOutboxPublisherPropertiesBean();
+    @DisplayName("IT should register OutboxPublisherProperties by default")
+    void shouldRegisterOutboxPublisherPropertiesByDefault() {
+        verifier.shouldRegisterOutboxPublisherPropertiesByDefault();
     }
 
     @Test
-    @DisplayName("IT should register OutboxConsumerProperties bean")
-    void shouldRegisterOutboxConsumerPropertiesBean() {
-        verifier.shouldRegisterOutboxConsumerPropertiesBean();
+    @DisplayName("IT should register OutboxPublisherProperties when enabled")
+    void shouldRegisterOutboxPublisherPropertiesWhenEnabled() {
+        verifier.shouldRegisterOutboxPublisherPropertiesWhenEnabled();
     }
 
     @Test
-    @DisplayName("IT should register JdbcTemplate bean")
+    @DisplayName("IT should not register OutboxPublisherProperties when disabled")
+    void shouldNotRegisterOutboxPublisherPropertiesWhenDisabled() {
+        verifier.shouldNotRegisterOutboxPublisherPropertiesWhenDisabled();
+    }
+
+    @Test
+    @DisplayName("IT should not register OutboxConsumerProperties by default")
+    void shouldNotRegisterOutboxConsumerPropertiesByDefault() {
+        verifier.shouldNotRegisterOutboxConsumerPropertiesByDefault();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxConsumerProperties when enabled")
+    void shouldRegisterOutboxConsumerPropertiesWhenEnabled() {
+        verifier.shouldRegisterOutboxConsumerPropertiesWhenEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should not register OutboxConsumerProperties when disabled")
+    void shouldNotRegisterOutboxConsumerPropertiesWhenDisabled() {
+        verifier.shouldNotRegisterOutboxConsumerPropertiesWhenDisabled();
+    }
+
+    @Test
+    @DisplayName("IT should register JdbcTemplate")
     void shouldRegisterJdbcTemplate() {
         verifier.shouldRegisterJdbcTemplate();
     }
 
     @Test
-    @DisplayName("IT should register ScheduledExecutorService bean")
-    void shouldRegisterScheduledExecutorServiceBean() {
-        verifier.shouldRegisterScheduledExecutorServiceBean();
+    @DisplayName("IT should not register JdbcTemplate when custom bean provided")
+    void shouldNotRegisterJdbcTemplateWhenCustomBeanProvided() {
+        verifier.shouldNotRegisterJdbcTemplateWhenCustomBeanProvided();
     }
 
     @Test
-    @DisplayName("IT should register PostApplicationStartOutboxInitializer bean when none present")
-    void shouldRegisterOutboxInitializerWhenMissing() {
-        verifier.shouldRegisterOutboxInitializerWhenMissing();
+    @DisplayName("IT should register DataSourceInitializer by default")
+    void shouldRegisterDataSourceInitializerByDefault() {
+        verifier.shouldRegisterDataSourceInitializerByDefault();
     }
 
     @Test
-    @DisplayName("IT should not register PostApplicationStartOutboxInitializer when bean already present")
-    void shouldNotRegisterOutboxInitializerWhenAlreadyPresent() {
-        verifier.shouldNotRegisterOutboxInitializerWhenAlreadyPresent();
+    @DisplayName("IT should register DataSourceInitializer when auto-create true")
+    void shouldRegisterDataSourceInitializerWhenAutoCreateTrue() {
+        verifier.shouldRegisterDataSourceInitializerWhenAutoCreateTrue();
     }
 
     @Test
-    @DisplayName("IT should not register DataSourceInitializer when auto-create is false")
+    @DisplayName("IT should not register DataSourceInitializer when auto-create false")
     void shouldNotRegisterDataSourceInitializerWhenAutoCreateFalse() {
         verifier.shouldNotRegisterDataSourceInitializerWhenAutoCreateFalse();
     }
 
     @Test
-    @DisplayName("IT should create outbox_events table when auto-create is true")
-    void shouldCreateTablesWhenAutoCreateTrue() {
-        verifier.shouldCreateTablesWhenAutoCreateTrue();
+    @DisplayName("IT should register DistributedLockRepository when clean-up enabled")
+    void shouldRegisterDistributedLockRepositoryWhenCleanUpEnabled() {
+        verifier.shouldRegisterDistributedLockRepositoryWhenCleanUpEnabled();
     }
 
     @Test
-    @DisplayName("IT publisher bean should have enabled=false when publisher not configured")
-    void publisherBeanShouldBeDisabledByDefault() {
-        verifier.publisherBeanShouldBeDisabledByDefault();
+    @DisplayName("IT should not register DistributedLockRepository when clean-up disabled")
+    void shouldNotRegisterDistributedLockRepositoryWhenCleanUpDisabled() {
+        verifier.shouldNotRegisterDistributedLockRepositoryWhenCleanUpDisabled();
     }
 
     @Test
-    @DisplayName("IT consumer bean should have enabled=false when consumer not configured")
-    void consumerBeanShouldBeDisabledByDefault() {
-        verifier.consumerBeanShouldBeDisabledByDefault();
+    @DisplayName("IT should not register duplicate DistributedLockRepository when custom bean provided")
+    void shouldNotRegisterDistributedLockRepositoryWhenCustomBeanProvided() {
+        verifier.shouldNotRegisterDistributedLockRepositoryWhenCustomBeanProvided();
     }
 
     @Test
-    @DisplayName("IT should fail to start context when DataSource is not available")
+    @DisplayName("IT should register NoopScheduleStrategyListenerSupplier by default")
+    void shouldRegisterNoopScheduleStrategyListenerSupplierByDefault() {
+        verifier.shouldRegisterNoopScheduleStrategyListenerSupplierByDefault();
+    }
+
+    @Test
+    @DisplayName("IT should register MetricsOutboxScheduleStrategyListenerSupplier when metrics enabled")
+    void shouldRegisterMetricsScheduleStrategyListenerSupplierWhenMetricsEnabled() {
+        verifier.shouldRegisterMetricsScheduleStrategyListenerSupplierWhenMetricsEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate ScheduleStrategyListenerSupplier when custom bean provided")
+    void shouldNotRegisterScheduleStrategyListenerSupplierWhenCustomBeanProvided() {
+        verifier.shouldNotRegisterScheduleStrategyListenerSupplierWhenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should register NoopContinuableTaskDecoratorSupplier by default")
+    void shouldRegisterNoopContinuableTaskDecoratorSupplierByDefault() {
+        verifier.shouldRegisterNoopContinuableTaskDecoratorSupplierByDefault();
+    }
+
+    @Test
+    @DisplayName("IT should register MetricsContinuableTaskDecoratorSupplier when metrics enabled")
+    void shouldRegisterMetricsContinuableTaskDecoratorSupplierWhenMetricsEnabled() {
+        verifier.shouldRegisterMetricsContinuableTaskDecoratorSupplierWhenMetricsEnabled();
+    }
+
+    @Test
+    @DisplayName("IT should not register duplicate ContinuableTaskDecoratorSupplier when custom bean provided")
+    void shouldNotRegisterContinuableTaskDecoratorSupplierWhenCustomBeanProvided() {
+        verifier.shouldNotRegisterContinuableTaskDecoratorSupplierWhenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should register ScheduledExecutorService by default")
+    void shouldRegisterScheduledExecutorServiceByDefault() {
+        verifier.shouldRegisterScheduledExecutorServiceByDefault();
+    }
+
+    @Test
+    @DisplayName("IT should register ScheduledExecutorService with custom pool size")
+    void shouldRegisterScheduledExecutorServiceWithCustomPoolSize() {
+        verifier.shouldRegisterScheduledExecutorServiceWithCustomPoolSize();
+    }
+
+    @Test
+    @DisplayName("IT should register ApplicationRunner for jobs initializer")
+    void shouldRegisterApplicationRunnerForJobs() {
+        verifier.shouldRegisterApplicationRunnerForJobs();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxInitializer when missing")
+    void shouldRegisterOutboxInitializerWhenMissing() {
+        verifier.shouldRegisterOutboxInitializerWhenMissing();
+    }
+
+    @Test
+    @DisplayName("IT should fail when DataSource not available")
     void shouldFailWhenDataSourceNotAvailable() {
         verifier.shouldFailWhenDataSourceNotAvailable();
-    }
-
-    @Test
-    @DisplayName("IT ScheduledExecutorService should use default thread pool size when not configured")
-    void shouldUseDefaultThreadPoolSizeWhenNotConfigured() {
-        verifier.shouldUseDefaultThreadPoolSizeWhenNotConfigured();
     }
 }

@@ -1,10 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategyListener;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategyListener;
 import io.github.dmitriyiliyov.springoutbox.metrics.MetricsOutboxScheduleStrategyListener;
 import io.micrometer.core.instrument.MeterRegistry;
 
-public final class MetricsOutboxScheduleStrategyListenerSupplier implements OutboxScheduleStrategyListenerSupplier {
+public class MetricsOutboxScheduleStrategyListenerSupplier implements OutboxScheduleStrategyListenerSupplier {
 
     private final MeterRegistry registry;
 

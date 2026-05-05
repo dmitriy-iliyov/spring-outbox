@@ -20,9 +20,9 @@ public class DefaultOutboxJobCreateCommand implements OutboxJobCreateCommand {
     private final Long lockAtMostFor;
 
     public DefaultOutboxJobCreateCommand(JdbcTemplate jdbcTemplate, Clock clock, String jobName, Long lockAtLeastFor, Long lockAtMostFor) {
+        this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
         this.jobName = jobName;
-        this.jdbcTemplate = jdbcTemplate;
         this.lockAtLeastFor = lockAtLeastFor;
         this.lockAtMostFor = lockAtMostFor;
     }
@@ -43,6 +43,7 @@ public class DefaultOutboxJobCreateCommand implements OutboxJobCreateCommand {
                         ps.setLong(4, lockAtMostFor);
                     }
             );
+            log.info("Successfully initialized job with name '{}'", jobName);
         } catch (DuplicateKeyException dke) {
             log.info("Job with name '{}' already exists", jobName);
         }

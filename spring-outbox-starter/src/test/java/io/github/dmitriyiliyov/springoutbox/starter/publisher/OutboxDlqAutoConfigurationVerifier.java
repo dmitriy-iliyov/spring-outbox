@@ -181,6 +181,7 @@ public class OutboxDlqAutoConfigurationVerifier {
                     assertThat(ctx).hasNotFailed();
                     JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
                     jdbcTemplate.execute("SELECT 1 FROM outbox_dlq_events WHERE 1=0");
+                    jdbcTemplate.execute("SELECT 1 FROM outbox_jobs WHERE 1=0");
                 });
     }
 

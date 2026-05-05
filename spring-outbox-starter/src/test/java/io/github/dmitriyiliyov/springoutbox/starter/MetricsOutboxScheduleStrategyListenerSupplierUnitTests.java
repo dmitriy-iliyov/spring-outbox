@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategyListener;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategyListener;
 import io.github.dmitriyiliyov.springoutbox.metrics.MetricsOutboxScheduleStrategyListener;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;

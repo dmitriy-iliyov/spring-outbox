@@ -1,26 +1,29 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import javax.sql.DataSource;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.Mockito.*;
-
 
 public class PostApplicationReadyOutboxInitializerIntegrationTests {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(OutboxAutoConfiguration.class))
             .withBean(DataSource.class, () -> mock(DataSource.class))
-            .withPropertyValues("outbox.tables.auto-create=false");
+            .withBean(DistributedLockRepository.class, () -> mock(DistributedLockRepository.class))
+            .withPropertyValues("outbox.tables.auto-create=false", "outbox.publisher.enabled=false");
 
     @Test
     @DisplayName("IT should call schedule on all OutboxScheduler beans after application ready")
@@ -64,16 +67,12 @@ public class PostApplicationReadyOutboxInitializerIntegrationTests {
                 .run(ctx -> {
                     OutboxScheduler scheduler = ctx.getBean("testScheduler", OutboxScheduler.class);
 
-                    ConfigurableApplicationContext configurableCtx =
-                            (ConfigurableApplicationContext) ctx.getSourceApplicationContext();
-                    configurableCtx.publishEvent(
-                            new ApplicationReadyEvent(
-                                    mock(org.springframework.boot.SpringApplication.class),
-                                    new String[]{},
-                                    configurableCtx,
-                                    null
-                            )
-                    );
+                    ctx.publishEvent(new ApplicationReadyEvent(
+                            mock(SpringApplication.class),
+                            new String[]{},
+                            (ConfigurableApplicationContext) ctx.getSourceApplicationContext(),
+                            Duration.ZERO
+                    ));
 
                     verify(scheduler, times(1)).schedule();
                 });
@@ -90,8 +89,8 @@ public class PostApplicationReadyOutboxInitializerIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT should not call schedule twice when init called twice")
-    void shouldCallScheduleOncePerInvocation() {
+    @DisplayName("IT should call schedule twice when init called twice (no idempotency check)")
+    void shouldCallScheduleTwiceWhenInitCalledTwice() {
         contextRunner
                 .withBean("testScheduler", OutboxScheduler.class, () -> mock(OutboxScheduler.class))
                 .run(ctx -> {

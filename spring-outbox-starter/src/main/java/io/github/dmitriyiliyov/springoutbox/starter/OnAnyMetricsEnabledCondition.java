@@ -14,8 +14,8 @@ public class OnAnyMetricsEnabledCondition extends SpringBootCondition {
         boolean isPublisherMetricsEnabled = environment.getProperty("outbox.publisher.metrics.enabled", Boolean.class, false);
         boolean isConsumerMetricsEnabled = environment.getProperty("outbox.consumer.metrics.enabled", Boolean.class, false);
         if (isPublisherMetricsEnabled || isConsumerMetricsEnabled) {
-            return ConditionOutcome.match("At least one metrics module is enabled");
+            return ConditionOutcome.match("At least somebody enabled metrics");
         }
-        return ConditionOutcome.noMatch("No metrics modules enabled");
+        return ConditionOutcome.noMatch("Nobody has the metrics enabled");
     }
 }

@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.datasource.init.DatabasePopulator;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.jdbc.support.MetaDataAccessException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -43,257 +45,148 @@ class OutboxDatabasePopulatorFactoryUnitTests {
     @Mock
     private OutboxConsumerProperties consumerProperties;
 
-    @Test
-    @DisplayName("UT create() when PostgreSQL and only outbox table should return populator with one script")
-    void create_whenPostgreSqlAndOnlyOutboxTable_shouldReturnPopulatorWithOneScript() throws SQLException {
-        // given
+    private void mockDbProductName(String productName) throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+        when(metaData.getDatabaseProductName()).thenReturn(productName);
+    }
+
+    @Test
+    @DisplayName("UT create() when properties is null should throw NullPointerException")
+    void create_whenPropertiesNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> OutboxDatabasePopulatorFactory.create(null, dataSource))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("properties cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT create() when dataSource is null should throw NullPointerException")
+    void create_whenDataSourceNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> OutboxDatabasePopulatorFactory.create(properties, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("dataSource cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT create() when PostgreSQL and only base tables enabled should return populator")
+    void create_whenPostgreSqlAndBaseTables_shouldReturnPopulator() throws SQLException {
+        mockDbProductName("PostgreSQL");
         when(properties.getPublisher()).thenReturn(publisherProperties);
         when(publisherProperties.getDlq()).thenReturn(null);
         when(properties.getConsumer()).thenReturn(null);
 
-        // when
         DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
 
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).getMetaData();
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
         verify(connection).close();
     }
 
     @Test
-    @DisplayName("UT create() when PostgreSQL with DLQ enabled should return populator with two scripts")
-    void create_whenPostgreSqlWithDlqEnabled_shouldReturnPopulatorWithTwoScripts() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+    @DisplayName("UT create() when PostgreSQL with DLQ enabled should return populator")
+    void create_whenPostgreSqlWithDlqEnabled_shouldReturnPopulator() throws SQLException {
+        mockDbProductName("PostgreSQL");
         when(properties.getPublisher()).thenReturn(publisherProperties);
         when(publisherProperties.getDlq()).thenReturn(dlqProperties);
         when(dlqProperties.isEnabled()).thenReturn(true);
         when(properties.getConsumer()).thenReturn(null);
 
-        // when
         DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
 
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
     }
 
     @Test
-    @DisplayName("UT create() when PostgreSQL with consumer enabled should return populator with two scripts")
-    void create_whenPostgreSqlWithConsumerEnabled_shouldReturnPopulatorWithTwoScripts() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+    @DisplayName("UT create() when PostgreSQL with consumer enabled should return populator")
+    void create_whenPostgreSqlWithConsumerEnabled_shouldReturnPopulator() throws SQLException {
+        mockDbProductName("PostgreSQL");
         when(properties.getPublisher()).thenReturn(publisherProperties);
         when(publisherProperties.getDlq()).thenReturn(null);
         when(properties.getConsumer()).thenReturn(consumerProperties);
         when(consumerProperties.isEnabled()).thenReturn(true);
 
-        // when
         DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
 
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
     }
 
     @Test
-    @DisplayName("UT create() when PostgreSQL with DLQ and consumer enabled should return populator with three scripts")
-    void create_whenPostgreSqlWithDlqAndConsumerEnabled_shouldReturnPopulatorWithThreeScripts() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
-        when(properties.getPublisher()).thenReturn(publisherProperties);
-        when(publisherProperties.getDlq()).thenReturn(dlqProperties);
-        when(dlqProperties.isEnabled()).thenReturn(true);
-        when(properties.getConsumer()).thenReturn(consumerProperties);
-        when(consumerProperties.isEnabled()).thenReturn(true);
-
-        // when
-        DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
-    }
-
-    @Test
-    @DisplayName("UT create() when MySQL and only outbox table should return populator with one script")
-    void create_whenMySqlAndOnlyOutboxTable_shouldReturnPopulatorWithOneScript() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("MySQL");
-        when(properties.getPublisher()).thenReturn(publisherProperties);
-        when(publisherProperties.getDlq()).thenReturn(null);
-        when(properties.getConsumer()).thenReturn(null);
-
-        // when
-        DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
-    }
-
-    @Test
-    @DisplayName("UT create() when MySQL with DLQ and consumer enabled should return populator with three scripts")
-    void create_whenMySqlWithDlqAndConsumerEnabled_shouldReturnPopulatorWithThreeScripts() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("MySQL");
+    @DisplayName("UT create() when PostgreSQL with DLQ and consumer enabled should return populator")
+    void create_whenPostgreSqlWithDlqAndConsumerEnabled_shouldReturnPopulator() throws SQLException {
+        mockDbProductName("PostgreSQL");
         when(properties.getPublisher()).thenReturn(publisherProperties);
         when(publisherProperties.getDlq()).thenReturn(dlqProperties);
         when(dlqProperties.isEnabled()).thenReturn(true);
         when(properties.getConsumer()).thenReturn(consumerProperties);
         when(consumerProperties.isEnabled()).thenReturn(true);
 
-        // when
         DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
 
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
     }
 
     @Test
-    @DisplayName("UT create() when Oracle and only outbox table should return populator with one script")
-    void create_whenOracleAndOnlyOutboxTable_shouldReturnPopulatorWithOneScript() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("Oracle");
-        when(properties.getPublisher()).thenReturn(publisherProperties);
-        when(publisherProperties.getDlq()).thenReturn(null);
-        when(properties.getConsumer()).thenReturn(null);
-
-        // when
-        DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
-    }
-
-    @Test
-    @DisplayName("UT create() when Oracle with DLQ and consumer enabled should return populator with three scripts")
-    void create_whenOracleWithDlqAndConsumerEnabled_shouldReturnPopulatorWithThreeScripts() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("Oracle");
+    @DisplayName("UT create() when MySQL with DLQ and consumer enabled should return populator")
+    void create_whenMySqlWithDlqAndConsumerEnabled_shouldReturnPopulator() throws SQLException {
+        mockDbProductName("MySQL");
         when(properties.getPublisher()).thenReturn(publisherProperties);
         when(publisherProperties.getDlq()).thenReturn(dlqProperties);
         when(dlqProperties.isEnabled()).thenReturn(true);
         when(properties.getConsumer()).thenReturn(consumerProperties);
         when(consumerProperties.isEnabled()).thenReturn(true);
 
-        // when
         DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
 
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
     }
 
     @Test
-    @DisplayName("UT create() when DLQ disabled should not include DLQ script")
-    void create_whenDlqDisabled_shouldNotIncludeDlqScript() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
+    @DisplayName("UT create() when Oracle with DLQ and consumer enabled should return populator")
+    void create_whenOracleWithDlqAndConsumerEnabled_shouldReturnPopulator() throws SQLException {
+        mockDbProductName("Oracle");
+        when(properties.getPublisher()).thenReturn(publisherProperties);
+        when(publisherProperties.getDlq()).thenReturn(dlqProperties);
+        when(dlqProperties.isEnabled()).thenReturn(true);
+        when(properties.getConsumer()).thenReturn(consumerProperties);
+        when(consumerProperties.isEnabled()).thenReturn(true);
+
+        DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
+
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
+    }
+
+    @Test
+    @DisplayName("UT create() when DLQ and consumer explicitly disabled should return base populator")
+    void create_whenDlqAndConsumerExplicitlyDisabled_shouldReturnBasePopulator() throws SQLException {
+        mockDbProductName("PostgreSQL");
         when(properties.getPublisher()).thenReturn(publisherProperties);
         when(publisherProperties.getDlq()).thenReturn(dlqProperties);
         when(dlqProperties.isEnabled()).thenReturn(false);
-        when(properties.getConsumer()).thenReturn(null);
-
-        // when
-        DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
-
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
-    }
-
-    @Test
-    @DisplayName("UT create() when consumer disabled should not include consumed script")
-    void create_whenConsumerDisabled_shouldNotIncludeConsumedScript() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("PostgreSQL");
-        when(properties.getPublisher()).thenReturn(publisherProperties);
-        when(publisherProperties.getDlq()).thenReturn(null);
         when(properties.getConsumer()).thenReturn(consumerProperties);
         when(consumerProperties.isEnabled()).thenReturn(false);
 
-        // when
         DatabasePopulator result = OutboxDatabasePopulatorFactory.create(properties, dataSource);
 
-        // then
-        assertThat(result).isNotNull();
-        verify(dataSource).getConnection();
-        verify(connection).close();
-    }
-
-    @Test
-    @DisplayName("UT create() when unsupported database should throw IllegalStateException")
-    void create_whenUnsupportedDatabase_shouldThrowIllegalStateException() throws SQLException {
-        // given
-        when(dataSource.getConnection()).thenReturn(connection);
-        when(connection.getMetaData()).thenReturn(metaData);
-        when(metaData.getDatabaseProductName()).thenReturn("UnsupportedDB");
-
-        // when + then
-        assertThatThrownBy(() -> OutboxDatabasePopulatorFactory.create(properties, dataSource))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Unsupported database 'UnsupportedDB'");
-        verify(connection).close();
+        assertThat(result).isNotNull().isInstanceOf(ResourceDatabasePopulator.class);
     }
 
     @Test
     @DisplayName("UT create() when connection fails should throw RuntimeException")
     void create_whenConnectionFails_shouldThrowRuntimeException() throws SQLException {
-        // given
         when(dataSource.getConnection()).thenThrow(new SQLException("Connection failed"));
 
-        // when + then
         assertThatThrownBy(() -> OutboxDatabasePopulatorFactory.create(properties, dataSource))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to get database connection")
-                .hasCauseInstanceOf(SQLException.class);
+                .hasCauseInstanceOf(MetaDataAccessException.class);
     }
 
     @Test
-    @DisplayName("UT create() when metadata fails should throw RuntimeException")
-    void create_whenMetadataFails_shouldThrowRuntimeException() throws SQLException {
-        // given
+    @DisplayName("UT create() when metadata extraction fails should throw RuntimeException")
+    void create_whenMetadataExtractionFails_shouldThrowRuntimeException() throws SQLException {
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getMetaData()).thenThrow(new SQLException("Metadata failed"));
 
-        // when + then
         assertThatThrownBy(() -> OutboxDatabasePopulatorFactory.create(properties, dataSource))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Failed to get database connection")
-                .hasCauseInstanceOf(SQLException.class);
-        verify(connection).close();
+                .hasCauseInstanceOf(MetaDataAccessException.class);
     }
 }

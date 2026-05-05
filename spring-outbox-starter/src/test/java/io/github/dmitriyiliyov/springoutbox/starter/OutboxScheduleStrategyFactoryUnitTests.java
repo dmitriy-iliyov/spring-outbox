@@ -1,11 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import io.github.dmitriyiliyov.springoutbox.core.AdaptiveOutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.FixedOutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.AdaptiveOutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.FixedOutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;

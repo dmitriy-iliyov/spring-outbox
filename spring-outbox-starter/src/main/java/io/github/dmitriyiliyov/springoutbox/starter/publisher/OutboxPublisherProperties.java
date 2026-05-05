@@ -63,7 +63,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             }
             cleanUp.applyDefaults();
             if (!cleanUp.isEnabled()) {
-                log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
+                log.warn("Outbox Publisher is configured with disabled clean-up, processed outbox storage will not be cleaned automatically");
             }
 
             if (dlq == null) {
@@ -72,7 +72,7 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             }
             dlq.applyDefaults();
             if (!dlq.isEnabled()) {
-                log.warn("Outbox is configured with disabled dlq, failed outbox events will not be managed automatically.");
+                log.warn("Outbox is configured with disabled DLQ, failed outbox events will not be managed automatically.");
             }
 
             if (metrics == null) {
@@ -697,6 +697,8 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
         private TransferProperties transferTo;
         @NestedConfigurationProperty
         private TransferProperties transferFrom;
+        @NestedConfigurationProperty
+        private OutboxProperties.CleanUpProperties cleanUp;
 
         public void applyDefaults() {
             if (enabled != null && enabled) {
@@ -715,10 +717,20 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
                 transferTo.applyDefaults(currentDefaults);
                 transferFrom = transferFrom == null ? new TransferProperties() : transferFrom;
                 transferFrom.applyDefaults(currentDefaults);
+
+                if (cleanUp == null) {
+                    cleanUp = new OutboxProperties.CleanUpProperties();
+                    cleanUp.setEnabled(true);
+                }
+                cleanUp.applyDefaults();
             } else {
                 enabled = false;
                 transferTo = new TransferProperties();
                 transferFrom = new TransferProperties();
+
+                cleanUp = new OutboxProperties.CleanUpProperties();
+                cleanUp.setEnabled(false);
+                cleanUp.applyDefaults();
             }
         }
 
@@ -764,12 +776,21 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
             this.transferFrom = transferFrom;
         }
 
+        public OutboxProperties.CleanUpProperties getCleanUp() {
+            return cleanUp;
+        }
+
+        public void setCleanUp(OutboxProperties.CleanUpProperties cleanUp) {
+            this.cleanUp = cleanUp;
+        }
+
         @Override
         public String toString() {
             return "DlqProperties{" +
                     "enabled=" + enabled +
                     ", transferTo=" + transferTo +
                     ", transferFrom=" + transferFrom +
+                    ", cleanUp=" + cleanUp +
                     '}';
         }
 

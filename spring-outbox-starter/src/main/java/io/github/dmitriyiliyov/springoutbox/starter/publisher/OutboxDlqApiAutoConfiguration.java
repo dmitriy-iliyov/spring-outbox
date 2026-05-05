@@ -1,10 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
+import io.github.dmitriyiliyov.springoutbox.core.utils.*;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqApiServiceMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.starter.ConditionalOnDatabaseType;
+import io.github.dmitriyiliyov.springoutbox.starter.DatabaseType;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,20 +17,58 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
 import java.time.Clock;
 
 @Configuration
-@ConditionalOnProperty(prefix = "outbox.publisher.dlq", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "outbox.publisher.dlq",
+        name = "enabled",
+        havingValue = "true"
+)
 public class OutboxDlqApiAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqApiAutoConfiguration.class);
 
     @Bean
-    @ConditionalOnMissingBean
     @ConditionalOnClass(OutboxDlqApiRepository.class)
-    public OutboxDlqApiRepository outboxDlqApiRepository(DataSource dataSource, JdbcTemplate jdbcTemplate, Clock clock) {
-        return OutboxDlqApiRepositoryFactory.create(dataSource, jdbcTemplate, clock);
+    @ConditionalOnMissingBean
+    @ConditionalOnDatabaseType(type = DatabaseType.POSTGRESQL)
+    public OutboxDlqApiRepository postgreSqlOutboxDlqApiRepository(@Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                                   Clock clock) {
+        return new PostgreSqlOutboxDlqApiRepository(
+                jdbcTemplate,
+                new PostgreSqlIdHelper(),
+                new DefaultResultSetMapper(),
+                clock
+        );
+    }
+
+    @Bean
+    @ConditionalOnClass(OutboxDlqApiRepository.class)
+    @ConditionalOnMissingBean
+    @ConditionalOnDatabaseType(type = DatabaseType.MYSQL)
+    public OutboxDlqApiRepository mySqlOutboxDlqApiRepository(@Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                              Clock clock) {
+        return new MySqlOutboxDlqApiRepository(
+                jdbcTemplate,
+                new MySqlIdHelper(),
+                new DefaultBytesResultSetMapper(),
+                clock
+        );
+    }
+
+    @Bean
+    @ConditionalOnClass(OutboxDlqApiRepository.class)
+    @ConditionalOnMissingBean
+    @ConditionalOnDatabaseType(type = DatabaseType.ORACLE)
+    public OutboxDlqApiRepository oracleOutboxDlqApiRepository(@Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                               Clock clock) {
+        return new OracleOutboxDlqApiRepository(
+                jdbcTemplate,
+                new OracleSqlIdHelper(),
+                new DefaultBytesResultSetMapper(),
+                clock
+        );
     }
 
     @Bean

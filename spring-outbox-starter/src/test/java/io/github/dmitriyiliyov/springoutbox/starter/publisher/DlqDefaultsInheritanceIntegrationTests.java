@@ -64,6 +64,10 @@ public class DlqDefaultsInheritanceIntegrationTests {
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
                 .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
+                        "spring.datasource.url=jdbc:postgresql://outbox-producer-postgresql:5432/outbox_example",
+                        "spring.datasource.driver-class-name=org.postgresql.Driver",
+                        "spring.datasource.username=admin",
+                        "spring.datasource.password=root",
                         "outbox.tables.auto-create=false",
                         "outbox.publisher.sender.type=kafka",
                         "outbox.publisher.events.my-event.topic=my.topic"

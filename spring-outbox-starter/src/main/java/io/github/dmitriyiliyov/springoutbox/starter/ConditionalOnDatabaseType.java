@@ -6,6 +6,8 @@ import java.lang.annotation.*;
 
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@Conditional(OnAnyMetricsEnabledCondition.class)
+@Conditional(OnDatabaseTypeCondition.class)
 @Documented
-public @interface ConditionalOnAnyMetricsEnabled { }
+public @interface ConditionalOnDatabaseType {
+    DatabaseType type();
+}

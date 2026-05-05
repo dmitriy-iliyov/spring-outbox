@@ -1,12 +1,16 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -15,6 +19,8 @@ import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 
 import javax.sql.DataSource;
+import java.time.Clock;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -29,17 +35,63 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public OutboxPublisherProperties outboxPublishProperties() {
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher",
+            name = "enabled",
+            havingValue = "true",
+            matchIfMissing = true
+    )
+    public OutboxPublisherProperties outboxPublisherProperties() {
         return properties.getPublisher();
     }
 
     @Bean
+    @ConditionalOnProperty(
+            prefix = "outbox.consumer",
+            name = "enabled",
+            havingValue = "true"
+    )
     public OutboxConsumerProperties outboxConsumerProperties() {
         return properties.getConsumer();
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "outbox.tables", name = "auto-create", havingValue = "true", matchIfMissing = true)
+    @ConditionalOnMissingBean(name = "outboxJdbcTemplate")
+    public JdbcTemplate outboxJdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnDatabaseType(type = DatabaseType.POSTGRESQL)
+    public OutboxRepositoryFactory postgreSqlOutboxRepositoryFactory(@Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                                     Clock clock) {
+        return new PostgreSqlOutboxRepositoryFactory(jdbcTemplate, clock);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnDatabaseType(type = DatabaseType.MYSQL)
+    public OutboxRepositoryFactory mySqlOutboxRepositoryFactory(@Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                                Clock clock) {
+        return new MySqlOutboxRepositoryFactory(jdbcTemplate, clock);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnDatabaseType(type = DatabaseType.ORACLE)
+    public OutboxRepositoryFactory oracleOutboxRepositoryFactory(@Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                                 Clock clock) {
+        return new OracleOutboxRepositoryFactory(jdbcTemplate, clock);
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "outbox.tables",
+            name = "auto-create",
+            havingValue = "true",
+            matchIfMissing = true
+    )
     public DataSourceInitializer outboxDataSourceInitializer(DataSource dataSource) {
         DataSourceInitializer dataSourceInitializer = new DataSourceInitializer();
         dataSourceInitializer.setEnabled(true);
@@ -49,9 +101,10 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(name = "outboxJdbcTemplate")
-    public JdbcTemplate outboxJdbcTemplate(DataSource dataSource) {
-        return new JdbcTemplate(dataSource);
+    @ConditionalOnAnyCleanUpEnabled
+    @ConditionalOnMissingBean
+    public DistributedLockRepository outboxDistributedLockRepository(OutboxRepositoryFactory repositoryFactory) {
+        return repositoryFactory.createDistributedLockRepository();
     }
 
     @Bean
@@ -92,8 +145,18 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public PostApplicationReadyOutboxInitializer outboxInitializer(ApplicationContext applicationContext) {
-        return new PostApplicationReadyOutboxInitializer(applicationContext);
+    public ApplicationRunner outboxJobsInitializer(List<OutboxJobCreateCommand> commands) {
+        return args -> {
+            for (OutboxJobCreateCommand command : commands) {
+                command.create();
+            }
+        };
+    }
+
+    @Bean
+    public PostApplicationReadyOutboxInitializer outboxInitializer(OutboxProperties properties,
+                                                                   List<OutboxMetrics> metrics,
+                                                                   List<OutboxScheduler> schedulers) {
+        return new PostApplicationReadyOutboxInitializer(properties, metrics, schedulers);
     }
 }

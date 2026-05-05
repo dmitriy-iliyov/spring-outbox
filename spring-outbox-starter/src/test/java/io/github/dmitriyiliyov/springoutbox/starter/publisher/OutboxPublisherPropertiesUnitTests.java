@@ -17,32 +17,27 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should throw when sender is null")
     public void applyDefaults_whenSenderNull_thenThrow() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         properties.setEvents(new HashMap<>());
 
-        // when + then
         assertThrows(IllegalArgumentException.class, properties::applyDefaults);
     }
 
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should throw when events is null")
     public void applyDefaults_whenEventsNull_thenThrow() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
 
-        // when + then
         assertThrows(IllegalArgumentException.class, properties::applyDefaults);
     }
 
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should accept empty events map")
     public void applyDefaults_whenEventsEmpty_thenAccept() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -50,17 +45,14 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertTrue(properties.getEvents().isEmpty());
     }
 
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should throw when event type is null")
     public void applyDefaults_whenEventTypeNull_thenThrow() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -73,14 +65,12 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put(null, event);
         properties.setEvents(events);
 
-        // when + then
         assertThrows(IllegalArgumentException.class, properties::applyDefaults);
     }
 
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should throw when event type is blank")
     public void applyDefaults_whenEventTypeBlank_thenThrow() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -93,14 +83,12 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("  ", event);
         properties.setEvents(events);
 
-        // when + then
         assertThrows(IllegalArgumentException.class, properties::applyDefaults);
     }
 
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should applyDefaults stuckRecovery when null")
     public void applyDefaults_whenStuckRecoveryNull_thenUseDefault() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -108,10 +96,8 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertNotNull(properties.getStuckRecovery());
         assertEquals(500, properties.getStuckRecovery().getBatchSize());
         assertEquals(Duration.ofMinutes(5), properties.getStuckRecovery().getMaxBatchProcessingTime());
@@ -125,7 +111,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should applyDefaults defaults when null")
     public void applyDefaults_whenDefaultsNull_thenUseDefault() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -133,10 +118,8 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertNotNull(properties.getDefaults());
         assertEquals(200, properties.getDefaults().getBatchSize());
         assertEquals(PollingType.ADAPTIVE, properties.getDefaults().getPolling().getType());
@@ -150,7 +133,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() with full configuration should applyDefaults all properties correctly")
     public void applyDefaults_withFullConfiguration_shouldApplyDefaultsAll() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -192,10 +174,8 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties.EventProperties.Defaults defaults = new OutboxPublisherProperties.EventProperties.Defaults();
         properties.setDefaults(defaults);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertEquals(SenderType.KAFKA, properties.getSender().getType());
         assertEquals("kafkaOutboxTemplate", properties.getSender().getBeanName());
 
@@ -240,7 +220,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should handle disabled backoff in defaults correctly")
     public void applyDefaults_whenBackoffDisabledInDefaults_thenApplyCorrectly() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -281,10 +260,8 @@ public class OutboxPublisherPropertiesUnitTests {
         dlq.setEnabled(true);
         properties.setDlq(dlq);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertFalse(properties.getDefaults().getBackoff().isEnabled());
         assertFalse(properties.getEvents().get("account-delete").getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(0), properties.getEvents().get("account-delete").getBackoff().getDelay());
@@ -297,7 +274,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should apply defaults to event properties with null values")
     public void applyDefaults_whenEventPropertiesNull_thenApplyDefaults() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -326,10 +302,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertEquals(50, resultEvent.getBatchSize());
         assertEquals(Duration.ofSeconds(10), resultEvent.getInitialDelay());
@@ -343,7 +317,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should override defaults with event specific values")
     public void applyDefaults_whenEventPropertiesProvided_thenOverrideDefaults() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -383,10 +356,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertEquals(100, resultEvent.getBatchSize());
         assertEquals(Duration.ofSeconds(20), resultEvent.getInitialDelay());
@@ -400,7 +371,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should handle disabled backoff in event properties")
     public void applyDefaults_whenEventBackoffDisabled_thenApplyCorrectly() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -431,10 +401,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertFalse(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(0), resultEvent.getBackoff().getDelay());
@@ -444,7 +412,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use default backoff delay when event backoff delay is null")
     public void applyDefaults_whenEventBackoffDelayNull_thenUseDefaultDelay() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -474,13 +441,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        System.out.println(defaults);
-        System.out.println(defaultBackoff);
-        System.out.println(eventBackoff);
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(15), resultEvent.getBackoff().getDelay());
@@ -490,7 +452,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use event backoff delay when provided")
     public void applyDefaults_whenEventBackoffDelayProvided_thenUseEventDelay() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -517,10 +478,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
@@ -530,7 +489,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use default backoff multiplier when event multiplier is zero")
     public void applyDefaults_whenEventBackoffMultiplierZero_thenUseDefaultMultiplier() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -557,10 +515,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
@@ -570,7 +526,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use default backoff multiplier when event multiplier is negative")
     public void applyDefaults_whenEventBackoffMultiplierNegative_thenUseDefaultMultiplier() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -597,10 +552,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
@@ -610,7 +563,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use event backoff multiplier when it is 1")
     public void applyDefaults_whenEventBackoffMultiplierOne_thenUseEventMultiplier() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -637,10 +589,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
@@ -650,7 +600,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use event backoff multiplier when greater than 1")
     public void applyDefaults_whenEventBackoffMultiplierGreaterThanOne_thenUseEventMultiplier() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -677,10 +626,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(20), resultEvent.getBackoff().getDelay());
@@ -690,7 +637,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use both defaults when event backoff delay and multiplier are null")
     public void applyDefaults_whenEventBackoffDelayAndMultiplierNull_thenUseBothDefaults() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -718,13 +664,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        System.out.println(defaultBackoff);
-        System.out.println(defaults);
-        System.out.println(properties.getEvents().get("test-event"));
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(15), resultEvent.getBackoff().getDelay());
@@ -734,7 +675,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should use both event values when backoff delay and multiplier are provided")
     public void applyDefaults_whenEventBackoffDelayAndMultiplierProvided_thenUseBothEventValues() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -761,10 +701,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
@@ -774,7 +712,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT OutboxProperties.applyDefaults() should mix defaults and event values correctly")
     public void applyDefaults_whenMixingDefaultsAndEventValues_thenApplyCorrectly() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
@@ -801,10 +738,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties resultEvent = properties.getEvents().get("test-event");
         assertTrue(resultEvent.getBackoff().isEnabled());
         assertEquals(Duration.ofSeconds(25), resultEvent.getBackoff().getDelay());
@@ -814,7 +749,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT isCleanUpEnabled() should return true when cleanUp is null")
     public void isCleanUpEnabled_whenCleanUpNull_thenReturnTrue() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -822,17 +756,14 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertTrue(properties.isCleanUpEnabled());
     }
 
     @Test
     @DisplayName("UT isCleanUpEnabled() should return true when cleanUp enabled")
     public void isCleanUpEnabled_whenCleanUpEnabled_thenReturnTrue() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -844,17 +775,14 @@ public class OutboxPublisherPropertiesUnitTests {
         cleanUp.setEnabled(true);
         properties.setCleanUp(cleanUp);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertTrue(properties.isCleanUpEnabled());
     }
 
     @Test
     @DisplayName("UT isCleanUpEnabled() should return false when cleanUp disabled")
     public void isCleanUpEnabled_whenCleanUpDisabled_thenReturnFalse() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -866,17 +794,14 @@ public class OutboxPublisherPropertiesUnitTests {
         cleanUp.setEnabled(false);
         properties.setCleanUp(cleanUp);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertFalse(properties.isCleanUpEnabled());
     }
 
     @Test
     @DisplayName("UT getCleanUp() should return cleanUp properties when provided")
     public void getCleanUp_whenCleanUpProvided_thenReturnProperties() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -895,10 +820,8 @@ public class OutboxPublisherPropertiesUnitTests {
         cleanUp.setPolling(polling);
         properties.setCleanUp(cleanUp);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertNotNull(properties.getCleanUp());
         assertEquals(50, properties.getCleanUp().getBatchSize());
         assertEquals(Duration.ofHours(2), properties.getCleanUp().getTtl());
@@ -909,7 +832,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT existEventType() should return true when event exists")
     public void existEventType_whenEventExists_thenReturnTrue() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -928,17 +850,14 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertTrue(properties.existEventType("test-event"));
     }
 
     @Test
     @DisplayName("UT existEventType() should return false when event does not exist")
     public void existEventType_whenEventDoesNotExist_thenReturnFalse() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -951,17 +870,14 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertFalse(properties.existEventType("non-existing-event"));
     }
 
     @Test
     @DisplayName("UT getEvents() should return unmodifiable map")
     public void getEvents_shouldReturnUnmodifiableMap() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -974,10 +890,8 @@ public class OutboxPublisherPropertiesUnitTests {
         events.put("test-event", event);
         properties.setEvents(events);
 
-        // when
         properties.applyDefaults();
 
-        // then
         OutboxPublisherProperties.EventProperties newEvent = new OutboxPublisherProperties.EventProperties();
         newEvent.setTopic("topic");
         assertThrows(UnsupportedOperationException.class,
@@ -988,7 +902,6 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT getSender() should return sender properties")
     public void getSender_shouldReturnSenderProperties() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -996,10 +909,8 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertNotNull(properties.getSender());
         assertEquals(SenderType.KAFKA, properties.getSender().getType());
         assertEquals("testBean", properties.getSender().getBeanName());
@@ -1022,21 +933,17 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT setMetrics() should update metrics properties")
     public void setMetrics_shouldUpdateMetricsProperties() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
 
-        // when
         properties.setMetrics(metrics);
 
-        // then
         assertEquals(metrics, properties.getMetrics());
     }
 
     @Test
     @DisplayName("UT applyDefaults() when metrics is null should create enabled metrics")
     public void applyDefaults_whenMetricsNull_shouldCreateDefaultMetrics() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
         sender.setType(SenderType.KAFKA);
@@ -1044,10 +951,8 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertNotNull(properties.getMetrics());
         assertFalse(properties.getMetrics().isEnabled());
         assertNotNull(properties.getMetrics().getGauge());
@@ -1057,19 +962,139 @@ public class OutboxPublisherPropertiesUnitTests {
     @Test
     @DisplayName("UT applyDefaults() when enabled is false should set enabled to false and apply default fallbacks")
     public void applyDefaultsEnabledFalse() {
-        // given
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         properties.setEnabled(false);
 
-        // when
         properties.applyDefaults();
 
-        // then
         assertFalse(properties.isEnabled());
         assertFalse(properties.getCleanUp().isEnabled());
         assertFalse(properties.getDlq().isEnabled());
         assertThat(properties.getEvents()).isEmpty();
         assertFalse(properties.getMetrics().isEnabled());
         assertNull(properties.getSender());
+    }
+
+    @Test
+    @DisplayName("UT DlqProperties.applyDefaults() when enabled is null should disable and init empty properties")
+    public void applyDefaults_dlqWhenEnabledNull_shouldDisableAndInitEmptyProperties() {
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        dlq.setEnabled(null);
+
+        dlq.applyDefaults();
+
+        assertFalse(dlq.isEnabled());
+        assertNotNull(dlq.getTransferTo());
+        assertNotNull(dlq.getTransferFrom());
+        assertNotNull(dlq.getCleanUp());
+        assertFalse(dlq.getCleanUp().isEnabled());
+    }
+
+    @Test
+    @DisplayName("UT DlqProperties.applyDefaults() when enabled is false should disable and init empty properties")
+    public void applyDefaults_dlqWhenEnabledFalse_shouldDisableAndInitEmptyProperties() {
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        dlq.setEnabled(false);
+
+        dlq.applyDefaults();
+
+        assertFalse(dlq.isEnabled());
+        assertNotNull(dlq.getTransferTo());
+        assertNotNull(dlq.getTransferFrom());
+        assertNotNull(dlq.getCleanUp());
+        assertFalse(dlq.getCleanUp().isEnabled());
+    }
+
+    @Test
+    @DisplayName("UT DlqProperties.applyDefaults() when enabled is true and fields null should apply defaults")
+    public void applyDefaults_dlqWhenEnabledTrueAndFieldsNull_shouldApplyDefaults() {
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        dlq.setEnabled(true);
+
+        dlq.applyDefaults();
+
+        assertTrue(dlq.isEnabled());
+        assertEquals(500, dlq.getBatchSize());
+        assertNotNull(dlq.getPolling());
+        assertEquals(PollingType.ADAPTIVE, dlq.getPolling().getType());
+
+        assertNotNull(dlq.getTransferTo());
+        assertEquals(500, dlq.getTransferTo().getBatchSize());
+
+        assertNotNull(dlq.getTransferFrom());
+        assertEquals(500, dlq.getTransferFrom().getBatchSize());
+
+        assertNotNull(dlq.getCleanUp());
+        assertTrue(dlq.getCleanUp().isEnabled());
+    }
+
+    @Test
+    @DisplayName("UT DlqProperties.applyDefaults() when batch size is zero or negative should use default")
+    public void applyDefaults_dlqWhenBatchSizeInvalid_shouldUseDefault() {
+        OutboxPublisherProperties.DlqProperties dlq1 = new OutboxPublisherProperties.DlqProperties();
+        dlq1.setEnabled(true);
+        dlq1.setBatchSize(0);
+        dlq1.applyDefaults();
+        assertEquals(500, dlq1.getBatchSize());
+
+        OutboxPublisherProperties.DlqProperties dlq2 = new OutboxPublisherProperties.DlqProperties();
+        dlq2.setEnabled(true);
+        dlq2.setBatchSize(-10);
+        dlq2.applyDefaults();
+        assertEquals(500, dlq2.getBatchSize());
+    }
+
+    @Test
+    @DisplayName("UT DlqProperties.applyDefaults() when custom values provided should retain them")
+    public void applyDefaults_dlqWhenCustomValuesProvided_shouldRetainThem() {
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        dlq.setEnabled(true);
+        dlq.setBatchSize(100);
+
+        OutboxProperties.CleanUpProperties cleanUp = new OutboxProperties.CleanUpProperties();
+        cleanUp.setEnabled(false);
+        dlq.setCleanUp(cleanUp);
+
+        OutboxPublisherProperties.DlqProperties.TransferProperties transferTo = new OutboxPublisherProperties.DlqProperties.TransferProperties();
+        transferTo.setBatchSize(50);
+        dlq.setTransferTo(transferTo);
+
+        dlq.applyDefaults();
+
+        assertTrue(dlq.isEnabled());
+        assertEquals(100, dlq.getBatchSize());
+        assertNotNull(dlq.getCleanUp());
+        assertFalse(dlq.getCleanUp().isEnabled());
+        assertEquals(50, dlq.getTransferTo().getBatchSize());
+        assertEquals(100, dlq.getTransferFrom().getBatchSize());
+    }
+
+    @Test
+    @DisplayName("UT TransferProperties getters should delegate to polling properties")
+    public void transferProperties_shouldDelegateToPolling() {
+        OutboxPublisherProperties.DlqProperties.TransferProperties transfer = new OutboxPublisherProperties.DlqProperties.TransferProperties();
+        OutboxProperties.PollingProperties polling = new OutboxProperties.PollingProperties();
+        polling.setMinFixedDelay(Duration.ofSeconds(1));
+        polling.setMaxFixedDelay(Duration.ofSeconds(10));
+        polling.setMultiplier(2.0);
+        polling.setInitialDelay(Duration.ofSeconds(5));
+        polling.setFixedDelay(Duration.ofSeconds(2));
+        transfer.setPolling(polling);
+
+        assertEquals(Duration.ofSeconds(1), transfer.getMinFixedDelay());
+        assertEquals(Duration.ofSeconds(10), transfer.getMaxFixedDelay());
+        assertEquals(2.0, transfer.getMultiplier());
+        assertEquals(Duration.ofSeconds(5), transfer.getInitialDelay());
+        assertEquals(Duration.ofSeconds(2), transfer.getFixedDelay());
+    }
+
+    @Test
+    @DisplayName("UT toString methods should return formatted strings")
+    public void dlqAndTransferProperties_toString_shouldNotBeNull() {
+        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
+        OutboxPublisherProperties.DlqProperties.TransferProperties transfer = new OutboxPublisherProperties.DlqProperties.TransferProperties();
+
+        assertNotNull(dlq.toString());
+        assertNotNull(transfer.toString());
     }
 }

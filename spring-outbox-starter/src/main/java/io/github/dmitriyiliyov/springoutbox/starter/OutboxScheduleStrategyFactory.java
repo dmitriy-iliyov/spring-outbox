@@ -1,10 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-import io.github.dmitriyiliyov.springoutbox.core.AdaptiveOutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.FixedOutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategyListener;
+import io.github.dmitriyiliyov.springoutbox.core.polling.AdaptiveOutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.FixedOutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategyListener;
 
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -25,12 +26,18 @@ public final class OutboxScheduleStrategyFactory {
      * @param executor         the scheduled executor service used for task scheduling.
      * @param listenerSupplier a supplier for providing a {@link OutboxScheduleStrategyListener} based on taskType.
      * @return                 a configured {@link OutboxScheduleStrategy} instance.
+     * @throws NullPointerException  if some of the passed parameters is null.
      * @throws IllegalStateException if an unknown or unsupported polling type is encountered.
      */
     public static OutboxScheduleStrategy create(String taskType,
                                                 OutboxProperties.PollingProperties properties,
                                                 ScheduledExecutorService executor,
                                                 OutboxScheduleStrategyListenerSupplier listenerSupplier) {
+        Objects.requireNonNull(taskType, "taskType cannot be null");
+        Objects.requireNonNull(properties, "properties cannot be null");
+        Objects.requireNonNull(executor, "executor cannot be null");
+        Objects.requireNonNull(listenerSupplier, "listenerSupplier cannot be null");
+
         if (PollingType.FIXED.equals(properties.getType())) {
             return new FixedOutboxScheduleStrategy(properties, executor, listenerSupplier.supply(taskType));
         } else if (PollingType.ADAPTIVE.equals(properties.getType())) {

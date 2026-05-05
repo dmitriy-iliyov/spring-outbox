@@ -1,20 +1,22 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
-
+import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.TransactionAwareDataSourceProxy;
 
 import java.time.Clock;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 public class OutboxAutoConfigurationVerifier {
 
@@ -43,50 +45,90 @@ public class OutboxAutoConfigurationVerifier {
                         "spring.datasource.url=" + dbUrl,
                         "spring.datasource.driver-class-name=" + dbDriver,
                         "spring.datasource.username=" + dbUsername,
-                        "spring.datasource.password=" + dbPassword,
-                        "outbox.tables.auto-create=false"
+                        "spring.datasource.password=" + dbPassword
                 );
     }
 
-    public void shouldRegisterOutboxPublisherPropertiesBean() {
+    public void shouldRegisterOutboxPublisherPropertiesByDefault() {
         getBaseContextRunner().run(ctx ->
                 assertThat(ctx).hasSingleBean(OutboxPublisherProperties.class)
         );
     }
 
-    public void shouldRegisterOutboxConsumerPropertiesBean() {
+    public void shouldRegisterOutboxPublisherPropertiesWhenEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.publisher.enabled=true",
+                        "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.events.my-event.topic=my.topic")
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(OutboxPublisherProperties.class)
+                );
+    }
+
+    public void shouldNotRegisterOutboxPublisherPropertiesWhenDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.publisher.enabled=false")
+                .run(ctx ->
+                        assertThat(ctx).doesNotHaveBean(OutboxPublisherProperties.class)
+                );
+    }
+
+    public void shouldNotRegisterOutboxConsumerPropertiesByDefault() {
         getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(OutboxConsumerProperties.class)
+                assertThat(ctx).doesNotHaveBean(OutboxConsumerProperties.class)
         );
+    }
+
+    public void shouldRegisterOutboxConsumerPropertiesWhenEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.enabled=true")
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(OutboxConsumerProperties.class)
+                );
+    }
+
+    public void shouldNotRegisterOutboxConsumerPropertiesWhenDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.consumer.enabled=false")
+                .run(ctx ->
+                        assertThat(ctx).doesNotHaveBean(OutboxConsumerProperties.class)
+                );
     }
 
     public void shouldRegisterJdbcTemplate() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("outboxJdbcTemplate")
-        );
-    }
-
-    public void shouldRegisterScheduledExecutorServiceBean() {
         getBaseContextRunner()
-                .withPropertyValues("outbox.thread-pool-size=3")
+                .withPropertyValues("outbox.tables.auto-create=false")
                 .run(ctx ->
-                        assertThat(ctx).hasSingleBean(ScheduledExecutorService.class)
+                        assertThat(ctx).hasBean("outboxJdbcTemplate")
                 );
     }
 
-    public void shouldRegisterOutboxInitializerWhenMissing() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(PostApplicationReadyOutboxInitializer.class)
-        );
+    public void shouldNotRegisterJdbcTemplateWhenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .withBean("outboxJdbcTemplate", JdbcTemplate.class, () -> mock(JdbcTemplate.class))
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(JdbcTemplate.class)
+                );
     }
 
-    public void shouldNotRegisterOutboxInitializerWhenAlreadyPresent() {
+    public void shouldRegisterDataSourceInitializerByDefault() {
         getBaseContextRunner()
-                .withBean(PostApplicationReadyOutboxInitializer.class,
-                        () -> new PostApplicationReadyOutboxInitializer(null))
                 .run(ctx ->
-                        assertThat(ctx).hasSingleBean(PostApplicationReadyOutboxInitializer.class)
+                        assertThat(ctx).hasBean("outboxDataSourceInitializer")
                 );
+    }
+
+    public void shouldRegisterDataSourceInitializerWhenAutoCreateTrue() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=true")
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+                    assertThat(ctx).hasBean("outboxDataSourceInitializer");
+                    JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
+                    jdbcTemplate.execute("SELECT 1 FROM outbox_events WHERE 1=0");
+                    jdbcTemplate.execute("SELECT 1 FROM outbox_jobs WHERE 1=0");
+                });
     }
 
     public void shouldNotRegisterDataSourceInitializerWhenAutoCreateFalse() {
@@ -97,35 +139,150 @@ public class OutboxAutoConfigurationVerifier {
                 );
     }
 
-    public void shouldCreateTablesWhenAutoCreateTrue() {
+    public void shouldRegisterDistributedLockRepositoryWhenCleanUpEnabled() {
         getBaseContextRunner()
-                .withPropertyValues("outbox.tables.auto-create=true")
+                .withPropertyValues("outbox.tables.auto-create=false",
+                        "outbox.publisher.clean-up.enabled=true",
+                        "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.events.my-event.topic=my.topic"
+                )
+                .withBean(OutboxRepositoryFactory.class, () -> mock(OutboxRepositoryFactory.class))
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(DistributedLockRepository.class)
+                );
+    }
+
+    public void shouldNotRegisterDistributedLockRepositoryWhenCleanUpDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.tables.auto-create=false",
+                        "outbox.publisher.clean-up.enabled=false",
+                        "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.events.my-event.topic=my.topic"
+                )
+                .run(ctx ->
+                        assertThat(ctx).doesNotHaveBean(DistributedLockRepository.class)
+                );
+    }
+
+    public void shouldNotRegisterDistributedLockRepositoryWhenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.tables.auto-create=false",
+                        "outbox.publisher.clean-up.enabled=true",
+                        "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.events.my-event.topic=my.topic")
+                .withBean(OutboxRepositoryFactory.class, () -> mock(OutboxRepositoryFactory.class))
+                .withBean(DistributedLockRepository.class, () -> mock(DistributedLockRepository.class))
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(DistributedLockRepository.class)
+                );
+    }
+
+    public void shouldRegisterNoopScheduleStrategyListenerSupplierByDefault() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
                 .run(ctx -> {
-                    assertThat(ctx).hasNotFailed();
-                    JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
-                    jdbcTemplate.execute("SELECT 1 FROM outbox_events WHERE 1=0");
+                    assertThat(ctx).hasSingleBean(OutboxScheduleStrategyListenerSupplier.class);
+                    assertThat(ctx.getBean(OutboxScheduleStrategyListenerSupplier.class))
+                            .isInstanceOf(NoopOutboxScheduleStrategyListenerSupplier.class);
                 });
     }
 
-    public void jdbcTemplateShouldBeTransactionAware() {
-        getBaseContextRunner().run(ctx -> {
-            JdbcTemplate jdbcTemplate = ctx.getBean("outboxJdbcTemplate", JdbcTemplate.class);
-            assertThat(jdbcTemplate.getDataSource()).isInstanceOf(TransactionAwareDataSourceProxy.class);
-        });
+    public void shouldRegisterMetricsScheduleStrategyListenerSupplierWhenMetricsEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.tables.auto-create=false",
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.events.my-event.topic=my.topic"
+                )
+                .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("metricsOutboxScheduleStrategyListenerSupplier");
+                    OutboxScheduleStrategyListenerSupplier primary = ctx.getBean(OutboxScheduleStrategyListenerSupplier.class);
+                    assertThat(primary).isInstanceOf(MetricsOutboxScheduleStrategyListenerSupplier.class);
+                });
     }
 
-    public void publisherBeanShouldBeDisabledByDefault() {
-        getBaseContextRunner().run(ctx -> {
-            OutboxPublisherProperties publisher = ctx.getBean(OutboxPublisherProperties.class);
-            assertThat(publisher.isEnabled()).isFalse();
-        });
+    public void shouldNotRegisterScheduleStrategyListenerSupplierWhenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .withBean("customScheduleStrategyListenerSupplier", OutboxScheduleStrategyListenerSupplier.class, () -> mock(OutboxScheduleStrategyListenerSupplier.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxScheduleStrategyListenerSupplier.class);
+                    assertThat(ctx).hasBean("customScheduleStrategyListenerSupplier");
+                });
     }
 
-    public void consumerBeanShouldBeDisabledByDefault() {
-        getBaseContextRunner().run(ctx -> {
-            OutboxConsumerProperties consumer = ctx.getBean(OutboxConsumerProperties.class);
-            assertThat(consumer.isEnabled()).isFalse();
-        });
+    public void shouldRegisterNoopContinuableTaskDecoratorSupplierByDefault() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(ContinuableTaskDecoratorSupplier.class);
+                    assertThat(ctx.getBean(ContinuableTaskDecoratorSupplier.class))
+                            .isInstanceOf(NoopContinuableTaskDecoratorSupplier.class);
+                });
+    }
+
+    public void shouldRegisterMetricsContinuableTaskDecoratorSupplierWhenMetricsEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.tables.auto-create=false",
+                        "outbox.publisher.metrics.enabled=true",
+                        "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.events.my-event.topic=my.topic"
+                )
+                .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                .withPropertyValues(
+                        )
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("metricsContinuableTaskDecoratorSupplier");
+                    ContinuableTaskDecoratorSupplier primary = ctx.getBean(ContinuableTaskDecoratorSupplier.class);
+                    assertThat(primary).isInstanceOf(ContinuableTaskTimeMeasureDecoratorSupplier.class);
+                });
+    }
+
+    public void shouldNotRegisterContinuableTaskDecoratorSupplierWhenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .withBean("customContinuableTaskDecoratorSupplier", ContinuableTaskDecoratorSupplier.class, () -> mock(ContinuableTaskDecoratorSupplier.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(ContinuableTaskDecoratorSupplier.class);
+                    assertThat(ctx).hasBean("customContinuableTaskDecoratorSupplier");
+                });
+    }
+
+    public void shouldRegisterScheduledExecutorServiceByDefault() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(ScheduledExecutorService.class)
+                );
+    }
+
+    public void shouldRegisterScheduledExecutorServiceWithCustomPoolSize() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false", "outbox.thread-pool-size=5")
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(ScheduledExecutorService.class)
+                );
+    }
+
+    public void shouldRegisterApplicationRunnerForJobs() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .run(ctx ->
+                        assertThat(ctx).hasBean("outboxJobsInitializer")
+                );
+    }
+
+    public void shouldRegisterOutboxInitializerWhenMissing() {
+        getBaseContextRunner()
+                .withPropertyValues("outbox.tables.auto-create=false")
+                .run(ctx ->
+                        assertThat(ctx).hasSingleBean(PostApplicationReadyOutboxInitializer.class)
+                );
     }
 
     public void shouldFailWhenDataSourceNotAvailable() {
@@ -134,11 +291,5 @@ public class OutboxAutoConfigurationVerifier {
                 .run(ctx ->
                         assertThat(ctx).hasFailed()
                 );
-    }
-
-    public void shouldUseDefaultThreadPoolSizeWhenNotConfigured() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(ScheduledExecutorService.class)
-        );
     }
 }

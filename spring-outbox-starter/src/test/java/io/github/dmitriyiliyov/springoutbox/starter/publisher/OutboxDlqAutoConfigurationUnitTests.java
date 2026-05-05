@@ -15,17 +15,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OutboxDlqAutoConfigurationUnitTests {
 
-    private final OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration();
-
     @Test
     @DisplayName("UT outboxDlqCache returns Passthrough cache when metrics null")
     void outboxDlqCache_metricsNull_returnsPassthrough() {
         // given
         OutboxPublisherProperties props = new OutboxPublisherProperties();
         props.setDlq(new OutboxPublisherProperties.DlqProperties());
+        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
 
         // when
-        OutboxCache<?> cache = config.outboxDlqCache(props);
+        OutboxCache<?> cache = config.outboxDlqCache();
 
         // then
         assertThat(cache).isInstanceOf(NoopOutboxCache.class).isNotNull();
@@ -49,8 +48,10 @@ class OutboxDlqAutoConfigurationUnitTests {
 
         props.setMetrics(metrics);
 
+        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+
         // when + then
-        assertThatThrownBy(() -> config.outboxDlqCache(props))
+        assertThatThrownBy(config::outboxDlqCache)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cache ttls cannot be null or empty");
     }
@@ -71,8 +72,10 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setDlq(new OutboxPublisherProperties.DlqProperties());
         props.setMetrics(metrics);
 
+        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+
         // when + then
-        assertThatThrownBy(() -> config.outboxDlqCache(props))
+        assertThatThrownBy(config::outboxDlqCache)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Ttls should be 3 element size");
     }
@@ -89,8 +92,10 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setMetrics(metrics);
         props.setDlq(dlq);
 
+        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+
         // when
-        OutboxCache<?> cache = config.outboxDlqCache(props);
+        OutboxCache<?> cache = config.outboxDlqCache();
 
         // then
         assertThat(cache).isInstanceOf(NoopOutboxCache.class);
@@ -110,8 +115,10 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setMetrics(metrics);
         props.setDlq(dlq);
 
+        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+
         // when
-        OutboxCache<?> cache = config.outboxDlqCache(props);
+        OutboxCache<?> cache = config.outboxDlqCache();
 
         // then
         assertThat(cache).isInstanceOf(NoopOutboxCache.class);
@@ -137,8 +144,10 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setMetrics(metrics);
         props.setDlq(dlq);
 
+        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+
         // when
-        OutboxCache<?> cache = config.outboxDlqCache(props);
+        OutboxCache<?> cache = config.outboxDlqCache();
 
         // then
         assertThat(cache).isInstanceOf(SimpleOutboxCache.class);

@@ -13,20 +13,24 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
-import java.sql.SQLException;
 import java.time.Clock;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Answers.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class OutboxDlqApiAutoConfigurationIntegrationTests {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withConfiguration(AutoConfigurations.of(OutboxDlqApiAutoConfiguration.class))
-            .withUserConfiguration(DependenciesConfiguration.class);
+            .withBean("outboxJdbcTemplate", JdbcTemplate.class, () -> mock(JdbcTemplate.class))
+            .withBean(Clock.class, Clock::systemDefaultZone)
+            .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+            .withPropertyValues(
+                    "spring.datasource.url=jdbc:postgresql://outbox-producer-postgresql:5432/outbox_example",
+                    "spring.datasource.driver-class-name=org.postgresql.Driver",
+                    "spring.datasource.username=admin",
+                    "spring.datasource.password=root"
+            );
 
     @Test
     @DisplayName("IT should not register any beans when dlq.enabled property is missing")
@@ -163,31 +167,31 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
         assertThat(context).doesNotHaveBean(OutboxDlqControllerAdvice.class);
     }
 
-    @Configuration
-    static class DependenciesConfiguration {
-
-        @Bean
-        DataSource dataSource() throws SQLException {
-            DataSource dataSource = mock(DataSource.class, RETURNS_DEEP_STUBS);
-            when(dataSource.getConnection().getMetaData().getDatabaseProductName()).thenReturn("PostgreSQL");
-            return dataSource;
-        }
-
-        @Bean
-        JdbcTemplate jdbcTemplate() {
-            return mock(JdbcTemplate.class);
-        }
-
-        @Bean
-        Clock clock() {
-            return Clock.systemUTC();
-        }
-
-        @Bean
-        MeterRegistry meterRegistry() {
-            return new SimpleMeterRegistry();
-        }
-    }
+//    @Configuration
+//    static class DependenciesConfiguration {
+//
+//        @Bean
+//        DataSource dataSource() throws SQLException {
+//            DataSource dataSource = mock(DataSource.class, RETURNS_DEEP_STUBS);
+//            when(dataSource.getConnection().getMetaData().getDatabaseProductName()).thenReturn("PostgreSQL");
+//            return dataSource;
+//        }
+//
+//        @Bean
+//        JdbcTemplate jdbcTemplate() {
+//            return mock(JdbcTemplate.class);
+//        }
+//
+////        @Bean
+////        Clock clock() {
+////            return Clock.systemUTC();
+////        }
+//
+//        @Bean
+//        MeterRegistry meterRegistry() {
+//            return new SimpleMeterRegistry();
+//        }
+//    }
 
     @Configuration
     static class CustomRepositoryConfiguration {

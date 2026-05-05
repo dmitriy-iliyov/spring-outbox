@@ -4,7 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.ContinuableTaskTimeMeasureDecorator;
 import io.micrometer.core.instrument.MeterRegistry;
 
-public final class ContinuableTaskTimeMeasureDecoratorSupplier implements ContinuableTaskDecoratorSupplier {
+public class ContinuableTaskTimeMeasureDecoratorSupplier implements ContinuableTaskDecoratorSupplier {
 
     private final MeterRegistry registry;
 

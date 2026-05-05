@@ -8,7 +8,11 @@ import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsRepository;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsService;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxJobCreateCommand;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -18,6 +22,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerA
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.Clock;
 
@@ -50,13 +55,13 @@ public class OutboxPublisherAutoConfigurationVerifier {
                 ))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
                 .withBean(Clock.class, Clock::systemDefaultZone)
+                .withBean(ObjectMapper.class, ObjectMapper::new)
                 .withPropertyValues(
                         "spring.datasource.url=" + dbUrl,
                         "spring.datasource.driver-class-name=" + dbDriver,
                         "spring.datasource.username=" + dbUsername,
                         "spring.datasource.password=" + dbPassword,
                         "outbox.tables.auto-create=false",
-                        "outbox.publisher.enabled=true",
                         "outbox.publisher.sender.type=kafka",
                         "outbox.publisher.events.my-event.topic=my.topic"
                 );
@@ -76,10 +81,14 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(UuidGenerator.class);
                     assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
                     assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+
+                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(NoopOutboxCache.class);
 
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
                     assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
 
                     assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
@@ -113,8 +122,12 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(UuidGenerator.class);
                     assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
                     assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+                    assertThat(ctx).hasSingleBean(OutboxJobCreateCommand.class);
 
-                    assertThat(ctx).hasBean("defaultOutboxManager");
+                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(SimpleOutboxCache.class);
+
+                    assertThat(ctx).hasBean("outboxManager");
                     assertThat(ctx).hasBean("outboxManagerMetricsDecorator");
                     OutboxManager primary = ctx.getBean(OutboxManager.class);
                     assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
@@ -126,6 +139,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
 
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
                     assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
                     assertThat(ctx).hasBean("othereventOutboxPublisherScheduler");
                 });
@@ -142,6 +156,9 @@ public class OutboxPublisherAutoConfigurationVerifier {
 
                     OutboxManager primary = ctx.getBean(OutboxManager.class);
                     assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
+
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(NoopOutboxCache.class);
 
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
@@ -160,6 +177,9 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasNotFailed();
 
                     assertThat(ctx).hasBean("outboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
+                    assertThat(ctx).hasSingleBean(OutboxJobCreateCommand.class);
+
                     assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
 
@@ -179,6 +199,8 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxCache.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxJobCreateCommand.class);
                 });
     }
 
@@ -238,13 +260,18 @@ public class OutboxPublisherAutoConfigurationVerifier {
         getBaseContextRunner()
                 .withPropertyValues(
                         "outbox.publisher.metrics.enabled=true",
-                        "outbox.publisher.metrics.gauge.enabled=true"
+                        "outbox.publisher.metrics.gauge.enabled=true",
+                        "outbox.publisher.metrics.gauge.cache.ttls[0]=PT1S",
+                        "outbox.publisher.metrics.gauge.cache.ttls[1]=PT2S",
+                        "outbox.publisher.metrics.gauge.cache.ttls[2]=PT3S"
                 )
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(OutboxManagerMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(OutboxMetricsService.class);
                     assertThat(ctx).hasSingleBean(OutboxMetricsRepository.class);
                     assertThat(ctx).hasSingleBean(OutboxMetrics.class);
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(SimpleOutboxCache.class);
                 });
     }
 
@@ -259,6 +286,8 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(NoopOutboxCache.class);
                 });
     }
 
@@ -272,6 +301,8 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetrics.class);
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(NoopOutboxCache.class);
                 });
     }
 
@@ -330,11 +361,20 @@ public class OutboxPublisherAutoConfigurationVerifier {
                 });
     }
 
+    public void shouldNotRegisterOutboxCache_whenCustomBeanProvided() {
+        getBaseContextRunner()
+                .withBean("outboxCache", OutboxCache.class, () -> org.mockito.Mockito.mock(OutboxCache.class))
+                .run(ctx -> {
+                    assertThat(ctx).hasSingleBean(OutboxCache.class);
+                    assertThat(ctx).hasBean("outboxCache");
+                });
+    }
+
     public void shouldRegisterOutboxManager_whenMetricsEnabled_hasDecoratorAsPrimary() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.publisher.metrics.enabled=true")
                 .run(ctx -> {
-                    assertThat(ctx).hasBean("defaultOutboxManager");
+                    assertThat(ctx).hasBean("outboxManager");
                     assertThat(ctx).hasBean("outboxManagerMetricsDecorator");
                     OutboxManager primary = ctx.getBean(OutboxManager.class);
                     assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);
@@ -367,16 +407,38 @@ public class OutboxPublisherAutoConfigurationVerifier {
                         "outbox.publisher.clean-up.interval=PT1M",
                         "outbox.publisher.clean-up.retention=PT24H"
                 )
-                .run(ctx ->
-                        assertThat(ctx).hasBean("outboxCleanUpScheduler")
-                );
+                .run(ctx -> {
+                    assertThat(ctx).hasBean("outboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
+                });
     }
 
     public void shouldNotRegisterCleanUpScheduler_whenDisabled() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.publisher.clean-up.enabled=false")
+                .run(ctx -> {
+                    assertThat(ctx).doesNotHaveBean("outboxCleanUpScheduler");
+                    assertThat(ctx).doesNotHaveBean("outboxCleanUpJobCreateCommand");
+                });
+    }
+
+    public void shouldRegisterCleanUpJobCreateCommand_whenEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.clean-up.enabled=true"
+                )
                 .run(ctx ->
-                        assertThat(ctx).doesNotHaveBean("outboxCleanUpScheduler")
+                        assertThat(ctx).hasSingleBean(OutboxJobCreateCommand.class)
+                );
+    }
+
+    public void shouldNotRegisterCleanUpJobCreateCommand_whenDisabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.publisher.clean-up.enabled=false"
+                )
+                .run(ctx ->
+                        assertThat(ctx).doesNotHaveBean(OutboxJobCreateCommand.class)
                 );
     }
 
