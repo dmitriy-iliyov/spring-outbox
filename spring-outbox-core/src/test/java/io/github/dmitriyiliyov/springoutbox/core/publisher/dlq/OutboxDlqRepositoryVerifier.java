@@ -14,17 +14,17 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class AbstractOutboxDlqRepositoryIntegrationTests {
+class OutboxDlqRepositoryVerifier {
 
     private final OutboxDlqRepository repository;
     private final JdbcTemplate jdbcTemplate;
     private final SqlIdHelper sqlIdHelper;
     private final ResultSetMapper mapper;
 
-    AbstractOutboxDlqRepositoryIntegrationTests(OutboxDlqRepository repository,
-                                                JdbcTemplate jdbcTemplate,
-                                                SqlIdHelper sqlIdHelper,
-                                                ResultSetMapper mapper) {
+    OutboxDlqRepositoryVerifier(OutboxDlqRepository repository,
+                                JdbcTemplate jdbcTemplate,
+                                SqlIdHelper sqlIdHelper,
+                                ResultSetMapper mapper) {
         this.repository = repository;
         this.jdbcTemplate = jdbcTemplate;
         this.sqlIdHelper = sqlIdHelper;
@@ -89,8 +89,8 @@ class AbstractOutboxDlqRepositoryIntegrationTests {
 
     void deleteBatchByStatusAndThreshold_matches_deleted() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(10));
-        OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(5));
+        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(1000));
+        OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(1000));
         repository.saveBatch(List.of(e1, e2));
 
         int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, now, 10);
@@ -105,7 +105,7 @@ class AbstractOutboxDlqRepositoryIntegrationTests {
         OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now);
         repository.saveBatch(List.of(e1));
 
-        int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, now.minusSeconds(10), 10);
+        int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, now.minusSeconds(1000), 10);
 
         assertThat(deleted).isZero();
         assertThat(findById(e1.getId())).isPresent();
@@ -113,7 +113,7 @@ class AbstractOutboxDlqRepositoryIntegrationTests {
 
     void deleteBatchByStatusAndThreshold_wrongStatus_notDeleted() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.MOVED, now.minusSeconds(10));
+        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.MOVED, now.minusSeconds(1000));
         repository.saveBatch(List.of(e1));
 
         int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, now, 10);
@@ -124,9 +124,10 @@ class AbstractOutboxDlqRepositoryIntegrationTests {
 
     void deleteBatchByStatusAndThreshold_respectsBatchSize() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(10));
-        OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(10));
-        OutboxDlqEvent e3 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(10));
+        Instant past = now.minusSeconds(1000);
+        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, past);
+        OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, past);
+        OutboxDlqEvent e3 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, past);
         repository.saveBatch(List.of(e1, e2, e3));
 
         int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, now, 2);

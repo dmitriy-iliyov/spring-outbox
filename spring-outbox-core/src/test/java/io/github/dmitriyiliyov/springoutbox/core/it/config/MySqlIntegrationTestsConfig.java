@@ -7,7 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.MySqlOutboxRepository
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -41,7 +41,9 @@ public class MySqlIntegrationTestsConfig {
                         new ClassPathResource("mysql/mysql_outbox_table.sql"),
                         new ClassPathResource("mysql/mysql_outbox_dlq_table.sql"),
                         new ClassPathResource("mysql/mysql_outbox_consumed_table.sql"),
-                        new ClassPathResource("mysql/mysql_business_table.sql"))
+                        new ClassPathResource("mysql/mysql_outbox_jobs_table.sql"),
+                        new ClassPathResource("mysql/mysql_business_table.sql")
+                )
         );
         return dataSourceInitializer;
     }
@@ -52,18 +54,18 @@ public class MySqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqRepository mysqlOutboxDlqRepository(DataSource dataSource) {
-        return new MySqlOutboxDlqRepository(new JdbcTemplate(dataSource), new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    public OutboxDlqRepository mysqlOutboxDlqRepository(DataSource dataSource, Clock clock) {
+        return new MySqlOutboxDlqRepository(new JdbcTemplate(dataSource), new MySqlIdHelper(), new DefaultBytesResultSetMapper(), clock);
     }
 
     @Bean
     public OutboxRepository mysqlOutboxRepository(DataSource dataSource, Clock clock) {
-        return new MySqlOutboxRepository(new JdbcTemplate(dataSource), clock, new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+        return new MySqlOutboxRepository(new JdbcTemplate(dataSource), clock, new MySqlIdHelper(), new DefaultBytesResultSetMapper());
     }
 
     @Bean
     public ConsumedOutboxRepository mysqlConsumedOutboxRepository(DataSource dataSource, Clock clock) {
-        return new MySqlConsumedOutboxRepository(new JdbcTemplate(dataSource), clock, new MySqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+        return new MySqlConsumedOutboxRepository(new JdbcTemplate(dataSource), clock, new MySqlIdHelper(), new DefaultBytesResultSetMapper());
     }
 
     @Bean
@@ -72,8 +74,9 @@ public class MySqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqManager mysqlOutboxDlqManager(@Qualifier("mysqlOutboxDlqRepository") OutboxDlqRepository repository) {
-        return new DefaultOutboxDlqManager(repository);
+    public OutboxDlqManager mysqlOutboxDlqManager(@Qualifier("mysqlOutboxDlqRepository") OutboxDlqRepository repository,
+                                                  Clock clock) {
+        return new DefaultOutboxDlqManager(repository, clock);
     }
 
     @Bean

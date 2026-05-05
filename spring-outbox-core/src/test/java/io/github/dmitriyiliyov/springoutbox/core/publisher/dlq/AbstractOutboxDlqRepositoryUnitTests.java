@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -39,6 +40,11 @@ class AbstractOutboxDlqRepositoryUnitTests {
                     @Override
                     public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) {
                         return List.of();
+                    }
+
+                    @Override
+                    public int deleteBatchByStatusAndThreshold(DlqStatus status, Instant threshold, int batchSize) {
+                        return 0;
                     }
                 }
         );

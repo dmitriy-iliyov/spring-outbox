@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.it.BaseMySqlIntegrationTests;
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -55,7 +55,7 @@ public class MySqlDefaultOutboxProcessorIntegrationTests extends BaseMySqlIntegr
                     bb.putLong(id.getLeastSignificantBits());
                     return bb.array();
                 },
-                new DefaultBytesSqlResultSetMapper()
+                new DefaultBytesResultSetMapper()
         );
     }
 

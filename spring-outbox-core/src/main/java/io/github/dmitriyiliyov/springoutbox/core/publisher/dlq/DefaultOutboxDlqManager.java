@@ -4,7 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,9 +17,11 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
     private static final Logger log = LoggerFactory.getLogger(DefaultOutboxDlqManager.class);
 
     private final OutboxDlqRepository repository;
+    private final Clock clock;
 
-    public DefaultOutboxDlqManager(OutboxDlqRepository repository) {
+    public DefaultOutboxDlqManager(OutboxDlqRepository repository, Clock clock) {
         this.repository = repository;
+        this.clock = clock;
     }
 
     @Transactional
@@ -42,5 +48,13 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
             return 0;
         }
         return repository.deleteBatch(ids);
+    }
+
+    @Transactional
+    @Override
+    public int deleteResolvedBatch(Duration ttl, int batchSize) {
+        Objects.requireNonNull(ttl, "ttl cannot be null");
+        Instant threshold = clock.instant().minusMillis(ttl.toMillis());
+        return repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, threshold, batchSize);
     }
 }

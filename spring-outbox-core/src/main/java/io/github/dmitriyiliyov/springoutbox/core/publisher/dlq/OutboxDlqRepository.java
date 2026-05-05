@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -44,4 +45,6 @@ public interface OutboxDlqRepository {
      * @return    the number of actually deleted events.
      */
     int deleteBatch(Set<UUID> ids);
+
+    int deleteBatchByStatusAndThreshold(DlqStatus status, Instant threshold, int batchSize);
 }

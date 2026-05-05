@@ -135,14 +135,14 @@ public class OutboxManagerMetricsDecoratorUnitTests {
     @DisplayName("UT deleteProcessedBatch() should delegate and increment cleaned counter")
     void deleteProcessedBatch_shouldDelegateAndIncrementCleanedCounter() {
         // given
-        Instant threshold = Instant.now();
-        when(outboxManager.deleteProcessedBatch(threshold, 20)).thenReturn(15);
+        Duration ttl = Duration.ZERO;
+        when(outboxManager.deleteProcessedBatch(ttl, 20)).thenReturn(15);
 
         // when
-        tested.deleteProcessedBatch(threshold, 20);
+        tested.deleteProcessedBatch(ttl, 20);
 
         // then
-        verify(outboxManager).deleteProcessedBatch(threshold, 20);
+        verify(outboxManager).deleteProcessedBatch(ttl, 20);
         Counter cleanedCounter = registry.get("outbox_events_by_action_type_rate_total")
                 .tag("action_type", "cleaned")
                 .counter();

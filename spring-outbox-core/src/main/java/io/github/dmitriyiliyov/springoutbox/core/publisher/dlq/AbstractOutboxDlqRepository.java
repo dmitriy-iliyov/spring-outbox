@@ -43,7 +43,7 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
                     ps.setInt(7, event.getRetryCount());
                     ps.setTimestamp(8, Timestamp.from(event.getNextRetryAt()));
                     ps.setTimestamp(9, Timestamp.from(event.getCreatedAt()));
-                    ps.setTimestamp(10, Timestamp.from(event.getUpdatedAt()));
+                    ps.setTimestamp(10, Timestamp.from(event.getMovedAt()));
                     ps.setTimestamp(11, Timestamp.from(event.getMovedAt()));
                 });
     }

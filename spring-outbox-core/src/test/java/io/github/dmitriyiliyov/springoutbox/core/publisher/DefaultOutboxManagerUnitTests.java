@@ -11,15 +11,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class DefaultConsumedOutboxManagerUnitTests {
+public class DefaultOutboxManagerUnitTests {
 
     @Mock
     OutboxRepository repository;
@@ -361,6 +363,48 @@ public class DefaultConsumedOutboxManagerUnitTests {
     }
 
     @Test
+    @DisplayName("recoverStuckBatch() with valid arguments should calculate threshold and recover events")
+    void recoverStuckBatch_validArguments_recoversEvents() {
+        Duration maxProcessingTime = Duration.ofMinutes(15);
+        int batchSize = 50;
+        int expectedRecoveredCount = 12;
+        Instant now = Instant.now();
+        Instant expectedThreshold = now.minusMillis(maxProcessingTime.toMillis());
+
+        when(repository.updateBatchStatusByStatusAndThreshold(
+                eq(EventStatus.IN_PROCESS),
+                any(Instant.class),
+                eq(batchSize),
+                eq(EventStatus.PENDING)
+        )).thenReturn(expectedRecoveredCount);
+        when(clock.instant()).thenReturn(now);
+
+        int actualCount = tested.recoverStuckBatch(maxProcessingTime, batchSize);
+
+        assertThat(actualCount).isEqualTo(expectedRecoveredCount);
+
+        verify(repository).updateBatchStatusByStatusAndThreshold(
+                eq(EventStatus.IN_PROCESS),
+                eq(expectedThreshold),
+                eq(batchSize),
+                eq(EventStatus.PENDING)
+        );
+
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("recoverStuckBatch() with null maxBatchProcessingTime should throw NullPointerException")
+    void recoverStuckBatch_nullDuration_throwsNullPointerException() {
+        int batchSize = 50;
+
+        assertThatThrownBy(() -> tested.recoverStuckBatch(null, batchSize))
+                .isInstanceOf(NullPointerException.class);
+
+        verifyNoInteractions(repository);
+    }
+
+    @Test
     @DisplayName("UT deleteBatch() when ids not null and not empty should delete")
     public void delete_whenIdsValid_shouldDelete() {
         // given
@@ -402,6 +446,47 @@ public class DefaultConsumedOutboxManagerUnitTests {
         tested.deleteBatch(ids);
 
         // then
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT deleteProcessedBatch() when arguments valid should call repo")
+    void deleteProcessedBatch_validArguments_calculatesThresholdAndCallsRepository() {
+        Duration ttl = Duration.ofDays(7);
+        int batchSize = 100;
+        int expectedDeletedCount = 42;
+
+        Instant now = Instant.now();
+        Instant expectedThreshold = now.minusMillis(ttl.toMillis());
+        when(repository.deleteBatchByStatusAndThreshold(
+                eq(EventStatus.PROCESSED),
+                any(Instant.class),
+                eq(batchSize)
+        )).thenReturn(expectedDeletedCount);
+        when(clock.instant()).thenReturn(now);
+
+        int actualDeletedCount = tested.deleteProcessedBatch(ttl, batchSize);
+
+        assertThat(actualDeletedCount).isEqualTo(expectedDeletedCount);
+
+        verify(repository).deleteBatchByStatusAndThreshold(
+                eq(EventStatus.PROCESSED),
+                eq(expectedThreshold),
+                eq(batchSize)
+        );
+
+        verifyNoMoreInteractions(repository);
+    }
+
+    @Test
+    @DisplayName("UT deleteProcessedBatch() when ttl is null should throws")
+    void deleteProcessedBatch_nullTtl_throwsNullPointerException() {
+        int batchSize = 100;
+
+        assertThatThrownBy(() -> tested.deleteProcessedBatch(null, batchSize))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("ttl cannot be null");
+
         verifyNoInteractions(repository);
     }
 }

@@ -46,60 +46,60 @@ public class KafkaJpaConsumerIntegrationTests extends BaseKafkaIntegrationTests 
     }
 
     @Test
-    @DisplayName("E2E consume() should save event id to consumed table and run business operation")
+    @DisplayName("IT consume() should save event id to consumed table and run business operation")
     void consume_shouldSaveToBusinessAndConsumedTables() {
         verifier.consume_shouldSaveToBusinessAndConsumedTables();
     }
 
     @Test
-    @DisplayName("E2E consume() should be idempotent: same message received twice -> business op runs once")
+    @DisplayName("IT consume() should be idempotent: same message received twice -> business op runs once")
     void consume_shouldBeIdempotent_whenSameMessageReceivedTwice() {
         verifier.consume_shouldBeIdempotent_whenSameMessageReceivedTwice();
     }
 
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
-    @DisplayName("E2E consume() should process all distinct single messages")
+    @DisplayName("IT consume() should process all distinct single messages")
     void consume_shouldSaveAllSingleMessages(int count) {
         verifier.consume_shouldSaveAllSingleMessages(count);
     }
 
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
-    @DisplayName("E2E consume() batch: all new records saved to both tables")
+    @DisplayName("IT consume() batch: all new records saved to both tables")
     void consume_shouldSaveBatchToBusinessAndConsumedTables(int batchSize) {
         verifier.consume_shouldSaveBatchToBusinessAndConsumedTables(batchSize);
     }
 
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
-    @DisplayName("E2E consume() batch: same batch delivered twice -> each record processed once")
+    @DisplayName("IT consume() batch: same batch delivered twice -> each record processed once")
     void consume_shouldBeIdempotent_whenSameBatchReceivedTwice(int batchSize) {
         verifier.consume_shouldBeIdempotent_whenSameBatchReceivedTwice(batchSize);
     }
 
     @Test
-    @DisplayName("E2E consume() batch: only new records processed when batch contains duplicates")
+    @DisplayName("IT consume() batch: only new records processed when batch contains duplicates")
     void consume_shouldProcessOnlyNewMessages_whenBatchContainsDuplicates() {
         verifier.consume_shouldProcessOnlyNewMessages_whenBatchContainsDuplicates();
     }
 
     @Test
-    @DisplayName("E2E consume() should rollback both tables when business operation throws (single)")
+    @DisplayName("IT consume() should rollback both tables when business operation throws (single)")
     void consume_shouldRollbackBothTables_whenBusinessOperationFails() {
         verifier.consume_shouldRollbackBothTables_whenBusinessOperationFails();
     }
 
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
-    @DisplayName("E2E consume() should rollback both tables when batch operation throws")
+    @DisplayName("IT consume() should rollback both tables when batch operation throws")
     void consume_shouldRollbackBothTables_whenBatchOperationFails(int batchSize) {
         verifier.consume_shouldRollbackBothTables_whenBatchOperationFails(batchSize);
     }
 
     @Disabled
     @Test
-    @DisplayName("E2E consume() should allow retry after rollback: event id not burned on failure (single)")
+    @DisplayName("IT consume() should allow retry after rollback: event id not burned on failure (single)")
     void consume_shouldBeRetryable_afterTransactionRollback() {
         verifier.consume_shouldBeRetryable_afterTransactionRollback();
     }
@@ -107,7 +107,7 @@ public class KafkaJpaConsumerIntegrationTests extends BaseKafkaIntegrationTests 
     @Disabled
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
-    @DisplayName("E2E consume() should allow retry after rollback: event id not burned on failure (batch)")
+    @DisplayName("IT consume() should allow retry after rollback: event id not burned on failure (batch)")
     void consume_shouldBeBatchRetryable_afterTransactionRollback(int batchSize) {
         verifier.consume_shouldBeBatchRetryable_afterTransactionRollback(batchSize);
     }

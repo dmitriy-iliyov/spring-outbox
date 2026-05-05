@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -42,4 +43,15 @@ public interface OutboxDlqManager {
      * @return    the number of deleted events.
      */
     int deleteBatch(Set<UUID> ids);
+
+    /**
+     * Deletes resolved DLQ events with {@code updated_at} strictly before the given threshold.
+     * <p>
+     * At most {@code batchSize} records are deleted per call.
+     *
+     * @param ttl the duration after which a processed event record is considered expired.
+     * @param batchSize the maximum number of events to delete in one call.
+     * @return          the number of deleted events.
+     */
+    int deleteResolvedBatch(Duration ttl, int batchSize);
 }

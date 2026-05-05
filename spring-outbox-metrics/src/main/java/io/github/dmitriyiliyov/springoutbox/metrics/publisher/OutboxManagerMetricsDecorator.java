@@ -93,8 +93,8 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
     }
 
     @Override
-    public int deleteProcessedBatch(Instant threshold, int batchSize) {
-        int deletedCount = delegate.deleteProcessedBatch(threshold, batchSize);
+    public int deleteProcessedBatch(Duration ttl, int batchSize) {
+        int deletedCount = delegate.deleteProcessedBatch(ttl, batchSize);
         actionCounters.get(ActionType.CLEANED).increment(deletedCount);
         return deletedCount;
     }

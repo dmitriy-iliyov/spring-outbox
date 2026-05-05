@@ -41,6 +41,7 @@ public class PostgresSqlIntegrationTestsConfig {
                         new ClassPathResource("psql/psql_outbox_table.sql"),
                         new ClassPathResource("psql/psql_outbox_dlq_table.sql"),
                         new ClassPathResource("psql/psql_outbox_consumed_table.sql"),
+                        new ClassPathResource("psql/psql_outbox_jobs_table.sql"),
                         new ClassPathResource("psql/psql_business_table.sql"))
         );
         return dataSourceInitializer;
@@ -52,8 +53,8 @@ public class PostgresSqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqRepository postgresOutboxDlqRepository(DataSource dataSource) {
-        return new PostgreSqlOutboxDlqRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper());
+    public OutboxDlqRepository postgresOutboxDlqRepository(DataSource dataSource, Clock clock) {
+        return new PostgreSqlOutboxDlqRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper(), clock);
     }
 
     @Bean
@@ -72,8 +73,9 @@ public class PostgresSqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqManager postgresOutboxDlqManager(@Qualifier("postgresOutboxDlqRepository") OutboxDlqRepository repository) {
-        return new DefaultOutboxDlqManager(repository);
+    public OutboxDlqManager postgresOutboxDlqManager(@Qualifier("postgresOutboxDlqRepository") OutboxDlqRepository repository,
+                                                     Clock clock) {
+        return new DefaultOutboxDlqManager(repository, clock);
     }
 
     @Bean

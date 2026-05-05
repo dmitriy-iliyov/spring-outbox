@@ -1,11 +1,14 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.BytesResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlIdHelper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
-import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -14,8 +17,12 @@ import java.util.stream.Collectors;
 
 public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
-    public MySqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, BytesSqlResultSetMapper mapper) {
+    private final Clock clock;
+
+    public MySqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper, BytesResultSetMapper mapper,
+                                    Clock clock) {
         super(jdbcTemplate, idHelper, mapper);
+        this.clock = clock;
     }
 
     @Override
@@ -44,17 +51,36 @@ public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
         }
         String lockSql = """
             UPDATE outbox_dlq_events 
-                SET dlq_status = ?
+                SET dlq_status = ?, updated_at = ?
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
         jdbcTemplate.update(
                 lockSql,
                 ps -> {
                     ps.setString(1, lockStatus.name());
-                    idHelper.setIdsToPs(ps, 2, ids);
+                    ps.setTimestamp(2, Timestamp.from(clock.instant()));
+                    idHelper.setIdsToPs(ps, 3, ids);
                 }
         );
         events.forEach(event -> event.setDlqStatus(lockStatus));
         return events;
+    }
+
+    @Override
+    public int deleteBatchByStatusAndThreshold(DlqStatus status, Instant threshold, int batchSize) {
+        String sql = """
+            DELETE FROM outbox_dlq_events
+            WHERE dlq_status = ? AND updated_at <= ?
+            ORDER BY updated_at
+            LIMIT ?
+        """;
+        return jdbcTemplate.update(
+                sql,
+                ps -> {
+                    ps.setString(1, status.name());
+                    ps.setTimestamp(2, Timestamp.from(threshold));
+                    ps.setInt(3, batchSize);
+                }
+        );
     }
 }

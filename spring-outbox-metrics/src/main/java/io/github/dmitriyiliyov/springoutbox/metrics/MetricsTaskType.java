@@ -1,11 +1,12 @@
 package io.github.dmitriyiliyov.springoutbox.metrics;
 
 public enum MetricsTaskType {
-    PUBLISHER_CLEANUP("clean-up-processed-events"),
-    CONSUMER_CLEANUP("clean-up-consumed-events"),
+    PUBLISHER_CLEANUP("cleanup-processed-events"),
+    CONSUMER_CLEANUP("cleanup-consumed-events"),
     STUCK_RECOVERY("stuck-event-recovery"),
     TRANSFER_TO_DLQ("transfer-to-dlq"),
-    TRANSFER_FROM_DLQ("transfer-from-dlq");
+    TRANSFER_FROM_DLQ("transfer-from-dlq"),
+    DLQ_CLEANUP("cleanup-resolved-dlq-events");
 
     private final String value;
 

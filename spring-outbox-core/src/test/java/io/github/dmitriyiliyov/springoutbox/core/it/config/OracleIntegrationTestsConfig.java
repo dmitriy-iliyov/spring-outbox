@@ -7,7 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.OracleOutboxRepositor
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRepository;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -35,6 +35,7 @@ public class OracleIntegrationTestsConfig {
                 new ClassPathResource("oracle/oracle_outbox_table.sql"),
                 new ClassPathResource("oracle/oracle_outbox_dlq_table.sql"),
                 new ClassPathResource("oracle/oracle_outbox_consumed_table.sql"),
+                new ClassPathResource("oracle/oracle_outbox_jobs_table.sql"),
                 new ClassPathResource("oracle/oracle_business_table.sql")
         );
         populator.setContinueOnError(false);
@@ -50,18 +51,18 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqRepository oracleOutboxDlqRepository(DataSource dataSource) {
-        return new OracleOutboxDlqRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+    public OutboxDlqRepository oracleOutboxDlqRepository(DataSource dataSource, Clock clock) {
+        return new OracleOutboxDlqRepository(new JdbcTemplate(dataSource), new OracleSqlIdHelper(), new DefaultBytesResultSetMapper(), clock);
     }
 
     @Bean
     public OutboxRepository oracleOutboxRepository(DataSource dataSource, Clock clock) {
-        return new OracleOutboxRepository(new JdbcTemplate(dataSource), clock, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+        return new OracleOutboxRepository(new JdbcTemplate(dataSource), clock, new OracleSqlIdHelper(), new DefaultBytesResultSetMapper());
     }
 
     @Bean
     public ConsumedOutboxRepository oracleConsumedOutboxRepository(DataSource dataSource, Clock clock) {
-        return new OracleConsumedOutboxRepository(new JdbcTemplate(dataSource), clock, new OracleSqlIdHelper(), new DefaultBytesSqlResultSetMapper());
+        return new OracleConsumedOutboxRepository(new JdbcTemplate(dataSource), clock, new OracleSqlIdHelper(), new DefaultBytesResultSetMapper());
     }
 
     @Bean
@@ -70,8 +71,9 @@ public class OracleIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqManager oracleOutboxDlqManager(@Qualifier("oracleOutboxDlqRepository") OutboxDlqRepository repository) {
-        return new DefaultOutboxDlqManager(repository);
+    public OutboxDlqManager oracleOutboxDlqManager(@Qualifier("oracleOutboxDlqRepository") OutboxDlqRepository repository,
+                                                   Clock clock) {
+        return new DefaultOutboxDlqManager(repository, clock);
     }
 
     @Bean

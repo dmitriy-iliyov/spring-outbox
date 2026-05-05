@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.it.BaseOracleIntegrationTests;
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,18 +18,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OracleOutboxDlqRepositoryIntegrationTests extends BaseOracleIntegrationTests {
 
     private final OutboxDlqRepository repository;
-    private final AbstractOutboxDlqRepositoryIntegrationTests delegate;
+    private final OutboxDlqRepositoryVerifier delegate;
 
     public OracleOutboxDlqRepositoryIntegrationTests(
             @Qualifier("oracleOutboxDlqRepository") OutboxDlqRepository repository,
             @Qualifier("oracleJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
-        this.delegate = new AbstractOutboxDlqRepositoryIntegrationTests(
+        this.delegate = new OutboxDlqRepositoryVerifier(
                 repository,
                 jdbcTemplate,
                 new OracleSqlIdHelper(),
-                new DefaultBytesSqlResultSetMapper()
+                new DefaultBytesResultSetMapper()
         );
     }
 
@@ -113,5 +113,35 @@ class OracleOutboxDlqRepositoryIntegrationTests extends BaseOracleIntegrationTes
 
         assertThat(delegate.findById(resolved.getId()).get().getDlqStatus())
                 .isEqualTo(DlqStatus.RESOLVED);
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should delete matching events and return count")
+    void deleteBatchByStatusAndThreshold_matches_deleted() {
+        delegate.deleteBatchByStatusAndThreshold_matches_deleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should not delete events newer than threshold")
+    void deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted() {
+        delegate.deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should not delete events with different status")
+    void deleteBatchByStatusAndThreshold_wrongStatus_notDeleted() {
+        delegate.deleteBatchByStatusAndThreshold_wrongStatus_notDeleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should respect batch size limit")
+    void deleteBatchByStatusAndThreshold_respectsBatchSize() {
+        delegate.deleteBatchByStatusAndThreshold_respectsBatchSize();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() when no matches should return zero")
+    void deleteBatchByStatusAndThreshold_noMatches_returnsZero() {
+        delegate.deleteBatchByStatusAndThreshold_noMatches_returnsZero();
     }
 }

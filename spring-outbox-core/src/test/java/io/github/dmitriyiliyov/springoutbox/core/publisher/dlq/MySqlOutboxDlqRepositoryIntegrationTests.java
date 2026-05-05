@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.it.BaseMySqlIntegrationTests;
-import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,18 +18,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MySqlOutboxDlqRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
 
     private final OutboxDlqRepository repository;
-    private final AbstractOutboxDlqRepositoryIntegrationTests delegate;
+    private final OutboxDlqRepositoryVerifier delegate;
 
     public MySqlOutboxDlqRepositoryIntegrationTests(
             @Qualifier("mysqlOutboxDlqRepository") OutboxDlqRepository repository,
             @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
-        this.delegate = new AbstractOutboxDlqRepositoryIntegrationTests(
+        this.delegate = new OutboxDlqRepositoryVerifier(
                 repository,
                 jdbcTemplate,
                 new MySqlIdHelper(),
-                new DefaultBytesSqlResultSetMapper()
+                new DefaultBytesResultSetMapper()
         );
     }
 
@@ -115,5 +115,23 @@ class MySqlOutboxDlqRepositoryIntegrationTests extends BaseMySqlIntegrationTests
 
         assertThat(delegate.findById(resolved.getId()).get().getDlqStatus())
                 .isEqualTo(DlqStatus.RESOLVED);
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should not delete events newer than threshold")
+    void deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted() {
+        delegate.deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should not delete events with different status")
+    void deleteBatchByStatusAndThreshold_wrongStatus_notDeleted() {
+        delegate.deleteBatchByStatusAndThreshold_wrongStatus_notDeleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() when no matches should return zero")
+    void deleteBatchByStatusAndThreshold_noMatches_returnsZero() {
+        delegate.deleteBatchByStatusAndThreshold_noMatches_returnsZero();
     }
 }

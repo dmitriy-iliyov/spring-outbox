@@ -6,7 +6,7 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqManager;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
-import java.time.Instant;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -50,8 +50,8 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
     }
 
     @Override
-    public int deleteResolvedBatch(Instant threshold, int batchSize) {
-        int deletedCount = delegate.deleteResolvedBatch(threshold, batchSize);
+    public int deleteResolvedBatch(Duration ttl, int batchSize) {
+        int deletedCount = delegate.deleteResolvedBatch(ttl, batchSize);
         actionCounters.get(ActionType.CLEANED).increment(deletedCount);
         return deletedCount;
     }

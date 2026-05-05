@@ -309,6 +309,7 @@ public @interface OutboxPublish {
 ```
 Both approaches require specifying the eventType in accordance with the YAML configuration and support saving events in batches.
 When using the annotation-based approach, the payload can be derived from method parameters or the return value and is configured via SpEL expressions (e.g. by referencing a parameter name).
+
 More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-producer-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/producer/OrderService.java).
 
 ---
@@ -351,7 +352,7 @@ public interface OutboxSerializer {
 #### Retry Policy
 An exponential backoff is supported where the delay increases exponentially with each retry, the next retry attempt is calculated using the following formula:
 
-`next_retry_at = delay * (multiplier ^ retry_attempt)`
+`next_retry_at = initial_delay * (multiplier ^ retry_attempt)`
 
 Example: 10s -> 30s -> 90s -> 270s...
 
@@ -366,6 +367,15 @@ Detailed configuration options are available [here](#stuck-event-recovery-1).
 
 ---
 
+#### Cleanup
+
+Outbox events with the `PROCESSED` status are periodically cleaned up by a background worker according to the configured retention policy.
+
+When cleaning, distributed locking is used to ensure that only one instance will perform the work, this should be taken into account when setting up.
+
+Detailed configuration options are available [here](#cleanup-3).
+
+---
 #### Dead Letter Queue
 
 The Dead Letter Queue is implemented using the database. As described above, events are automatically moved to the DLQ once they are marked with the `FAILED` status after the maximum number of retry attempts is exceeded.
@@ -425,12 +435,12 @@ The Dead Letter Queue provides a REST API for managing events that have failed d
 
 Detailed DLQ configuration options are available [here](#dead-letter-queue-1).
 
----
+##### Cleanup
+DLQ events with the `RESOLVED` status are periodically cleaned up by a background worker according to the configured retention policy.
 
-#### Cleanup
+When cleaning, distributed locking is used to ensure that only one instance will perform the work, this should be taken into account when setting up.
 
-Outbox events with the `PROCESSED` status are periodically cleaned up by a background worker according to the configured retention policy.
-Detailed configuration options are available [here](#cleanup-2).
+Detailed configuration options are available [here](#cleanup-3).
 
 ---
 
@@ -538,7 +548,11 @@ public class OrderRabbitListener {
 ---
 
 #### Cleanup
-The automatic cleanup strategy for consumed events is identical to the publisher cleanup strategy described [above](#cleanup).
+Consumed outbox events are periodically cleaned up by a background worker according to the configured retention policy.
+
+When cleaning, distributed locking is used to ensure that only one instance will perform the work, this should be taken into account when setting up.
+
+Detailed configuration options are available [here](#cleanup-4).
 
 ---
 
@@ -550,15 +564,15 @@ The automatic cleanup strategy for consumed events is identical to the publisher
 
 **Gauges**
 
-| Metric Name                                  | Description                             | Tags                                                                                                                     |
-|:---------------------------------------------|:----------------------------------------|:-------------------------------------------------------------------------------------------------------------------------|
-| `outbox_events`                              | Total number of outbox events           | —                                                                                                                        |
-| `outbox_events_by_status`                    | Number of outbox events by status       | `status={pending, in_process}`                                                                                           |
-| `outbox_events_by_event_type_and_status`     | Number of outbox events by type         | `event_type`, <br/>`status={pending, in_process}`                                                                        |
-| `outbox_dlq_events`                          | Total number of events in DLQ           | —                                                                                                                        |
-| `outbox_dlq_events_by_status`                | Number of DLQ events by status          | `status={moved, in_process, to_retry}`                                                                                   |
-| `outbox_dlq_events_by_event_type_and_status` | Number of DLQ events by type and status | `event_type`, <br/>`status={moved, in_process, to_retry}`                                                                |
-| `outbox_polling_delay_milliseconds`          | Current delay between tasks execution   | `task_type={clean-up-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq}` or declared event type |
+| Metric Name                                  | Description                             | Tags                                                                                                                                                 |
+|:---------------------------------------------|:----------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `outbox_events`                              | Total number of outbox events           | —                                                                                                                                                    |
+| `outbox_events_by_status`                    | Number of outbox events by status       | `status={pending, in_process}`                                                                                                                       |
+| `outbox_events_by_event_type_and_status`     | Number of outbox events by type         | `event_type`, <br/>`status={pending, in_process}`                                                                                                    |
+| `outbox_dlq_events`                          | Total number of events in DLQ           | —                                                                                                                                                    |
+| `outbox_dlq_events_by_status`                | Number of DLQ events by status          | `status={moved, in_process, to_retry}`                                                                                                               |
+| `outbox_dlq_events_by_event_type_and_status` | Number of DLQ events by type and status | `event_type`, <br/>`status={moved, in_process, to_retry}`                                                                                            |
+| `outbox_polling_delay_milliseconds`          | Current delay between tasks execution   | `task_type={cleanup-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq, cleanup-resolved-dlq-events}` or declared event type |
 
 All event related gauges execute `COUNT` queries against the database and therefore reflect the **exact number of events at the current moment**.
 
@@ -567,18 +581,18 @@ Caching can be disabled via metrics configuration.
 
 **Counters**
 
-| Metric Name                                                                                                                      | Description                    | Tags                                                                                                                     |
-|:---------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|:-------------------------------------------------------------------------------------------------------------------------|
-| `outbox_events_rate_total`                                                                                                       | Processed events rate          | `event_type`, <br/>`status={processed}`                                                                                  |
-| `outbox_events_by_action_type_rate_total`                                                                                        | Internal lifecycle events rate | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`                                            |
-| `outbox_dlq_events_by_action_type_rate_total`                                                                                    | DLQ operational events rate    | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted}`                                          |
-| `outbox_started_tasks_total`<br/>`outbox_skipped_tasks_total`<br/>`outbox_succeeded_tasks_total`<br/>`outbox_failed_tasks_total` | Rate of task execution states  | `task_type={clean-up-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq}` or declared event type |
+| Metric Name                                                                                                                      | Description                    | Tags                                                                                                                                                 |
+|:---------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `outbox_events_rate_total`                                                                                                       | Processed events rate          | `event_type`, <br/>`status={processed}`                                                                                                              |
+| `outbox_events_by_action_type_rate_total`                                                                                        | Internal lifecycle events rate | `action_type={attempt_move_to_dlq, recovered, cleaned, success_moved_to_dlq}`                                                                        |
+| `outbox_dlq_events_by_action_type_rate_total`                                                                                    | DLQ operational events rate    | `action_type={attempt_move_to_outbox, success_moved_to_outbox, manual_deleted, cleaned}`                                                             |
+| `outbox_started_tasks_total`<br/>`outbox_skipped_tasks_total`<br/>`outbox_succeeded_tasks_total`<br/>`outbox_failed_tasks_total` | Rate of task execution states  | `task_type={cleanup-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq, cleanup-resolved-dlq-events}` or declared event type |
 
 **Timers**
 
-| Metric Name                       | Description                 | Tags                                                                                                                     |
-|:----------------------------------|:----------------------------|:-------------------------------------------------------------------------------------------------------------------------|
-| `outbox_task_processing_duration` | Duration of task processing | `task_type={clean-up-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq}` or declared event type |
+| Metric Name                       | Description                 | Tags                                                                                                                                                 |
+|:----------------------------------|:----------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `outbox_task_processing_duration` | Duration of task processing | `task_type={cleanup-processed-events, stuck-event-recovery, transfer-to-dlq, transfer-from-dlq, cleanup-resolved-dlq-events}` or declared event type |
 
 These timers help identify performance bottlenecks during bulk recovery or DLQ reprocessing operations.
 
@@ -588,9 +602,9 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 
 **Gauges**
 
-| Metric Name                         | Description                           | Tags                                   |
-|:------------------------------------|:--------------------------------------|:---------------------------------------|
-| `outbox_polling_delay_milliseconds` | Current delay between tasks execution | `task_type={clean-up-consumed-events}` |
+| Metric Name                         | Description                           | Tags                                  |
+|:------------------------------------|:--------------------------------------|:--------------------------------------|
+| `outbox_polling_delay_milliseconds` | Current delay between tasks execution | `task_type={cleanup-consumed-events}` |
 
 
 **Counters**
@@ -599,16 +613,19 @@ These timers help identify performance bottlenecks during bulk recovery or DLQ r
 |:---------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------|:--------------------------------------------------------|
 | `consumed_outbox_events_total`                                                                                                   | Number of consumed outbox events by specific type  | `type={rejected_duplicates, consumed, cleaned, failed}` |
 | `consumed_outbox_cache_action_total`                                                                                             | Number of hit/miss in consumed outbox events cache | `action_type={hit, miss}`                               |
-| `outbox_started_tasks_total`<br/>`outbox_skipped_tasks_total`<br/>`outbox_succeeded_tasks_total`<br/>`outbox_failed_tasks_total` | Rate of task execution states                      | `task_type={clean-up-consumed-events}`                  |
+| `outbox_started_tasks_total`<br/>`outbox_skipped_tasks_total`<br/>`outbox_succeeded_tasks_total`<br/>`outbox_failed_tasks_total` | Rate of task execution states                      | `task_type={cleanup-consumed-events}`                   |
 
 **Timers**
 
-| Metric Name                       | Description                 | Tags                                   |
-|:----------------------------------|:----------------------------|:---------------------------------------|
-| `outbox_task_processing_duration` | Duration of task processing | `task_type={clean-up-consumed-events}` |
+| Metric Name                       | Description                 | Tags                                  |
+|:----------------------------------|:----------------------------|:--------------------------------------|
+| `outbox_task_processing_duration` | Duration of task processing | `task_type={cleanup-consumed-events}` |
 
 ## Configuration
+
 ### Global
+
+#### Thread Pool Size
 When calculating the thread pool size, it's important to account for all background system processes. 
 
 Publisher requires three threads for its background operations (stuck event recovery, DLQ transfers and cleanup), 
@@ -616,17 +633,28 @@ plus one additional thread for each configured event type. Therefore, the recomm
 
 Consumer side requires only one thread for cleanup as background operation, the number of threads is `1`.
 
+#### Distributed Lock
+
+Used to guarantee that the clean-up job runs on only one instance at a time. You can set global values for all jobs or use adaptive calculation based on the polling mechanism by setting `resolve-by-polling-properties=true`.
+
 ```yaml
 outbox:
   thread-pool-size: 5
   tables:
     auto-create: true
+  distributed-lock:
+    lock-at-least-for: 1s
+    lock-at-most-for: 1m
+    resolve-by-polling-properties: false
 ```
 
-| Property           | Description                                                                                                                                                                                                                                     | Default                         |
-|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------|
-| `thread-pool-size` | Size of the thread pool for parallel event processing                                                                                                                                                                                           | `min(available_processors, 5)`  |
-| `auto-create`      | Automatically create outbox tables on startup. Create 3 tables: <br/>- `outbox_events`; <br/>- `outbox_dlq_events` (when `outbox.publisher.dlq.enabled` is `true`); <br/>- `outbox_consumed_events` (when `outbox.consumer.enabled` is `true`). | `true`                          |
+| Property                                         | Description                                                                                                                                                                                                                                                               | Default                        |
+|--------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------------------------------|
+| `thread-pool-size`                               | Size of the thread pool for parallel event processing                                                                                                                                                                                                                     | `min(available_processors, 5)` |
+| `auto-create`                                    | Automatically create outbox tables on startup. Create 4 tables: <br/>- `outbox_events` and `outbox_jobs`; <br/>- `outbox_dlq_events` (when `outbox.publisher.dlq.enabled` is `true`); <br/>- `outbox_consumed_events` (when `outbox.consumer.enabled` is `true`).         | `true`                         |
+| `distributed-lock.lock-at-least-for`             | Minimum time duration betwean lock. Used when `resolve-by-polling-properties` is false.                                                                                                                                                                                   | `1s`                           |
+| `distributed-lock.lock-at-most-for`              | Maximum time duration betwean lock, the lock will be released by another instance even if it is not released by another. Used when `resolve-by-polling-properties` is false.                                                                                              | `1m`                           |
+| `distributed-lock.resolve-by-polling-properties` | When this property is enabled, `lock-at-least-for` and `lock-at-most-for` are calculated as follows: <br/> - if `polling.type` of clean-up is `fixed`, they are based on `fixed-delay`; <br/> - if `adaptive`, they are based on `min-fixed-delay` and `max-fixed-delay`. | `true`                         |
 
 ### Publisher
 
@@ -851,67 +879,6 @@ outbox:
 | `polling.multiplier`        | Multiplier for exponential backoff between polling iterations                                                        |   `4.0`    |
 ---
 
-#### Dead Letter Queue
-```yaml
-outbox:
-  publisher:
-    dlq:
-      enabled: true  
-      batch-size: 500
-      polling:
-        type: adaptive
-        initial-delay: 5m
-        min-fixed-delay: 1s
-        max-fixed-delay: 2m
-        multiplier: 10.0
-      transfer-to:
-        # All properties inherit from section above
-      transfer-from:
-        # All properties inherit from section above
-```
-DLQ has shared section with `batch-size`, `polling`. Values from this section will be used in `transfer-to` and `transfer-from` as defaults.
-> [!WARNING]
-> When disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`.
-
-| Property                  | Description                                                                                                          |  Default   |
-|---------------------------|----------------------------------------------------------------------------------------------------------------------|:----------:|
-| `enabled`                 | Enable DLQ functionality                                                                                             |  `false`   |
-| `batch-size`              | Number of events to transfer per iteration                                                                           |   `500`    |
-| `polling.type`            | Polling type (`fixed` or `adaptive`)                                                                                 | `adaptive` |
-| `polling.initial-delay`   | Delay before first polling starts                                                                                    |    `5m`    |
-| `polling.min-fixed-delay` | Min delay between polling iterations                                                                                 |    `1s`    |
-| `polling.max-fixed-delay` | Max delay between polling iterations                                                                                 |    `2m`    |
-| `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                        |   `10.0`   |
-| `transfer-to`             | Section for specifying settings for transferring events from the outbox to the DLQ                                   |     —      |
-| `transfer-from`           | Section for specifying settings for transferring events from the DLQ to the outbox                                   |     —      |
-
-**Override example**: 
-```yaml
-outbox:
-  publisher:
-    dlq:
-      enabled: true  
-      batch-size: 500
-      polling:
-        type: adaptive
-        initial-delay: 5m
-        min-fixed-delay: 1s
-        max-fixed-delay: 2m
-        multiplier: 10.0
-      transfer-to:
-        pooling:
-          multiplier: 2.5
-      # Inherits: batch-size=500, other polling settings except multiplier
-      transfer-from:
-        batch-size: 1000
-        pooling:
-          type: fixed
-          initial-delay: 5m
-          fixed-delay: 1m
-        # Nothing inherits
-```
----
-
 #### Cleanup
 ```yaml
 outbox:
@@ -942,6 +909,78 @@ outbox:
 | `polling.max-fixed-delay` | Max delay between polling iterations                                                                                 |    `1m`    |
 | `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                        |   `2.0`    |
 
+---
+
+#### Dead Letter Queue
+```yaml
+outbox:
+  publisher:
+    dlq:
+      enabled: true  
+      batch-size: 500
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 2m
+        multiplier: 10.0
+      transfer-to:
+        # All properties inherit from section above
+      transfer-from:
+        # All properties inherit from section above
+      clean-up:
+        enabled: true
+        batch-size: 500
+        ttl: 24h
+        polling:
+          type: adaptive
+          initial-delay: 5m
+          min-fixed-delay: 5s
+          max-fixed-delay: 1m
+          multiplier: 2.0
+```
+DLQ has shared section with `batch-size`, `polling`. Values from this section will be used in `transfer-to` and `transfer-from` as defaults.
+> [!WARNING]
+> When disabled, failed events are not managed automatically and stay in `outbox_events` as `FAILED`.
+
+| Property                  | Description                                                                                                            |  Default   |
+|---------------------------|------------------------------------------------------------------------------------------------------------------------|:----------:|
+| `enabled`                 | Enable DLQ functionality                                                                                               |  `false`   |
+| `batch-size`              | Number of events to transfer per iteration                                                                             |   `500`    |
+| `polling.type`            | Polling type (`fixed` or `adaptive`)                                                                                   | `adaptive` |
+| `polling.initial-delay`   | Delay before first polling starts                                                                                      |    `5m`    |
+| `polling.min-fixed-delay` | Min delay between polling iterations                                                                                   |    `1s`    |
+| `polling.max-fixed-delay` | Max delay between polling iterations                                                                                   |    `2m`    |
+| `polling.multiplier`      | Multiplier for exponential backoff between polling iterations                                                          |   `10.0`   |
+| `transfer-to`             | Section for specifying settings for transferring events from the outbox to the DLQ                                     |     —      |
+| `transfer-from`           | Section for specifying settings for transferring events from the DLQ to the outbox                                     |     —      |
+| `clean-up`                | Specifying cleanup settings for DLQ events with `RESOLVED` status, parameters and defaults same as [here](#cleanup-3). |     —      |
+
+**Override example**: 
+```yaml
+outbox:
+  publisher:
+    dlq:
+      enabled: true  
+      batch-size: 500
+      polling:
+        type: adaptive
+        initial-delay: 5m
+        min-fixed-delay: 1s
+        max-fixed-delay: 2m
+        multiplier: 10.0
+      transfer-to:
+        pooling:
+          multiplier: 2.5
+      # Inherits: batch-size=500, other polling settings except multiplier
+      transfer-from:
+        batch-size: 1000
+        pooling:
+          type: fixed
+          initial-delay: 5m
+          fixed-delay: 1m
+        # Nothing inherits
+```
 ---
 
 #### Metrics
@@ -988,7 +1027,7 @@ outbox:
         max-fixed-delay: 1m
         multiplier: 2.0
 ```
-All parameters same as [Publisher Cleanup](#cleanup-2).
+All parameters and defaults same as [here](#cleanup-3).
 
 ---
 

@@ -18,14 +18,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class PostgreSqlOutboxDlqRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
 
     private final OutboxDlqRepository repository;
-    private final AbstractOutboxDlqRepositoryIntegrationTests delegate;
+    private final OutboxDlqRepositoryVerifier delegate;
 
     public PostgreSqlOutboxDlqRepositoryIntegrationTests(
             @Qualifier("postgresOutboxDlqRepository") OutboxDlqRepository repository,
             @Qualifier("postgresJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
-        this.delegate = new AbstractOutboxDlqRepositoryIntegrationTests(
+        this.delegate = new OutboxDlqRepositoryVerifier(
                 repository,
                 jdbcTemplate,
                 new PostgreSqlIdHelper(),
@@ -93,5 +93,35 @@ class PostgreSqlOutboxDlqRepositoryIntegrationTests extends BasePostgresSqlInteg
 
         assertThat(repository.findAndLockBatchByStatus(DlqStatus.MOVED, 3, DlqStatus.IN_PROCESS))
                 .hasSize(3);
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should delete matching events and return count")
+    void deleteBatchByStatusAndThreshold_matches_deleted() {
+        delegate.deleteBatchByStatusAndThreshold_matches_deleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should not delete events newer than threshold")
+    void deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted() {
+        delegate.deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should not delete events with different status")
+    void deleteBatchByStatusAndThreshold_wrongStatus_notDeleted() {
+        delegate.deleteBatchByStatusAndThreshold_wrongStatus_notDeleted();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should respect batch size limit")
+    void deleteBatchByStatusAndThreshold_respectsBatchSize() {
+        delegate.deleteBatchByStatusAndThreshold_respectsBatchSize();
+    }
+
+    @Test
+    @DisplayName("IT deleteBatchByStatusAndThreshold() when no matches should return zero")
+    void deleteBatchByStatusAndThreshold_noMatches_returnsZero() {
+        delegate.deleteBatchByStatusAndThreshold_noMatches_returnsZero();
     }
 }
