@@ -4,7 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
 import io.micrometer.core.instrument.MeterRegistry;
 
-public final class ConsumedOutboxManagerMetricsDecoratorSupplier implements ConsumedOutboxManagerDecoratorSupplier {
+public class ConsumedOutboxManagerMetricsDecoratorSupplier implements ConsumedOutboxManagerDecoratorSupplier {
 
     private final MeterRegistry registry;
 

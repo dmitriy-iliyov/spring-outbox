@@ -2,15 +2,15 @@ package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
+import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
+import io.github.dmitriyiliyov.springoutbox.core.locks.OutboxJob;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.messaging.SpringMessageOutboxEventIdResolver;
 import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheListener;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxEventIdResolver;
-import io.github.dmitriyiliyov.springoutbox.starter.ContinuableTaskDecoratorSupplier;
-import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyFactory;
-import io.github.dmitriyiliyov.springoutbox.starter.OutboxScheduleStrategyListenerSupplier;
+import io.github.dmitriyiliyov.springoutbox.starter.*;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,31 +26,30 @@ import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.sql.DataSource;
 import java.time.Clock;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
-@ConditionalOnProperty(prefix = "outbox.consumer", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(
+        prefix = "outbox.consumer",
+        name = "enabled",
+        havingValue = "true"
+)
 public class OutboxConsumerAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxConsumerAutoConfiguration.class);
 
-    private final OutboxConsumerProperties properties;
+    private final OutboxConsumerProperties consumerProperties;
 
-    public OutboxConsumerAutoConfiguration(OutboxConsumerProperties properties) {
-        this.properties = properties;
+    public OutboxConsumerAutoConfiguration(OutboxConsumerProperties consumerProperties) {
+        this.consumerProperties = consumerProperties;
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ConsumedOutboxRepository consumedOutboxRepository(
-            DataSource dataSource,
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
-            Clock clock
-    ) {
-        return ConsumedOutboxRepositoryFactory.create(dataSource, jdbcTemplate, clock);
+    public ConsumedOutboxRepository consumedOutboxRepository(OutboxRepositoryFactory repositoryFactory) {
+        return repositoryFactory.createConsumedOutboxRepository();
     }
 
     @Bean
@@ -93,7 +92,7 @@ public class OutboxConsumerAutoConfiguration {
     ) {
         return new ConsumedOutboxManagerCacheDecoratorSupplier(
                 cacheManager,
-                properties.getCache().getCacheName(),
+                consumerProperties.getCache().getCacheName(),
                 cacheListener
         );
     }
@@ -171,23 +170,53 @@ public class OutboxConsumerAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(prefix = "outbox.consumer.clean-up", name = "enabled", havingValue = "true")
+    @ConditionalOnProperty(
+            prefix = "outbox.consumer.clean-up",
+            name = "enabled",
+            havingValue = "true"
+    )
     public OutboxScheduler consumedOutboxCleanUpScheduler(
+            OutboxProperties properties,
             @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
             ConsumedOutboxManager manager,
             OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
-            ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier
+            ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier,
+            DistributedLockRepository lockRepository
     ) {
         return new ConsumedOutboxCleanUpScheduler(
-                properties.getCleanUp(),
+                properties.getWorkerId(),
+                consumerProperties.getCleanUp(),
                 OutboxScheduleStrategyFactory.create(
                         MetricsTaskType.CONSUMER_CLEANUP.getValue(),
-                        properties.getCleanUp().getPolling(),
+                        consumerProperties.getCleanUp().getPolling(),
                         executor,
                         scheduleStrategyListenerSupplier
                 ),
                 manager,
+                lockRepository,
                 continuableTaskDecoratorSupplier.supply(MetricsTaskType.CONSUMER_CLEANUP.getValue())
+        );
+    }
+
+    @Bean
+    @ConditionalOnProperty(
+            prefix = "outbox.consumer.clean-up",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxJobCreateCommand consumedOutboxCleanUpJobCreateCommand(OutboxProperties properties,
+                                                                        @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+                                                                        Clock clock) {
+        DistributedLockPropertiesResolver.LockDurations lockDurations = DistributedLockPropertiesResolver.resolve(
+                properties.getDistributedLock(),
+                consumerProperties.getCleanUp().getPolling()
+        );
+        return new DefaultOutboxJobCreateCommand(
+                jdbcTemplate,
+                clock,
+                OutboxJob.OUTBOX_CONSUMED_CLEANUP.getJobName(),
+                lockDurations.atLeastFor(),
+                lockDurations.atMostFor()
         );
     }
 }

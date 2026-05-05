@@ -4,10 +4,13 @@ import io.github.dmitriyiliyov.springoutbox.core.it.BaseOracleIntegrationTests;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.ParameterizedPreparedStatementSetter;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collection;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -126,6 +129,29 @@ class OracleConsumedOutboxRepositoryIntegrationTests extends BaseOracleIntegrati
         Set<UUID> inserted = repository.saveIfAbsent(Set.of(id));
 
         assertThat(inserted).containsOnly(id);
+    }
+
+    @Test
+    @DisplayName("IT saveIfAbsent(Set) throws ConcurrentInsertException when inserted rows mismatch")
+    void saveIfAbsent_concurrentInsertMismatch_throwsException() {
+        org.springframework.jdbc.core.JdbcTemplate interceptedJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(repository.jdbcTemplate.getDataSource()) {
+            @Override
+            public <T> int[][] batchUpdate(String sql, Collection<T> batchArgs, int batchSize, ParameterizedPreparedStatementSetter<T> pss) throws DataAccessException {
+                return new int[0][0];
+            }
+        };
+
+        OracleConsumedOutboxRepository testRepository = new OracleConsumedOutboxRepository(
+                interceptedJdbcTemplate,
+                repository.clock,
+                repository.idHelper,
+                repository.mapper
+        );
+
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> testRepository.saveIfAbsent(ids))
+                .isInstanceOf(ConcurrentInsertException.class);
     }
 
     @Test

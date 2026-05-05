@@ -3,25 +3,23 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
-import org.junit.jupiter.api.DisplayName;
+import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
+import io.github.dmitriyiliyov.springoutbox.core.locks.OutboxJob;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class OutboxCleanUpSchedulerUnitTests {
@@ -36,13 +34,22 @@ public class OutboxCleanUpSchedulerUnitTests {
     OutboxManager manager;
 
     @Mock
-    Clock clock;
+    DistributedLockRepository lock;
 
     @Mock
     ContinuableTaskDecorator decorator;
 
-    @InjectMocks
     OutboxCleanUpScheduler tested;
+
+    private final UUID workerId = UUID.randomUUID();
+    private final String jobName = OutboxJob.OUTBOX_PROCESSED_CLEANUP.getJobName();
+
+    @BeforeEach
+    void setUp() {
+        tested = new OutboxCleanUpScheduler(
+                workerId, properties, strategy, manager, lock, decorator
+        );
+    }
 
     private boolean captureAndRun() {
         ArgumentCaptor<ContinuableTask> captor = ArgumentCaptor.forClass(ContinuableTask.class);
@@ -51,8 +58,10 @@ public class OutboxCleanUpSchedulerUnitTests {
     }
 
     @Test
-    @DisplayName("UT schedule() should delegate execution to strategy")
     void schedule_shouldDelegateToStrategy() {
+        // given
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+
         // when
         tested.schedule();
 
@@ -61,19 +70,32 @@ public class OutboxCleanUpSchedulerUnitTests {
     }
 
     @Test
-    @DisplayName("UT schedule() when deleted count equals batch size, continuable should return true")
-    void schedule_whenDeletedCountEqualsBatchSize_continuableShouldReturnTrue() {
+    void schedule_whenLockNotAcquired_shouldReturnFalseAndNotExecute() {
+        // given
+        when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+        when(lock.tryLock(jobName, workerId)).thenReturn(false);
+
+        // when
+        tested.schedule();
+        boolean result = captureAndRun();
+
+        // then
+        assertFalse(result);
+        verifyNoInteractions(properties);
+        verifyNoInteractions(manager);
+        verify(lock, never()).unlock(anyString(), any(UUID.class));
+    }
+
+    @Test
+    void schedule_whenDeletedCountEqualsBatchSize_shouldReturnTrueAndUnlock() {
         // given
         int batchSize = 50;
-        Instant now = Instant.parse("2024-01-01T12:00:00Z");
         Duration ttl = Duration.ofDays(7);
-
-        when(clock.instant()).thenReturn(now);
-        when(properties.getTtl()).thenReturn(ttl);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-        when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(batchSize);
-
         when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+        when(lock.tryLock(jobName, workerId)).thenReturn(true);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.deleteProcessedBatch(ttl, batchSize)).thenReturn(batchSize);
 
         // when
         tested.schedule();
@@ -81,22 +103,19 @@ public class OutboxCleanUpSchedulerUnitTests {
 
         // then
         assertTrue(result);
+        verify(lock).unlock(jobName, workerId);
     }
 
     @Test
-    @DisplayName("UT schedule() when deleted count less than batch size, continuable should return false")
-    void schedule_whenDeletedCountLessThanBatchSize_continuableShouldReturnFalse() {
+    void schedule_whenDeletedCountLessThanBatchSize_shouldReturnFalseAndUnlock() {
         // given
         int batchSize = 50;
-        Instant now = Instant.parse("2024-01-01T12:00:00Z");
         Duration ttl = Duration.ofDays(7);
-
-        when(clock.instant()).thenReturn(now);
-        when(properties.getTtl()).thenReturn(ttl);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-        when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(batchSize - 1);
-
         when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+        when(lock.tryLock(jobName, workerId)).thenReturn(true);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.deleteProcessedBatch(ttl, batchSize)).thenReturn(batchSize - 1);
 
         // when
         tested.schedule();
@@ -104,22 +123,19 @@ public class OutboxCleanUpSchedulerUnitTests {
 
         // then
         assertFalse(result);
+        verify(lock).unlock(jobName, workerId);
     }
 
     @Test
-    @DisplayName("UT schedule() when deleted count is zero, continuable should return false")
-    void schedule_whenDeletedCountIsZero_continuableShouldReturnFalse() {
+    void schedule_whenDeletedCountIsZero_shouldReturnFalseAndUnlock() {
         // given
         int batchSize = 50;
-        Instant now = Instant.parse("2024-01-01T12:00:00Z");
         Duration ttl = Duration.ofDays(7);
-
-        when(clock.instant()).thenReturn(now);
-        when(properties.getTtl()).thenReturn(ttl);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-        when(manager.deleteProcessedBatch(now.minus(ttl), batchSize)).thenReturn(0);
-
         when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+        when(lock.tryLock(jobName, workerId)).thenReturn(true);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.deleteProcessedBatch(ttl, batchSize)).thenReturn(0);
 
         // when
         tested.schedule();
@@ -127,45 +143,39 @@ public class OutboxCleanUpSchedulerUnitTests {
 
         // then
         assertFalse(result);
+        verify(lock).unlock(jobName, workerId);
     }
 
     @Test
-    @DisplayName("UT schedule() should pass threshold computed from clock and ttl to manager")
     void schedule_shouldPassCorrectThresholdToManager() {
         // given
         int batchSize = 100;
-        Instant now = Instant.parse("2024-06-15T10:00:00Z");
         Duration ttl = Duration.ofHours(48);
-        Instant expectedThreshold = now.minus(ttl);
-
-        when(clock.instant()).thenReturn(now);
-        when(properties.getTtl()).thenReturn(ttl);
-        when(properties.getBatchSize()).thenReturn(batchSize);
-        when(manager.deleteProcessedBatch(any(), anyInt())).thenReturn(0);
-
         when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+        when(lock.tryLock(jobName, workerId)).thenReturn(true);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.deleteProcessedBatch(any(), anyInt())).thenReturn(0);
 
         // when
         tested.schedule();
         captureAndRun();
 
         // then
-        verify(manager).deleteProcessedBatch(expectedThreshold, batchSize);
+        verify(manager).deleteProcessedBatch(ttl, batchSize);
+        verify(lock).unlock(jobName, workerId);
     }
 
     @Test
-    @DisplayName("UT schedule() when manager throws exception, continuable should return false and not rethrow")
-    void schedule_whenManagerThrows_continuableShouldReturnFalseAndNotRethrow() {
+    void schedule_whenManagerThrowsException_shouldReturnFalseAndNotRethrowAndUnlock() {
         // given
-        Instant now = Instant.parse("2024-01-01T12:00:00Z");
+        int batchSize = 50;
         Duration ttl = Duration.ofDays(7);
-
-        when(clock.instant()).thenReturn(now);
-        when(properties.getTtl()).thenReturn(ttl);
-        when(properties.getBatchSize()).thenReturn(50);
-        when(manager.deleteProcessedBatch(any(), anyInt())).thenThrow(new RuntimeException("DB error"));
-
         when(decorator.decorate(any(ContinuableTask.class))).then(returnsFirstArg());
+        when(lock.tryLock(jobName, workerId)).thenReturn(true);
+        when(properties.getBatchSize()).thenReturn(batchSize);
+        when(properties.getTtl()).thenReturn(ttl);
+        when(manager.deleteProcessedBatch(ttl, batchSize)).thenThrow(new RuntimeException());
 
         // when
         tested.schedule();
@@ -173,5 +183,6 @@ public class OutboxCleanUpSchedulerUnitTests {
 
         // then
         assertFalse(result);
+        verify(lock).unlock(jobName, workerId);
     }
 }

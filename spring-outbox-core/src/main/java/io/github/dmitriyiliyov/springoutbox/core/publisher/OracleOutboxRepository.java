@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.BytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,12 +15,12 @@ import java.util.stream.Collectors;
 
 public class OracleOutboxRepository extends AbstractOutboxRepository {
 
-    protected final BytesSqlResultSetMapper mapper;
+    protected final BytesResultSetMapper mapper;
 
     public OracleOutboxRepository(JdbcTemplate jdbcTemplate,
                                   Clock clock,
                                   SqlIdHelper idHelper,
-                                  BytesSqlResultSetMapper mapper) {
+                                  BytesResultSetMapper mapper) {
         super(jdbcTemplate, clock, idHelper);
         this.mapper = mapper;
     }
@@ -150,16 +150,10 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
     @Override
     public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String selectSql = """
-            SELECT id
-            FROM outbox_events
-            WHERE id IN(
-                SELECT id 
-                FROM outbox_events
-                WHERE status = ? AND updated_at <= ?
-                ORDER BY updated_at
-                FETCH FIRST ? ROWS ONLY
-            )
-            FOR UPDATE SKIP LOCKED
+            SELECT id FROM outbox_events
+            WHERE status = ? AND updated_at <= ?
+            ORDER BY updated_at
+            FETCH FIRST ? ROWS ONLY
         """;
         Set<UUID> ids = new HashSet<>(jdbcTemplate.query(
                 selectSql,
@@ -168,18 +162,15 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                     ps.setTimestamp(2, Timestamp.from(threshold));
                     ps.setInt(3, batchSize);
                 },
-                (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id")))
-        );
+                (rs, numRow) -> mapper.fromBytesToUuid(rs.getBytes("id"))
+        ));
         if (!RepositoryUtils.isIdsValid(ids)) {
             return 0;
         }
-        String deleteSql = """
+        String sql = """
             DELETE FROM outbox_events
             WHERE id IN (%s)
         """.formatted(RepositoryUtils.generateIdsPlaceholders(ids));
-        return jdbcTemplate.update(
-                deleteSql,
-                ps -> idHelper.setIdsToPs(ps, 1, ids)
-        );
+        return jdbcTemplate.update(sql, ps -> idHelper.setIdsToPs(ps, 1, ids));
     }
 }

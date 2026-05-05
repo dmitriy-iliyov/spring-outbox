@@ -1,6 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
@@ -15,11 +19,13 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,19 +40,10 @@ class OutboxPublisherAutoConfigurationUnitTests {
     private OutboxPublisherAutoConfiguration config;
 
     @Mock
-    private OutboxPublisherProperties mockedPublisherProperties;
-
-    @Mock
     private ScheduledExecutorService executor;
 
     @Mock
     private OutboxProcessor processor;
-
-    @Mock
-    private OutboxManager manager;
-
-    @Mock
-    private Clock clock;
 
     @Mock
     private ConfigurableListableBeanFactory factory;
@@ -60,16 +57,19 @@ class OutboxPublisherAutoConfigurationUnitTests {
     @Mock
     private ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier;
 
+    @Mock
+    private ObjectMapper mapper;
+
     @BeforeEach
     void setUp() {
-        props = new OutboxPublisherProperties();
-        config = new OutboxPublisherAutoConfiguration(props, mock(ObjectMapper.class));
+        props = mock(OutboxPublisherProperties.class);
+        config = new OutboxPublisherAutoConfiguration(props, mapper);
     }
 
     @Test
     @DisplayName("UT outboxCache returns noop when metrics null")
     void outboxCache_metricsNull_returnsNoop() {
-        props.setMetrics(null);
+        when(props.getMetrics()).thenReturn(null);
 
         OutboxCache<?> cache = config.outboxCache();
 
@@ -81,7 +81,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
     void outboxCache_gaugeNull_returnsNoop() {
         OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
         metrics.setGauge(null);
-        props.setMetrics(metrics);
+        when(props.getMetrics()).thenReturn(metrics);
 
         OutboxCache<?> cache = config.outboxCache();
 
@@ -95,7 +95,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
         OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
         gauge.setEnabled(false);
         metrics.setGauge(gauge);
-        props.setMetrics(metrics);
+        when(props.getMetrics()).thenReturn(metrics);
 
         OutboxCache<?> cache = config.outboxCache();
 
@@ -110,9 +110,9 @@ class OutboxPublisherAutoConfigurationUnitTests {
         gauge.setEnabled(true);
         gauge.setCache(new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties());
         metrics.setGauge(gauge);
-        props.setMetrics(metrics);
+        when(props.getMetrics()).thenReturn(metrics);
 
-        assertThatThrownBy(() -> config.outboxCache())
+        assertThatThrownBy(config::outboxCache)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cache ttls cannot be null or empty");
     }
@@ -128,9 +128,9 @@ class OutboxPublisherAutoConfigurationUnitTests {
         cacheProps.setTtls(List.of(Duration.ofSeconds(1)));
         gauge.setCache(cacheProps);
         metrics.setGauge(gauge);
-        props.setMetrics(metrics);
+        when(props.getMetrics()).thenReturn(metrics);
 
-        assertThatThrownBy(() -> config.outboxCache())
+        assertThatThrownBy(config::outboxCache)
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Ttls should be 3 element size");
     }
@@ -146,7 +146,7 @@ class OutboxPublisherAutoConfigurationUnitTests {
         cacheProps.setTtls(List.of(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(3)));
         gauge.setCache(cacheProps);
         metrics.setGauge(gauge);
-        props.setMetrics(metrics);
+        when(props.getMetrics()).thenReturn(metrics);
 
         OutboxCache<?> cache = config.outboxCache();
 
@@ -154,50 +154,10 @@ class OutboxPublisherAutoConfigurationUnitTests {
     }
 
     @Test
-    @DisplayName("UT outboxSchedulersInitializer should register publisher and recovery schedulers when cleanup is disabled")
-    void shouldRegisterPublisherAndRecoverySchedulers() {
-        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
-        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
-
-        when(mockedPublisherProperties.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
-        when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
-        when(eventPropertiesHolder.getPolling()).thenReturn(mockPollingProperties);
-
-        when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(false);
-        when(factory.containsBean(anyString())).thenReturn(false);
-
-        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
-        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
-        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
-
-        try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class)) {
-            beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
-                    .thenReturn("testEventOutboxPublisherScheduler");
-
-            SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    mockedPublisherProperties, executor, processor, manager, clock, factory,
-                    scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
-            );
-
-            initializer.afterSingletonsInstantiated();
-
-            verify(factory).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
-            verify(factory).registerSingleton(eq("outboxRecoveryScheduler"), any(OutboxRecoveryScheduler.class));
-            verify(factory, never()).registerSingleton(eq("outboxCleanUpScheduler"), any());
-        }
-    }
-
-    @Test
     @DisplayName("UT outboxSchedulersInitializer should skip publisher scheduler registration if bean already exists")
     void shouldSkipPublisherSchedulerIfBeanExists() {
-        when(mockedPublisherProperties.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
+        when(props.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
         when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
-        when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(false);
-        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
-        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
-        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
-        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
-        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
 
         try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class)) {
             beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
@@ -206,66 +166,104 @@ class OutboxPublisherAutoConfigurationUnitTests {
             when(factory.containsBean("testEventOutboxPublisherScheduler")).thenReturn(true);
 
             SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    mockedPublisherProperties, executor, processor, manager, clock, factory,
-                    scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
+                    executor, processor, factory, scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
             );
 
             initializer.afterSingletonsInstantiated();
 
             verify(factory, never()).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
-            verify(factory).registerSingleton(eq("outboxRecoveryScheduler"), any(OutboxRecoveryScheduler.class));
         }
     }
 
     @Test
-    @DisplayName("UT outboxSchedulersInitializer should register cleanup scheduler when cleanup is enabled and properties are present")
-    void shouldRegisterCleanUpSchedulerWhenEnabled() {
-        when(mockedPublisherProperties.getEvents()).thenReturn(Map.of());
-        when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(true);
-        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
-        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
+    @DisplayName("UT outboxSchedulersInitializer should register publisher scheduler if bean does not exist")
+    void shouldRegisterPublisherSchedulerIfBeanDoesNotExist() {
+        when(props.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
+        when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
+        when(eventPropertiesHolder.getPolling()).thenReturn(mock(OutboxProperties.PollingProperties.class));
+        when(continuableTaskDecoratorSupplier.supply(anyString())).thenReturn(mock(ContinuableTaskDecorator.class));
 
-        OutboxProperties.CleanUpProperties mockCleanUpProperties = mock(OutboxProperties.CleanUpProperties.class);
-        when(mockCleanUpProperties.getPolling()).thenReturn(mockPollingProperties);
-        when(mockedPublisherProperties.getCleanUp()).thenReturn(mockCleanUpProperties);
+        try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class);
+             MockedStatic<OutboxScheduleStrategyFactory> strategyFactory = mockStatic(OutboxScheduleStrategyFactory.class)) {
 
-        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
-        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
-        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
+            beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
+                    .thenReturn("testEventOutboxPublisherScheduler");
+            strategyFactory.when(() -> OutboxScheduleStrategyFactory.create(any(), any(), any(), any()))
+                    .thenReturn(mock(OutboxScheduleStrategy.class));
+            when(factory.containsBean("testEventOutboxPublisherScheduler")).thenReturn(false);
 
-        SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                mockedPublisherProperties, executor, processor, manager, clock, factory,
-                scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
-        );
+            SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
+                    executor, processor, factory, scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
+            );
 
-        initializer.afterSingletonsInstantiated();
+            initializer.afterSingletonsInstantiated();
 
-        verify(factory).registerSingleton(eq("outboxRecoveryScheduler"), any(OutboxRecoveryScheduler.class));
-        verify(factory).registerSingleton(eq("outboxCleanUpScheduler"), any(OutboxCleanUpScheduler.class));
+            verify(factory).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
+        }
     }
 
     @Test
-    @DisplayName("UT outboxSchedulersInitializer should throw IllegalStateException when cleanup is enabled but properties are null")
-    void shouldThrowExceptionWhenCleanUpPropertiesAreNull() {
-        when(mockedPublisherProperties.getEvents()).thenReturn(Map.of());
-        when(mockedPublisherProperties.isCleanUpEnabled()).thenReturn(true);
-        when(mockedPublisherProperties.getCleanUp()).thenReturn(null);
-        OutboxProperties.PollingProperties mockPollingProperties = mock(OutboxProperties.PollingProperties.class);
-        when(mockPollingProperties.getType()).thenReturn(PollingType.ADAPTIVE);
-        OutboxPublisherProperties.StuckRecoveryProperties mockStuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
-        when(mockStuckRecoveryProperties.getPolling()).thenReturn(mockPollingProperties);
-        when(mockedPublisherProperties.getStuckRecovery()).thenReturn(mockStuckRecoveryProperties);
+    @DisplayName("UT outboxRecoveryScheduler creates OutboxRecoveryScheduler")
+    void outboxRecoveryScheduler_createsScheduler(@Mock OutboxManager manager) {
+        OutboxPublisherProperties.StuckRecoveryProperties stuckRecoveryProperties = mock(OutboxPublisherProperties.StuckRecoveryProperties.class);
+        when(stuckRecoveryProperties.getPolling()).thenReturn(mock(OutboxProperties.PollingProperties.class));
+        when(props.getStuckRecovery()).thenReturn(stuckRecoveryProperties);
+        when(continuableTaskDecoratorSupplier.supply(anyString())).thenReturn(mock(ContinuableTaskDecorator.class));
 
-        SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                mockedPublisherProperties, executor, processor, manager, clock, factory,
-                scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
-        );
+        try (MockedStatic<OutboxScheduleStrategyFactory> strategyFactory = mockStatic(OutboxScheduleStrategyFactory.class)) {
+            strategyFactory.when(() -> OutboxScheduleStrategyFactory.create(any(), any(), any(), any()))
+                    .thenReturn(mock(OutboxScheduleStrategy.class));
 
-        assertThatThrownBy(initializer::afterSingletonsInstantiated)
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("OutboxProperties.CleanUpProperties is null");
+            OutboxScheduler scheduler = config.outboxRecoveryScheduler(
+                    executor, scheduleStrategyListenerSupplier, manager, continuableTaskDecoratorSupplier
+            );
 
-        verify(factory).registerSingleton(eq("outboxRecoveryScheduler"), any(OutboxRecoveryScheduler.class));
-        verify(factory, never()).registerSingleton(eq("outboxCleanUpScheduler"), any());
+            assertThat(scheduler).isInstanceOf(OutboxRecoveryScheduler.class);
+        }
+    }
+
+    @Test
+    @DisplayName("UT cleanUpOutboxScheduler creates OutboxCleanUpScheduler")
+    void cleanUpOutboxScheduler_createsScheduler(@Mock OutboxProperties outboxProperties,
+                                                 @Mock OutboxManager manager,
+                                                 @Mock DistributedLockRepository lockRepository) {
+        OutboxProperties.CleanUpProperties cleanUpProperties = mock(OutboxProperties.CleanUpProperties.class);
+        when(cleanUpProperties.getPolling()).thenReturn(mock(OutboxProperties.PollingProperties.class));
+        when(props.getCleanUp()).thenReturn(cleanUpProperties);
+        when(outboxProperties.getWorkerId()).thenReturn(UUID.randomUUID());
+        when(continuableTaskDecoratorSupplier.supply(anyString())).thenReturn(mock(ContinuableTaskDecorator.class));
+
+        try (MockedStatic<OutboxScheduleStrategyFactory> strategyFactory = mockStatic(OutboxScheduleStrategyFactory.class)) {
+            strategyFactory.when(() -> OutboxScheduleStrategyFactory.create(any(), any(), any(), any()))
+                    .thenReturn(mock(OutboxScheduleStrategy.class));
+
+            OutboxScheduler scheduler = config.cleanUpOutboxScheduler(
+                    outboxProperties, executor, scheduleStrategyListenerSupplier, manager, lockRepository, continuableTaskDecoratorSupplier
+            );
+
+            assertThat(scheduler).isInstanceOf(OutboxCleanUpScheduler.class);
+        }
+    }
+
+    @Test
+    @DisplayName("UT outboxCleanUpJobCreateCommand creates DefaultOutboxJobCreateCommand")
+    void outboxCleanUpJobCreateCommand_createsCommand(@Mock OutboxProperties outboxProperties,
+                                                      @Mock JdbcTemplate jdbcTemplate,
+                                                      @Mock Clock clock) {
+        OutboxProperties.CleanUpProperties cleanUpProperties = mock(OutboxProperties.CleanUpProperties.class);
+        when(cleanUpProperties.getPolling()).thenReturn(mock(OutboxProperties.PollingProperties.class));
+        when(props.getCleanUp()).thenReturn(cleanUpProperties);
+        when(outboxProperties.getDistributedLock()).thenReturn(mock(OutboxProperties.DistributedLockProperties.class));
+
+        try (MockedStatic<DistributedLockPropertiesResolver> resolver = mockStatic(DistributedLockPropertiesResolver.class)) {
+            DistributedLockPropertiesResolver.LockDurations lockDurations = mock(DistributedLockPropertiesResolver.LockDurations.class);
+            when(lockDurations.atLeastFor()).thenReturn(Duration.ofSeconds(1).toMillis());
+            when(lockDurations.atMostFor()).thenReturn(Duration.ofSeconds(5).toMillis());
+            resolver.when(() -> DistributedLockPropertiesResolver.resolve(any(), any())).thenReturn(lockDurations);
+
+            OutboxJobCreateCommand command = config.outboxCleanUpJobCreateCommand(outboxProperties, jdbcTemplate, clock);
+
+            assertThat(command).isInstanceOf(DefaultOutboxJobCreateCommand.class);
+        }
     }
 }

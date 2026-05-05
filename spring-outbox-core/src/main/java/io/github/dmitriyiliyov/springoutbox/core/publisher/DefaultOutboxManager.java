@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -123,7 +124,7 @@ public class DefaultOutboxManager implements OutboxManager {
     public int recoverStuckBatch(Duration maxBatchProcessingTime, int batchSize) {
         int recoveredCount = repository.updateBatchStatusByStatusAndThreshold(
                 EventStatus.IN_PROCESS,
-                clock.instant().minusSeconds(maxBatchProcessingTime.toSeconds()),
+                clock.instant().minusMillis(maxBatchProcessingTime.toMillis()),
                 batchSize,
                 EventStatus.PENDING
         );
@@ -133,7 +134,9 @@ public class DefaultOutboxManager implements OutboxManager {
 
     @Transactional
     @Override
-    public int deleteProcessedBatch(Instant threshold, int batchSize) {
+    public int deleteProcessedBatch(Duration ttl, int batchSize) {
+        Objects.requireNonNull(ttl, "ttl cannot be null");
+        Instant threshold = clock.instant().minusMillis(ttl.toMillis());
         return repository.deleteBatchByStatusAndThreshold(EventStatus.PROCESSED, threshold, batchSize);
     }
 

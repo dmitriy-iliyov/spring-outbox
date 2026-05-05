@@ -1,5 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core;
 
+import io.github.dmitriyiliyov.springoutbox.core.polling.PollingPropertiesHolder;
+
 import java.time.Duration;
 import java.util.Map;
 

@@ -127,7 +127,6 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                 WHERE status = ? AND updated_at <= ?
                 ORDER BY updated_at
                 LIMIT ?
-                FOR UPDATE SKIP LOCKED
             )
             DELETE FROM outbox_events 
             WHERE id IN (SELECT id FROM to_delete)

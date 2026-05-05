@@ -1,7 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 
-import io.github.dmitriyiliyov.springoutbox.core.*;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
+import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

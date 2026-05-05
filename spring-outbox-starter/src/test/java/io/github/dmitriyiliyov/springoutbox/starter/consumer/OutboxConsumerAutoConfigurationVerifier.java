@@ -129,6 +129,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                         OutboxAutoConfiguration.class,
                         OutboxConsumerAutoConfiguration.class
                 ))
+                .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
                         "spring.datasource.url=" + dbUrl,
                         "spring.datasource.driver-class-name=" + dbDriver,
@@ -188,17 +189,19 @@ public class OutboxConsumerAutoConfigurationVerifier {
     public void shouldNotRegisterCleanUpScheduler_whenDisabled() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.consumer.clean-up.enabled=false")
-                .run(ctx ->
-                        assertThat(ctx).doesNotHaveBean("consumedOutboxCleanUpScheduler")
-                );
+                .run(ctx -> {
+                    assertThat(ctx).doesNotHaveBean("consumedOutboxCleanUpScheduler");
+                    assertThat(ctx).doesNotHaveBean("consumedOutboxCleanUpJobCreateCommand");
+                });
     }
 
     public void shouldNotRegisterCleanUpScheduler_whenEnabled() {
         getBaseContextRunner()
                 .withPropertyValues("outbox.consumer.clean-up.enabled=true")
-                .run(ctx ->
-                        assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler")
-                );
+                .run(ctx -> {
+                            assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
+                            assertThat(ctx).hasBean("consumedOutboxCleanUpJobCreateCommand");
+                });
     }
 
     public void shouldNotRegisterDuplicateConsumedOutboxManager_whenCustomBeanProvided() {
@@ -341,6 +344,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("consumedOutboxCleanUpJobCreateCommand");
                 });
     }
 
@@ -375,6 +379,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
+                    assertThat(ctx).hasBean("consumedOutboxCleanUpJobCreateCommand");
                 });
     }
 }

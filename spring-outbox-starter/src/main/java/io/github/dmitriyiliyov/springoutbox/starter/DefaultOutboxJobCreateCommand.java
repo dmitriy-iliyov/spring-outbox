@@ -1,0 +1,50 @@
+package io.github.dmitriyiliyov.springoutbox.starter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.sql.Timestamp;
+import java.time.Clock;
+import java.time.temporal.ChronoUnit;
+
+public class DefaultOutboxJobCreateCommand implements OutboxJobCreateCommand {
+
+    private static final Logger log = LoggerFactory.getLogger(DefaultOutboxJobCreateCommand.class);
+
+    private final JdbcTemplate jdbcTemplate;
+    private final Clock clock;
+    private final String jobName;
+    private final Long lockAtLeastFor;
+    private final Long lockAtMostFor;
+
+    public DefaultOutboxJobCreateCommand(JdbcTemplate jdbcTemplate, Clock clock, String jobName, Long lockAtLeastFor, Long lockAtMostFor) {
+        this.clock = clock;
+        this.jobName = jobName;
+        this.jdbcTemplate = jdbcTemplate;
+        this.lockAtLeastFor = lockAtLeastFor;
+        this.lockAtMostFor = lockAtMostFor;
+    }
+
+    @Override
+    public void create() {
+        String sql = """
+                INSERT INTO outbox_jobs (job_name, lock_until, locked_by, lock_at_least_for, lock_at_most_for)
+                VALUES (?, ?, NULL, ?, ?)
+        """;
+        try {
+            jdbcTemplate.update(
+                    sql,
+                    ps -> {
+                        ps.setString(1, jobName);
+                        ps.setTimestamp(2, Timestamp.from(clock.instant().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS)));
+                        ps.setLong(3, lockAtLeastFor);
+                        ps.setLong(4, lockAtMostFor);
+                    }
+            );
+        } catch (DuplicateKeyException dke) {
+            log.info("Job with name '{}' already exists", jobName);
+        }
+    }
+}

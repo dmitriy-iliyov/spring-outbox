@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.core.utils.BytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.springoutbox.core.utils.ResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
@@ -23,7 +24,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
     public MySqlOutboxRepository(JdbcTemplate jdbcTemplate,
                                  Clock clock,
                                  SqlIdHelper idHelper,
-                                 ResultSetMapper mapper) {
+                                 BytesResultSetMapper mapper) {
         super(jdbcTemplate, clock, idHelper);
         this.mapper = mapper;
     }
@@ -131,16 +132,9 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
     @Override
     public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) {
         String sql = """
-            DELETE FROM outbox_events 
-            WHERE id IN (
-                SELECT id FROM(
-                    SELECT id FROM outbox_events 
-                    WHERE status = ? AND updated_at <= ?
-                    ORDER BY updated_at
-                    LIMIT ?
-                    FOR UPDATE SKIP LOCKED
-                ) AS to_delete 
-            )
+            DELETE FROM outbox_events
+            WHERE status = ? AND updated_at <= ?
+            LIMIT ?
         """;
         return jdbcTemplate.update(
                 sql,

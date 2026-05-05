@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.core.consumer;
 
+import io.github.dmitriyiliyov.springoutbox.core.utils.BytesResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlIdHelper;
-import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlResultSetMapper;
 import io.github.dmitriyiliyov.springoutbox.core.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -9,19 +9,18 @@ import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
     protected final JdbcTemplate jdbcTemplate;
     protected final Clock clock;
     protected final BytesSqlIdHelper idHelper;
-    protected final BytesSqlResultSetMapper mapper;
+    protected final BytesResultSetMapper mapper;
 
     public MySqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate,
                                          Clock clock,
                                          BytesSqlIdHelper idHelper,
-                                         BytesSqlResultSetMapper mapper) {
+                                         BytesResultSetMapper mapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.clock = clock;
         this.idHelper = idHelper;
@@ -58,9 +57,8 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
                 ps -> idHelper.setIdsToPs(ps, 1, ids),
                 (rs, rowNum) -> mapper.fromBytesToUuid(rs.getBytes("id"))
         );
-        Set<UUID> nonExistsIds = ids.stream()
-                .filter(id -> !existsIds.contains(id))
-                .collect(Collectors.toSet());
+        Set<UUID> nonExistsIds = new HashSet<>(ids);
+        nonExistsIds.removeAll(new HashSet<>(existsIds));
         if (!RepositoryUtils.isIdsValid(nonExistsIds)) {
             return Collections.emptySet();
         }
@@ -89,16 +87,9 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
     public int deleteBatchByThreshold(Instant threshold, int batchSize) {
         String sql = """
             DELETE FROM outbox_consumed_events
-            WHERE id IN (
-                SELECT id FROM(
-                    SELECT id 
-                    FROM outbox_consumed_events 
-                    WHERE consumed_at < ?
-                    ORDER BY consumed_at
-                    LIMIT ?
-                    FOR UPDATE SKIP LOCKED
-                ) AS to_delete
-            )
+            WHERE consumed_at <= ?
+            ORDER BY consumed_at
+            LIMIT ?
         """;
         return jdbcTemplate.update(
                 sql,

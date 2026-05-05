@@ -102,11 +102,11 @@ public interface OutboxManager {
      * <p>
      * At most {@code batchSize} records are deleted per call.
      *
-     * @param threshold events updated strictly before this timestamp will be deleted.
+     * @param ttl the duration after which a processed event record is considered expired.
      * @param batchSize the maximum number of events to delete in one call.
      * @return          the number of deleted events.
      */
-    int deleteProcessedBatch(Instant threshold, int batchSize);
+    int deleteProcessedBatch(Duration ttl, int batchSize);
 
     /**
      * Deletes a batch of events by their IDs without any additional status checks.

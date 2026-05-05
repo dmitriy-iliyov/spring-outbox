@@ -3,7 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
-import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

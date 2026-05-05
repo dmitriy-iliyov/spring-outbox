@@ -5,7 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.ConsumedOutboxManagerCacheDecorator;
 import org.springframework.cache.CacheManager;
 
-public final class ConsumedOutboxManagerCacheDecoratorSupplier implements ConsumedOutboxManagerDecoratorSupplier {
+public class ConsumedOutboxManagerCacheDecoratorSupplier implements ConsumedOutboxManagerDecoratorSupplier {
 
     private final String cacheName;
     private final CacheManager cacheManager;

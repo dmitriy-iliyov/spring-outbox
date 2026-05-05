@@ -70,10 +70,9 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
             WITH to_delete AS (
                 SELECT id 
                 FROM outbox_consumed_events 
-                WHERE consumed_at < ?
+                WHERE consumed_at <= ?
                 ORDER BY consumed_at
                 LIMIT ?
-                FOR UPDATE SKIP LOCKED
             )
             DELETE FROM outbox_consumed_events
             WHERE id IN (SELECT id FROM to_delete)

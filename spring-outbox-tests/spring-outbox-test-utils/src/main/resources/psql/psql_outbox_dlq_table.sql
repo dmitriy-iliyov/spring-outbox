@@ -5,14 +5,13 @@ CREATE TABLE IF NOT EXISTS outbox_dlq_events (
     event_type VARCHAR(255) NOT NULL,
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
-    retry_count INTEGER DEFAULT 0,
+    retry_count INTEGER NOT NULL,
     next_retry_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP NOT NULL,
     updated_at TIMESTAMP NOT NULL,
     moved_at TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_outbox_dlq_count ON outbox_dlq_events(event_type, dlq_status);
-CREATE INDEX IF NOT EXISTS idx_outbox_dlq_move_to_main
-    ON outbox_dlq_events(moved_at, id)
+CREATE INDEX IF NOT EXISTS idx_outbox_dlq_by_moved_at
+    ON outbox_dlq_events(moved_at)
     WHERE dlq_status = 'TO_RETRY';

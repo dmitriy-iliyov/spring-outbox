@@ -4,20 +4,20 @@ CREATE TABLE IF NOT EXISTS outbox_events (
     event_type VARCHAR(255) NOT NULL,
     payload_type VARCHAR(255) NOT NULL,
     payload TEXT NOT NULL,
-    retry_count INTEGER DEFAULT 0,
+    retry_count INTEGER NOT NULL,
     next_retry_at DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
 );
 
 SET @exists := (
     SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
     WHERE table_schema = DATABASE()
     AND table_name = 'outbox_events'
-    AND index_name = 'idx_outbox_count'
+    AND index_name = 'idx_outbox_by_event_type_and_next_retry_at'
     );
 SET @sql := IF(@exists = 0,
-    'CREATE INDEX idx_outbox_count ON outbox_events(status, event_type)',
+    'CREATE INDEX idx_outbox_by_event_type_and_next_retry_at ON outbox_events(event_type, next_retry_at, id)',
     'SELECT 1'
     );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
@@ -26,34 +26,10 @@ SET @exists := (
     SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
     WHERE table_schema = DATABASE()
     AND table_name = 'outbox_events'
-    AND index_name = 'idx_outbox_pool'
+    AND index_name = 'idx_outbox_by_status_and_updated_at'
     );
 SET @sql := IF(@exists = 0,
-    'CREATE INDEX idx_outbox_pool ON outbox_events(event_type, next_retry_at, id)',
-    'SELECT 1'
-    );
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE table_schema = DATABASE()
-    AND table_name = 'outbox_events'
-    AND index_name = 'idx_outbox_recover_and_move_to_dlq'
-    );
-SET @sql := IF(@exists = 0,
-    'CREATE INDEX idx_outbox_recover_and_move_to_dlq ON outbox_events(updated_at, status, id)',
-    'SELECT 1'
-    );
-PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
-SET @exists := (
-    SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
-    WHERE table_schema = DATABASE()
-    AND table_name = 'outbox_events'
-    AND index_name = 'idx_outbox_cleanup'
-    );
-SET @sql := IF(@exists = 0,
-    'CREATE INDEX idx_outbox_cleanup ON outbox_events(updated_at, id)',
+    'CREATE INDEX idx_outbox_by_status_and_updated_at ON outbox_events(status, updated_at, id)',
     'SELECT 1'
     );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;

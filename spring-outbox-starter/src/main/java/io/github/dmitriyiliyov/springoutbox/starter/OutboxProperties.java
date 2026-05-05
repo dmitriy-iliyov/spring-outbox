@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPropertiesHolder;
-import io.github.dmitriyiliyov.springoutbox.core.PollingPropertiesHolder;
+import io.github.dmitriyiliyov.springoutbox.core.polling.PollingPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import jakarta.annotation.PostConstruct;
@@ -12,12 +12,14 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 
 @ConfigurationProperties(prefix = "outbox")
 public class OutboxProperties implements OutboxPropertiesHolder {
 
     private static final int DEFAULT_THREAD_POOL_SIZE = Math.min(Runtime.getRuntime().availableProcessors(), 5);
 
+    private final UUID workerId = UUID.randomUUID();
     private Integer threadPoolSize;
     @NestedConfigurationProperty
     private OutboxPublisherProperties publisher;
@@ -25,6 +27,8 @@ public class OutboxProperties implements OutboxPropertiesHolder {
     private OutboxConsumerProperties consumer;
     @NestedConfigurationProperty
     private OutboxProperties.TablesProperties tables;
+    @NestedConfigurationProperty
+    private DistributedLockProperties distributedLock;
 
     public OutboxProperties() {}
 
@@ -49,6 +53,15 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             tables.setAutoCreate(true);
         }
         tables.applyDefaults();
+
+        if (distributedLock == null) {
+            distributedLock = new DistributedLockProperties();
+        }
+        distributedLock.applyDefaults();
+    }
+
+    public UUID getWorkerId() {
+        return workerId;
     }
 
     public Integer getThreadPoolSize() {
@@ -83,13 +96,23 @@ public class OutboxProperties implements OutboxPropertiesHolder {
         this.tables = tables;
     }
 
+    public DistributedLockProperties getDistributedLock() {
+        return distributedLock;
+    }
+
+    public void setDistributedLock(DistributedLockProperties distributedLock) {
+        this.distributedLock = distributedLock;
+    }
+
     @Override
     public String toString() {
         return "OutboxProperties{" +
-                "threadPoolSize=" + threadPoolSize +
+                "workerId=" + workerId +
+                ", threadPoolSize=" + threadPoolSize +
                 ", publisher=" + publisher +
                 ", consumer=" + consumer +
                 ", tables=" + tables +
+                ", distributedLock=" + distributedLock +
                 '}';
     }
 
@@ -554,6 +577,55 @@ public class OutboxProperties implements OutboxPropertiesHolder {
                         polling.getMultiplier()
                 );
             }
+        }
+    }
+
+    public static final class DistributedLockProperties {
+
+        private Duration lockAtLeastFor = Duration.ofSeconds(1);
+        private Duration lockAtMostFor = Duration.ofMinutes(1);
+        private Boolean resolveByPollingProperties = true;
+
+        public void applyDefaults() {
+            Objects.requireNonNull(lockAtLeastFor, "lockAtLeastFor cannot be null");
+            Objects.requireNonNull(lockAtMostFor, "lockAtMostFor cannot be null");
+            if (resolveByPollingProperties) {
+                lockAtLeastFor = Duration.ZERO;
+                lockAtMostFor = Duration.ZERO;
+            }
+        }
+
+        public Duration getLockAtLeastFor() {
+            return lockAtLeastFor;
+        }
+
+        public void setLockAtLeastFor(Duration lockAtLeastFor) {
+            this.lockAtLeastFor = lockAtLeastFor;
+        }
+
+        public Duration getLockAtMostFor() {
+            return lockAtMostFor;
+        }
+
+        public void setLockAtMostFor(Duration lockAtMostFor) {
+            this.lockAtMostFor = lockAtMostFor;
+        }
+
+        public Boolean isResolveByPollingProperties() {
+            return resolveByPollingProperties;
+        }
+
+        public void setResolveByPollingProperties(Boolean resolveByPollingProperties) {
+            this.resolveByPollingProperties = resolveByPollingProperties;
+        }
+
+        @Override
+        public String toString() {
+            return "DistributedLockProperties{" +
+                    "lockAtLeastFor=" + lockAtLeastFor +
+                    ", lockAtMostFor=" + lockAtMostFor +
+                    ", resolveByPollingProperties=" + resolveByPollingProperties +
+                    '}';
         }
     }
 }

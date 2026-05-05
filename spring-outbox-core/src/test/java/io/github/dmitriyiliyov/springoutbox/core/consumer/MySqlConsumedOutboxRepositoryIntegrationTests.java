@@ -130,6 +130,32 @@ class MySqlConsumedOutboxRepositoryIntegrationTests extends BaseMySqlIntegration
     }
 
     @Test
+    @DisplayName("IT saveIfAbsent(Set) throws ConcurrentInsertException when inserted rows mismatch")
+    void saveIfAbsent_concurrentInsertMismatch_throwsException() {
+        org.springframework.jdbc.core.JdbcTemplate interceptedJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(repository.jdbcTemplate.getDataSource()) {
+            @Override
+            public int update(String sql, org.springframework.jdbc.core.PreparedStatementSetter pss) throws org.springframework.dao.DataAccessException {
+                if (sql.contains("INSERT IGNORE INTO outbox_consumed_events")) {
+                    return 0;
+                }
+                return super.update(sql, pss);
+            }
+        };
+
+        MySqlConsumedOutboxRepository testRepository = new MySqlConsumedOutboxRepository(
+                interceptedJdbcTemplate,
+                repository.clock,
+                repository.idHelper,
+                repository.mapper
+        );
+
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> testRepository.saveIfAbsent(ids))
+                .isInstanceOf(ConcurrentInsertException.class);
+    }
+
+    @Test
     @DisplayName("IT deleteBatchByThreshold() should delete old events via subquery")
     void deleteBatchByThreshold_deletesOldEvents() {
         repository.saveIfAbsent(UUID.randomUUID());
