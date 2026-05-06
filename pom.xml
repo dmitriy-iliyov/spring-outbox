@@ -53,7 +53,7 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring.boot.version>3.5.13</spring.boot.version>
+        <spring.boot.version>3.5.14</spring.boot.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
