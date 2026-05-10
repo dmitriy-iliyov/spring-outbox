@@ -3,12 +3,14 @@ package io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.Objects;
+
 public class MultiDialectOutboxDlqMetricsRepository implements OutboxDlqMetricsRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
     public MultiDialectOutboxDlqMetricsRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
     }
 
     @Override

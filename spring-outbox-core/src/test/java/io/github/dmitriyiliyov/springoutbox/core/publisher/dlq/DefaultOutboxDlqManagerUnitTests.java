@@ -33,6 +33,22 @@ public class DefaultOutboxDlqManagerUnitTests {
     DefaultOutboxDlqManager tested;
 
     @Test
+    @DisplayName("UT DefaultOutboxDlqManager() when repository is null should throw NullPointerException")
+    void constructor_whenRepositoryIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqManager(null, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("repository cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT DefaultOutboxDlqManager() when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqManager(repository, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
+    }
+
+    @Test
     @DisplayName("UT saveBatch(), should early return if List.isEmpty")
     public void saveBatch_whenEventsIsEmpty_shouldEarlyReturn() {
         // given

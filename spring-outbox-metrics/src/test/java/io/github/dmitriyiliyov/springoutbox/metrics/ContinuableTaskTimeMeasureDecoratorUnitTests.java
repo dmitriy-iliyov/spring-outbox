@@ -21,6 +21,18 @@ class ContinuableTaskTimeMeasureDecoratorUnitTests {
     }
 
     @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new ContinuableTaskTimeMeasureDecorator(null, "test_task"));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when taskType is null")
+    void constructor_shouldThrowNPE_whenTaskTypeIsNull() {
+        assertThrows(NullPointerException.class, () -> new ContinuableTaskTimeMeasureDecorator(registry, null));
+    }
+
+    @Test
     @DisplayName("UT decorate() when task returns true, decorated task should return true")
     void decorate_whenTaskReturnsTrue_shouldReturnTrue() throws Exception {
         ContinuableTask decorated = tested.decorate(() -> true);

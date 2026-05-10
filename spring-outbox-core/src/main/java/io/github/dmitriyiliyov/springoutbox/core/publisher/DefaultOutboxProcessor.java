@@ -20,23 +20,25 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
     protected final Clock clock;
 
     public DefaultOutboxProcessor(OutboxManager manager, OutboxSender sender, Clock clock) {
-        this.manager = manager;
-        this.sender = sender;
-        this.clock = clock;
+        this.manager = Objects.requireNonNull(manager, "manager cannot be null");
+        this.sender = Objects.requireNonNull(sender, "sender cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override
     public int process(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties) {
         Objects.requireNonNull(properties, "properties cannot be null");
+
         List<OutboxEvent> events = manager.loadBatch(properties.getEventType(), properties.getBatchSize());
         if (events == null) {
-            log.warn("Outbox events is unexpectedly null, for eventType={}", properties.getEventType());
+            log.warn("Outbox events batch is unexpectedly null, for eventType={}", properties.getEventType());
             return 0;
         }
         if (events.isEmpty()) {
-            log.info("Outbox events is empty, for eventType={}", properties.getEventType());
+            log.info("Outbox events batch is empty, for eventType={}", properties.getEventType());
             return 0;
         }
+
         SenderResult result;
         try {
             result = sender.sendEvents(properties.getTopic(), events);
@@ -49,6 +51,7 @@ public class DefaultOutboxProcessor implements OutboxProcessor {
                             .collect(Collectors.toSet())
             );
         }
+
         manager.finalizeBatch(
                 events,
                 result.processedIds(),

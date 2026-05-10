@@ -2,7 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher.domain;
 
 public enum OutboxHeaders {
     EVENT_TYPE("outbox_event_type"),
-    EVENT_ID("outbox_event_id");
+    EVENT_ID("outbox_event_id"),
+    EVENT_PAYLOAD_TYPE("outbox_event_payload_type");
 
     private final String value;
 

@@ -9,10 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
@@ -22,7 +19,7 @@ public class MySqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
     public MySqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper, BytesResultSetMapper mapper,
                                     Clock clock) {
         super(jdbcTemplate, idHelper, mapper);
-        this.clock = clock;
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

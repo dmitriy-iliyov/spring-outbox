@@ -9,10 +9,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class OracleOutboxDlqRepositoryIntegrationTests extends BaseOracleIntegrationTests {
@@ -20,17 +22,39 @@ class OracleOutboxDlqRepositoryIntegrationTests extends BaseOracleIntegrationTes
     private final OutboxDlqRepository repository;
     private final OutboxDlqRepositoryVerifier delegate;
 
+    private final JdbcTemplate jdbcTemplate;
+    private final OracleSqlIdHelper oracleSqlIdHelper = new OracleSqlIdHelper();
+    private final DefaultBytesResultSetMapper mapper = new DefaultBytesResultSetMapper();
+    private final Clock clock = Clock.systemUTC();
+
     public OracleOutboxDlqRepositoryIntegrationTests(
             @Qualifier("oracleOutboxDlqRepository") OutboxDlqRepository repository,
             @Qualifier("oracleJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
         this.delegate = new OutboxDlqRepositoryVerifier(
                 repository,
                 jdbcTemplate,
                 new OracleSqlIdHelper(),
                 new DefaultBytesResultSetMapper()
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleOutboxDlqRepository(jdbcTemplate, oracleSqlIdHelper, null, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleOutboxDlqRepository(jdbcTemplate, oracleSqlIdHelper, mapper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

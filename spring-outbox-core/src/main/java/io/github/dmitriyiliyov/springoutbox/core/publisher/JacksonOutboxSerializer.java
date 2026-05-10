@@ -3,10 +3,10 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
 
 import java.time.Clock;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class JacksonOutboxSerializer implements OutboxSerializer {
@@ -16,9 +16,9 @@ public class JacksonOutboxSerializer implements OutboxSerializer {
     private final Clock clock;
 
     public JacksonOutboxSerializer(ObjectMapper mapper, UuidGenerator uuidGenerator, Clock clock) {
-        this.mapper = mapper;
-        this.uuidGenerator = uuidGenerator;
-        this.clock = clock;
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
+        this.uuidGenerator = Objects.requireNonNull(uuidGenerator, "uuidGenerator cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

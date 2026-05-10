@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -19,6 +20,7 @@ public class OutboxDlqApiServiceMetricsDecorator implements OutboxDlqApiService 
     private final OutboxDlqApiService delegate;
 
     public OutboxDlqApiServiceMetricsDecorator(MeterRegistry registry, OutboxDlqApiService delegate) {
+        Objects.requireNonNull(registry, "registry cannot be null");
         this.actionCounters = Arrays.stream(ActionType.values())
                 .collect(Collectors.toMap(
                                 Function.identity(),
@@ -27,7 +29,7 @@ public class OutboxDlqApiServiceMetricsDecorator implements OutboxDlqApiService 
                                         "action_type", type.toString().toLowerCase())
                         )
                 );
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "delegate cannot be null");
     }
 
     @Override

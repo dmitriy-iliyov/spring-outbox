@@ -3,17 +3,22 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.it.BaseMySqlIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.MySqlIdHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class MySqlOutboxRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
@@ -21,13 +26,28 @@ class MySqlOutboxRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
     private final MySqlOutboxRepository repository;
     private final AbstractOutboxRepositoryIntegrationTests delegate;
 
+    private final JdbcTemplate jdbcTemplate;
+    private final Clock clock = Clock.systemUTC();
+    private final MySqlIdHelper mySqlIdHelper = new MySqlIdHelper();
+    private final DefaultBytesResultSetMapper mapper = new DefaultBytesResultSetMapper();
+
     MySqlOutboxRepositoryIntegrationTests(
-            @Qualifier("mysqlOutboxRepository") MySqlOutboxRepository repository
+            @Qualifier("mysqlOutboxRepository") MySqlOutboxRepository repository,
+            @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
         this.delegate = new AbstractOutboxRepositoryIntegrationTests(repository);
     }
-    
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlOutboxRepository(jdbcTemplate, clock, mySqlIdHelper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
+    }
+
     @Test 
     @DisplayName("IT save() should persist event correctly")
     void save_singleEvent_persistedCorrectly() { delegate.save_singleEvent_persistedCorrectly(); }

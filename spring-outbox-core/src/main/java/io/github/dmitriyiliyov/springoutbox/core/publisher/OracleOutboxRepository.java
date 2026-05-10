@@ -22,7 +22,7 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
                                   SqlIdHelper idHelper,
                                   BytesResultSetMapper mapper) {
         super(jdbcTemplate, clock, idHelper);
-        this.mapper = mapper;
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
     }
 
     @Override

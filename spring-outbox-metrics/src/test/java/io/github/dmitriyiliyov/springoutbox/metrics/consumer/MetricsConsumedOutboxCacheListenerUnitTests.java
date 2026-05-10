@@ -6,52 +6,56 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class MetricsConsumedOutboxCacheListenerUnitTests {
 
     @Mock
-    MeterRegistry registry;
+    private MeterRegistry registry;
 
     @Mock
-    Counter hitsCounter;
+    private Counter hits;
 
     @Mock
-    Counter missesCounter;
+    private Counter misses;
 
-    MetricsConsumedOutboxCacheListener observer;
+    private MetricsConsumedOutboxCacheListener tested;
 
     @BeforeEach
     void setUp() {
-        when(registry.counter(anyString(), eq("action_type"), eq("hit"))).thenReturn(hitsCounter);
-        when(registry.counter(anyString(), eq("action_type"), eq("miss"))).thenReturn(missesCounter);
-        observer = new MetricsConsumedOutboxCacheListener(registry);
+        Mockito.lenient().when(registry.counter(ArgumentMatchers.eq("consumed_outbox_cache_action_total"), ArgumentMatchers.eq("action_type"), ArgumentMatchers.eq("hit")))
+                .thenReturn(hits);
+        Mockito.lenient().when(registry.counter(ArgumentMatchers.eq("consumed_outbox_cache_action_total"), ArgumentMatchers.eq("action_type"), ArgumentMatchers.eq("miss")))
+                .thenReturn(misses);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new MetricsConsumedOutboxCacheListener(null));
     }
 
     @Test
     @DisplayName("UT onHit() should increment hits counter")
     void onHit_shouldIncrementHitsCounter() {
-        // when
-        observer.onHit();
+        tested = new MetricsConsumedOutboxCacheListener(registry);
+        tested.onHit();
 
-        // then
-        verify(hitsCounter).increment();
+        Mockito.verify(hits).increment();
     }
 
     @Test
     @DisplayName("UT onMiss() should increment misses counter")
     void onMiss_shouldIncrementMissesCounter() {
-        // when
-        observer.onMiss();
+        tested = new MetricsConsumedOutboxCacheListener(registry);
+        tested.onMiss();
 
-        // then
-        verify(missesCounter).increment();
+        Mockito.verify(misses).increment();
     }
 }

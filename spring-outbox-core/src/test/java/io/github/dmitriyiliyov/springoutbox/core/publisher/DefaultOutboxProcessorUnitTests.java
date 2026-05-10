@@ -19,6 +19,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -55,6 +56,30 @@ class DefaultOutboxProcessorUnitTests {
         lenient().when(properties.getTopic()).thenReturn("test-topic");
         lenient().when(properties.getBatchSize()).thenReturn(10);
         lenient().when(properties.getMaxRetries()).thenReturn(1);
+    }
+
+    @Test
+    @DisplayName("UT constructor when manager is null should throw NullPointerException")
+    void constructor_whenManagerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxProcessor(null, sender, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("manager cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when sender is null should throw NullPointerException")
+    void constructor_whenSenderIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxProcessor(manager, null, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("sender cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxProcessor(manager, sender, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

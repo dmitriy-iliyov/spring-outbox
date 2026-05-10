@@ -23,10 +23,10 @@ public abstract class AbstractOutboxDlqApiRepository implements OutboxDlqApiRepo
                                           SqlIdHelper idHelper,
                                           ResultSetMapper mapper,
                                           Clock clock) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.idHelper = idHelper;
-        this.mapper = mapper;
-        this.clock = clock;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.idHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class PostgreSqlOutboxDlqRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
@@ -20,17 +21,30 @@ class PostgreSqlOutboxDlqRepositoryIntegrationTests extends BasePostgresSqlInteg
     private final OutboxDlqRepository repository;
     private final OutboxDlqRepositoryVerifier delegate;
 
+    private final JdbcTemplate jdbcTemplate;
+    private final PostgreSqlIdHelper postgreSqlIdHelper = new PostgreSqlIdHelper();
+    private final DefaultResultSetMapper mapper = new DefaultResultSetMapper();
+
     public PostgreSqlOutboxDlqRepositoryIntegrationTests(
             @Qualifier("postgresOutboxDlqRepository") OutboxDlqRepository repository,
             @Qualifier("postgresJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
         this.delegate = new OutboxDlqRepositoryVerifier(
                 repository,
                 jdbcTemplate,
                 new PostgreSqlIdHelper(),
                 new DefaultResultSetMapper()
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new PostgreSqlOutboxDlqRepository(jdbcTemplate, postgreSqlIdHelper, mapper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.time.Clock;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class OracleOutboxDlqApiRepository extends AbstractOutboxDlqApiRepository {
@@ -17,7 +18,7 @@ public class OracleOutboxDlqApiRepository extends AbstractOutboxDlqApiRepository
     public OracleOutboxDlqApiRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper, BytesResultSetMapper mapper,
                                         Clock clock) {
         super(jdbcTemplate, idHelper, mapper, clock);
-        this.localIdHelper = idHelper;
+        this.localIdHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
     }
 
     @Override

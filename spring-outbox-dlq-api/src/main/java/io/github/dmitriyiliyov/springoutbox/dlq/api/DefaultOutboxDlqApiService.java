@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class DefaultOutboxDlqApiService implements OutboxDlqApiService {
@@ -19,7 +20,7 @@ public class DefaultOutboxDlqApiService implements OutboxDlqApiService {
     private final OutboxDlqApiRepository repository;
 
     public DefaultOutboxDlqApiService(OutboxDlqApiRepository repository) {
-        this.repository = repository;
+        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
     }
 
     @Transactional(readOnly = true)

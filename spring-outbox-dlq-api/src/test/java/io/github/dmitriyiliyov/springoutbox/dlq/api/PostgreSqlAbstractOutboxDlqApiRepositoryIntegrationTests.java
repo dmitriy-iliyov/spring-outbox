@@ -15,7 +15,7 @@ class PostgreSqlAbstractOutboxDlqApiRepositoryIntegrationTests extends BasePostg
     private final MultiDialectOutboxDlqApiRepositoryVerifier delegate;
 
     public PostgreSqlAbstractOutboxDlqApiRepositoryIntegrationTests(
-            @Qualifier("postgresOutboxDlqWebRepository") OutboxDlqApiRepository repository,
+            @Qualifier("postgresOutboxDlqApiRepository") OutboxDlqApiRepository repository,
             @Qualifier("postgresJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.delegate = new MultiDialectOutboxDlqApiRepositoryVerifier(

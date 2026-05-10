@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.core.locks;
 import io.github.dmitriyiliyov.springoutbox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class PostgreSqlDistributedLockRepository implements DistributedLockRepository {
@@ -11,8 +12,8 @@ public class PostgreSqlDistributedLockRepository implements DistributedLockRepos
     private final SqlIdHelper idHelper;
 
     public PostgreSqlDistributedLockRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.idHelper = idHelper;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.idHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
     }
 
     @Override

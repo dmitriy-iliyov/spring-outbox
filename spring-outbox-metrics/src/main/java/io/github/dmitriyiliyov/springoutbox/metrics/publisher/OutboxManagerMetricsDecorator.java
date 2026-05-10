@@ -23,6 +23,8 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
     public OutboxManagerMetricsDecorator(OutboxPublisherPropertiesHolder properties,
                                          MeterRegistry registry,
                                          OutboxManager delegate) {
+        Objects.requireNonNull(properties, "properties cannot be null");
+        Objects.requireNonNull(registry, "registry cannot be null");
         this.counters = properties.getEventHolders().keySet()
                 .stream()
                 .collect(Collectors.toMap(
@@ -45,7 +47,7 @@ public class OutboxManagerMetricsDecorator implements OutboxManager {
                                 "action_type", type.toString().toLowerCase())
                         )
                 );
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "delegate cannot be null");
     }
 
     @Override

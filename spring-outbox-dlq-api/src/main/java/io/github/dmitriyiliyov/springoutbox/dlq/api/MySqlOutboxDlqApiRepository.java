@@ -5,6 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Clock;
+import java.util.Objects;
 import java.util.UUID;
 
 public class MySqlOutboxDlqApiRepository extends AbstractOutboxDlqApiRepository {
@@ -14,7 +15,7 @@ public class MySqlOutboxDlqApiRepository extends AbstractOutboxDlqApiRepository 
     public MySqlOutboxDlqApiRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper, BytesResultSetMapper mapper,
                                        Clock clock) {
         super(jdbcTemplate, idHelper, mapper, clock);
-        this.localIdHelper = idHelper;
+        this.localIdHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
     }
 
     @Override

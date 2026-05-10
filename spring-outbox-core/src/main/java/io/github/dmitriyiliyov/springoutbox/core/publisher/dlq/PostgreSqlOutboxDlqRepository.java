@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxDlqRepository}.
@@ -18,7 +19,7 @@ public class PostgreSqlOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
     public PostgreSqlOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper, Clock clock) {
         super(jdbcTemplate, idHelper, mapper);
-        this.clock = clock;
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

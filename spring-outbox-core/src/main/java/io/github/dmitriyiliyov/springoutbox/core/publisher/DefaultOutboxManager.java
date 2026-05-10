@@ -25,8 +25,8 @@ public class DefaultOutboxManager implements OutboxManager {
     protected final Clock clock;
 
     public DefaultOutboxManager(OutboxRepository repository, Clock clock) {
-        this.repository = repository;
-        this.clock = clock;
+        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -62,10 +62,6 @@ public class DefaultOutboxManager implements OutboxManager {
     @Override
     public void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
                               int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier) {
-        if (maxRetryCount < 0) {
-            throw new IllegalArgumentException("Parameter maxRetryCount is negative for some reason");
-        }
-
         boolean hasProcessed = !CollectionUtils.isEmpty(processedIds);
         boolean hasFailed = !CollectionUtils.isEmpty(failedIds);
 
@@ -135,7 +131,6 @@ public class DefaultOutboxManager implements OutboxManager {
     @Transactional
     @Override
     public int deleteProcessedBatch(Duration ttl, int batchSize) {
-        Objects.requireNonNull(ttl, "ttl cannot be null");
         Instant threshold = clock.instant().minusMillis(ttl.toMillis());
         return repository.deleteBatchByStatusAndThreshold(EventStatus.PROCESSED, threshold, batchSize);
     }

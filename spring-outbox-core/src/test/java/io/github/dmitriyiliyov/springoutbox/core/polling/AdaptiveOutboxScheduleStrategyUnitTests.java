@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.core.polling;
 
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -15,6 +16,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -45,11 +47,35 @@ class AdaptiveOutboxScheduleStrategyUnitTests {
 
     @BeforeEach
     void setUp() {
-        when(properties.getMinFixedDelay()).thenReturn(Duration.ofMillis(MIN_DELAY));
-        when(properties.getMaxFixedDelay()).thenReturn(Duration.ofMillis(MAX_DELAY));
-        when(properties.getInitialDelay()).thenReturn(Duration.ofMillis(INITIAL_DELAY));
-        when(properties.getMultiplier()).thenReturn(MULTIPLIER);
+        lenient().when(properties.getMinFixedDelay()).thenReturn(Duration.ofMillis(MIN_DELAY));
+        lenient().when(properties.getMaxFixedDelay()).thenReturn(Duration.ofMillis(MAX_DELAY));
+        lenient().when(properties.getInitialDelay()).thenReturn(Duration.ofMillis(INITIAL_DELAY));
+        lenient().when(properties.getMultiplier()).thenReturn(MULTIPLIER);
         strategy = new AdaptiveOutboxScheduleStrategy(properties, executor, listener);
+    }
+
+    @Test
+    @DisplayName("UT constructor when properties is null should throw NullPointerException")
+    void constructor_whenPropertiesIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AdaptiveOutboxScheduleStrategy(null, executor, listener))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("properties cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when executor is null should throw NullPointerException")
+    void constructor_whenExecutorIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AdaptiveOutboxScheduleStrategy(properties, null, listener))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("executor cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when listener is null should throw NullPointerException")
+    void constructor_whenListenerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AdaptiveOutboxScheduleStrategy(properties, executor, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("listener cannot be null");
     }
 
     @Test

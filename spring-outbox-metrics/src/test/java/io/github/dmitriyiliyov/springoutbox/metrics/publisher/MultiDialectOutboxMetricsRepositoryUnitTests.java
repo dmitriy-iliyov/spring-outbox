@@ -10,6 +10,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,6 +24,12 @@ class MultiDialectOutboxMetricsRepositoryUnitTests {
     @BeforeEach
     void setUp() {
         repository = new MultiDialectOutboxMetricsRepository(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when jdbcTemplate is null")
+    void constructor_shouldThrowNPE_whenJdbcTemplateIsNull() {
+        assertThrows(NullPointerException.class, () -> new MultiDialectOutboxMetricsRepository(null));
     }
 
     @Test

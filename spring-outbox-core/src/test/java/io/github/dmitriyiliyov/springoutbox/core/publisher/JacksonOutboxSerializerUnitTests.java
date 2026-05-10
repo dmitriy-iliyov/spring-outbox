@@ -3,7 +3,6 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +14,7 @@ import java.time.Clock;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -34,6 +34,30 @@ public class JacksonOutboxSerializerUnitTests {
     @BeforeEach
     void setup() {
         serializer = new JacksonOutboxSerializer(mapper, uuidGenerator, clock);
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new JacksonOutboxSerializer(null, uuidGenerator, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when uuidGenerator is null should throw NullPointerException")
+    void constructor_whenUuidGeneratorIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new JacksonOutboxSerializer(mapper, null, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("uuidGenerator cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new JacksonOutboxSerializer(mapper, uuidGenerator, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

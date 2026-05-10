@@ -19,8 +19,8 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
 
     public OracleOutboxDlqRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper, BytesResultSetMapper mapper, Clock clock) {
         super(jdbcTemplate, idHelper, mapper);
-        this.localMapper = mapper;
-        this.clock = clock;
+        this.localMapper = Objects.requireNonNull(mapper, "mapper cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

@@ -30,6 +30,12 @@ public class DefaultOutboxDlqApiServiceUnitTests {
     DefaultOutboxDlqApiService tested;
 
     @Test
+    @DisplayName("UT constructor should throw NPE when repository is null")
+    void constructor_shouldThrowNPE_whenRepositoryIsNull() {
+        assertThrows(NullPointerException.class, () -> new DefaultOutboxDlqApiService(null));
+    }
+
+    @Test
     @DisplayName("UT findById() when event found should return event")
     void findById_whenFound_shouldReturnEvent() {
         // given

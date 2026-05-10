@@ -8,23 +8,25 @@ import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 public final class OutboxPollingScheduler implements OutboxScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPollingScheduler.class);
 
     private final OutboxPublisherPropertiesHolder.EventPropertiesHolder properties;
     private final OutboxProcessor processor;
-    private final OutboxScheduleStrategy strategy;
-    private final ContinuableTaskDecorator continuableTaskDecorator;
+    private final OutboxScheduleStrategy scheduleStrategy;
+    private final ContinuableTaskDecorator taskDecorator;
 
     public OutboxPollingScheduler(OutboxPublisherPropertiesHolder.EventPropertiesHolder properties,
-                                  OutboxScheduleStrategy strategy,
+                                  OutboxScheduleStrategy scheduleStrategy,
                                   OutboxProcessor processor,
-                                  ContinuableTaskDecorator continuableTaskDecorator) {
-        this.properties = properties;
-        this.strategy = strategy;
-        this.processor = processor;
-        this.continuableTaskDecorator = continuableTaskDecorator;
+                                  ContinuableTaskDecorator taskDecorator) {
+        this.properties = Objects.requireNonNull(properties, "properties cannot be null");
+        this.scheduleStrategy = Objects.requireNonNull(scheduleStrategy, "scheduleStrategy cannot be null");
+        this.processor = Objects.requireNonNull(processor, "processor cannot be null");
+        this.taskDecorator = Objects.requireNonNull(taskDecorator, "taskDecorator cannot be null");
     }
 
     @Override
@@ -40,6 +42,6 @@ public final class OutboxPollingScheduler implements OutboxScheduler {
             }
             return processedCount == batchSize;
         };
-        strategy.scheduleExecution(continuableTaskDecorator.decorate(task));
+        scheduleStrategy.scheduleExecution(taskDecorator.decorate(task));
     }
 }

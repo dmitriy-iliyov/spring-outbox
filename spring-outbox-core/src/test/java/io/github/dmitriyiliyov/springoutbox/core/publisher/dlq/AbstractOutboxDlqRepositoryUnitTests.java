@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -48,6 +49,42 @@ class AbstractOutboxDlqRepositoryUnitTests {
                     }
                 }
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqRepository(null, idHelper, mapper) {
+            @Override
+            public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) { return null; }
+
+            @Override
+            public int deleteBatchByStatusAndThreshold(DlqStatus status, Instant threshold, int batchSize) { return 0; }
+        }).isInstanceOf(NullPointerException.class).hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqRepository(jdbcTemplate, null, mapper) {
+            @Override
+            public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) { return null; }
+
+            @Override
+            public int deleteBatchByStatusAndThreshold(DlqStatus status, Instant threshold, int batchSize) { return 0; }
+        }).isInstanceOf(NullPointerException.class).hasMessageContaining("idHelper cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqRepository(jdbcTemplate, idHelper, null) {
+            @Override
+            public List<OutboxDlqEvent> findAndLockBatchByStatus(DlqStatus status, int batchSize, DlqStatus lockStatus) { return null; }
+
+            @Override
+            public int deleteBatchByStatusAndThreshold(DlqStatus status, Instant threshold, int batchSize) { return 0; }
+        }).isInstanceOf(NullPointerException.class).hasMessageContaining("mapper cannot be null");
     }
 
     @Test

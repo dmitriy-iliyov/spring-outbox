@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,9 +18,9 @@ public abstract class AbstractOutboxDlqRepository implements OutboxDlqRepository
     protected final ResultSetMapper mapper;
 
     public AbstractOutboxDlqRepository(JdbcTemplate jdbcTemplate, SqlIdHelper idHelper, ResultSetMapper mapper) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.idHelper = idHelper;
-        this.mapper = mapper;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.idHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
     }
 
     @Override

@@ -47,7 +47,51 @@ class AbstractOutboxDlqApiRepositoryUnitTests {
                 return id;
             }
         };
-        when(clock.instant()).thenReturn(Instant.now());
+        lenient().when(clock.instant()).thenReturn(Instant.now());
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when jdbcTemplate is null")
+    void constructor_shouldThrowNPE_whenJdbcTemplateIsNull() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqApiRepository(null, idHelper, mapper, clock) {
+            @Override
+            protected Object convertIdParameter(UUID id) {
+                return id;
+            }
+        }).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when idHelper is null")
+    void constructor_shouldThrowNPE_whenIdHelperIsNull() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqApiRepository(jdbcTemplate, null, mapper, clock) {
+            @Override
+            protected Object convertIdParameter(UUID id) {
+                return id;
+            }
+        }).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when mapper is null")
+    void constructor_shouldThrowNPE_whenMapperIsNull() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqApiRepository(jdbcTemplate, idHelper, null, clock) {
+            @Override
+            protected Object convertIdParameter(UUID id) {
+                return id;
+            }
+        }).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when clock is null")
+    void constructor_shouldThrowNPE_whenClockIsNull() {
+        assertThatThrownBy(() -> new AbstractOutboxDlqApiRepository(jdbcTemplate, idHelper, mapper, null) {
+            @Override
+            protected Object convertIdParameter(UUID id) {
+                return id;
+            }
+        }).isInstanceOf(NullPointerException.class);
     }
 
     @Test

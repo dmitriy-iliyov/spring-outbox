@@ -14,6 +14,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 @Transactional
 class PostgreSqlDistributedLockRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
 
@@ -23,10 +25,12 @@ class PostgreSqlDistributedLockRepositoryIntegrationTests extends BasePostgresSq
     private JdbcTemplate jdbcTemplate;
 
     private PostgreSqlDistributedLockRepository repository;
+    private PostgreSqlIdHelper postgreSqlIdHelper;
 
     @BeforeEach
     void setUp() {
-        repository = new PostgreSqlDistributedLockRepository(jdbcTemplate, new PostgreSqlIdHelper());
+        postgreSqlIdHelper = new PostgreSqlIdHelper();
+        repository = new PostgreSqlDistributedLockRepository(jdbcTemplate, postgreSqlIdHelper);
         this.verifier = new DistributedLockRepositoryVerifier(
                 jdbcTemplate,
                 repository,
@@ -37,6 +41,22 @@ class PostgreSqlDistributedLockRepositoryIntegrationTests extends BasePostgresSq
                     jdbcTemplate.update(sql, jobName, Timestamp.from(Instant.now().minus(1, ChronoUnit.HOURS)), idPreparer.prepare(UUID.randomUUID()), lockAtLeastFor, lockAtMostFor);
                 }
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new PostgreSqlDistributedLockRepository(null, postgreSqlIdHelper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new PostgreSqlDistributedLockRepository(jdbcTemplate, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("idHelper cannot be null");
     }
 
     @Test

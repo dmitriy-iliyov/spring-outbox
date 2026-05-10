@@ -10,6 +10,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,6 +28,18 @@ class DefaultOutboxMetricsServiceUnitTests {
     @BeforeEach
     void setUp() {
         service = new DefaultOutboxMetricsService(repository, cache);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when repository is null")
+    void constructor_shouldThrowNPE_whenRepositoryIsNull() {
+        assertThrows(NullPointerException.class, () -> new DefaultOutboxMetricsService(null, cache));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when cache is null")
+    void constructor_shouldThrowNPE_whenCacheIsNull() {
+        assertThrows(NullPointerException.class, () -> new DefaultOutboxMetricsService(repository, null));
     }
 
     @Test

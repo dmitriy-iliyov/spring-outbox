@@ -15,6 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
+
 @ExtendWith(MockitoExtension.class)
 class DefaultOutboxMetricsUnitTests {
 
@@ -32,17 +35,35 @@ class DefaultOutboxMetricsUnitTests {
     void setUp() {
         registry = new SimpleMeterRegistry();
         Map<String, OutboxPublisherPropertiesHolder.EventPropertiesHolder> eventProps = Map.of(
-                "test-event", Mockito.mock(OutboxPublisherPropertiesHolder.EventPropertiesHolder.class)
+                "test-event", mock(OutboxPublisherPropertiesHolder.EventPropertiesHolder.class)
         );
-        Mockito.when(properties.getEventHolders()).thenReturn(eventProps);
+        lenient().when(properties.getEventHolders()).thenReturn(eventProps);
         tested = new DefaultOutboxMetrics(properties, registry, metricsService);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when properties is null")
+    void constructor_shouldThrowNPE_whenPropertiesIsNull() {
+        assertThrows(NullPointerException.class, () -> new DefaultOutboxMetrics(null, registry, metricsService));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new DefaultOutboxMetrics(properties, null, metricsService));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when metricsService is null")
+    void constructor_shouldThrowNPE_whenMetricsServiceIsNull() {
+        assertThrows(NullPointerException.class, () -> new DefaultOutboxMetrics(properties, registry, null));
     }
 
     @Test
     @DisplayName("UT register() should register total events gauge")
     void register_shouldRegisterTotalEventsGauge() {
         // given
-        Mockito.when(metricsService.count()).thenReturn(10L);
+        when(metricsService.count()).thenReturn(10L);
 
         // when
         tested.register();
@@ -57,8 +78,8 @@ class DefaultOutboxMetricsUnitTests {
     @DisplayName("UT register() should register events by status gauges")
     void register_shouldRegisterEventsByStatusGauges() {
         // given
-        Mockito.when(metricsService.countByStatus(EventStatus.PENDING)).thenReturn(5L);
-        Mockito.when(metricsService.countByStatus(EventStatus.IN_PROCESS)).thenReturn(3L);
+        when(metricsService.countByStatus(EventStatus.PENDING)).thenReturn(5L);
+        when(metricsService.countByStatus(EventStatus.IN_PROCESS)).thenReturn(3L);
 
         // when
         tested.register();
@@ -81,8 +102,8 @@ class DefaultOutboxMetricsUnitTests {
     @DisplayName("UT register() should register events by type and status gauges")
     void register_shouldRegisterEventsByTypeAndStatusGauges() {
         // given
-        Mockito.when(metricsService.countByEventTypeAndStatus("test-event", EventStatus.PENDING)).thenReturn(2L);
-        Mockito.when(metricsService.countByEventTypeAndStatus("test-event", EventStatus.IN_PROCESS)).thenReturn(1L);
+        when(metricsService.countByEventTypeAndStatus("test-event", EventStatus.PENDING)).thenReturn(2L);
+        when(metricsService.countByEventTypeAndStatus("test-event", EventStatus.IN_PROCESS)).thenReturn(1L);
 
         // when
         tested.register();

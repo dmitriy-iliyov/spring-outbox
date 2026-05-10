@@ -5,14 +5,16 @@ import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
+import java.util.Objects;
+
 public class ContinuableTaskTimeMeasureDecorator implements ContinuableTaskDecorator {
 
     private final MeterRegistry registry;
     private final Timer timer;
 
     public ContinuableTaskTimeMeasureDecorator(MeterRegistry registry, String taskType) {
-        this.registry = registry;
-        this.timer = registry.timer("outbox_task_processing_duration", "task_type", taskType);
+        this.registry = Objects.requireNonNull(registry, "registry cannot be null");
+        this.timer = registry.timer("outbox_task_processing_duration", "task_type", Objects.requireNonNull(taskType, "taskType cannot be null"));
     }
 
     @Override

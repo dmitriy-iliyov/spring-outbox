@@ -15,6 +15,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
+
 @ExtendWith(MockitoExtension.class)
 class OutboxDlqMetricsUnitTests {
 
@@ -34,8 +37,26 @@ class OutboxDlqMetricsUnitTests {
         Map<String, OutboxPublisherPropertiesHolder.EventPropertiesHolder> eventProps = Map.of(
                 "test-event", Mockito.mock(OutboxPublisherPropertiesHolder.EventPropertiesHolder.class)
         );
-        Mockito.when(properties.getEventHolders()).thenReturn(eventProps);
+        lenient().when(properties.getEventHolders()).thenReturn(eventProps);
         tested = new OutboxDlqMetrics(properties, registry, metricsService);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when properties is null")
+    void constructor_shouldThrowNPE_whenPropertiesIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqMetrics(null, registry, metricsService));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqMetrics(properties, null, metricsService));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when metricsService is null")
+    void constructor_shouldThrowNPE_whenMetricsServiceIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqMetrics(properties, registry, null));
     }
 
     @Test

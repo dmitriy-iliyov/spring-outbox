@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 @Transactional
 class MySqlDistributedLockRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
 
@@ -21,10 +23,12 @@ class MySqlDistributedLockRepositoryIntegrationTests extends BaseMySqlIntegratio
     private JdbcTemplate jdbcTemplate;
 
     private MySqlDistributedLockRepository repository;
+    private MySqlIdHelper mySqlIdHelper;
 
     @BeforeEach
     void setUp() {
-        repository = new MySqlDistributedLockRepository(jdbcTemplate, new MySqlIdHelper());
+        mySqlIdHelper = new MySqlIdHelper();
+        repository = new MySqlDistributedLockRepository(jdbcTemplate, mySqlIdHelper);
         this.verifier = new DistributedLockRepositoryVerifier(
                 jdbcTemplate,
                 repository,
@@ -44,6 +48,22 @@ class MySqlDistributedLockRepositoryIntegrationTests extends BaseMySqlIntegratio
                     jdbcTemplate.update(sql, jobName, idPreparer.prepare(UUID.randomUUID()), lockAtLeastFor, lockAtMostFor);
                 }
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlDistributedLockRepository(null, mySqlIdHelper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlDistributedLockRepository(jdbcTemplate, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("idHelper cannot be null");
     }
 
     @Test

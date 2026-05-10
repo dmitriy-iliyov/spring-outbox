@@ -17,6 +17,7 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
     private final OutboxDlqManager delegate;
 
     public OutboxDlqManagerMetricsDecorator(MeterRegistry registry, OutboxDlqManager delegate) {
+        Objects.requireNonNull(registry, "registry cannot be null");
         this.actionCounters = Arrays.stream(ActionType.values())
                 .collect(Collectors.toMap(
                                 Function.identity(),
@@ -25,7 +26,7 @@ public class OutboxDlqManagerMetricsDecorator implements OutboxDlqManager {
                                         "action_type", type.toString().toLowerCase())
                         )
                 );
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "delegate cannot be null");
     }
 
     @Override

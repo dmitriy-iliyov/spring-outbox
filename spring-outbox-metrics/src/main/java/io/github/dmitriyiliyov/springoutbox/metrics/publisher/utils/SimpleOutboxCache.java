@@ -17,6 +17,7 @@ public final class SimpleOutboxCache<S extends Enum<S>> implements OutboxCache<S
     private final Map<String, CachedCount> countByEventTypeAndStatus;
 
     public SimpleOutboxCache(long ... ttls) {
+        Objects.requireNonNull(ttls, "ttls cannot be null");
         if (ttls.length != 3) {
             throw new IllegalArgumentException("Ttls should contain three values");
         }

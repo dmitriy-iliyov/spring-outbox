@@ -4,14 +4,16 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.CacheHelper;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 
+import java.util.Objects;
+
 public class DefaultOutboxDlqMetricsService implements OutboxDlqMetricsService {
 
     private final OutboxDlqMetricsRepository repository;
     private final OutboxCache<DlqStatus> cache;
 
     public DefaultOutboxDlqMetricsService(OutboxDlqMetricsRepository repository, OutboxCache<DlqStatus> cache) {
-        this.repository = repository;
-        this.cache = cache;
+        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
+        this.cache = Objects.requireNonNull(cache, "cache cannot be null");
     }
 
     @Override

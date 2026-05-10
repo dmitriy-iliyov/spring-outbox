@@ -4,6 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -26,12 +27,12 @@ public class AdaptiveOutboxScheduleStrategy implements OutboxScheduleStrategy {
     public AdaptiveOutboxScheduleStrategy(AdaptivePollingPropertiesHolder properties,
                                           ScheduledExecutorService executor,
                                           OutboxScheduleStrategyListener listener) {
-        this.properties = properties;
-        this.executor = executor;
+        this.properties = Objects.requireNonNull(properties, "properties cannot be null");
+        this.executor = Objects.requireNonNull(executor, "executor cannot be null");
+        this.listener = Objects.requireNonNull(listener, "listener cannot be null");
         this.minFixedDelay = properties.getMinFixedDelay().toMillis();
         this.maxFixedDelay = properties.getMaxFixedDelay().toMillis();
         this.multiplier = properties.getMultiplier();
-        this.listener = listener;
         this.currentDelay = new AtomicLong(minFixedDelay);
         this.taskInProcess = new AtomicBoolean(false);
     }

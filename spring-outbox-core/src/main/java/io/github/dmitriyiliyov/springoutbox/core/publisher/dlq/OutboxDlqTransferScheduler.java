@@ -8,6 +8,7 @@ import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -16,21 +17,22 @@ public final class OutboxDlqTransferScheduler implements OutboxScheduler {
     private static final Logger log = LoggerFactory.getLogger(OutboxDlqTransferScheduler.class);
 
     private final OutboxPublisherPropertiesHolder.DlqPropertiesHolder.TransferPropertiesHolder properties;
-    private final OutboxScheduleStrategy transferScheduleStrategy;
+    private final OutboxScheduleStrategy scheduleStrategy;
     private final Function<Integer, Integer> transferApplier;
-    private final ContinuableTaskDecorator transferContinuableTaskDecorator;
+    private final ContinuableTaskDecorator taskDecorator;
     private final LogMessage logMessage;
 
     public OutboxDlqTransferScheduler(Supplier<OutboxPublisherPropertiesHolder.DlqPropertiesHolder.TransferPropertiesHolder> propertiesSupplier,
                                       OutboxScheduleStrategy strategy,
                                       Function<Integer, Integer> transferApplier,
-                                      ContinuableTaskDecorator continuableTaskDecorator,
+                                      ContinuableTaskDecorator taskDecorator,
                                       LogMessage logMessage) {
-        this.properties = propertiesSupplier.get();
-        this.transferScheduleStrategy = strategy;
-        this.transferApplier = transferApplier;
-        this.transferContinuableTaskDecorator = continuableTaskDecorator;
-        this.logMessage = logMessage;
+        Objects.requireNonNull(propertiesSupplier, "propertiesSupplier cannot be null");
+        this.properties = Objects.requireNonNull(propertiesSupplier.get(), "properties cannot be null");
+        this.scheduleStrategy = Objects.requireNonNull(strategy, "scheduleStrategy cannot be null");
+        this.transferApplier = Objects.requireNonNull(transferApplier, "transferApplier cannot be null");
+        this.taskDecorator = Objects.requireNonNull(taskDecorator, "taskDecorator cannot be null");
+        this.logMessage = Objects.requireNonNull(logMessage, "logMessage cannot be null");
     }
 
     @Override
@@ -46,7 +48,7 @@ public final class OutboxDlqTransferScheduler implements OutboxScheduler {
             }
             return transferredCount == batchSize;
         };
-        transferScheduleStrategy.scheduleExecution(transferContinuableTaskDecorator.decorate(task));
+        scheduleStrategy.scheduleExecution(taskDecorator.decorate(task));
     }
 
     public record LogMessage(

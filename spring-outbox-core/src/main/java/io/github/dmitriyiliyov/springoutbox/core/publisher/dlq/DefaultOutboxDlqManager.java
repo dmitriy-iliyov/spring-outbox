@@ -20,8 +20,8 @@ public class DefaultOutboxDlqManager implements OutboxDlqManager {
     private final Clock clock;
 
     public DefaultOutboxDlqManager(OutboxDlqRepository repository, Clock clock) {
-        this.repository = repository;
-        this.clock = clock;
+        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Transactional

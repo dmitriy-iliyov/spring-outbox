@@ -3,17 +3,22 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.it.BaseOracleIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultBytesResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.OracleSqlIdHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class OracleOutboxRepositoryIntegrationTests extends BaseOracleIntegrationTests {
@@ -21,11 +26,26 @@ class OracleOutboxRepositoryIntegrationTests extends BaseOracleIntegrationTests 
     private final OracleOutboxRepository repository;
     private final AbstractOutboxRepositoryIntegrationTests delegate;
 
+    private final JdbcTemplate jdbcTemplate;
+    private final Clock clock = Clock.systemUTC();
+    private final OracleSqlIdHelper oracleSqlIdHelper = new OracleSqlIdHelper();
+    private final DefaultBytesResultSetMapper mapper = new DefaultBytesResultSetMapper();
+
     OracleOutboxRepositoryIntegrationTests(
-            @Qualifier("oracleOutboxRepository") OracleOutboxRepository repository
+            @Qualifier("oracleOutboxRepository") OracleOutboxRepository repository,
+            @Qualifier("oracleJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
         this.delegate = new AbstractOutboxRepositoryIntegrationTests(repository);
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleOutboxRepository(jdbcTemplate, clock, oracleSqlIdHelper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
     }
 
     @Test @DisplayName("IT save() should persist event correctly")
@@ -219,7 +239,7 @@ class OracleOutboxRepositoryIntegrationTests extends BaseOracleIntegrationTests 
     }
 
     @Test
-    @DisplayName("IT deleteBatchByStatusAndThreshold() should delete old events via SELECT + DELETE")
+    @DisplayName("IT deleteBatchByStatusAndThreshold() should delete old processed events via SELECT + DELETE")
     void deleteBatchByStatusAndThreshold_deletesOldEvents() {
         repository.saveBatch(List.of(
                 delegate.buildEvent(EventStatus.PROCESSED),

@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.core.locks;
 import io.github.dmitriyiliyov.springoutbox.core.utils.BytesSqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public class OracleDistributedLockRepository implements DistributedLockRepository {
@@ -11,8 +12,8 @@ public class OracleDistributedLockRepository implements DistributedLockRepositor
     private final BytesSqlIdHelper idHelper;
 
     public OracleDistributedLockRepository(JdbcTemplate jdbcTemplate, BytesSqlIdHelper idHelper) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.idHelper = idHelper;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.idHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
     }
 
     @Override

@@ -10,6 +10,7 @@ import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.UUID;
 
 public final class OutboxDlqCleanUpScheduler implements OutboxScheduler {
@@ -19,23 +20,23 @@ public final class OutboxDlqCleanUpScheduler implements OutboxScheduler {
 
     private final UUID workerId;
     private final OutboxPropertiesHolder.CleanUpPropertiesHolder properties;
-    private final OutboxScheduleStrategy strategy;
-    private final ContinuableTaskDecorator continuableTaskDecorator;
+    private final OutboxScheduleStrategy scheduleStrategy;
+    private final ContinuableTaskDecorator taskDecorator;
     private final OutboxDlqManager manager;
     private final DistributedLockRepository lock;
 
     public OutboxDlqCleanUpScheduler(UUID workerId,
                                      OutboxPropertiesHolder.CleanUpPropertiesHolder properties,
-                                     OutboxScheduleStrategy strategy,
-                                     ContinuableTaskDecorator continuableTaskDecorator,
+                                     OutboxScheduleStrategy scheduleStrategy,
+                                     ContinuableTaskDecorator taskDecorator,
                                      OutboxDlqManager manager,
                                      DistributedLockRepository lock) {
-        this.workerId = workerId;
-        this.properties = properties;
-        this.strategy = strategy;
-        this.continuableTaskDecorator = continuableTaskDecorator;
-        this.manager = manager;
-        this.lock = lock;
+        this.workerId = Objects.requireNonNull(workerId, "workerId cannot be null");
+        this.properties = Objects.requireNonNull(properties, "properties cannot be null");
+        this.scheduleStrategy = Objects.requireNonNull(scheduleStrategy, "scheduleStrategy cannot be null");
+        this.taskDecorator = Objects.requireNonNull(taskDecorator, "taskDecorator cannot be null");
+        this.manager = Objects.requireNonNull(manager, "manager cannot be null");
+        this.lock = Objects.requireNonNull(lock, "lock cannot be null");
     }
 
     @Override
@@ -58,6 +59,6 @@ public final class OutboxDlqCleanUpScheduler implements OutboxScheduler {
                 lock.unlock(JOB.getJobName(), workerId);
             }
         };
-        strategy.scheduleExecution(continuableTaskDecorator.decorate(task));
+        scheduleStrategy.scheduleExecution(taskDecorator.decorate(task));
     }
 }

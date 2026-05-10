@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 @Transactional
 class OracleDistributedLockRepositoryIntegrationTests extends BaseOracleIntegrationTests {
 
@@ -21,10 +23,12 @@ class OracleDistributedLockRepositoryIntegrationTests extends BaseOracleIntegrat
     private JdbcTemplate jdbcTemplate;
 
     private OracleDistributedLockRepository repository;
+    private OracleSqlIdHelper oracleSqlIdHelper;
 
     @BeforeEach
     void setUp() {
-        repository = new OracleDistributedLockRepository(jdbcTemplate, new OracleSqlIdHelper());
+        oracleSqlIdHelper = new OracleSqlIdHelper();
+        repository = new OracleDistributedLockRepository(jdbcTemplate, oracleSqlIdHelper);
         this.verifier = new DistributedLockRepositoryVerifier(
                 jdbcTemplate,
                 repository,
@@ -44,6 +48,22 @@ class OracleDistributedLockRepositoryIntegrationTests extends BaseOracleIntegrat
                     jdbcTemplate.update(sql, jobName, idPreparer.prepare(UUID.randomUUID()), lockAtLeastFor, lockAtMostFor);
                 }
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleDistributedLockRepository(null, oracleSqlIdHelper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleDistributedLockRepository(jdbcTemplate, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("idHelper cannot be null");
     }
 
     @Test

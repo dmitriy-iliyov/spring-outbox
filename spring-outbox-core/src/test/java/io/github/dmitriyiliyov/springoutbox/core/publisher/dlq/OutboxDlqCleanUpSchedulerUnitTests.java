@@ -8,6 +8,7 @@ import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository
 import io.github.dmitriyiliyov.springoutbox.core.locks.OutboxJob;
 import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.Duration;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +52,54 @@ public class OutboxDlqCleanUpSchedulerUnitTests {
         tested = new OutboxDlqCleanUpScheduler(
                 workerId, properties, strategy, decorator, manager, lock
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when workerId is null should throw NullPointerException")
+    void constructor_whenWorkerIdIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxDlqCleanUpScheduler(null, properties, strategy, decorator, manager, lock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("workerId cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when properties is null should throw NullPointerException")
+    void constructor_whenPropertiesIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxDlqCleanUpScheduler(workerId, null, strategy, decorator, manager, lock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("properties cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when strategy is null should throw NullPointerException")
+    void constructor_whenStrategyIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxDlqCleanUpScheduler(workerId, properties, null, decorator, manager, lock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("scheduleStrategy cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when continuableTaskDecorator is null should throw NullPointerException")
+    void constructor_whenContinuableTaskDecoratorIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxDlqCleanUpScheduler(workerId, properties, strategy, null, manager, lock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("taskDecorator cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when manager is null should throw NullPointerException")
+    void constructor_whenManagerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxDlqCleanUpScheduler(workerId, properties, strategy, decorator, null, lock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("manager cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when lock is null should throw NullPointerException")
+    void constructor_whenLockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxDlqCleanUpScheduler(workerId, properties, strategy, decorator, manager, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("lock cannot be null");
     }
 
     private boolean captureAndRun() {

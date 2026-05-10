@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +36,38 @@ public class OutboxPollingSchedulerUnitTests {
 
     @InjectMocks
     OutboxPollingScheduler tested;
+
+    @Test
+    @DisplayName("UT constructor when properties is null should throw NullPointerException")
+    void constructor_whenPropertiesIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxPollingScheduler(null, strategy, processor, decorator))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("properties cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when strategy is null should throw NullPointerException")
+    void constructor_whenStrategyIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxPollingScheduler(properties, null, processor, decorator))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("scheduleStrategy cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when processor is null should throw NullPointerException")
+    void constructor_whenProcessorIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxPollingScheduler(properties, strategy, null, decorator))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("processor cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when decorator is null should throw NullPointerException")
+    void constructor_whenDecoratorIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OutboxPollingScheduler(properties, strategy, processor, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("taskDecorator cannot be null");
+    }
 
     private boolean captureAndRun() {
         ArgumentCaptor<ContinuableTask> captor = ArgumentCaptor.forClass(ContinuableTask.class);

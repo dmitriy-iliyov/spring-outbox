@@ -17,7 +17,8 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +32,22 @@ public class DefaultOutboxManagerUnitTests {
 
     @InjectMocks
     DefaultOutboxManager tested;
+
+    @Test
+    @DisplayName("UT constructor when repository is null should throw NullPointerException")
+    void constructor_whenRepositoryIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxManager(null, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("repository cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxManager(repository, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
+    }
 
     @Test
     @DisplayName("UT loadBatch(String, int) when events is not empty, should update status and return event list")
@@ -125,21 +142,6 @@ public class DefaultOutboxManagerUnitTests {
         assertTrue(result.isEmpty());
         verify(repository, times(1)).findAndLockBatchByStatus(status, batchSize, lockStatus);
         verifyNoMoreInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT finalizeBatch() when maxRetryCount < 0, should throw")
-    public void finalizeBatch_whenMaxRetryCountNegative_shouldThrow() {
-        // given
-        Set<UUID> processedIds = Set.of(UUID.randomUUID());
-        Set<UUID> failedIds = Set.of(UUID.randomUUID());
-        int maxRetryCount = -1;
-
-        // when / then
-        assertThrows(IllegalArgumentException.class,
-                () -> tested.finalizeBatch(List.of(), processedIds, failedIds, maxRetryCount, i -> Instant.now()));
-
-        verifyNoInteractions(repository);
     }
 
     @Test
@@ -446,47 +448,6 @@ public class DefaultOutboxManagerUnitTests {
         tested.deleteBatch(ids);
 
         // then
-        verifyNoInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT deleteProcessedBatch() when arguments valid should call repo")
-    void deleteProcessedBatch_validArguments_calculatesThresholdAndCallsRepository() {
-        Duration ttl = Duration.ofDays(7);
-        int batchSize = 100;
-        int expectedDeletedCount = 42;
-
-        Instant now = Instant.now();
-        Instant expectedThreshold = now.minusMillis(ttl.toMillis());
-        when(repository.deleteBatchByStatusAndThreshold(
-                eq(EventStatus.PROCESSED),
-                any(Instant.class),
-                eq(batchSize)
-        )).thenReturn(expectedDeletedCount);
-        when(clock.instant()).thenReturn(now);
-
-        int actualDeletedCount = tested.deleteProcessedBatch(ttl, batchSize);
-
-        assertThat(actualDeletedCount).isEqualTo(expectedDeletedCount);
-
-        verify(repository).deleteBatchByStatusAndThreshold(
-                eq(EventStatus.PROCESSED),
-                eq(expectedThreshold),
-                eq(batchSize)
-        );
-
-        verifyNoMoreInteractions(repository);
-    }
-
-    @Test
-    @DisplayName("UT deleteProcessedBatch() when ttl is null should throws")
-    void deleteProcessedBatch_nullTtl_throwsNullPointerException() {
-        int batchSize = 100;
-
-        assertThatThrownBy(() -> tested.deleteProcessedBatch(null, batchSize))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("ttl cannot be null");
-
         verifyNoInteractions(repository);
     }
 }

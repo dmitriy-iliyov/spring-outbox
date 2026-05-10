@@ -17,6 +17,8 @@ import java.time.Duration;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @ExtendWith(MockitoExtension.class)
 class ConsumedOutboxManagerMetricsDecoratorUnitTests {
 
@@ -50,112 +52,124 @@ class ConsumedOutboxManagerMetricsDecoratorUnitTests {
     }
 
     @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new ConsumedOutboxManagerMetricsDecorator(null, delegate));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when delegate is null")
+    void constructor_shouldThrowNPE_whenDelegateIsNull() {
+        assertThrows(NullPointerException.class, () -> new ConsumedOutboxManagerMetricsDecorator(registry, null));
+    }
+
+    @Test
     @DisplayName("UT isConsumed() when event is consumed should increment duplicated counter")
-    void isConsumed_whenEventIsConsumed_shouldIncrementDuplicatedCounter() {
+    void isConsumed_whenEventTryConsume_shouldIncrementDuplicatedCounter() {
         // given
         UUID id = UUID.randomUUID();
-        Mockito.when(delegate.isConsumed(id)).thenReturn(true);
+        Mockito.when(delegate.tryConsume(id)).thenReturn(true);
 
         // when
-        boolean result = decorator.isConsumed(id);
+        boolean result = decorator.tryConsume(id);
 
         // then
         Assertions.assertThat(result).isTrue();
-        Mockito.verify(delegate).isConsumed(id);
+        Mockito.verify(delegate).tryConsume(id);
         Mockito.verify(duplicatedCounter).increment();
         Mockito.verify(consumedCounter, Mockito.never()).increment();
     }
 
     @Test
     @DisplayName("UT isConsumed() when event is not consumed should increment consumed counter")
-    void isConsumed_whenEventIsNotConsumed_shouldIncrementConsumedCounter() {
+    void isConsumed_whenEventTryNotConsumed_shouldIncrementConsumedCounter() {
         // given
         UUID id = UUID.randomUUID();
-        Mockito.when(delegate.isConsumed(id)).thenReturn(false);
+        Mockito.when(delegate.tryConsume(id)).thenReturn(false);
 
         // when
-        boolean result = decorator.isConsumed(id);
+        boolean result = decorator.tryConsume(id);
 
         // then
         Assertions.assertThat(result).isFalse();
-        Mockito.verify(delegate).isConsumed(id);
+        Mockito.verify(delegate).tryConsume(id);
         Mockito.verify(consumedCounter).increment();
         Mockito.verify(duplicatedCounter, Mockito.never()).increment();
     }
 
     @Test
     @DisplayName("UT filterOutUnconsumed() when no duplicates should increment consumed counter with total count")
-    void filterOutUnconsumed_whenNoDuplicates_shouldIncrementOutUnconsumedCounterWithTotalCount() {
+    void filterOutUnconsumed_whenNoDuplicates_shouldIncrementOutConsumedCounterWithTotalCount() {
         // given
         Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         Set<UUID> alreadyConsumed = Set.of();
-        Mockito.when(delegate.filterOutUnconsumed(ids)).thenReturn(alreadyConsumed);
+        Mockito.when(delegate.tryConsumeAndGetDuplicates(ids)).thenReturn(alreadyConsumed);
 
         // when
-        Set<UUID> result = decorator.filterOutUnconsumed(ids);
+        Set<UUID> result = decorator.tryConsumeAndGetDuplicates(ids);
 
         // then
         Assertions.assertThat(result).isEmpty();
-        Mockito.verify(delegate).filterOutUnconsumed(ids);
+        Mockito.verify(delegate).tryConsumeAndGetDuplicates(ids);
         Mockito.verify(duplicatedCounter).increment(0.0);
         Mockito.verify(consumedCounter).increment(3.0);
     }
 
     @Test
     @DisplayName("UT filterOutUnconsumed() when all duplicates should increment duplicated counter with total count")
-    void filterOutUnconsumed_whenAllDuplicates_shouldIncrementDuplicatedCounterWithTotalCount() {
+    void tryConsumeAndGetDuplicates_whenAllDuplicates_shouldIncrementDuplicatedCounterWithTotalCount() {
         // given
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         Set<UUID> ids = Set.of(id1, id2);
         Set<UUID> alreadyConsumed = Set.of(id1, id2);
-        Mockito.when(delegate.filterOutUnconsumed(ids)).thenReturn(alreadyConsumed);
+        Mockito.when(delegate.tryConsumeAndGetDuplicates(ids)).thenReturn(alreadyConsumed);
 
         // when
-        Set<UUID> result = decorator.filterOutUnconsumed(ids);
+        Set<UUID> result = decorator.tryConsumeAndGetDuplicates(ids);
 
         // then
         Assertions.assertThat(result).hasSize(2);
-        Mockito.verify(delegate).filterOutUnconsumed(ids);
+        Mockito.verify(delegate).tryConsumeAndGetDuplicates(ids);
         Mockito.verify(duplicatedCounter).increment(2.0);
         Mockito.verify(consumedCounter).increment(0.0);
     }
 
     @Test
     @DisplayName("UT filterOutUnconsumed() when partial duplicates should increment both counters correctly")
-    void filterOutUnconsumed_whenPartialDuplicates_shouldIncrementBothCountersCorrectly() {
+    void tryConsumeAndGetDuplicates_whenPartialDuplicates_shouldIncrementBothCountersCorrectly() {
         // given
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         UUID id3 = UUID.randomUUID();
         Set<UUID> ids = Set.of(id1, id2, id3);
         Set<UUID> alreadyConsumed = Set.of(id1);
-        Mockito.when(delegate.filterOutUnconsumed(ids)).thenReturn(alreadyConsumed);
+        Mockito.when(delegate.tryConsumeAndGetDuplicates(ids)).thenReturn(alreadyConsumed);
 
         // when
-        Set<UUID> result = decorator.filterOutUnconsumed(ids);
+        Set<UUID> result = decorator.tryConsumeAndGetDuplicates(ids);
 
         // then
         Assertions.assertThat(result).hasSize(1);
-        Mockito.verify(delegate).filterOutUnconsumed(ids);
+        Mockito.verify(delegate).tryConsumeAndGetDuplicates(ids);
         Mockito.verify(duplicatedCounter).increment(1.0);
         Mockito.verify(consumedCounter).increment(2.0);
     }
 
     @Test
     @DisplayName("UT filterOutUnconsumed() when empty set should not increment any counter")
-    void filterOutUnconsumed_whenEmptySet_shouldNotIncrementAnyCounter() {
+    void tryConsumeAndGetDuplicates_whenEmptySet_shouldNotIncrementAnyCounter() {
         // given
         Set<UUID> ids = Set.of();
         Set<UUID> alreadyConsumed = Set.of();
-        Mockito.when(delegate.filterOutUnconsumed(ids)).thenReturn(alreadyConsumed);
+        Mockito.when(delegate.tryConsumeAndGetDuplicates(ids)).thenReturn(alreadyConsumed);
 
         // when
-        Set<UUID> result = decorator.filterOutUnconsumed(ids);
+        Set<UUID> result = decorator.tryConsumeAndGetDuplicates(ids);
 
         // then
         Assertions.assertThat(result).isEmpty();
-        Mockito.verify(delegate).filterOutUnconsumed(ids);
+        Mockito.verify(delegate).tryConsumeAndGetDuplicates(ids);
         Mockito.verify(duplicatedCounter).increment(0.0);
         Mockito.verify(consumedCounter).increment(0.0);
     }

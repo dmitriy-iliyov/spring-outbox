@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 public class OutboxManagerMetricsDecoratorUnitTests {
@@ -43,6 +44,24 @@ public class OutboxManagerMetricsDecoratorUnitTests {
                 .tag("event_type", "test-event-type")
                 .tag("status", "processed")
                 .counter();
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when properties is null")
+    void constructor_shouldThrowNPE_whenPropertiesIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxManagerMetricsDecorator(null, registry, tested));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxManagerMetricsDecorator(properties, null, tested));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when delegate is null")
+    void constructor_shouldThrowNPE_whenDelegateIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxManagerMetricsDecorator(properties, registry, null));
     }
 
     @Test

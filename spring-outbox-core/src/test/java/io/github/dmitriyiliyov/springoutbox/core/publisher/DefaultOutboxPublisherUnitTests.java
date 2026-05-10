@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -41,6 +42,30 @@ class DefaultOutboxPublisherUnitTests {
         serializedEvent = mock(OutboxEvent.class);
 
         lenient().when(properties.existEventType(eventType)).thenReturn(true);
+    }
+
+    @Test
+    @DisplayName("UT constructor when properties is null should throw NullPointerException")
+    void constructor_whenPropertiesIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxPublisher(null, serializer, manager))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("properties cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when serializer is null should throw NullPointerException")
+    void constructor_whenSerializerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxPublisher(properties, null, manager))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("serializer cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when manager is null should throw NullPointerException")
+    void constructor_whenManagerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxPublisher(properties, serializer, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("manager cannot be null");
     }
 
     @Test

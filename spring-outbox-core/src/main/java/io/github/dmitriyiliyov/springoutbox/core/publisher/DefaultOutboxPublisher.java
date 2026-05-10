@@ -16,9 +16,9 @@ public class DefaultOutboxPublisher implements OutboxPublisher {
     private final OutboxManager manager;
 
     public DefaultOutboxPublisher(OutboxPublisherPropertiesHolder properties, OutboxSerializer serializer, OutboxManager manager) {
-        this.properties = properties;
-        this.serializer = serializer;
-        this.manager = manager;
+        this.properties = Objects.requireNonNull(properties, "properties cannot be null");
+        this.serializer = Objects.requireNonNull(serializer, "serializer cannot be null");
+        this.manager = Objects.requireNonNull(manager, "manager cannot be null");
     }
 
     @Override

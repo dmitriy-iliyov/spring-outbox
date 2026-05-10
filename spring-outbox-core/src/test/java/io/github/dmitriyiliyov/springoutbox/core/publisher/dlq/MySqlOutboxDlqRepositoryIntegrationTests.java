@@ -9,10 +9,12 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class MySqlOutboxDlqRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
@@ -20,17 +22,31 @@ class MySqlOutboxDlqRepositoryIntegrationTests extends BaseMySqlIntegrationTests
     private final OutboxDlqRepository repository;
     private final OutboxDlqRepositoryVerifier delegate;
 
+    private final JdbcTemplate jdbcTemplate;
+    private final MySqlIdHelper mySqlIdHelper = new MySqlIdHelper();
+    private final DefaultBytesResultSetMapper mapper = new DefaultBytesResultSetMapper();
+    private final Clock clock = Clock.systemUTC();
+
     public MySqlOutboxDlqRepositoryIntegrationTests(
             @Qualifier("mysqlOutboxDlqRepository") OutboxDlqRepository repository,
             @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
         this.delegate = new OutboxDlqRepositoryVerifier(
                 repository,
                 jdbcTemplate,
                 new MySqlIdHelper(),
                 new DefaultBytesResultSetMapper()
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlOutboxDlqRepository(jdbcTemplate, mySqlIdHelper, mapper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

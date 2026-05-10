@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -62,6 +63,51 @@ public class AbstractOutboxRepositoryUnitTests {
                     }
                 }
         );
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AbstractOutboxRepository(null, clock, idHelper) {
+            @Override
+            public List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize, EventStatus lockStatus) { return null; }
+            @Override
+            public List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus) { return null; }
+            @Override
+            public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) { return 0; }
+            @Override
+            public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) { return 0; }
+        }).isInstanceOf(NullPointerException.class).hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AbstractOutboxRepository(jdbcTemplate, null, idHelper) {
+            @Override
+            public List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize, EventStatus lockStatus) { return null; }
+            @Override
+            public List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus) { return null; }
+            @Override
+            public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) { return 0; }
+            @Override
+            public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) { return 0; }
+        }).isInstanceOf(NullPointerException.class).hasMessageContaining("clock cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new AbstractOutboxRepository(jdbcTemplate, clock, null) {
+            @Override
+            public List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize, EventStatus lockStatus) { return null; }
+            @Override
+            public List<OutboxEvent> findAndLockBatchByStatus(EventStatus status, int batchSize, EventStatus lockStatus) { return null; }
+            @Override
+            public int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus) { return 0; }
+            @Override
+            public int deleteBatchByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize) { return 0; }
+        }).isInstanceOf(NullPointerException.class).hasMessageContaining("idHelper cannot be null");
     }
 
     @Test

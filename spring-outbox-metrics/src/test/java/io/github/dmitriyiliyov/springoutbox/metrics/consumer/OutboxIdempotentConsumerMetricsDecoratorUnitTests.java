@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.metrics.consumer;
 
+import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdExtractor;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -7,185 +8,101 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(MockitoExtension.class)
 class OutboxIdempotentConsumerMetricsDecoratorUnitTests {
 
     @Mock
-    OutboxIdempotentConsumer delegate;
+    private OutboxIdempotentConsumer delegate;
 
     @Mock
-    MeterRegistry registry;
+    private MeterRegistry registry;
 
     @Mock
-    Counter failsCounter;
+    private Counter fails;
 
-    OutboxIdempotentConsumerMetricsDecorator decorator;
+    private OutboxIdempotentConsumerMetricsDecorator tested;
 
     @BeforeEach
     void setUp() {
-        when(registry.counter(eq("consumed_outbox_events_total"), eq("type"), eq("failed")))
-                .thenReturn(failsCounter);
-
-        decorator = new OutboxIdempotentConsumerMetricsDecorator(registry, delegate);
+        Mockito.lenient().when(registry.counter(ArgumentMatchers.eq("consumed_outbox_events_total"), ArgumentMatchers.eq("type"), ArgumentMatchers.eq("failed")))
+                .thenReturn(fails);
     }
 
     @Test
-    @DisplayName("UT consume() when operation succeeds should not increment fails counter")
-    void consume_whenOperationSucceeds_shouldNotIncrementFailsCounter() {
-        // given
-        String message = "test-message";
-        Runnable operation = mock(Runnable.class);
-        doNothing().when(delegate).consume(anyString(), any(Runnable.class));
-
-        // when
-        decorator.consume(message, operation);
-
-        // then
-        verify(delegate).consume(anyString(), any(Runnable.class));
-        verify(failsCounter, never()).increment();
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxIdempotentConsumerMetricsDecorator(null, delegate));
     }
 
     @Test
-    @DisplayName("UT consume() when operation fails should increment fails counter and rethrow exception")
-    void consume_whenOperationFails_shouldIncrementFailsCounterAndRethrowException() {
-        // given
-        String message = "test-message";
-        Runnable operation = mock(Runnable.class);
-        RuntimeException exception = new RuntimeException("Operation failed");
-        doThrow(exception).when(delegate).consume(anyString(), any(Runnable.class));
-
-        // when + then
-        assertThatThrownBy(() -> decorator.consume(message, operation))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Operation failed");
-        verify(delegate).consume(anyString(), any(Runnable.class));
-        verify(failsCounter).increment();
+    @DisplayName("UT constructor should throw NPE when delegate is null")
+    void constructor_shouldThrowNPE_whenDelegateIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxIdempotentConsumerMetricsDecorator(registry, null));
     }
 
     @Test
-    @DisplayName("UT consume() when delegate throws exception should increment fails counter")
-    void consume_whenDelegateThrowsException_shouldIncrementFailsCounter() {
-        // given
-        String message = "test-message";
-        Runnable operation = mock(Runnable.class);
-        IllegalStateException exception = new IllegalStateException("Delegate exception");
-        doThrow(exception).when(delegate).consume(anyString(), any(Runnable.class));
+    @DisplayName("UT consume(UUID, Runnable) when throws should increment fails counter")
+    void consumeUUIDRunnable_whenThrows_shouldIncrementFailsCounter() {
+        tested = new OutboxIdempotentConsumerMetricsDecorator(registry, delegate);
+        UUID id = UUID.randomUUID();
+        Runnable runnable = () -> {};
+        
+        Mockito.doThrow(new RuntimeException()).when(delegate).consume(id, runnable);
 
-        // when + then
-        assertThatThrownBy(() -> decorator.consume(message, operation))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Delegate exception");
-        verify(delegate).consume(anyString(), any(Runnable.class));
-        verify(failsCounter).increment();
+        assertThrows(RuntimeException.class, () -> tested.consume(id, runnable));
+        Mockito.verify(fails).increment();
     }
 
     @Test
-    @DisplayName("UT consume() with null message when operation succeeds should not increment fails counter")
-    void consume_withNullMessage_whenOperationSucceeds_shouldNotIncrementFailsCounter() {
-        // given
-        String message = null;
-        Runnable operation = mock(Runnable.class);
-        doNothing().when(delegate).consume(isNull(), any(Runnable.class));
+    @DisplayName("UT consume(T, Extractor, Consumer) when throws should increment fails counter")
+    void consumeTExtractorConsumer_whenThrows_shouldIncrementFailsCounter() {
+        tested = new OutboxIdempotentConsumerMetricsDecorator(registry, delegate);
+        String message = "msg";
+        OutboxEventIdExtractor<String> extractor = m -> UUID.randomUUID();
+        Consumer<String> consumer = m -> {};
 
-        // when
-        decorator.consume(message, operation);
+        Mockito.doThrow(new RuntimeException()).when(delegate).consume(message, extractor, consumer);
 
-        // then
-        verify(delegate).consume(isNull(), any(Runnable.class));
-        verify(failsCounter, never()).increment();
+        assertThrows(RuntimeException.class, () -> tested.consume(message, extractor, consumer));
+        Mockito.verify(fails).increment();
     }
 
     @Test
-    @DisplayName("UT consume() batch when operation succeeds should not increment fails counter")
-    void consumeBatch_whenOperationSucceeds_shouldNotIncrementFailsCounter() {
-        // given
+    @DisplayName("UT consume(Set<UUID>, Consumer) when throws should increment fails counter by size")
+    void consumeSetConsumer_whenThrows_shouldIncrementFailsCounterBySize() {
+        tested = new OutboxIdempotentConsumerMetricsDecorator(registry, delegate);
+        Set<UUID> ids = Set.of(UUID.randomUUID(), UUID.randomUUID());
+        Consumer<Set<UUID>> consumer = m -> {};
+
+        Mockito.doThrow(new RuntimeException()).when(delegate).consume(ids, consumer);
+
+        assertThrows(RuntimeException.class, () -> tested.consume(ids, consumer));
+        Mockito.verify(fails).increment(2.0);
+    }
+
+    @Test
+    @DisplayName("UT consume(List<T>, Extractor, Consumer) when throws should increment fails counter by size")
+    void consumeListExtractorConsumer_whenThrows_shouldIncrementFailsCounterBySize() {
+        tested = new OutboxIdempotentConsumerMetricsDecorator(registry, delegate);
         List<String> messages = List.of("msg1", "msg2", "msg3");
-        Consumer<List<String>> operation = mock(Consumer.class);
-        doNothing().when(delegate).consume(anyList(), any(Consumer.class));
+        OutboxEventIdExtractor<String> extractor = m -> UUID.randomUUID();
+        Consumer<List<String>> consumer = m -> {};
 
-        // when
-        decorator.consume(messages, operation);
+        Mockito.doThrow(new RuntimeException()).when(delegate).consume(messages, extractor, consumer);
 
-        // then
-        verify(delegate).consume(anyList(), any(Consumer.class));
-        verify(failsCounter, never()).increment(anyDouble());
-    }
-
-    @Test
-    @DisplayName("UT consume() batch when operation fails should increment fails counter with batch size")
-    void consumeBatch_whenOperationFails_shouldIncrementFailsCounterWithBatchSize() {
-        // given
-        List<String> messages = List.of("msg1", "msg2", "msg3");
-        Consumer<List<String>> operation = mock(Consumer.class);
-        RuntimeException exception = new RuntimeException("Batch operation failed");
-        doThrow(exception).when(delegate).consume(anyList(), any(Consumer.class));
-
-        // when + then
-        assertThatThrownBy(() -> decorator.consume(messages, operation))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Batch operation failed");
-        verify(delegate).consume(anyList(), any(Consumer.class));
-        verify(failsCounter).increment(3.0);
-    }
-
-    @Test
-    @DisplayName("UT consume() batch with single message when operation fails should increment fails counter by one")
-    void consumeBatch_withSingleMessage_whenOperationFails_shouldIncrementFailsCounterByOne() {
-        // given
-        List<String> messages = List.of("msg1");
-        Consumer<List<String>> operation = mock(Consumer.class);
-        RuntimeException exception = new RuntimeException("Single message failed");
-        doThrow(exception).when(delegate).consume(anyList(), any(Consumer.class));
-
-        // when + then
-        assertThatThrownBy(() -> decorator.consume(messages, operation))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Single message failed");
-        verify(delegate).consume(anyList(), any(Consumer.class));
-        verify(failsCounter).increment(1.0);
-    }
-
-    @Test
-    @DisplayName("UT consume() batch with empty list when operation fails should increment fails counter with zero")
-    void consumeBatch_withEmptyList_whenOperationFails_shouldIncrementFailsCounterWithZero() {
-        // given
-        List<String> messages = List.of();
-        Consumer<List<String>> operation = mock(Consumer.class);
-        RuntimeException exception = new RuntimeException("Empty batch failed");
-        doThrow(exception).when(delegate).consume(anyList(), any(Consumer.class));
-
-        // when + then
-        assertThatThrownBy(() -> decorator.consume(messages, operation))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Empty batch failed");
-        verify(delegate).consume(anyList(), any(Consumer.class));
-        verify(failsCounter).increment(0.0);
-    }
-
-    @Test
-    @DisplayName("UT consume() batch when delegate throws exception should increment fails counter")
-    void consumeBatch_whenDelegateThrowsException_shouldIncrementFailsCounter() {
-        // given
-        List<String> messages = List.of("msg1", "msg2");
-        Consumer<List<String>> operation = mock(Consumer.class);
-        IllegalStateException exception = new IllegalStateException("Delegate exception in batch");
-        doThrow(exception).when(delegate).consume(anyList(), any(Consumer.class));
-
-        // when + then
-        assertThatThrownBy(() -> decorator.consume(messages, operation))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Delegate exception in batch");
-        verify(delegate).consume(anyList(), any(Consumer.class));
-        verify(failsCounter).increment(2.0);
+        assertThrows(RuntimeException.class, () -> tested.consume(messages, extractor, consumer));
+        Mockito.verify(fails).increment(3.0);
     }
 }

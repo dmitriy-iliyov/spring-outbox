@@ -3,17 +3,22 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.it.BasePostgresSqlIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.core.utils.DefaultResultSetMapper;
+import io.github.dmitriyiliyov.springoutbox.core.utils.PostgreSqlIdHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class PostgreSqlOutboxRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
@@ -21,11 +26,26 @@ class PostgreSqlOutboxRepositoryIntegrationTests extends BasePostgresSqlIntegrat
     private final PostgreSqlOutboxRepository repository;
     private final AbstractOutboxRepositoryIntegrationTests delegate;
 
+    private final JdbcTemplate jdbcTemplate;
+    private final Clock clock = Clock.systemUTC();
+    private final PostgreSqlIdHelper postgreSqlIdHelper = new PostgreSqlIdHelper();
+    private final DefaultResultSetMapper mapper = new DefaultResultSetMapper();
+
     PostgreSqlOutboxRepositoryIntegrationTests(
-            @Qualifier("postgresOutboxRepository") PostgreSqlOutboxRepository repository
+            @Qualifier("postgresOutboxRepository") PostgreSqlOutboxRepository repository,
+            @Qualifier("postgresJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;
+        this.jdbcTemplate = jdbcTemplate;
         this.delegate = new AbstractOutboxRepositoryIntegrationTests(repository);
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new PostgreSqlOutboxRepository(jdbcTemplate, clock, postgreSqlIdHelper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
     }
 
     @Test @DisplayName("IT save() should persist event correctly")

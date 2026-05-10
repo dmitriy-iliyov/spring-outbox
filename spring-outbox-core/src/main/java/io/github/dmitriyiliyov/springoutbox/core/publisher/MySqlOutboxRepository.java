@@ -11,10 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MySqlOutboxRepository extends AbstractOutboxRepository {
@@ -26,7 +23,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
                                  SqlIdHelper idHelper,
                                  BytesResultSetMapper mapper) {
         super(jdbcTemplate, clock, idHelper);
-        this.mapper = mapper;
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
     }
 
     @Override

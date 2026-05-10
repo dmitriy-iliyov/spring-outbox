@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -37,6 +38,18 @@ class OutboxDlqApiServiceMetricsDecoratorUnitTests {
     void setUp() {
         when(meterRegistry.counter(anyString(), anyString(), anyString())).thenReturn(mockCounter);
         tested = new OutboxDlqApiServiceMetricsDecorator(meterRegistry, delegate);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqApiServiceMetricsDecorator(null, delegate));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when delegate is null")
+    void constructor_shouldThrowNPE_whenDelegateIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqApiServiceMetricsDecorator(meterRegistry, null));
     }
 
     @Test

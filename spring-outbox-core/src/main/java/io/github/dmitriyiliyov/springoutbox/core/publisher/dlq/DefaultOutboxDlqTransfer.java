@@ -9,6 +9,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
@@ -26,11 +27,11 @@ public class DefaultOutboxDlqTransfer implements OutboxDlqTransfer {
                                     OutboxDlqManager dlqManager,
                                     OutboxDlqEventMapper eventMapper,
                                     OutboxDlqHandler handler) {
-        this.transactionTemplate = transactionTemplate;
-        this.manager = manager;
-        this.dlqManager = dlqManager;
-        this.eventMapper = eventMapper;
-        this.handler = handler;
+        this.transactionTemplate = Objects.requireNonNull(transactionTemplate, "transactionTemplate cannot be null");
+        this.manager = Objects.requireNonNull(manager, "manager cannot be null");
+        this.dlqManager = Objects.requireNonNull(dlqManager, "dlqManager cannot be null");
+        this.eventMapper = Objects.requireNonNull(eventMapper, "eventMapper cannot be null");
+        this.handler = Objects.requireNonNull(handler, "handler cannot be null");
     }
 
     @Override

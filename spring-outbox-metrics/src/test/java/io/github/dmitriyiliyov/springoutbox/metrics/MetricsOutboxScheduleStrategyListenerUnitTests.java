@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MetricsOutboxScheduleStrategyListenerUnitTests {
 
@@ -27,6 +28,30 @@ class MetricsOutboxScheduleStrategyListenerUnitTests {
 
     private Gauge findGauge(String name) {
         return registry.find(name).tag("task_type", "test_task").gauge();
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when taskType is null")
+    void constructor_shouldThrowNPE_whenTaskTypeIsNull() {
+        assertThrows(NullPointerException.class, () -> new MetricsOutboxScheduleStrategyListener(null, registry));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw IAE when taskType is empty")
+    void constructor_shouldThrowIAE_whenTaskTypeIsEmpty() {
+        assertThrows(IllegalArgumentException.class, () -> new MetricsOutboxScheduleStrategyListener("", registry));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw IAE when taskType is blank")
+    void constructor_shouldThrowIAE_whenTaskTypeIsBlank() {
+        assertThrows(IllegalArgumentException.class, () -> new MetricsOutboxScheduleStrategyListener("   ", registry));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new MetricsOutboxScheduleStrategyListener("test_task", null));
     }
 
     @Test

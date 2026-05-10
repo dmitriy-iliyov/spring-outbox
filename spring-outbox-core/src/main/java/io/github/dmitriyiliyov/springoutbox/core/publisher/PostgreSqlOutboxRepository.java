@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * PostgreSQL-specific implementation of {@link OutboxRepository}.
@@ -33,7 +34,7 @@ public class PostgreSqlOutboxRepository extends AbstractOutboxRepository {
                                       SqlIdHelper idHelper,
                                       ResultSetMapper mapper) {
         super(jdbcTemplate, clock, idHelper);
-        this.mapper = mapper;
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
     }
 
     @Override

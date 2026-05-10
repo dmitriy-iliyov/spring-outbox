@@ -13,7 +13,7 @@ public class DefaultOutboxDlqEventMapper implements OutboxDlqEventMapper {
     private final Clock clock;
 
     public DefaultOutboxDlqEventMapper(Clock clock) {
-        this.clock = clock;
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

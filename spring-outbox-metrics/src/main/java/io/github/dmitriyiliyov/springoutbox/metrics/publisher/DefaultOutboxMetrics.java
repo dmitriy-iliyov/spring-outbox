@@ -7,6 +7,7 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public final class DefaultOutboxMetrics implements OutboxMetrics {
 
@@ -18,9 +19,9 @@ public final class DefaultOutboxMetrics implements OutboxMetrics {
     public DefaultOutboxMetrics(OutboxPublisherPropertiesHolder properties,
                                 MeterRegistry registry,
                                 OutboxMetricsService metricsService) {
-        this.properties = properties;
-        this.registry = registry;
-        this.metricsService = metricsService;
+        this.properties = Objects.requireNonNull(properties, "properties cannot be null");
+        this.registry = Objects.requireNonNull(registry, "registry cannot be null");
+        this.metricsService = Objects.requireNonNull(metricsService, "metricsService cannot be null");
     }
 
     @Override

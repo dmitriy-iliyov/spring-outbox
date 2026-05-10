@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @ExtendWith(MockitoExtension.class)
 class OutboxDlqManagerMetricsDecoratorUnitTests {
 
@@ -33,6 +35,18 @@ class OutboxDlqManagerMetricsDecoratorUnitTests {
     void setUp() {
         registry = new SimpleMeterRegistry();
         tested = new OutboxDlqManagerMetricsDecorator(registry, delegate);
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when registry is null")
+    void constructor_shouldThrowNPE_whenRegistryIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqManagerMetricsDecorator(null, delegate));
+    }
+
+    @Test
+    @DisplayName("UT constructor should throw NPE when delegate is null")
+    void constructor_shouldThrowNPE_whenDelegateIsNull() {
+        assertThrows(NullPointerException.class, () -> new OutboxDlqManagerMetricsDecorator(registry, null));
     }
 
     @Test

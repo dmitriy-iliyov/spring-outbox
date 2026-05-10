@@ -5,6 +5,7 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -16,15 +17,16 @@ public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxMana
     private final ConsumedOutboxManager delegate;
 
     public ConsumedOutboxManagerMetricsDecorator(MeterRegistry registry, ConsumedOutboxManager delegate) {
+        Objects.requireNonNull(registry, "registry cannot be null");
         this.rejectedDuplicates = registry.counter("consumed_outbox_events_total", "type", "rejected_duplicates");
         this.consumed = registry.counter("consumed_outbox_events_total", "type", "consumed");
         this.cleaned = registry.counter("consumed_outbox_events_total", "type", "cleaned");
-        this.delegate = delegate;
+        this.delegate = Objects.requireNonNull(delegate, "delegate cannot be null");
     }
 
     @Override
-    public boolean isConsumed(UUID id) {
-        boolean isConsumed = delegate.isConsumed(id);
+    public boolean tryConsume(UUID id) {
+        boolean isConsumed = delegate.tryConsume(id);
         if (isConsumed) {
             rejectedDuplicates.increment();
         } else {
@@ -34,8 +36,8 @@ public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxMana
     }
 
     @Override
-    public Set<UUID> filterOutUnconsumed(Set<UUID> ids) {
-        Set<UUID> alreadyConsumed = delegate.filterOutUnconsumed(ids);
+    public Set<UUID> tryConsumeAndGetDuplicates(Set<UUID> ids) {
+        Set<UUID> alreadyConsumed = delegate.tryConsumeAndGetDuplicates(ids);
         double currentDuplicates = alreadyConsumed.size();
         rejectedDuplicates.increment(currentDuplicates);
         consumed.increment(ids.size() - currentDuplicates);

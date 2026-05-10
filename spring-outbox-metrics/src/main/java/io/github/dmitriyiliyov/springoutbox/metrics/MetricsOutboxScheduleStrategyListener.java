@@ -5,6 +5,8 @@ import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 
+import java.util.Objects;
+
 public class MetricsOutboxScheduleStrategyListener implements OutboxScheduleStrategyListener {
 
     private final Counter startedCounter;
@@ -14,6 +16,11 @@ public class MetricsOutboxScheduleStrategyListener implements OutboxScheduleStra
     private volatile long currentDelay;
 
     public MetricsOutboxScheduleStrategyListener(String taskType, MeterRegistry registry) {
+        Objects.requireNonNull(taskType, "taskType cannot be null");
+        if (taskType.isBlank()) {
+            throw new IllegalArgumentException("taskType cannot be empty or blank");
+        }
+        Objects.requireNonNull(registry, "registry cannot be null");
         this.startedCounter = Counter.builder("outbox_started_tasks")
                 .description("Total number of started tasks")
                 .tag("task_type", taskType)

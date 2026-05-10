@@ -8,10 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
 import java.time.Clock;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  *  Abstract multi SQL dialect implementation of {@link OutboxRepository}.
@@ -24,9 +21,9 @@ public abstract class AbstractOutboxRepository implements OutboxRepository {
     protected final SqlIdHelper idHelper;
 
     public AbstractOutboxRepository(JdbcTemplate jdbcTemplate, Clock clock, SqlIdHelper idHelper) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.clock = clock;
-        this.idHelper = idHelper;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
+        this.idHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
     }
 
     @Override

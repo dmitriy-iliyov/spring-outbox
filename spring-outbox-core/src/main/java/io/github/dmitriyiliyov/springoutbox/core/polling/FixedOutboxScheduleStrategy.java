@@ -4,6 +4,7 @@ import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -18,9 +19,9 @@ public class FixedOutboxScheduleStrategy implements OutboxScheduleStrategy {
     public FixedOutboxScheduleStrategy(FixedPollingPropertiesHolder properties,
                                        ScheduledExecutorService executor,
                                        OutboxScheduleStrategyListener listener) {
-        this.properties = properties;
-        this.executor = executor;
-        this.listener = listener;
+        this.properties = Objects.requireNonNull(properties, "properties cannot be null");
+        this.executor = Objects.requireNonNull(executor, "executor cannot be null");
+        this.listener = Objects.requireNonNull(listener, "listener cannot be null");
     }
 
     @Override

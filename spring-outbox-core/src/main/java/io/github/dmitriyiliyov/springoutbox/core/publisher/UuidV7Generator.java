@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.core.publisher.utils;
+package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import com.github.f4b6a3.uuid.UuidCreator;
 

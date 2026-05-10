@@ -23,7 +23,7 @@ class OracleOutboxDlqApiRepositoryIntegrationTests extends BaseOracleIntegration
     private final MultiDialectOutboxDlqApiRepositoryVerifier delegate;
 
     public OracleOutboxDlqApiRepositoryIntegrationTests(
-            @Qualifier("oracleOutboxDlqWebRepository") OutboxDlqApiRepository repository,
+            @Qualifier("oracleOutboxDlqApiRepository") OutboxDlqApiRepository repository,
             @Qualifier("oracleJdbcTemplate") JdbcTemplate jdbcTemplate
     ) {
         this.repository = repository;

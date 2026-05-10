@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class DefaultOutboxDlqEventMapperUnitTests {
@@ -26,6 +27,14 @@ public class DefaultOutboxDlqEventMapperUnitTests {
     void setUp() {
         clock = Clock.fixed(FIXED_NOW, ZoneId.of("UTC"));
         tested = new DefaultOutboxDlqEventMapper(clock);
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqEventMapper(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

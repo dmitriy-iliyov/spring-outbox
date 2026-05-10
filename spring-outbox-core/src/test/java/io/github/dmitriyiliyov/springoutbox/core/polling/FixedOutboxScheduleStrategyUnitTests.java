@@ -1,11 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.core.polling;
 
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTask;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
@@ -33,8 +34,36 @@ public class FixedOutboxScheduleStrategyUnitTests {
     @Mock
     OutboxScheduleStrategyListener listener;
 
-    @InjectMocks
     FixedOutboxScheduleStrategy tested;
+
+    @BeforeEach
+    void setUp() {
+        tested = new FixedOutboxScheduleStrategy(properties, executor, listener);
+    }
+
+    @Test
+    @DisplayName("UT constructor when properties is null should throw NullPointerException")
+    void constructor_whenPropertiesIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new FixedOutboxScheduleStrategy(null, executor, listener))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("properties cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when executor is null should throw NullPointerException")
+    void constructor_whenExecutorIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new FixedOutboxScheduleStrategy(properties, null, listener))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("executor cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when listener is null should throw NullPointerException")
+    void constructor_whenListenerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new FixedOutboxScheduleStrategy(properties, executor, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("listener cannot be null");
+    }
 
     private Runnable captureScheduledRunnable() {
         ArgumentCaptor<Runnable> captor = ArgumentCaptor.forClass(Runnable.class);

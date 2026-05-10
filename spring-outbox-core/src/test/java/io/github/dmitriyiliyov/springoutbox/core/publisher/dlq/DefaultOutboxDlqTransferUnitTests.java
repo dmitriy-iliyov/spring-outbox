@@ -19,6 +19,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -56,6 +57,46 @@ public class DefaultOutboxDlqTransferUnitTests {
             TransactionCallback<?> callback = invocation.getArgument(0);
             return callback.doInTransaction(null);
         }).when(transactionTemplate).execute(any());
+    }
+
+    @Test
+    @DisplayName("UT constructor when transactionTemplate is null should throw NullPointerException")
+    void constructor_whenTransactionTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqTransfer(null, manager, dlqManager, eventMapper, handler))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("transactionTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when manager is null should throw NullPointerException")
+    void constructor_whenManagerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqTransfer(transactionTemplate, null, dlqManager, eventMapper, handler))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("manager cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when dlqManager is null should throw NullPointerException")
+    void constructor_whenDlqManagerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqTransfer(transactionTemplate, manager, null, eventMapper, handler))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("dlqManager cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when eventMapper is null should throw NullPointerException")
+    void constructor_whenEventMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, null, handler))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("eventMapper cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when handler is null should throw NullPointerException")
+    void constructor_whenHandlerIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultOutboxDlqTransfer(transactionTemplate, manager, dlqManager, eventMapper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("handler cannot be null");
     }
 
     @Test

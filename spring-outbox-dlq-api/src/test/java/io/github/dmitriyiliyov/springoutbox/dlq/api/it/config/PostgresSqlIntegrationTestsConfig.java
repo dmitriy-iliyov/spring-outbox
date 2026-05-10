@@ -42,7 +42,7 @@ public class PostgresSqlIntegrationTestsConfig {
     }
 
     @Bean
-    public OutboxDlqApiRepository postgresOutboxDlqWebRepository(DataSource dataSource, Clock clock) {
+    public OutboxDlqApiRepository postgresOutboxDlqApiRepository(DataSource dataSource, Clock clock) {
         return new PostgreSqlOutboxDlqApiRepository(new JdbcTemplate(dataSource), new PostgreSqlIdHelper(), new DefaultResultSetMapper(), clock);
     }
 }

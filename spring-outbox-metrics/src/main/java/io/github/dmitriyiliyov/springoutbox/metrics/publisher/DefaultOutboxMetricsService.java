@@ -4,14 +4,16 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.CacheHelper;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 
+import java.util.Objects;
+
 public class DefaultOutboxMetricsService implements OutboxMetricsService {
 
     private final OutboxMetricsRepository repository;
     private final OutboxCache<EventStatus> cache;
 
     public DefaultOutboxMetricsService(OutboxMetricsRepository repository, OutboxCache<EventStatus> cache) {
-        this.repository = repository;
-        this.cache = cache;
+        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
+        this.cache = Objects.requireNonNull(cache, "cache cannot be null");
     }
 
     @Override
