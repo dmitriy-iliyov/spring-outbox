@@ -2,21 +2,21 @@
   "apiVersion": "dashboard.grafana.app/v2",
   "kind": "Dashboard",
   "metadata": {
-    "name": "admxxnr",
+    "name": "admxxn2",
     "namespace": "default",
-    "uid": "273c3f9c-b5e8-4126-9dfc-8b41803dc36a",
-    "resourceVersion": "1777303892931997",
-    "generation": 5,
-    "creationTimestamp": "2026-04-24T02:19:57Z",
+    "uid": "b532490f-0eef-4663-a456-23d67b37bb21",
+    "resourceVersion": "1778513409968014",
+    "generation": 4,
+    "creationTimestamp": "2026-05-11T15:27:58Z",
     "labels": {
-      "grafana.app/deprecatedInternalID": "2866533874769920"
+      "grafana.app/deprecatedInternalID": "218238494171136"
     },
     "annotations": {
-      "grafana.app/createdBy": "user:efk0hmk69dou8c",
+      "grafana.app/createdBy": "user:aflr3ulq101dse",
       "grafana.app/folder": "",
       "grafana.app/saved-from-ui": "Grafana v13.0.1 (a100054f)",
-      "grafana.app/updatedBy": "user:efk0hmk69dou8c",
-      "grafana.app/updatedTimestamp": "2026-04-27T15:31:32Z"
+      "grafana.app/updatedBy": "user:aflr3ulq101dse",
+      "grafana.app/updatedTimestamp": "2026-05-11T15:30:09Z"
     }
   },
   "spec": {
@@ -63,7 +63,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
@@ -84,7 +84,7 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
@@ -203,11 +203,11 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "outbox_started_tasks_total{task_type=\"clean-up-consumed-events\"}",
+                        "expr": "outbox_started_tasks_total{task_type=\"cleanup-consumed-events\"}",
                         "legendFormat": "__auto",
                         "range": true
                       }
@@ -224,11 +224,11 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "outbox_succeeded_tasks_total{task_type=\"clean-up-consumed-events\"}",
+                        "expr": "outbox_succeeded_tasks_total{task_type=\"cleanup-consumed-events\"}",
                         "instant": false,
                         "legendFormat": "__auto",
                         "range": true
@@ -246,11 +246,11 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "outbox_skipped_tasks_total{task_type=\"clean-up-consumed-events\"}",
+                        "expr": "outbox_skipped_tasks_total{task_type=\"cleanup-consumed-events\"}",
                         "instant": false,
                         "legendFormat": "__auto",
                         "range": true
@@ -268,11 +268,11 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "outbox_failed_tasks_total{task_type=\"clean-up-consumed-events\"}",
+                        "expr": "outbox_failed_tasks_total{task_type=\"cleanup-consumed-events\"}",
                         "instant": false,
                         "legendFormat": "__auto",
                         "range": true
@@ -354,11 +354,11 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "outbox_polling_delay_milliseconds{task_type=\"clean-up-consumed-events\"}",
+                        "expr": "outbox_polling_delay_milliseconds{task_type=\"cleanup-consumed-events\"}",
                         "legendFormat": "__auto",
                         "range": true
                       }
@@ -375,11 +375,11 @@
                       "group": "prometheus",
                       "version": "v0",
                       "datasource": {
-                        "name": "afk0i9k7l5clcb"
+                        "name": "cflr41soa21vkd"
                       },
                       "spec": {
                         "editorMode": "builder",
-                        "expr": "outbox_task_processing_duration_seconds_count{task_type=\"clean-up-consumed-events\"}",
+                        "expr": "outbox_task_processing_duration_seconds_count{task_type=\"cleanup-consumed-events\"}",
                         "instant": false,
                         "legendFormat": "__auto",
                         "range": true
