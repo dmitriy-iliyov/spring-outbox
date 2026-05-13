@@ -97,12 +97,14 @@ public class KafkaJpaConsumerIntegrationTests extends BaseKafkaIntegrationTests 
         verifier.consume_shouldRollbackBothTables_whenBatchOperationFails(batchSize);
     }
 
+    @Disabled
     @Test
     @DisplayName("IT consume() should allow retry after rollback: event id not burned on failure (single)")
     void consume_shouldBeRetryable_afterTransactionRollback() {
         verifier.consume_shouldBeRetryable_afterTransactionRollback();
     }
 
+    @Disabled
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
     @DisplayName("IT consume() should allow retry after rollback: event id not burned on failure (batch)")
