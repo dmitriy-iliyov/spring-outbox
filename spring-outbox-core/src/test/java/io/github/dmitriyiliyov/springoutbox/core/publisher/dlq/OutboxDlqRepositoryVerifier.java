@@ -88,9 +88,9 @@ class OutboxDlqRepositoryVerifier {
     }
 
     void deleteBatchByStatusAndThreshold_matches_deleted() {
-        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(1000));
-        OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(1000));
+        Instant now = Instant.now();
+        OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(6000));
+        OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(6000));
         repository.saveBatch(List.of(e1, e2));
 
         int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, now, 10);
