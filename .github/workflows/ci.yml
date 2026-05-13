@@ -87,4 +87,31 @@ jobs:
 
       - name: Run infra INBOX IT
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
-        run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox -Ddb=postgres
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox,kafka -Ddb=postgres
+
+  rabbit-infra-inbox-it:
+    runs-on: ubuntu-latest
+    needs: build-and-ut-it
+
+    steps:
+      - name: Download workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - name: Download local Maven repo
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository/io/github/dmitriy-iliyov
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run infra INBOX IT
+        working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
+        run: mvn -B verify -Dgpg.skip=true -Dgroups=rabbit-inbox -Dspring.profiles.active=inbox,rabbit -Ddb=postgres
