@@ -102,7 +102,7 @@ public interface OutboxManager {
      * <p>
      * At most {@code batchSize} records are deleted per call.
      *
-     * @param ttl the duration after which a processed event record is considered expired.
+     * @param ttl       the duration after which a processed event record is considered expired.
      * @param batchSize the maximum number of events to delete in one call.
      * @return          the number of deleted events.
      */

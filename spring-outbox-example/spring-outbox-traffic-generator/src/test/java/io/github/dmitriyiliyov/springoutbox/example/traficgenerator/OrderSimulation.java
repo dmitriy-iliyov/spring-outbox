@@ -5,7 +5,6 @@ import io.gatling.javaapi.core.Simulation;
 import io.gatling.javaapi.http.HttpProtocolBuilder;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -25,7 +24,7 @@ public class OrderSimulation extends Simulation {
     private static final int DURATION = intProp("durationSec", 60);
 
     private static final int MIN_WAIT_MS = intProp("minWaitMs", 1);
-    private static final int MAX_WAIT_MS = intProp("maxWaitMs", 3);
+    private static final int MAX_WAIT_MS = intProp("maxWaitMs", 5);
 
     private final HttpProtocolBuilder httpProtocol = http
             .baseUrl(PROTOCOL + "://" + HOST + ":" + PORT)
@@ -45,35 +44,12 @@ public class OrderSimulation extends Simulation {
         );
     }
 
-    private static String createBatchBody(int size) {
-        return IntStream.range(0, size)
-                .mapToObj(i -> createSingleBody())
-                .collect(Collectors.joining(",\n", "[", "]"));
-    }
-
     private static String updateBody() {
         return """
                 {
                   "itemIds": "%s"
                 }
                 """.formatted(generateItemIds());
-    }
-
-    private static String updateBatchBody(List<Object> ids) {
-        return ids.stream()
-                .map(id -> """
-                        {
-                          "id": %s,
-                          "itemIds": "%s"
-                        }
-                        """.formatted(id.toString(), generateItemIds()))
-                .collect(Collectors.joining(",\n", "[", "]"));
-    }
-
-    private static String deleteBatchBody(List<Object> ids) {
-        return ids.stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(",", "[", "]"));
     }
 
     private final ScenarioBuilder orderCrudLoop = scenario("Order CRUD Loop")

@@ -55,6 +55,7 @@ public class OutboxJobsInitializerIntegrationVerifier {
                         "spring.datasource.password=" + dbPassword,
                         "outbox.tables.auto-create=true",
                         "outbox.publisher.sender.type=kafka",
+                        "outbox.consumer.mappings.test-event=io.github.dmitriyiliyov.springoutbox.starter.consumer.TestEvent",
                         "outbox.publisher.events.my-event.topic=my.topic"
                 );
     }
@@ -98,7 +99,7 @@ public class OutboxJobsInitializerIntegrationVerifier {
 
     public void shouldExecuteCommandsAndSaveToDatabase_whenConsumerEnabled() {
         getBaseContextRunner()
-                .withPropertyValues("outbox.consumer.enabled=true", "outbox.consumer.clean-up.enabled=true")
+                .withPropertyValues("outbox.consumer.enabled=true", "outbox.consumer.source.type=kafka", "outbox.consumer.clean-up.enabled=true")
                 .run(context -> {
                     assertThat(context).hasSingleBean(ApplicationRunner.class);
 

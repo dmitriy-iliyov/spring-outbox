@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.starter;
 import io.github.dmitriyiliyov.springoutbox.core.polling.AdaptiveOutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.polling.FixedOutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
+import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategyListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class OutboxScheduleStrategyFactoryUnitTests {
 
@@ -18,12 +20,16 @@ public class OutboxScheduleStrategyFactoryUnitTests {
     @DisplayName("UT create() should return FixedOutboxScheduleStrategy when type is FIXED")
     public void create_whenTypeIsFixed_shouldReturnFixedStrategy() {
         // given
+        String taskType = "taskType";
         OutboxProperties.PollingProperties properties = new OutboxProperties.PollingProperties();
         properties.setType(PollingType.FIXED);
         ScheduledExecutorService executorMock = mock(ScheduledExecutorService.class);
 
+        OutboxScheduleStrategyListenerSupplier listenerSupplier = mock(OutboxScheduleStrategyListenerSupplier.class);
+        when(listenerSupplier.supply(taskType)).thenReturn(mock(OutboxScheduleStrategyListener.class));
+
         // when
-        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create("taskType", properties, executorMock, mock(OutboxScheduleStrategyListenerSupplier.class));
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(taskType, properties, executorMock, listenerSupplier);
 
         // then
         assertNotNull(strategy);
@@ -35,6 +41,7 @@ public class OutboxScheduleStrategyFactoryUnitTests {
     @DisplayName("UT create() should return AdaptiveOutboxScheduleStrategy when type is ADAPTIVE")
     public void create_whenTypeIsAdaptive_shouldReturnAdaptiveStrategy() {
         // given
+        String taskType = "taskType";
         OutboxProperties.PollingProperties properties = new OutboxProperties.PollingProperties();
         properties.setType(PollingType.ADAPTIVE);
         properties.setInitialDelay(Duration.ofMinutes(1));
@@ -44,8 +51,11 @@ public class OutboxScheduleStrategyFactoryUnitTests {
         
         ScheduledExecutorService executorMock = mock(ScheduledExecutorService.class);
 
+        OutboxScheduleStrategyListenerSupplier listenerSupplier = mock(OutboxScheduleStrategyListenerSupplier.class);
+        when(listenerSupplier.supply(taskType)).thenReturn(mock(OutboxScheduleStrategyListener.class));
+
         // when
-        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create("taskType", properties, executorMock, mock(OutboxScheduleStrategyListenerSupplier.class));
+        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(taskType, properties, executorMock, listenerSupplier);
 
         // then
         assertNotNull(strategy);

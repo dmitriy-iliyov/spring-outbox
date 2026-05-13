@@ -64,7 +64,6 @@ public class OutboxIntegrationTestsConfig {
             OutboxPublisher publisher,
             @Qualifier("jpaBusinessRepositoryProxy") BusinessRepository repository
     ) {
-        System.out.println("ManualBusinessService");
         return new ManualBusinessService(publisher, repository);
     }
 

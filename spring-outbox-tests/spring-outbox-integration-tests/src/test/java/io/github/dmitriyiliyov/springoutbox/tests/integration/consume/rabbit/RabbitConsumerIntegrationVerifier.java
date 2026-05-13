@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdExtractor;
 import org.awaitility.Awaitility;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -28,6 +29,7 @@ public class RabbitConsumerIntegrationVerifier {
     private final IdExtractor idExtractor;
     private final RabbitConsumerFaultyBusinessService faultyService;
     private final ObjectMapper objectMapper;
+    private final RabbitAdmin rabbitAdmin;
 
     public RabbitConsumerIntegrationVerifier(RabbitTemplate rabbitTemplate,
                                              JdbcTemplate jdbcTemplate,
@@ -38,6 +40,7 @@ public class RabbitConsumerIntegrationVerifier {
         this.idExtractor = idExtractor;
         this.faultyService = faultyService;
         this.objectMapper = new ObjectMapper();
+        this.rabbitAdmin = new RabbitAdmin(rabbitTemplate.getConnectionFactory());
     }
 
     public void consume_shouldSaveToBusinessAndConsumedTables() {
@@ -45,6 +48,18 @@ public class RabbitConsumerIntegrationVerifier {
         UUID verifyId = UUID.randomUUID();
 
         sendSingle(eventId, verifyId);
+
+        awaitBusinessCount(1);
+
+        assertThat(selectBusinessVerifyIds()).containsOnly(verifyId);
+        assertThat(selectConsumedEventIds()).containsOnly(eventId);
+    }
+
+    public void consumeId_shouldSaveToBusinessAndConsumedTables() {
+        UUID eventId  = UUID.randomUUID();
+        UUID verifyId = UUID.randomUUID();
+
+        sendSingleId(eventId, verifyId);
 
         awaitBusinessCount(1);
 
@@ -66,12 +81,42 @@ public class RabbitConsumerIntegrationVerifier {
         assertThat(selectConsumedEventIds()).containsOnly(eventId);
     }
 
+    public void consumeId_shouldBeIdempotent_whenSameMessageReceivedTwice() {
+        UUID eventId  = UUID.randomUUID();
+        UUID verifyId = UUID.randomUUID();
+
+        sendSingleId(eventId, verifyId);
+        awaitBusinessCount(1);
+
+        sendSingleId(eventId, verifyId);
+        awaitStableBusinessCount(1);
+
+        assertThat(selectBusinessVerifyIds()).containsOnly(verifyId);
+        assertThat(selectConsumedEventIds()).containsOnly(eventId);
+    }
+
     public void consume_shouldSaveAllSingleMessages(int count) {
         List<UUID> eventIds  = generateIds(count);
         List<UUID> verifyIds = generateIds(count);
 
         for (int i = 0; i < count; i++) {
             sendSingle(eventIds.get(i), verifyIds.get(i));
+        }
+
+        awaitBusinessCount(count);
+
+        assertThat(selectBusinessVerifyIds())
+                .containsExactlyInAnyOrder(verifyIds.toArray(new UUID[0]));
+        assertThat(selectConsumedEventIds())
+                .containsExactlyInAnyOrder(eventIds.toArray(new UUID[0]));
+    }
+
+    public void consumeId_shouldSaveAllSingleMessages(int count) {
+        List<UUID> eventIds  = generateIds(count);
+        List<UUID> verifyIds = generateIds(count);
+
+        for (int i = 0; i < count; i++) {
+            sendSingleId(eventIds.get(i), verifyIds.get(i));
         }
 
         awaitBusinessCount(count);
@@ -96,6 +141,20 @@ public class RabbitConsumerIntegrationVerifier {
                 .containsExactlyInAnyOrder(eventIds.toArray(new UUID[0]));
     }
 
+    public void consumeId_shouldSaveBatchToBusinessAndConsumedTables(int batchSize) {
+        List<UUID> eventIds  = generateIds(batchSize);
+        List<UUID> verifyIds = generateIds(batchSize);
+
+        sendBatchId(eventIds, verifyIds);
+
+        awaitBusinessCount(batchSize);
+
+        assertThat(selectBusinessVerifyIds())
+                .containsExactlyInAnyOrder(verifyIds.toArray(new UUID[0]));
+        assertThat(selectConsumedEventIds())
+                .containsExactlyInAnyOrder(eventIds.toArray(new UUID[0]));
+    }
+
     public void consume_shouldBeIdempotent_whenSameBatchReceivedTwice(int batchSize) {
         List<UUID> eventIds  = generateIds(batchSize);
         List<UUID> verifyIds = generateIds(batchSize);
@@ -104,6 +163,22 @@ public class RabbitConsumerIntegrationVerifier {
         awaitBusinessCount(batchSize);
 
         sendBatch(eventIds, verifyIds);
+        awaitStableBusinessCount(batchSize);
+
+        assertThat(selectBusinessVerifyIds())
+                .containsExactlyInAnyOrder(verifyIds.toArray(new UUID[0]));
+        assertThat(selectConsumedEventIds())
+                .containsExactlyInAnyOrder(eventIds.toArray(new UUID[0]));
+    }
+
+    public void consumeId_shouldBeIdempotent_whenSameBatchReceivedTwice(int batchSize) {
+        List<UUID> eventIds  = generateIds(batchSize);
+        List<UUID> verifyIds = generateIds(batchSize);
+
+        sendBatchId(eventIds, verifyIds);
+        awaitBusinessCount(batchSize);
+
+        sendBatchId(eventIds, verifyIds);
         awaitStableBusinessCount(batchSize);
 
         assertThat(selectBusinessVerifyIds())
@@ -140,6 +215,34 @@ public class RabbitConsumerIntegrationVerifier {
                 .containsExactlyInAnyOrder(allEventIds.toArray(new UUID[0]));
     }
 
+    public void consumeId_shouldProcessOnlyNewMessages_whenBatchContainsDuplicates() {
+        List<UUID> firstEventIds  = generateIds(3);
+        List<UUID> firstVerifyIds = generateIds(3);
+        sendBatchId(firstEventIds, firstVerifyIds);
+        awaitBusinessCount(3);
+
+        List<UUID> newEventIds  = generateIds(3);
+        List<UUID> newVerifyIds = generateIds(3);
+
+        List<UUID> mixedEventIds  = new ArrayList<>(firstEventIds);
+        mixedEventIds.addAll(newEventIds);
+        List<UUID> mixedVerifyIds = new ArrayList<>(firstVerifyIds);
+        mixedVerifyIds.addAll(newVerifyIds);
+
+        sendBatchId(mixedEventIds, mixedVerifyIds);
+        awaitBusinessCount(6);
+
+        List<UUID> allVerifyIds = new ArrayList<>(firstVerifyIds);
+        allVerifyIds.addAll(newVerifyIds);
+        assertThat(selectBusinessVerifyIds())
+                .containsExactlyInAnyOrder(allVerifyIds.toArray(new UUID[0]));
+
+        List<UUID> allEventIds = new ArrayList<>(firstEventIds);
+        allEventIds.addAll(newEventIds);
+        assertThat(selectConsumedEventIds())
+                .containsExactlyInAnyOrder(allEventIds.toArray(new UUID[0]));
+    }
+
     public void consume_shouldRollbackBothTables_whenBusinessOperationFails() {
         faultyService.setShouldFail(true);
 
@@ -147,6 +250,20 @@ public class RabbitConsumerIntegrationVerifier {
         UUID verifyId = UUID.randomUUID();
 
         sendToFailingQueue(eventId, verifyId);
+
+        awaitStableBusinessCount(0);
+
+        assertThat(selectBusinessVerifyIds()).isEmpty();
+        assertThat(selectConsumedEventIds()).isEmpty();
+    }
+
+    public void consumeId_shouldRollbackBothTables_whenBusinessOperationFails() {
+        faultyService.setShouldFail(true);
+
+        UUID eventId  = UUID.randomUUID();
+        UUID verifyId = UUID.randomUUID();
+
+        sendToIdFailingQueue(eventId, verifyId);
 
         awaitStableBusinessCount(0);
 
@@ -168,6 +285,20 @@ public class RabbitConsumerIntegrationVerifier {
         assertThat(selectConsumedEventIds()).isEmpty();
     }
 
+    public void consumeId_shouldRollbackBothTables_whenBatchOperationFails(int batchSize) {
+        faultyService.setShouldFail(true);
+
+        List<UUID> eventIds  = generateIds(batchSize);
+        List<UUID> verifyIds = generateIds(batchSize);
+
+        sendBatchToIdFailingQueue(eventIds, verifyIds);
+
+        awaitStableBusinessCount(0);
+
+        assertThat(selectBusinessVerifyIds()).isEmpty();
+        assertThat(selectConsumedEventIds()).isEmpty();
+    }
+
     public void consume_shouldBeRetryable_afterTransactionRollback() {
         faultyService.setShouldFail(true);
 
@@ -180,8 +311,47 @@ public class RabbitConsumerIntegrationVerifier {
         assertThat(selectBusinessVerifyIds()).isEmpty();
         assertThat(selectConsumedEventIds()).isEmpty();
 
+        try {
+            Thread.sleep(2000);
+
+            rabbitAdmin.purgeQueue(RabbitConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE, true);
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
+
         faultyService.setShouldFail(false);
         sendToFailingQueue(eventId, verifyId);
+
+        awaitBusinessCount(1);
+
+        assertThat(selectBusinessVerifyIds()).containsOnly(verifyId);
+        assertThat(selectConsumedEventIds()).containsOnly(eventId);
+    }
+
+    public void consumeId_shouldBeRetryable_afterTransactionRollback() {
+        faultyService.setShouldFail(true);
+
+        UUID eventId  = UUID.randomUUID();
+        UUID verifyId = UUID.randomUUID();
+
+        sendToIdFailingQueue(eventId, verifyId);
+        awaitStableBusinessCount(0);
+
+        assertThat(selectBusinessVerifyIds()).isEmpty();
+        assertThat(selectConsumedEventIds()).isEmpty();
+
+        try {
+            Thread.sleep(2000);
+
+            rabbitAdmin.purgeQueue(RabbitConsumerFaultyBusinessService.SINGLE_ID_FAILING_QUEUE, true);
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
+
+        faultyService.setShouldFail(false);
+        sendToIdFailingQueue(eventId, verifyId);
 
         awaitBusinessCount(1);
 
@@ -201,8 +371,49 @@ public class RabbitConsumerIntegrationVerifier {
         assertThat(selectBusinessVerifyIds()).isEmpty();
         assertThat(selectConsumedEventIds()).isEmpty();
 
+        try {
+            Thread.sleep(2000);
+
+            rabbitAdmin.purgeQueue(RabbitConsumerFaultyBusinessService.BATCH_FAILING_QUEUE, true);
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
+
         faultyService.setShouldFail(false);
         sendBatchToFailingQueue(eventIds, verifyIds);
+
+        awaitBusinessCount(batchSize);
+
+        assertThat(selectBusinessVerifyIds())
+                .containsExactlyInAnyOrder(verifyIds.toArray(new UUID[0]));
+        assertThat(selectConsumedEventIds())
+                .containsExactlyInAnyOrder(eventIds.toArray(new UUID[0]));
+    }
+
+    public void consumeId_shouldBeBatchRetryable_afterTransactionRollback(int batchSize) {
+        faultyService.setShouldFail(true);
+
+        List<UUID> eventIds  = generateIds(batchSize);
+        List<UUID> verifyIds = generateIds(batchSize);
+
+        sendBatchToIdFailingQueue(eventIds, verifyIds);
+        awaitStableBusinessCount(0);
+
+        assertThat(selectBusinessVerifyIds()).isEmpty();
+        assertThat(selectConsumedEventIds()).isEmpty();
+
+        try {
+            Thread.sleep(2000);
+
+            rabbitAdmin.purgeQueue(RabbitConsumerFaultyBusinessService.BATCH_ID_FAILING_QUEUE, true);
+            Thread.sleep(1000);
+        } catch (InterruptedException ie) {
+            throw new RuntimeException(ie);
+        }
+
+        faultyService.setShouldFail(false);
+        sendBatchToIdFailingQueue(eventIds, verifyIds);
 
         awaitBusinessCount(batchSize);
 
@@ -216,14 +427,28 @@ public class RabbitConsumerIntegrationVerifier {
         rabbitTemplate.send(RabbitConsumerBusinessService.SINGLE_QUEUE, buildMessage(eventId, verifyId));
     }
 
+    private void sendSingleId(UUID eventId, UUID verifyId) {
+        rabbitTemplate.send(RabbitConsumerBusinessService.SINGLE_ID_QUEUE, buildMessage(eventId, verifyId));
+    }
+
     private void sendBatch(List<UUID> eventIds, List<UUID> verifyIds) {
         for (int i = 0; i < eventIds.size(); i++) {
             rabbitTemplate.send(RabbitConsumerBusinessService.BATCH_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
         }
     }
 
+    private void sendBatchId(List<UUID> eventIds, List<UUID> verifyIds) {
+        for (int i = 0; i < eventIds.size(); i++) {
+            rabbitTemplate.send(RabbitConsumerBusinessService.BATCH_ID_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
+        }
+    }
+
     private void sendToFailingQueue(UUID eventId, UUID verifyId) {
         rabbitTemplate.send(RabbitConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE, buildMessage(eventId, verifyId));
+    }
+
+    private void sendToIdFailingQueue(UUID eventId, UUID verifyId) {
+        rabbitTemplate.send(RabbitConsumerFaultyBusinessService.SINGLE_ID_FAILING_QUEUE, buildMessage(eventId, verifyId));
     }
 
     private void sendBatchToFailingQueue(List<UUID> eventIds, List<UUID> verifyIds) {
@@ -232,11 +457,12 @@ public class RabbitConsumerIntegrationVerifier {
         }
     }
 
-    /**
-     * Builds an AMQP {@link Message} whose body is a JSON-serialised {@link BusinessEvent}
-     * and whose headers carry the two outbox identifiers required by
-     * {@link io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolveManager}.
-     */
+    private void sendBatchToIdFailingQueue(List<UUID> eventIds, List<UUID> verifyIds) {
+        for (int i = 0; i < eventIds.size(); i++) {
+            rabbitTemplate.send(RabbitConsumerFaultyBusinessService.BATCH_ID_FAILING_QUEUE, buildMessage(eventIds.get(i), verifyIds.get(i)));
+        }
+    }
+
     private Message buildMessage(UUID eventId, UUID verifyId) {
         try {
             byte[] body = objectMapper.writeValueAsBytes(BusinessEvent.of(verifyId));
@@ -261,7 +487,7 @@ public class RabbitConsumerIntegrationVerifier {
 
     private void awaitStableBusinessCount(int stableCount) {
         Awaitility.await()
-                .atMost(Duration.ofSeconds(5))
+                .atMost(AWAIT_AT_MOST)
                 .pollInterval(POLL_INTERVAL)
                 .during(Duration.ofSeconds(2))
                 .untilAsserted(() ->
@@ -295,10 +521,35 @@ public class RabbitConsumerIntegrationVerifier {
     }
 
     public void cleanUpQueries() {
+
+        String[] queuesToPurge = {
+                RabbitConsumerBusinessService.SINGLE_QUEUE,
+                RabbitConsumerBusinessService.SINGLE_ID_QUEUE,
+                RabbitConsumerBusinessService.BATCH_QUEUE,
+                RabbitConsumerBusinessService.BATCH_ID_QUEUE,
+                RabbitConsumerFaultyBusinessService.SINGLE_FAILING_QUEUE,
+                RabbitConsumerFaultyBusinessService.SINGLE_ID_FAILING_QUEUE,
+                RabbitConsumerFaultyBusinessService.BATCH_FAILING_QUEUE,
+                RabbitConsumerFaultyBusinessService.BATCH_ID_FAILING_QUEUE
+        };
+
+        for (String queue : queuesToPurge) {
+            try {
+                rabbitAdmin.purgeQueue(queue, true);
+            } catch (Exception e) { }
+        }
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         jdbcTemplate.execute("DELETE FROM business_events");
         jdbcTemplate.execute("DELETE FROM outbox_consumed_events");
+
         try {
-            Thread.sleep(1000);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

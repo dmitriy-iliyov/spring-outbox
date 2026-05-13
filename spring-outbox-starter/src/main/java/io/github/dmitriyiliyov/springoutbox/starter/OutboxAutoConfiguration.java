@@ -21,6 +21,7 @@ import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import javax.sql.DataSource;
 import java.time.Clock;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -155,8 +156,9 @@ public class OutboxAutoConfiguration {
 
     @Bean
     public PostApplicationReadyOutboxInitializer outboxInitializer(OutboxProperties properties,
-                                                                   List<OutboxMetrics> metrics,
-                                                                   List<OutboxScheduler> schedulers) {
-        return new PostApplicationReadyOutboxInitializer(properties, metrics, schedulers);
+                                                                   Map<String, OutboxScheduler> schedulers,
+                                                                   Map<String, OutboxMetrics> metrics) {
+        return new PostApplicationReadyOutboxInitializer(properties, schedulers, metrics);
     }
 }
+ 

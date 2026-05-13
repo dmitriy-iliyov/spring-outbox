@@ -2,7 +2,6 @@ package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
-import io.github.dmitriyiliyov.springoutbox.starter.publisher.SenderType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +58,7 @@ class OutboxPropertiesUnitTests {
         // given
         OutboxProperties props = new OutboxProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         OutboxPublisherProperties.EventProperties event = new OutboxPublisherProperties.EventProperties();
         event.setTopic("test-topic");
         OutboxPublisherProperties publisher = new OutboxPublisherProperties();
@@ -101,6 +100,11 @@ class OutboxPropertiesUnitTests {
         cache.setCacheName(cacheName);
         OutboxConsumerProperties consumer = new OutboxConsumerProperties();
         consumer.setEnabled(true);
+
+        OutboxConsumerProperties.SourceProperties source = new OutboxConsumerProperties.SourceProperties();
+        source.setType(TransportType.KAFKA);
+
+        consumer.setSource(source);
         consumer.setCache(cache);
         props.setConsumer(consumer);
 

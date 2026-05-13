@@ -38,32 +38,48 @@ class DefaultConsumedOutboxManagerUnitTests {
     }
 
     @Test
-    @DisplayName("UT isConsumed() when event not consumed should return false and save event")
-    void isConsumed_whenEventNotConsumed_shouldReturnFalseAndSaveEvent() {
+    @DisplayName("UT DefaultConsumedOutboxManager() when repository is null should throw NullPointerException")
+    void constructor_whenRepositoryIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultConsumedOutboxManager(null, clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("repository cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT DefaultConsumedOutboxManager() when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new DefaultConsumedOutboxManager(repository, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT tryConsume() when event not consumed should return false and save event")
+    void tryConsume_whenEventNotConsume_shouldReturnFalseAndSaveEvent() {
         // given
         UUID id = UUID.randomUUID();
         when(repository.saveIfAbsent(id)).thenReturn(1);
 
         // when
-        boolean result = manager.isConsumed(id);
+        boolean result = manager.tryConsume(id);
 
         // then
-        assertThat(result).isFalse();
+        assertThat(result).isTrue();
         verify(repository).saveIfAbsent(id);
     }
 
     @Test
-    @DisplayName("UT isConsumed() when event already consumed should return true")
-    void isConsumed_whenEventAlreadyConsumed_shouldReturnTrue() {
+    @DisplayName("UT tryConsume() when event already consumed should return false")
+    void tryConsume_whenEventAlreadyConsume_shouldReturnTrue() {
         // given
         UUID id = UUID.randomUUID();
         when(repository.saveIfAbsent(id)).thenReturn(0);
 
         // when
-        boolean result = manager.isConsumed(id);
+        boolean result = manager.tryConsume(id);
 
         // then
-        assertThat(result).isTrue();
+        assertThat(result).isFalse();
         verify(repository).saveIfAbsent(id);
     }
 
@@ -78,7 +94,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of(id1, id2, id3));
 
         // when
-        Set<UUID> result = manager.filterOutUnconsumed(ids);
+        Set<UUID> result = manager.tryConsumeAndGetDuplicates(ids);
 
         // then
         assertThat(result).isEmpty();
@@ -95,7 +111,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of());
 
         // when
-        Set<UUID> result = manager.filterOutUnconsumed(ids);
+        Set<UUID> result = manager.tryConsumeAndGetDuplicates(ids);
 
         // then
         assertThat(result).containsExactlyInAnyOrder(id1, id2);
@@ -113,7 +129,7 @@ class DefaultConsumedOutboxManagerUnitTests {
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of(id1));
 
         // when
-        Set<UUID> result = manager.filterOutUnconsumed(ids);
+        Set<UUID> result = manager.tryConsumeAndGetDuplicates(ids);
 
         // then
         assertThat(result).containsExactlyInAnyOrder(id2, id3);
@@ -122,30 +138,17 @@ class DefaultConsumedOutboxManagerUnitTests {
 
     @Test
     @DisplayName("UT filterConsumed() with empty set should return empty set")
-    void filterOutUnconsumed_withEmptySet_shouldReturnEmptySet() {
+    void tryConsumeAndGetDuplicates_withEmptySet_shouldReturnEmptySet() {
         // given
         Set<UUID> ids = Set.of();
         when(repository.saveIfAbsent(ids)).thenReturn(Set.of());
 
         // when
-        Set<UUID> result = manager.filterOutUnconsumed(ids);
+        Set<UUID> result = manager.tryConsumeAndGetDuplicates(ids);
 
         // then
         assertThat(result).isEmpty();
         verify(repository).saveIfAbsent(ids);
-    }
-
-    @Test
-    @DisplayName("UT cleanBatchByTtl() when ttl is null should throw NullPointerException")
-    void cleanBatchByTtl_whenTtlIsNull_shouldThrowNullPointerException() {
-        // given
-        Duration ttl = null;
-        int batchSize = 100;
-
-        // when + then
-        assertThatThrownBy(() -> manager.cleanBatchByTtl(ttl, batchSize))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessageContaining("ttl cannot be null");
     }
 
     @Test

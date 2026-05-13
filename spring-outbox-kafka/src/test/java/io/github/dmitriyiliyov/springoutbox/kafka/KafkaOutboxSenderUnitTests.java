@@ -1,13 +1,10 @@
 package io.github.dmitriyiliyov.springoutbox.kafka;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
 import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.errors.SerializationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,6 +22,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -33,10 +31,7 @@ import static org.mockito.Mockito.*;
 public class KafkaOutboxSenderUnitTests {
 
     @Mock
-    KafkaTemplate<String, Object> kafkaTemplate;
-
-    @Mock
-    ObjectMapper mapper;
+    KafkaTemplate<String, String> kafkaTemplate;
 
     long emergencyTimeout = 120L;
 
@@ -44,7 +39,15 @@ public class KafkaOutboxSenderUnitTests {
 
     @BeforeEach
     void setup() {
-        tested = new KafkaOutboxSender(kafkaTemplate, emergencyTimeout, mapper);
+        tested = new KafkaOutboxSender(kafkaTemplate, emergencyTimeout);
+    }
+
+    @Test
+    @DisplayName("UT constructor when kafkaTemplate is null should throw NullPointerException")
+    void constructor_whenKafkaTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new KafkaOutboxSender(null, emergencyTimeout))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("kafkaTemplate cannot be null");
     }
 
     @Test
@@ -60,7 +63,7 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertThat(result.failedIds()).isEmpty();
         assertThat(result.processedIds()).isEmpty();
-        verifyNoInteractions(kafkaTemplate, mapper);
+        verifyNoInteractions(kafkaTemplate);
     }
 
     @Test
@@ -76,7 +79,7 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertThat(result.failedIds()).isEmpty();
         assertThat(result.processedIds()).isEmpty();
-        verifyNoInteractions(kafkaTemplate, mapper);
+        verifyNoInteractions(kafkaTemplate);
     }
 
     @Test
@@ -97,7 +100,6 @@ public class KafkaOutboxSenderUnitTests {
         );
         List<OutboxEvent> events = List.of(event);
         when(kafkaTemplate.send(any(Message.class))).thenReturn(CompletableFuture.completedFuture(null));
-        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
 
         // when
         SenderResult result = tested.sendEvents(topic, events);
@@ -106,8 +108,7 @@ public class KafkaOutboxSenderUnitTests {
         assertEquals(Set.of(event.getId()), result.processedIds());
         assertEquals(Set.of(), result.failedIds());
         verify(kafkaTemplate, times(events.size())).send(any(Message.class));
-        verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
-        verifyNoMoreInteractions(kafkaTemplate, mapper);
+        verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
@@ -128,7 +129,6 @@ public class KafkaOutboxSenderUnitTests {
         );
         List<OutboxEvent> events = List.of(event);
         when(kafkaTemplate.send(any(Message.class))).thenThrow(new RuntimeException());
-        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
 
         // when
         SenderResult result = tested.sendEvents(topic, events);
@@ -137,8 +137,7 @@ public class KafkaOutboxSenderUnitTests {
         assertEquals(Set.of(event.getId()), result.failedIds());
         assertEquals(Set.of(), result.processedIds());
         verify(kafkaTemplate, times(events.size())).send(any(Message.class));
-        verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
-        verifyNoMoreInteractions(kafkaTemplate, mapper);
+        verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
@@ -161,7 +160,6 @@ public class KafkaOutboxSenderUnitTests {
         CompletableFuture<SendResult<String, Object>> future = new CompletableFuture<>();
         future.completeExceptionally(new RuntimeException("Kafka send failed"));
         when(kafkaTemplate.send(any(Message.class))).thenReturn((CompletableFuture) future);
-        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
 
         // when
         SenderResult result = tested.sendEvents(topic, events);
@@ -170,44 +168,14 @@ public class KafkaOutboxSenderUnitTests {
         assertEquals(Set.of(event.getId()), result.failedIds());
         assertEquals(Set.of(), result.processedIds());
         verify(kafkaTemplate, times(events.size())).send(any(Message.class));
-        verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
-        verifyNoMoreInteractions(kafkaTemplate, mapper);
-    }
-
-    @Test
-    @DisplayName("UT sendEvents() when JsonParseException occurs should add to failedIds")
-    public void sendEvents_whenJsonParseException_shouldAddToFailedIds() throws JsonProcessingException {
-        // given
-        String topic = "test-topic";
-        OutboxEvent event = new OutboxEvent(
-                UUID.randomUUID(),
-                EventStatus.PENDING,
-                "TestOutboxEvent",
-                TestOutboxEvent.class.getName(),
-                "invalid-json",
-                0,
-                Instant.now(),
-                Instant.now(),
-                Instant.now()
-        );
-        List<OutboxEvent> events = List.of(event);
-        when(mapper.readValue(anyString(), any(Class.class))).thenThrow(new JsonParseException(null, "parse error"));
-
-        // when
-        SenderResult result = tested.sendEvents(topic, events);
-
-        // then
-        assertEquals(Set.of(event.getId()), result.failedIds());
-        assertEquals(Set.of(), result.processedIds());
-        verify(mapper).readValue(anyString(), any(Class.class));
-        verifyNoInteractions(kafkaTemplate);
+        verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
     @DisplayName("UT sendEvents() when emergency timeout occurs should add unprocessed to failedIds")
     public void sendEvents_whenEmergencyTimeout_shouldAddUnprocessedToFailedIds() throws JsonProcessingException {
         // given
-        tested = new KafkaOutboxSender(kafkaTemplate, 0, mapper);
+        tested = new KafkaOutboxSender(kafkaTemplate, 0);
         String topic = "test-topic";
         OutboxEvent event = new OutboxEvent(
                 UUID.randomUUID(),
@@ -222,7 +190,6 @@ public class KafkaOutboxSenderUnitTests {
         );
         List<OutboxEvent> events = List.of(event);
         
-        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
         when(kafkaTemplate.send(any(Message.class))).thenReturn(new CompletableFuture<>());
 
         // when
@@ -250,7 +217,6 @@ public class KafkaOutboxSenderUnitTests {
                 Instant.now()
         );
         List<OutboxEvent> events = List.of(event);
-        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
         when(kafkaTemplate.send(any(Message.class))).thenThrow(new KafkaException());
 
         // when
@@ -259,9 +225,8 @@ public class KafkaOutboxSenderUnitTests {
         // then
         assertEquals(Set.of(event.getId()), result.failedIds());
         assertEquals(Set.of(), result.processedIds());
-        verify(mapper, times(events.size())).readValue(anyString(), any(Class.class));
         verify(kafkaTemplate).send(any(Message.class));
-        verifyNoMoreInteractions(kafkaTemplate, mapper);
+        verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
@@ -296,8 +261,6 @@ public class KafkaOutboxSenderUnitTests {
 
         List<OutboxEvent> events = List.of(validEvent, badEvent);
 
-        when(mapper.readValue(anyString(), any(Class.class))).thenReturn(new Object());
-
         when(kafkaTemplate.send(any(Message.class)))
                 .thenReturn(CompletableFuture.completedFuture(null))
                 .thenThrow(new org.apache.kafka.common.errors.SerializationException("Too big or bad format"));
@@ -312,7 +275,70 @@ public class KafkaOutboxSenderUnitTests {
         assertEquals(1, result.processedIds().size());
         assertEquals(1, result.failedIds().size());
 
-        verify(mapper, times(2)).readValue(anyString(), any(Class.class));
         verify(kafkaTemplate, times(2)).send(any(Message.class));
+    }
+
+    @Test
+    @DisplayName("UT sendEvents() when CompletionException and event is partially processed or failed, should add remaining to failed")
+    public void sendEvents_whenCompletionException_shouldAddRemainingToFailed() {
+        // given
+        tested = new KafkaOutboxSender(kafkaTemplate, 0);
+        String topic = "test-topic";
+        OutboxEvent event1 = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "{}",
+                0,
+                Instant.now(),
+                Instant.now(),
+                Instant.now()
+        );
+        OutboxEvent event2 = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "{}",
+                0,
+                Instant.now(),
+                Instant.now(),
+                Instant.now()
+        );
+        OutboxEvent event3 = new OutboxEvent(
+                UUID.randomUUID(),
+                EventStatus.PENDING,
+                "TestOutboxEvent",
+                TestOutboxEvent.class.getName(),
+                "{}",
+                0,
+                Instant.now(),
+                Instant.now(),
+                Instant.now()
+        );
+        List<OutboxEvent> events = List.of(event1, event2, event3);
+
+        when(kafkaTemplate.send(any(Message.class))).thenAnswer(invocation -> {
+            Message<?> msg = invocation.getArgument(0);
+            String idStr = (String) msg.getHeaders().get(io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxHeaders.EVENT_ID.getValue());
+            UUID id = UUID.fromString(idStr);
+            if (id.equals(event1.getId())) {
+                return CompletableFuture.completedFuture(null);
+            } else if (id.equals(event2.getId())) {
+                CompletableFuture<Object> failed = new CompletableFuture<>();
+                failed.completeExceptionally(new RuntimeException("failed"));
+                return failed;
+            } else {
+                return new CompletableFuture<>();
+            }
+        });
+
+        // when
+        SenderResult result = tested.sendEvents(topic, events);
+
+        // then
+        assertThat(result.processedIds()).containsExactly(event1.getId());
+        assertThat(result.failedIds()).containsExactlyInAnyOrder(event2.getId(), event3.getId());
     }
 }

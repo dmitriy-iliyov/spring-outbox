@@ -16,6 +16,10 @@ outbox:
     enabled: false
   consumer:
     enabled: true
+    mappings:
+      create-order: io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto
+      update-order: io.github.dmitriyiliyov.springoutbox.example.shared.OrderDto
+      delete-order: java.lang.Long
     clean-up:
       enabled: true
       ttl: 10m

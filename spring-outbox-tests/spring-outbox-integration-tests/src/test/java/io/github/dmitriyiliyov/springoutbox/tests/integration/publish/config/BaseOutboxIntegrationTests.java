@@ -13,7 +13,7 @@ import static io.github.dmitriyiliyov.springoutbox.tests.integration.publish.con
 @Tag("outbox")
 @SpringBootTest(classes = OutboxIntegrationTestApplication.class)
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
-public abstract class BaseIntegrationTests {
+public abstract class BaseOutboxIntegrationTests {
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

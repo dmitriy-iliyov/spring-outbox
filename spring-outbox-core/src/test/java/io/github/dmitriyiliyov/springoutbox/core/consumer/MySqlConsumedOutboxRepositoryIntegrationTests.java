@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class MySqlConsumedOutboxRepositoryIntegrationTests extends BaseMySqlIntegrationTests {
@@ -24,6 +25,38 @@ class MySqlConsumedOutboxRepositoryIntegrationTests extends BaseMySqlIntegration
             @Qualifier("mysqlConsumedOutboxRepository") MySqlConsumedOutboxRepository repository
     ) {
         this.repository = repository;
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlConsumedOutboxRepository(null, repository.clock, repository.idHelper, repository.mapper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlConsumedOutboxRepository(repository.jdbcTemplate, null, repository.idHelper, repository.mapper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlConsumedOutboxRepository(repository.jdbcTemplate, repository.clock, null, repository.mapper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("idHelper cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new MySqlConsumedOutboxRepository(repository.jdbcTemplate, repository.clock, repository.idHelper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
     }
 
     @Test

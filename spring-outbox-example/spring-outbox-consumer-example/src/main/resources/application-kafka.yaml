@@ -1,3 +1,7 @@
+outbox:
+  consumer:
+    source:
+      type: kafka
 spring:
   kafka:
     bootstrap-servers: outbox-kafka:9092
@@ -5,7 +9,7 @@ spring:
       group-id: analytics
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
         spring.json.trusted.packages: "*"
       enable-auto-commit: false

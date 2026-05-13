@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class SenderTypeUnitTests {
+public class TransportTypeUnitTests {
 
     @Test
     @DisplayName("UT fromString() when value is null, should throws")
@@ -15,7 +15,7 @@ public class SenderTypeUnitTests {
         String value = null;
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> SenderType.fromString(value));
+        assertThrows(IllegalArgumentException.class, () -> TransportType.fromString(value));
     }
 
     @Test
@@ -25,10 +25,10 @@ public class SenderTypeUnitTests {
         String value = "kaFKa";
 
         // when
-        SenderType type = SenderType.fromString(value);
+        TransportType type = TransportType.fromString(value);
 
         // then
-        assertEquals(SenderType.KAFKA, type);
+        assertEquals(TransportType.KAFKA, type);
     }
 
     @Test
@@ -38,6 +38,6 @@ public class SenderTypeUnitTests {
         String value = "UNKNOWN_SENDER_TYPE";
 
         // when + then
-        assertThrows(IllegalArgumentException.class, () -> SenderType.fromString(value));
+        assertThrows(IllegalArgumentException.class, () -> TransportType.fromString(value));
     }
 }

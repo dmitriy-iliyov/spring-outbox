@@ -16,8 +16,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.*;
 
 @Transactional
 class OracleConsumedOutboxRepositoryIntegrationTests extends BaseOracleIntegrationTests {
@@ -28,6 +27,38 @@ class OracleConsumedOutboxRepositoryIntegrationTests extends BaseOracleIntegrati
             @Qualifier("oracleConsumedOutboxRepository") OracleConsumedOutboxRepository repository
     ) {
         this.repository = repository;
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleConsumedOutboxRepository(null, repository.clock, repository.idHelper, repository.mapper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleConsumedOutboxRepository(repository.jdbcTemplate, null, repository.idHelper, repository.mapper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when idHelper is null should throw NullPointerException")
+    void constructor_whenIdHelperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleConsumedOutboxRepository(repository.jdbcTemplate, repository.clock, null, repository.mapper))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("idHelper cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when mapper is null should throw NullPointerException")
+    void constructor_whenMapperIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new OracleConsumedOutboxRepository(repository.jdbcTemplate, repository.clock, repository.idHelper, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("mapper cannot be null");
     }
 
     @Test

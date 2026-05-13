@@ -1,5 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dmitriyiliyov.springoutbox.consumer.cache.OutboxIdempotentConsumerCacheDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.consumer.MetricsConsumedOutboxCacheListener;
@@ -8,9 +10,11 @@ import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.cache.CacheAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cache.CacheManager;
@@ -43,9 +47,12 @@ public class OutboxConsumerAutoConfigurationVerifier {
                         TransactionAutoConfiguration.class,
                         CacheAutoConfiguration.class,
                         OutboxAutoConfiguration.class,
-                        OutboxConsumerAutoConfiguration.class
+                        OutboxConsumerAutoConfiguration.class,
+                        KafkaAutoConfiguration.class,
+                        RabbitAutoConfiguration.class
                 ))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                .withBean(ObjectMapper.class, ObjectMapper::new)
                 .withBean(CacheManager.class, () -> new ConcurrentMapCacheManager("outbox"))
                 .withBean(Clock.class, Clock::systemDefaultZone)
                 .withPropertyValues(
@@ -55,6 +62,8 @@ public class OutboxConsumerAutoConfigurationVerifier {
                         "spring.datasource.password=" + dbPassword,
                         "outbox.tables.auto-create=false",
                         "outbox.consumer.enabled=true",
+                        "outbox.consumer.source.type=kafka",
+                        "outbox.consumer.mappings.test-event=io.github.dmitriyiliyov.springoutbox.starter.consumer.TestEvent",
                         "outbox.consumer.cache.cache-name=outbox"
                 );
     }
@@ -73,15 +82,18 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasNotFailed();
 
                     assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
-                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
                     assertThat(ctx).hasSingleBean(DefaultConsumedOutboxManager.class);
                     assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(DefaultOutboxIdempotentConsumer.class);
-                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(MetricsConsumedOutboxCacheListener.class);
 
-                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerCacheDecoratorSupplier.class);
-                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
+                    assertThat(ctx).hasBean("outboxKafkaRecordMessageConverter");
+                    assertThat(ctx).hasBean("outboxKafkaListenerContainerFactory");
+                    assertThat(ctx).doesNotHaveBean("outboxRabbitMessageConverter");
+                    assertThat(ctx).doesNotHaveBean("outboxRabbitListenerContainerFactory");
+
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerCacheDecoratorSupplier.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerMetricsDecoratorSupplier.class);
 
                     ConsumedOutboxManager primaryConsumedOutboxManager = ctx.getBean(ConsumedOutboxManager.class);
                     assertThat(primaryConsumedOutboxManager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
@@ -89,9 +101,43 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     OutboxIdempotentConsumer primaryOutboxIdempotentConsumer = ctx.getBean(OutboxIdempotentConsumer.class);
                     assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(OutboxIdempotentConsumerMetricsDecorator.class);
 
-                    assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("rabbitOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
+                    assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
+                });
+    }
+
+    public void shouldLoadFullConfiguration_whenAllFeaturesWithRabbitEnabled() {
+        getBaseContextRunner()
+                .withPropertyValues(
+                        "outbox.consumer.source.type=rabbit",
+                        "outbox.consumer.metrics.enabled=true",
+                        "outbox.consumer.cache.enabled=true",
+                        "outbox.consumer.cache.cache-name=outbox",
+                        "outbox.consumer.clean-up.enabled=true",
+                        "outbox.consumer.clean-up.interval=PT1M",
+                        "outbox.consumer.clean-up.retention=PT24H"
+                )
+                .run(ctx -> {
+                    assertThat(ctx).hasNotFailed();
+
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
+                    assertThat(ctx).hasSingleBean(DefaultConsumedOutboxManager.class);
+                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecorator.class);
+                    assertThat(ctx).hasSingleBean(DefaultOutboxIdempotentConsumer.class);
+                    assertThat(ctx).hasSingleBean(MetricsConsumedOutboxCacheListener.class);
+
+                    assertThat(ctx).hasBean("outboxRabbitMessageConverter");
+                    assertThat(ctx).hasBean("outboxRabbitListenerContainerFactory");
+                    assertThat(ctx).doesNotHaveBean("outboxKafkaRecordMessageConverter");
+                    assertThat(ctx).doesNotHaveBean("outboxKafkaListenerContainerFactory");
+
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerCacheDecoratorSupplier.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerMetricsDecoratorSupplier.class);
+
+                    ConsumedOutboxManager primaryConsumedOutboxManager = ctx.getBean(ConsumedOutboxManager.class);
+                    assertThat(primaryConsumedOutboxManager).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
+
+                    OutboxIdempotentConsumer primaryOutboxIdempotentConsumer = ctx.getBean(OutboxIdempotentConsumer.class);
+                    assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(OutboxIdempotentConsumerMetricsDecorator.class);
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
                 });
@@ -104,15 +150,12 @@ public class OutboxConsumerAutoConfigurationVerifier {
 
                     assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
                     assertThat(ctx).hasBean("consumedOutboxManager");
-                    assertThat(ctx).hasBean("primaryConsumedOutboxManager");
+                    assertThat(ctx).hasBean("primaryOutboxIdempotentConsumer");
 
                     ConsumedOutboxManager primaryConsumedOutboxManager = ctx.getBean(ConsumedOutboxManager.class);
                     assertThat(primaryConsumedOutboxManager).isInstanceOf(DefaultConsumedOutboxManager.class);
 
-                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumer.class);
-                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
-
-                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecoratorSupplier.class);
                     assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean("consumedOutboxCleanUpScheduler");
@@ -153,37 +196,13 @@ public class OutboxConsumerAutoConfigurationVerifier {
 
     public void shouldRegisterConsumedOutboxManager() {
         getBaseContextRunner().run(ctx -> {
-            assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerDecoratorSupplier.class);
+            assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerDecoratorSupplier.class);
             assertThat(ctx).hasBean("consumedOutboxManager");
-            assertThat(ctx).hasBean("primaryConsumedOutboxManager");
+            assertThat(ctx).hasBean("primaryOutboxIdempotentConsumer");
 
             ConsumedOutboxManager primaryConsumedOutboxManager = ctx.getBean(ConsumedOutboxManager.class);
             assertThat(primaryConsumedOutboxManager).isInstanceOf(DefaultConsumedOutboxManager.class);
         });
-    }
-
-    public void shouldRegisterOutboxIdempotentConsumer() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(OutboxIdempotentConsumer.class)
-        );
-    }
-
-    public void shouldRegisterOutboxEventIdResolveManager() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class)
-        );
-    }
-
-    public void shouldRegisterKafkaEventIdResolver() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("kafkaOutboxEventIdResolver")
-        );
-    }
-
-    public void shouldRegisterRabbitMqEventIdResolver() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("rabbitOutboxEventIdResolver")
-        );
     }
 
     public void shouldNotRegisterCleanUpScheduler_whenDisabled() {
@@ -212,9 +231,9 @@ public class OutboxConsumerAutoConfigurationVerifier {
                         () -> org.mockito.Mockito.mock(ConsumedOutboxManager.class)
                 )
                 .run(ctx -> {
-                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerDecoratorSupplier.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerDecoratorSupplier.class);
                     assertThat(ctx).hasBean("customConsumedOutboxManager");
-                    assertThat(ctx).hasBean("primaryConsumedOutboxManager");
+                    assertThat(ctx).hasBean("primaryOutboxIdempotentConsumer");
                 });
     }
 
@@ -233,7 +252,7 @@ public class OutboxConsumerAutoConfigurationVerifier {
         getBaseContextRunner()
                 .withPropertyValues("outbox.consumer.metrics.enabled=false")
                 .run(ctx -> {
-                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecoratorSupplier.class);
                     assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecorator.class);
                 });
     }
@@ -242,7 +261,6 @@ public class OutboxConsumerAutoConfigurationVerifier {
         getBaseContextRunner()
                 .withPropertyValues("outbox.consumer.metrics.enabled=true")
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
                     assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecorator.class);
                 });
     }
@@ -262,18 +280,9 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 .withBean("customOutboxIdempotentConsumer", OutboxIdempotentConsumer.class,
                         () -> org.mockito.Mockito.mock(OutboxIdempotentConsumer.class))
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumer.class);
+                    assertThat(ctx).doesNotHaveBean("outboxIdempotentConsumer");
                     assertThat(ctx).hasBean("customOutboxIdempotentConsumer");
-                });
-    }
-
-    public void shouldNotRegisterDuplicateOutboxEventIdResolveManager_whenCustomBeanProvided() {
-        getBaseContextRunner()
-                .withBean("customOutboxEventIdResolveManager", OutboxEventIdResolveManager.class,
-                        () -> org.mockito.Mockito.mock(OutboxEventIdResolveManager.class))
-                .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
-                    assertThat(ctx).hasBean("customOutboxEventIdResolveManager");
+                    assertThat(ctx).hasBean("primaryOutboxIdempotentConsumer");
                 });
     }
 
@@ -281,9 +290,8 @@ public class OutboxConsumerAutoConfigurationVerifier {
         getBaseContextRunner()
                 .withPropertyValues("outbox.consumer.metrics.enabled=true")
                 .run(ctx -> {
-                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
                     assertThat(ctx).hasBean("consumedOutboxManager");
-                    assertThat(ctx).hasBean("primaryConsumedOutboxManager");
+                    assertThat(ctx).hasBean("primaryOutboxIdempotentConsumer");
                     ConsumedOutboxManager primary = ctx.getBean(ConsumedOutboxManager.class);
                     assertThat(primary).isInstanceOf(ConsumedOutboxManagerMetricsDecorator.class);
                 });
@@ -305,12 +313,6 @@ public class OutboxConsumerAutoConfigurationVerifier {
                 );
     }
 
-    public void shouldRegisterSpringMessageEventIdResolver() {
-        getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasBean("springMessageOutboxEventIdResolver")
-        );
-    }
-
     public void shouldRegisteredConsumedOutboxManagerCacheDecorator_asPrimary_whenCacheEnableAndMetricsDisabled() {
         getBaseContextRunner()
                 .withPropertyValues(
@@ -325,24 +327,18 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasNotFailed();
 
                     assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
-                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
                     assertThat(ctx).hasSingleBean(DefaultConsumedOutboxManager.class);
                     assertThat(ctx).hasSingleBean(DefaultOutboxIdempotentConsumer.class);
                     assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecorator.class);
 
-                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerCacheDecoratorSupplier.class);
-                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerCacheDecoratorSupplier.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecoratorSupplier.class);
 
                     ConsumedOutboxManager primaryConsumedOutboxManager = ctx.getBean(ConsumedOutboxManager.class);
-                    System.out.println(primaryConsumedOutboxManager.getClass().getName());
-                    assertThat(primaryConsumedOutboxManager).isInstanceOf(ConsumedOutboxManagerCacheDecorator.class);
+                    assertThat(primaryConsumedOutboxManager).isInstanceOf(DefaultConsumedOutboxManager.class);
 
                     OutboxIdempotentConsumer primaryOutboxIdempotentConsumer = ctx.getBean(OutboxIdempotentConsumer.class);
-                    assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(DefaultOutboxIdempotentConsumer.class);
-
-                    assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("rabbitOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
+                    assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(OutboxIdempotentConsumerCacheDecorator.class);
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
                     assertThat(ctx).hasBean("consumedOutboxCleanUpJobCreateCommand");
@@ -360,24 +356,19 @@ public class OutboxConsumerAutoConfigurationVerifier {
                     assertThat(ctx).hasNotFailed();
 
                     assertThat(ctx).hasSingleBean(ConsumedOutboxRepository.class);
-                    assertThat(ctx).hasSingleBean(OutboxEventIdResolveManager.class);
                     assertThat(ctx).hasSingleBean(DefaultConsumedOutboxManager.class);
                     assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecorator.class);
                     assertThat(ctx).hasSingleBean(DefaultOutboxIdempotentConsumer.class);
                     assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecorator.class);
 
-                    assertThat(ctx).hasSingleBean(ConsumedOutboxManagerCacheDecoratorSupplier.class);
-                    assertThat(ctx).doesNotHaveBean(ConsumedOutboxManagerMetricsDecoratorSupplier.class);
+                    assertThat(ctx).hasSingleBean(OutboxIdempotentConsumerCacheDecoratorSupplier.class);
+                    assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerMetricsDecoratorSupplier.class);
 
                     ConsumedOutboxManager primaryConsumedOutboxManager = ctx.getBean(ConsumedOutboxManager.class);
-                    assertThat(primaryConsumedOutboxManager).isInstanceOf(ConsumedOutboxManagerCacheDecorator.class);
+                    assertThat(primaryConsumedOutboxManager).isInstanceOf(DefaultConsumedOutboxManager.class);
 
                     OutboxIdempotentConsumer primaryOutboxIdempotentConsumer = ctx.getBean(OutboxIdempotentConsumer.class);
-                    assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(DefaultOutboxIdempotentConsumer.class);
-
-                    assertThat(ctx).hasBean("kafkaOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("rabbitOutboxEventIdResolver");
-                    assertThat(ctx).hasBean("springMessageOutboxEventIdResolver");
+                    assertThat(primaryOutboxIdempotentConsumer).isInstanceOf(OutboxIdempotentConsumerCacheDecorator.class);
 
                     assertThat(ctx).hasBean("consumedOutboxCleanUpScheduler");
                     assertThat(ctx).hasBean("consumedOutboxCleanUpJobCreateCommand");

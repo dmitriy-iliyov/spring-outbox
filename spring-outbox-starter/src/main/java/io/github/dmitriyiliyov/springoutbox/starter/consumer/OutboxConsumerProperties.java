@@ -1,10 +1,12 @@
 package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.TransportType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class OutboxConsumerProperties {
@@ -12,6 +14,8 @@ public class OutboxConsumerProperties {
     private static final Logger log = LoggerFactory.getLogger(OutboxConsumerProperties.class);
 
     private Boolean enabled;
+    private SourceProperties source;
+    private Map<String, Class<?>> mappings;
     @NestedConfigurationProperty
     private OutboxProperties.CleanUpProperties cleanUp;
     @NestedConfigurationProperty
@@ -21,6 +25,13 @@ public class OutboxConsumerProperties {
 
     public void applyDefaults() {
         if (enabled != null && enabled) {
+
+            source.applyDefaults();
+
+            if (mappings == null || mappings.isEmpty()) {
+                log.warn("Outbox consumer mappings is null or empty");
+            }
+
             if (cleanUp == null) {
                 cleanUp = new OutboxProperties.CleanUpProperties();
                 cleanUp.setEnabled(true);
@@ -29,6 +40,7 @@ public class OutboxConsumerProperties {
             if (!cleanUp.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled clean-up, consumed outbox storage will not be cleaned automatically");
             }
+
             if (cache == null) {
                 cache = new CacheProperties();
                 cache.setEnabled(false);
@@ -37,14 +49,18 @@ public class OutboxConsumerProperties {
             if (!cache.isEnabled()) {
                 log.warn("Consumer Outbox is configured with disabled cache");
             }
+
             if (metrics == null) {
                 metrics = new OutboxProperties.MetricsProperties();
                 metrics.setEnabled(false);
             }
             metrics.applyDefaults();
+
             log.debug("OutboxConsumerProperties successfully initialized");
         } else {
             enabled = false;
+
+            source = new SourceProperties();
 
             cleanUp = new OutboxProperties.CleanUpProperties();
             cleanUp.setEnabled(false);
@@ -66,6 +82,22 @@ public class OutboxConsumerProperties {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public SourceProperties getSource() {
+        return source;
+    }
+
+    public void setSource(SourceProperties source) {
+        this.source = source;
+    }
+
+    public Map<String, Class<?>> getMappings() {
+        return mappings;
+    }
+
+    public void setMappings(Map<String, Class<?>> mappings) {
+        this.mappings = mappings;
     }
 
     public OutboxProperties.CleanUpProperties getCleanUp() {
@@ -96,10 +128,38 @@ public class OutboxConsumerProperties {
     public String toString() {
         return "OutboxConsumerProperties{" +
                 "enabled=" + enabled +
+                ", source=" + source +
+                ", mappings=" + mappings +
                 ", cleanUp=" + cleanUp +
                 ", cache=" + cache +
                 ", metrics=" + metrics +
-                "}";
+                '}';
+    }
+
+    public static final class SourceProperties {
+
+        private TransportType type;
+
+        public void applyDefaults() {
+            if (type == null) {
+                throw new IllegalArgumentException("source type cannot be null");
+            }
+        }
+
+        public TransportType getType() {
+            return type;
+        }
+
+        public void setType(TransportType type) {
+            this.type = type;
+        }
+
+        @Override
+        public String toString() {
+            return "SourceProperties{" +
+                    "type='" + type + '\'' +
+                    '}';
+        }
     }
 
     public static final class CacheProperties {

@@ -1,61 +1,97 @@
 package io.github.dmitriyiliyov.springoutbox.starter.consumer;
 
-import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolveManager;
-import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxEventIdResolver;
-import io.micrometer.core.instrument.MeterRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.cache.CacheManager;
-
-import java.util.List;
+import org.springframework.boot.autoconfigure.kafka.ConcurrentKafkaListenerContainerFactoryConfigurer;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.listener.ContainerProperties;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OutboxConsumerAutoConfigurationUnitTests {
 
-    @Mock
-    OutboxConsumerProperties properties;
-
-    @InjectMocks
-    OutboxConsumerAutoConfiguration config;
+    private OutboxConsumerAutoConfiguration config;
 
     @Mock
-    CacheManager cacheManager;
+    private OutboxConsumerProperties consumerProperties;
 
     @Mock
-    MeterRegistry registry;
+    private ConcurrentKafkaListenerContainerFactoryConfigurer configurer;
 
     @Mock
-    OutboxConsumerProperties.CacheProperties cacheProperties;
+    private ConsumerFactory<Object, Object> consumerFactory;
 
-    @Test
-    @DisplayName("UT defaultOutboxEventIdResolveManager() when resolvers empty should throw")
-    void defaultOutboxEventIdResolveManager_whenResolversEmpty_shouldThrow() {
-        // given
-        List<OutboxEventIdResolver<?>> resolvers = List.of();
+    @Mock
+    private RecordMessageConverter recordMessageConverter;
 
-        // when + then
-        assertThrows(IllegalArgumentException.class, () -> config.defaultOutboxEventIdResolveManager(resolvers));
+    @BeforeEach
+    void setUp() {
+        config = new OutboxConsumerAutoConfiguration(consumerProperties);
     }
 
     @Test
-    @DisplayName("UT defaultOutboxEventIdResolveManager() when resolvers present should create manager")
-    void defaultOutboxEventIdResolveManager_whenResolversPresent_shouldCreateManager() {
-        // given
-        OutboxEventIdResolver<?> resolver = mock(OutboxEventIdResolver.class);
-        List<OutboxEventIdResolver<?>> resolvers = List.of(resolver);
+    @DisplayName("UT outboxKafkaListenerContainerFactory creates factory for non-batch listener with MANUAL ack mode")
+    void createsFactory_nonBatchListener_manualAckMode() {
+        doAnswer(invocation -> {
+            ConcurrentKafkaListenerContainerFactory<Object, Object> factory = invocation.getArgument(0);
+            factory.setBatchListener(false);
+            factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+            return null;
+        }).when(configurer).configure(any(ConcurrentKafkaListenerContainerFactory.class), eq(consumerFactory));
 
-        // when
-        OutboxEventIdResolveManager manager = config.defaultOutboxEventIdResolveManager(resolvers);
+        ConcurrentKafkaListenerContainerFactory<Object, Object> result = config.outboxKafkaListenerContainerFactory(
+                configurer, consumerFactory, recordMessageConverter
+        );
 
-        // then
-        assertThat(manager).isNotNull();
+        assertThat(result.isBatchListener()).isFalse();
+        assertThat(result.getContainerProperties().getAckMode()).isEqualTo(ContainerProperties.AckMode.MANUAL);
+        verify(configurer).configure(any(), eq(consumerFactory));
+    }
+
+    @Test
+    @DisplayName("UT outboxKafkaListenerContainerFactory creates factory for batch listener with MANUAL_IMMEDIATE ack mode")
+    void createsFactory_batchListener_manualImmediateAckMode() {
+        doAnswer(invocation -> {
+            ConcurrentKafkaListenerContainerFactory<Object, Object> factory = invocation.getArgument(0);
+            factory.setBatchListener(true);
+            factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+            return null;
+        }).when(configurer).configure(any(ConcurrentKafkaListenerContainerFactory.class), eq(consumerFactory));
+
+        ConcurrentKafkaListenerContainerFactory<Object, Object> result = config.outboxKafkaListenerContainerFactory(
+                configurer, consumerFactory, recordMessageConverter
+        );
+
+        assertThat(result.isBatchListener()).isTrue();
+        assertThat(result.getContainerProperties().getAckMode()).isEqualTo(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+        verify(configurer).configure(any(), eq(consumerFactory));
+    }
+    
+    @Test
+    @DisplayName("UT outboxKafkaListenerContainerFactory creates factory with other ack mode and logs warning")
+    void createsFactory_otherAckMode_logsWarning() {
+        doAnswer(invocation -> {
+            ConcurrentKafkaListenerContainerFactory<Object, Object> factory = invocation.getArgument(0);
+            factory.setBatchListener(false);
+            factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+            return null;
+        }).when(configurer).configure(any(ConcurrentKafkaListenerContainerFactory.class), eq(consumerFactory));
+
+        ConcurrentKafkaListenerContainerFactory<Object, Object> result = config.outboxKafkaListenerContainerFactory(
+                configurer, consumerFactory, recordMessageConverter
+        );
+
+        assertThat(result.isBatchListener()).isFalse();
+        assertThat(result.getContainerProperties().getAckMode()).isEqualTo(ContainerProperties.AckMode.RECORD);
+        verify(configurer).configure(any(), eq(consumerFactory));
     }
 }

@@ -22,6 +22,8 @@ outbox:
     enabled: false
   consumer:
     enabled: true
+    mappings:
+      test-business-event: io.github.dmitriyiliyov.springoutbox.tests.integration.domain.BusinessEvent
     cache:
       enabled: false
     metrics:

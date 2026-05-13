@@ -6,10 +6,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxRepository {
 
@@ -17,8 +14,8 @@ public class PostgreSqlConsumedOutboxRepository implements ConsumedOutboxReposit
     protected final Clock clock;
 
     public PostgreSqlConsumedOutboxRepository(JdbcTemplate jdbcTemplate, Clock clock) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.clock = clock;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Override

@@ -16,29 +16,28 @@ public class DefaultConsumedOutboxManager implements ConsumedOutboxManager {
     protected final Clock clock;
 
     public DefaultConsumedOutboxManager(ConsumedOutboxRepository repository, Clock clock) {
-        this.repository = repository;
-        this.clock = clock;
+        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
     }
 
     @Transactional
     @Override
-    public boolean isConsumed(UUID id) {
-        return repository.saveIfAbsent(id) == 0;
+    public boolean tryConsume(UUID id) {
+        return repository.saveIfAbsent(id) == 1;
     }
 
     @Transactional
     @Override
-    public Set<UUID> filterOutUnconsumed(Set<UUID> ids) {
-        Set<UUID> nonExistedIds = repository.saveIfAbsent(ids);
+    public Set<UUID> tryConsumeAndGetDuplicates(Set<UUID> ids) {
+        Set<UUID> unconsumedIds = repository.saveIfAbsent(ids);
         return ids.stream()
-                .filter(id -> !nonExistedIds.contains(id))
+                .filter(id -> !unconsumedIds.contains(id))
                 .collect(Collectors.toSet());
     }
 
     @Transactional
     @Override
     public int cleanBatchByTtl(Duration ttl, int batchSize) {
-        Objects.requireNonNull(ttl, "ttl cannot be null");
         Instant threshold = clock.instant().minusMillis(ttl.toMillis());
         return repository.deleteBatchByThreshold(threshold, batchSize);
     }

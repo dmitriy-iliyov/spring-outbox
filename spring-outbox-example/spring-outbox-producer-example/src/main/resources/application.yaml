@@ -25,6 +25,8 @@ outbox:
   thread-pool-size: 7
   tables:
     auto-create: true
+  distributed-lock:
+    resolve-by-polling-properties: true
   publisher:
     defaults:
       batch-size: 200

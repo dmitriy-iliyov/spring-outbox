@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Transactional
 class PostgreSqlConsumedOutboxRepositoryIntegrationTests extends BasePostgresSqlIntegrationTests {
@@ -24,6 +25,22 @@ class PostgreSqlConsumedOutboxRepositoryIntegrationTests extends BasePostgresSql
             @Qualifier("postgresConsumedOutboxRepository") PostgreSqlConsumedOutboxRepository repository
     ) {
         this.repository = repository;
+    }
+
+    @Test
+    @DisplayName("UT constructor when jdbcTemplate is null should throw NullPointerException")
+    void constructor_whenJdbcTemplateIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new PostgreSqlConsumedOutboxRepository(null, repository.clock))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("jdbcTemplate cannot be null");
+    }
+
+    @Test
+    @DisplayName("UT constructor when clock is null should throw NullPointerException")
+    void constructor_whenClockIsNull_shouldThrowNullPointerException() {
+        assertThatThrownBy(() -> new PostgreSqlConsumedOutboxRepository(repository.jdbcTemplate, null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessageContaining("clock cannot be null");
     }
 
     @Test

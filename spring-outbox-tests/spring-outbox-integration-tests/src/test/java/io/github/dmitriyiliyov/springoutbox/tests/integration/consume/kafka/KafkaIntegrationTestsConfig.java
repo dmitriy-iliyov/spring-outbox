@@ -10,14 +10,16 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.kafka.ConcurrentKafkaListenerContainerFactoryConfigurer;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
+import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,82 +31,97 @@ public class KafkaIntegrationTestsConfig {
 
     @Bean
     public NewTopic testOutboxSingleTopic() {
-        return TopicBuilder.name(KafkaConsumerBusinessService.SINGLE_TOPIC)
-                .partitions(1)
-                .replicas(1)
-                .build();
+        return TopicBuilder.name(KafkaConsumerBusinessService.SINGLE_TOPIC).partitions(1).replicas(1).build();
     }
 
     @Bean
     public NewTopic testOutboxBatchTopic() {
-        return TopicBuilder.name(KafkaConsumerBusinessService.BATCH_TOPIC)
-                .partitions(1)
-                .replicas(1)
-                .build();
+        return TopicBuilder.name(KafkaConsumerBusinessService.BATCH_TOPIC).partitions(1).replicas(1).build();
     }
 
     @Bean
-    public KafkaTemplate<String, Object> testKafkaTemplate() {
+    public NewTopic testOutboxSingleIdTopic() {
+        return TopicBuilder.name(KafkaConsumerBusinessService.SINGLE_ID_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic testOutboxBatchIdTopic() {
+        return TopicBuilder.name(KafkaConsumerBusinessService.BATCH_ID_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic testOutboxSingleFailingTopic() {
+        return TopicBuilder.name(KafkaConsumerFaultyBusinessService.SINGLE_FAILING_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic testOutboxBatchFailingTopic() {
+        return TopicBuilder.name(KafkaConsumerFaultyBusinessService.BATCH_FAILING_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic testOutboxSingleIdFailingTopic() {
+        return TopicBuilder.name(KafkaConsumerFaultyBusinessService.SINGLE_ID_FAILING_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public NewTopic testOutboxBatchIdFailingTopic() {
+        return TopicBuilder.name(KafkaConsumerFaultyBusinessService.BATCH_ID_FAILING_TOPIC).partitions(1).replicas(1).build();
+    }
+
+    @Bean
+    public KafkaTemplate<String, String> testKafkaTemplate() {
         Map<String, Object> props = Map.of(
                 ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP,
                 ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class,
-                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class
         );
         return new KafkaTemplate<>(new DefaultKafkaProducerFactory<>(props));
     }
 
     @Bean
-    public ConsumerFactory<String, Object> testConsumerFactory() {
+    public ConsumerFactory<Object, Object> testConsumerFactory() {
         Map<String, Object> props = Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP,
                 ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest",
                 ConsumerConfig.GROUP_ID_CONFIG, KafkaConsumerBusinessService.CONSUMER_GROUP,
-                "spring.json.trusted.packages", "*",
                 ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false"
         );
         return new DefaultKafkaConsumerFactory<>(props);
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> testSingleKafkaListenerContainerFactory(
-            ConsumerFactory<String, Object> testConsumerFactory
+    public ConcurrentKafkaListenerContainerFactory<Object, Object> testSingleKafkaListenerContainerFactory(
+            ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
+            ConsumerFactory<Object, Object> testConsumerFactory,
+            @Qualifier("outboxKafkaRecordMessageConverter") RecordMessageConverter outboxKafkaRecordMessageConverter
     ) {
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
-        factory.setConsumerFactory(testConsumerFactory);
-        factory.setBatchListener(false);
-         return factory;
-    }
+        ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
 
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> testBatchKafkaListenerContainerFactory(
-            ConsumerFactory<String, Object> testConsumerFactory
-    ) {
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
+        configurer.configure(factory, testConsumerFactory);
+
+        factory.setRecordMessageConverter(outboxKafkaRecordMessageConverter);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
-        factory.setConsumerFactory(testConsumerFactory);
-        factory.setBatchListener(true);
+        factory.setBatchListener(false);
         return factory;
     }
 
     @Bean
-    public NewTopic testOutboxSingleFailingTopic() {
-        return TopicBuilder.name(KafkaConsumerFaultyBusinessService.SINGLE_FAILING_TOPIC)
-                .partitions(1)
-                .replicas(1)
-                .build();
-    }
+    public ConcurrentKafkaListenerContainerFactory<Object, Object> testBatchKafkaListenerContainerFactory(
+            ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
+            ConsumerFactory<Object, Object> testConsumerFactory,
+            RecordMessageConverter outboxKafkaRecordMessageConverter
+    ) {
+        ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
 
-    @Bean
-    public NewTopic testOutboxBatchFailingTopic() {
-        return TopicBuilder.name(KafkaConsumerFaultyBusinessService.BATCH_FAILING_TOPIC)
-                .partitions(1)
-                .replicas(1)
-                .build();
+        configurer.configure(factory, testConsumerFactory);
+
+        factory.setBatchMessageConverter(new BatchMessagingMessageConverter(outboxKafkaRecordMessageConverter));
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        factory.setBatchListener(true);
+        return factory;
     }
 
     @Bean

@@ -1,12 +1,9 @@
 package io.github.dmitriyiliyov.springoutbox.kafka;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxSender;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxHeaders;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.SenderResult;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.CacheableClassResolver;
 import org.apache.kafka.common.KafkaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,16 +32,12 @@ public class KafkaOutboxSender implements OutboxSender {
             org.apache.kafka.common.errors.UnknownTopicOrPartitionException.class
     );
 
-    private final KafkaTemplate<String, Object> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final long emergencyTimeout;
-    private final ObjectMapper mapper;
-    private final CacheableClassResolver classResolver;
 
-    public KafkaOutboxSender(KafkaTemplate<String, Object> kafkaTemplate, long emergencyTimeout, ObjectMapper mapper) {
-        this.kafkaTemplate = kafkaTemplate;
+    public KafkaOutboxSender(KafkaTemplate<String, String> kafkaTemplate, long emergencyTimeout) {
+        this.kafkaTemplate = Objects.requireNonNull(kafkaTemplate, "kafkaTemplate cannot be null");
         this.emergencyTimeout = emergencyTimeout;
-        this.mapper = mapper;
-        this.classResolver = new CacheableClassResolver();
     }
 
     @Override
@@ -52,17 +45,14 @@ public class KafkaOutboxSender implements OutboxSender {
         if (events == null || events.isEmpty()) {
             return SenderResult.empty();
         }
+
         Set<UUID> processedIds = ConcurrentHashMap.newKeySet();
         Set<UUID> failedIds = ConcurrentHashMap.newKeySet();
         List<CompletableFuture<Void>> futures = new ArrayList<>();
+
         for (OutboxEvent event : events) {
             try {
-                Message<?> message = MessageBuilder
-                        .withPayload(mapper.readValue(event.getPayload(), classResolver.resolve(event.getPayloadType())))
-                        .setHeader(KafkaHeaders.TOPIC, topic)
-                        .setHeader(OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType())
-                        .setHeader(OutboxHeaders.EVENT_ID.getValue(), event.getId().toString())
-                        .build();
+                Message<?> message = buildMessage(topic, event);
                 CompletableFuture<Void> future = kafkaTemplate
                         .send(message)
                         .thenAccept(success -> processedIds.add(event.getId()))
@@ -72,16 +62,12 @@ public class KafkaOutboxSender implements OutboxSender {
                             return null;
                         });
                 futures.add(future);
-            } catch (JsonParseException e) {
-                failedIds.add(event.getId());
-                log.error("Error when parsing event payload with id={} ", event.getId(), e);
             } catch (Exception e) {
                 log.error("Error when preparing event with id={} to send in topic={}", event.getId(), topic, e);
                 if (isInfrastructureError(e)) {
-                    failedIds.addAll(
-                            events.stream()
-                                    .map(OutboxEvent::getId)
-                                    .toList()
+                    failedIds.addAll(events.stream()
+                            .map(OutboxEvent::getId)
+                            .toList()
                     );
                     log.info("Mark whole '{}' event batch as failed", event.getEventType());
                     return new SenderResult(Collections.emptySet(), new HashSet<>(failedIds));
@@ -89,6 +75,7 @@ public class KafkaOutboxSender implements OutboxSender {
                 failedIds.add(event.getId());
             }
         }
+
         try {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
                     .orTimeout(emergencyTimeout, TimeUnit.SECONDS)
@@ -99,6 +86,16 @@ public class KafkaOutboxSender implements OutboxSender {
                     .forEach(event -> failedIds.add(event.getId()));
         }
         return new SenderResult(new HashSet<>(processedIds), new HashSet<>(failedIds));
+    }
+
+    private Message<?> buildMessage(String topic, OutboxEvent event) {
+        return MessageBuilder
+                .withPayload(event.getPayload())
+                .setHeader(KafkaHeaders.TOPIC, topic)
+                .setHeader(OutboxHeaders.EVENT_ID.getValue(), event.getId().toString())
+                .setHeader(OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType())
+                .setHeader(OutboxHeaders.EVENT_PAYLOAD_TYPE.getValue(), event.getPayloadType())
+                .build();
     }
 
     private boolean isInfrastructureError(Throwable t) {

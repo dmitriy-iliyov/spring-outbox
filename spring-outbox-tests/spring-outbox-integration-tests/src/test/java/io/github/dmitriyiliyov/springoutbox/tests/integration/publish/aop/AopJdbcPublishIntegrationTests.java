@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.tests.integration.publish.aop;
 
-import io.github.dmitriyiliyov.springoutbox.tests.integration.publish.config.BaseIntegrationTests;
+import io.github.dmitriyiliyov.springoutbox.tests.integration.publish.config.BaseOutboxIntegrationTests;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdExtractor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +14,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.stream.Stream;
 
-public class AopJdbcPublishIntegrationTests extends BaseIntegrationTests {
+public class AopJdbcPublishIntegrationTests extends BaseOutboxIntegrationTests {
 
     private final AopPublishIntegrationVerifier verifier;
 

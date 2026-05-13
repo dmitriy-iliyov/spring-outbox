@@ -1,3 +1,7 @@
+outbox:
+  consumer:
+    source:
+      type: rabbit
 spring:
   rabbitmq:
     host: outbox-rabbit

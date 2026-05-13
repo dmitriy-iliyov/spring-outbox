@@ -10,20 +10,22 @@ import java.util.UUID;
 public interface ConsumedOutboxManager {
 
     /**
-     * Checks if an event with the given ID has already been consumed.
+     * Attempts to save the given event ID to mark it as consumed.
+     * Returns true if the ID was successfully saved (meaning it was not processed before),
+     * and false if the ID already exists (meaning it has already been consumed).
      *
-     * @param id The ID of the event.
-     * @return   {@code true} if the event has been consumed, {@code false} otherwise.
+     * @param id the ID of the event.
+     * @return   {@code true} if the event was successfully marked as consumed, {@code false} if it was already consumed.
      */
-    boolean isConsumed(UUID id);
+    boolean tryConsume(UUID id);
 
     /**
      * Save only unconsumed events, return already consumed.
      *
      * @param ids the set of event IDs to filter.
-     * @return    a subset of consumed event IDs.
+     * @return    a subset of already consumed event IDs.
      */
-    Set<UUID> filterOutUnconsumed(Set<UUID> ids);
+    Set<UUID> tryConsumeAndGetDuplicates(Set<UUID> ids);
 
     /**
      * Cleans up (deletes) consumed event records that have exceeded their TTL.

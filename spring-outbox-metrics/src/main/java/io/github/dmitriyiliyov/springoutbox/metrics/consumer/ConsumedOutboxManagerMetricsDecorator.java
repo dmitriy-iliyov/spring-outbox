@@ -28,20 +28,24 @@ public class ConsumedOutboxManagerMetricsDecorator implements ConsumedOutboxMana
     public boolean tryConsume(UUID id) {
         boolean isConsumed = delegate.tryConsume(id);
         if (isConsumed) {
-            rejectedDuplicates.increment();
-        } else {
             consumed.increment();
+        } else {
+            rejectedDuplicates.increment();
         }
         return isConsumed;
     }
 
     @Override
     public Set<UUID> tryConsumeAndGetDuplicates(Set<UUID> ids) {
-        Set<UUID> alreadyConsumed = delegate.tryConsumeAndGetDuplicates(ids);
-        double currentDuplicates = alreadyConsumed.size();
-        rejectedDuplicates.increment(currentDuplicates);
-        consumed.increment(ids.size() - currentDuplicates);
-        return alreadyConsumed;
+        Set<UUID> duplicates = delegate.tryConsumeAndGetDuplicates(ids);
+        if (!duplicates.isEmpty()) {
+            double duplicatesCount = duplicates.size();
+            rejectedDuplicates.increment(duplicatesCount);
+            consumed.increment(ids.size() - duplicatesCount);
+        } else {
+            consumed.increment(ids.size());
+        }
+        return duplicates;
     }
 
     @Override

@@ -81,7 +81,7 @@ public class OutboxAutoConfigurationVerifier {
 
     public void shouldRegisterOutboxConsumerPropertiesWhenEnabled() {
         getBaseContextRunner()
-                .withPropertyValues("outbox.consumer.enabled=true")
+                .withPropertyValues("outbox.consumer.enabled=true", "outbox.consumer.source.type=kafka")
                 .run(ctx ->
                         assertThat(ctx).hasSingleBean(OutboxConsumerProperties.class)
                 );

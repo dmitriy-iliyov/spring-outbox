@@ -78,7 +78,7 @@
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-kafka</artifactId>
+            <artifactId>spring-outbox-consumer-cache</artifactId>
             <version>1.1.0</version>
         </dependency>
 
@@ -86,12 +86,6 @@
         <dependency>
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-rabbit</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-rabbit</artifactId>
-            <version>1.1.0</version>
         </dependency>
 
         <!-- lombok -->

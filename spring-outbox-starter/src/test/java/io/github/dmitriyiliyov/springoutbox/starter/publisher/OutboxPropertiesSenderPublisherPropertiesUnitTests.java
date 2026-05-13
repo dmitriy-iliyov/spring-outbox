@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
+import io.github.dmitriyiliyov.springoutbox.starter.TransportType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,7 +27,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
     @DisplayName("UT initialize() with valid type and beanName should assign values")
     public void applyDefaults_withValidTypeAndBeanName_shouldAssignValues() {
         // given
-        SenderType type = SenderType.KAFKA;
+        TransportType type = TransportType.KAFKA;
         String beanName = "myKafkaBean";
 
         // when
@@ -45,7 +46,7 @@ public class OutboxPropertiesSenderPublisherPropertiesUnitTests {
     @DisplayName("UT initialize() with valid type, beanName and emergencyTimeout should assign values")
     public void applyDefaults_validParameters_shouldAssignValues() {
         // given
-        SenderType type = SenderType.KAFKA;
+        TransportType type = TransportType.KAFKA;
         String beanName = "myKafkaBean";
         Duration emergencyTimeout = Duration.ofSeconds(120);
 

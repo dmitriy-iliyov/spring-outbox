@@ -8,7 +8,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -27,7 +28,7 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         OutboxScheduler scheduler2 = mock(OutboxScheduler.class);
 
         PostApplicationReadyOutboxInitializer initializer = new PostApplicationReadyOutboxInitializer(
-                properties, List.of(), List.of(scheduler1, scheduler2)
+                properties, Map.of("scheduler1", scheduler1, "scheduler2", scheduler2), Collections.emptyMap()
         );
 
         // when
@@ -43,7 +44,7 @@ class PostApplicationReadyOutboxInitializerUnitTests {
     void init_whenNoSchedulers_shouldNotThrow() {
         // given
         PostApplicationReadyOutboxInitializer initializer = new PostApplicationReadyOutboxInitializer(
-                properties, List.of(), List.of()
+                properties, Collections.emptyMap(), Collections.emptyMap()
         );
 
         // when + then (no exception is thrown)
@@ -58,7 +59,7 @@ class PostApplicationReadyOutboxInitializerUnitTests {
         OutboxMetrics metrics2 = mock(OutboxMetrics.class);
 
         PostApplicationReadyOutboxInitializer initializer = new PostApplicationReadyOutboxInitializer(
-                properties, List.of(metrics1, metrics2), List.of()
+                properties, Collections.emptyMap(), Map.of("metrics1", metrics1, "metrics2", metrics2)
         );
 
         // when

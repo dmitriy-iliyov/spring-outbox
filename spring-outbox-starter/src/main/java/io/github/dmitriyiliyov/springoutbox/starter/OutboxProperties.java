@@ -138,7 +138,7 @@ public class OutboxProperties implements OutboxPropertiesHolder {
             if (enabled == null || enabled) {
                 enabled = true;
                 batchSize = (batchSize == null || batchSize <= 0) ? DEFAULT_BATCH_SIZE : batchSize;
-                ttl = (ttl == null) ? DEFAULT_TTL : ttl;
+                ttl = ttl == null ? DEFAULT_TTL : ttl;
                 polling = polling == null ? new PollingProperties() : polling;
                 polling.applyDefaults(POLLING_DEFAULTS);
             } else {

@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxPublisherPropertiesHolder;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
+import io.github.dmitriyiliyov.springoutbox.starter.TransportType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
@@ -223,22 +224,22 @@ public class OutboxPublisherProperties implements OutboxPublisherPropertiesHolde
 
         private static final Duration DEFAULT_EMERGENCY_TIMEOUT = Duration.ofSeconds(120);
 
-        private SenderType type;
+        private TransportType type;
         private String beanName;
         private Duration emergencyTimeout;
 
         public void applyDefaults() {
             if (type == null) {
-                throw new IllegalArgumentException("senderType cannot be null");
+                throw new IllegalArgumentException("sender type cannot be null");
             }
             emergencyTimeout = emergencyTimeout == null ? DEFAULT_EMERGENCY_TIMEOUT : emergencyTimeout;
         }
 
-        public SenderType getType() {
+        public TransportType getType() {
             return type;
         }
 
-        public void setType(SenderType type) {
+        public void setType(TransportType type) {
             this.type = type;
         }
 

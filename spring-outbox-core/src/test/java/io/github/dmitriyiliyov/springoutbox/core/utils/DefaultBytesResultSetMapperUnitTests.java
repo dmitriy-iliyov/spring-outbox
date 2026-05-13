@@ -20,6 +20,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -28,11 +30,11 @@ class DefaultBytesResultSetMapperUnitTests {
     @Mock
     private ResultSet rs;
 
-    private DefaultBytesResultSetMapper mapper;
+    private DefaultBytesResultSetMapper tested;
 
     @BeforeEach
     void setUp() {
-        mapper = new DefaultBytesResultSetMapper();
+        tested = new DefaultBytesResultSetMapper();
     }
 
     @Test
@@ -46,7 +48,7 @@ class DefaultBytesResultSetMapperUnitTests {
         byte[] bytes = buffer.array();
 
         // when
-        UUID result = mapper.fromBytesToUuid(bytes);
+        UUID result = tested.fromBytesToUuid(bytes);
 
         // then
         assertThat(result).isEqualTo(expectedUuid);
@@ -59,7 +61,7 @@ class DefaultBytesResultSetMapperUnitTests {
         byte[] bytes = new byte[15];
 
         // when & then
-        assertThatThrownBy(() -> mapper.fromBytesToUuid(bytes))
+        assertThatThrownBy(() -> tested.fromBytesToUuid(bytes))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("UUID byte array must be 16 bytes long");
     }
@@ -93,7 +95,7 @@ class DefaultBytesResultSetMapperUnitTests {
         when(rs.getTimestamp("updated_at")).thenReturn(timestamp);
 
         // when
-        OutboxEvent result = mapper.toEvent(rs);
+        OutboxEvent result = tested.toEvent(rs);
 
         // then
         assertThat(result.getId()).isEqualTo(id);
@@ -139,7 +141,7 @@ class DefaultBytesResultSetMapperUnitTests {
         when(rs.getTimestamp("moved_at")).thenReturn(timestamp);
 
         // when
-        OutboxDlqEvent result = mapper.toDlqEvent(rs);
+        OutboxDlqEvent result = tested.toDlqEvent(rs);
 
         // then
         assertThat(result.getId()).isEqualTo(id);
@@ -153,5 +155,49 @@ class DefaultBytesResultSetMapperUnitTests {
         assertThat(result.getUpdatedAt()).isEqualTo(now);
         assertThat(result.getDlqStatus()).isEqualTo(dlqStatus);
         assertThat(result.getMovedAt()).isEqualTo(now);
+    }
+
+    @Test
+    @DisplayName("UT fromBytesToUuid() when bytes valid should return UUID")
+    void fromBytesToUuid_whenBytesValid_shouldReturnUuid() {
+        // given
+        UUID expected = UUID.randomUUID();
+        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+        bb.putLong(expected.getMostSignificantBits());
+        bb.putLong(expected.getLeastSignificantBits());
+        byte[] bytes = bb.array();
+
+        // when
+        UUID result = tested.fromBytesToUuid(bytes);
+
+        // then
+        assertEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("UT fromBytesToUuid() when bytes length less than 16 should throw IAE")
+    void fromBytesToUuid_whenBytesLengthLessThan16_shouldThrow() {
+        // given
+        byte[] bytes = new byte[15];
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, () -> tested.fromBytesToUuid(bytes));
+    }
+
+    @Test
+    @DisplayName("UT fromBytesToUuid() when bytes length more than 16 should throw IAE")
+    void fromBytesToUuid_whenBytesLengthMoreThan16_shouldThrow() {
+        // given
+        byte[] bytes = new byte[17];
+
+        // when + then
+        assertThrows(IllegalArgumentException.class, () -> tested.fromBytesToUuid(bytes));
+    }
+
+    @Test
+    @DisplayName("UT fromBytesToUuid() when bytes is null should throw NPE")
+    void fromBytesToUuid_whenBytesNull_shouldThrow() {
+        // when + then
+        assertThrows(NullPointerException.class, () -> tested.fromBytesToUuid(null));
     }
 }

@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
+import io.github.dmitriyiliyov.springoutbox.starter.TransportType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -28,7 +29,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenEventsNull_thenThrow() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
 
@@ -40,7 +41,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenEventsEmpty_thenAccept() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -55,7 +56,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenEventTypeNull_thenThrow() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
 
@@ -73,7 +74,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenEventTypeBlank_thenThrow() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
 
@@ -91,7 +92,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenStuckRecoveryNull_thenUseDefault() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -113,7 +114,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenDefaultsNull_thenUseDefault() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("beanName");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -136,7 +137,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("kafkaOutboxTemplate");
         properties.setSender(sender);
 
@@ -176,7 +177,7 @@ public class OutboxPublisherPropertiesUnitTests {
 
         properties.applyDefaults();
 
-        assertEquals(SenderType.KAFKA, properties.getSender().getType());
+        assertEquals(TransportType.KAFKA, properties.getSender().getType());
         assertEquals("kafkaOutboxTemplate", properties.getSender().getBeanName());
 
         assertEquals(200, properties.getEvents().get("account-delete").getBatchSize());
@@ -223,7 +224,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("kafkaOutboxTemplate");
         properties.setSender(sender);
 
@@ -277,7 +278,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -320,7 +321,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -374,7 +375,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -415,7 +416,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -455,7 +456,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -492,7 +493,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -529,7 +530,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -566,7 +567,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -603,7 +604,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -640,7 +641,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -678,7 +679,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -715,7 +716,7 @@ public class OutboxPublisherPropertiesUnitTests {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
 
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -751,7 +752,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void isCleanUpEnabled_whenCleanUpNull_thenReturnTrue() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -766,7 +767,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void isCleanUpEnabled_whenCleanUpEnabled_thenReturnTrue() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -785,7 +786,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void isCleanUpEnabled_whenCleanUpDisabled_thenReturnFalse() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -804,7 +805,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void getCleanUp_whenCleanUpProvided_thenReturnProperties() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -834,7 +835,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void existEventType_whenEventExists_thenReturnTrue() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -860,7 +861,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void existEventType_whenEventDoesNotExist_thenReturnFalse() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -880,7 +881,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void getEvents_shouldReturnUnmodifiableMap() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
 
@@ -904,7 +905,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void getSender_shouldReturnSenderProperties() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("testBean");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());
@@ -912,7 +913,7 @@ public class OutboxPublisherPropertiesUnitTests {
         properties.applyDefaults();
 
         assertNotNull(properties.getSender());
-        assertEquals(SenderType.KAFKA, properties.getSender().getType());
+        assertEquals(TransportType.KAFKA, properties.getSender().getType());
         assertEquals("testBean", properties.getSender().getBeanName());
     }
 
@@ -946,7 +947,7 @@ public class OutboxPublisherPropertiesUnitTests {
     public void applyDefaults_whenMetricsNull_shouldCreateDefaultMetrics() {
         OutboxPublisherProperties properties = new OutboxPublisherProperties();
         OutboxPublisherProperties.SenderProperties sender = new OutboxPublisherProperties.SenderProperties();
-        sender.setType(SenderType.KAFKA);
+        sender.setType(TransportType.KAFKA);
         sender.setBeanName("bean");
         properties.setSender(sender);
         properties.setEvents(new HashMap<>());

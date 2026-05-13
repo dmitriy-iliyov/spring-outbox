@@ -5,7 +5,10 @@ import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
 import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxCleanUpScheduler;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxProcessor;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxRecoveryScheduler;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
@@ -17,20 +20,19 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -151,55 +153,6 @@ class OutboxPublisherAutoConfigurationUnitTests {
         OutboxCache<?> cache = config.outboxCache();
 
         assertThat(cache).isInstanceOf(SimpleOutboxCache.class);
-    }
-
-    @Test
-    @DisplayName("UT outboxSchedulersInitializer should skip publisher scheduler registration if bean already exists")
-    void shouldSkipPublisherSchedulerIfBeanExists() {
-        when(props.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
-        when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
-
-        try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class)) {
-            beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
-                    .thenReturn("testEventOutboxPublisherScheduler");
-
-            when(factory.containsBean("testEventOutboxPublisherScheduler")).thenReturn(true);
-
-            SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    executor, processor, factory, scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
-            );
-
-            initializer.afterSingletonsInstantiated();
-
-            verify(factory, never()).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
-        }
-    }
-
-    @Test
-    @DisplayName("UT outboxSchedulersInitializer should register publisher scheduler if bean does not exist")
-    void shouldRegisterPublisherSchedulerIfBeanDoesNotExist() {
-        when(props.getEvents()).thenReturn(Map.of("testEvent", eventPropertiesHolder));
-        when(eventPropertiesHolder.getEventType()).thenReturn("test-event");
-        when(eventPropertiesHolder.getPolling()).thenReturn(mock(OutboxProperties.PollingProperties.class));
-        when(continuableTaskDecoratorSupplier.supply(anyString())).thenReturn(mock(ContinuableTaskDecorator.class));
-
-        try (MockedStatic<BeanNameUtils> beanNameUtils = mockStatic(BeanNameUtils.class);
-             MockedStatic<OutboxScheduleStrategyFactory> strategyFactory = mockStatic(OutboxScheduleStrategyFactory.class)) {
-
-            beanNameUtils.when(() -> BeanNameUtils.toBeanName("test-event", "OutboxPublisherScheduler"))
-                    .thenReturn("testEventOutboxPublisherScheduler");
-            strategyFactory.when(() -> OutboxScheduleStrategyFactory.create(any(), any(), any(), any()))
-                    .thenReturn(mock(OutboxScheduleStrategy.class));
-            when(factory.containsBean("testEventOutboxPublisherScheduler")).thenReturn(false);
-
-            SmartInitializingSingleton initializer = config.outboxSchedulersInitializer(
-                    executor, processor, factory, scheduleStrategyListenerSupplier, continuableTaskDecoratorSupplier
-            );
-
-            initializer.afterSingletonsInstantiated();
-
-            verify(factory).registerSingleton(eq("testEventOutboxPublisherScheduler"), any(OutboxPollingScheduler.class));
-        }
     }
 
     @Test

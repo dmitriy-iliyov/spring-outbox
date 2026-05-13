@@ -1,6 +1,5 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxSender;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxSender;
 import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxSender;
@@ -38,9 +37,6 @@ class OutboxSenderAutoConfigurationUnitTests {
     private ApplicationContext context;
 
     @Mock
-    private ObjectMapper mapper;
-
-    @Mock
     private KafkaTemplate<String, Object> kafkaTemplate;
 
     @Mock
@@ -51,7 +47,7 @@ class OutboxSenderAutoConfigurationUnitTests {
 
     @BeforeEach
     void setUp() {
-        config = new OutboxPublisherAutoConfiguration(publisherProperties, mapper);
+        config = new OutboxPublisherAutoConfiguration(publisherProperties, null);
         lenient().when(publisherProperties.getSender()).thenReturn(senderProperties);
         lenient().when(senderProperties.getEmergencyTimeout()).thenReturn(Duration.ofSeconds(10));
     }
@@ -68,7 +64,7 @@ class OutboxSenderAutoConfigurationUnitTests {
                 "enable.idempotence", true
         ));
 
-        OutboxSender result = config.kafkaOutboxSender(context, mapper);
+        OutboxSender result = config.kafkaOutboxSender(context);
 
         assertThat(result).isInstanceOf(KafkaOutboxSender.class);
         verify(senderProperties).setBeanName("explicitKafkaBean");
@@ -87,7 +83,7 @@ class OutboxSenderAutoConfigurationUnitTests {
                 "enable.idempotence", "true"
         ));
 
-        OutboxSender result = config.kafkaOutboxSender(context, mapper);
+        OutboxSender result = config.kafkaOutboxSender(context);
 
         assertThat(result).isInstanceOf(KafkaOutboxSender.class);
         verify(senderProperties).setBeanName("resolvedKafkaBean");
@@ -105,7 +101,7 @@ class OutboxSenderAutoConfigurationUnitTests {
                 "enable.idempotence", false
         ));
 
-        OutboxSender result = config.kafkaOutboxSender(context, mapper);
+        OutboxSender result = config.kafkaOutboxSender(context);
 
         assertThat(result).isInstanceOf(KafkaOutboxSender.class);
     }
@@ -119,7 +115,7 @@ class OutboxSenderAutoConfigurationUnitTests {
         when(kafkaTemplate.getProducerFactory()).thenReturn(producerFactory);
         when(producerFactory.getConfigurationProperties()).thenReturn(Map.of());
 
-        OutboxSender result = config.kafkaOutboxSender(context, mapper);
+        OutboxSender result = config.kafkaOutboxSender(context);
 
         assertThat(result).isInstanceOf(KafkaOutboxSender.class);
     }
@@ -130,7 +126,7 @@ class OutboxSenderAutoConfigurationUnitTests {
         when(senderProperties.getBeanName()).thenReturn("");
         when(context.getBeanNamesForType(KafkaTemplate.class)).thenReturn(new String[0]);
 
-        assertThatThrownBy(() -> config.kafkaOutboxSender(context, mapper))
+        assertThatThrownBy(() -> config.kafkaOutboxSender(context))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Cannot create OutboxSender: no KafkaTemplate bean found");
     }
@@ -141,7 +137,7 @@ class OutboxSenderAutoConfigurationUnitTests {
         when(senderProperties.getBeanName()).thenReturn(null);
         when(context.getBeanNamesForType(KafkaTemplate.class)).thenReturn(new String[]{"bean1", "bean2"});
 
-        assertThatThrownBy(() -> config.kafkaOutboxSender(context, mapper))
+        assertThatThrownBy(() -> config.kafkaOutboxSender(context))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Cannot create OutboxSender: found more then one KafkaTemplate bean");
     }
@@ -152,7 +148,7 @@ class OutboxSenderAutoConfigurationUnitTests {
         when(senderProperties.getBeanName()).thenReturn("missingKafkaBean");
         when(context.containsBean("missingKafkaBean")).thenReturn(false);
 
-        assertThatThrownBy(() -> config.kafkaOutboxSender(context, mapper))
+        assertThatThrownBy(() -> config.kafkaOutboxSender(context))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Cannot create OutboxSender: KafkaTemplate bean 'missingKafkaBean' not found");
     }

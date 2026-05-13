@@ -63,10 +63,7 @@ class KafkaOutboxSenderIntegrationTests {
     }
 
     @Autowired
-    private KafkaTemplate<String, Object> kafkaTemplate;
-
-    @Autowired
-    private ObjectMapper objectMapper;
+    private KafkaTemplate<String, String> kafkaTemplate;
 
     @Autowired
     private KafkaMessageReceiver receiver;
@@ -76,7 +73,7 @@ class KafkaOutboxSenderIntegrationTests {
     @BeforeEach
     void setUp() {
         receiver.clear();
-        sender = new KafkaOutboxSender(kafkaTemplate, 5L, objectMapper);
+        sender = new KafkaOutboxSender(kafkaTemplate, 5L);
     }
 
     @Test
@@ -103,39 +100,8 @@ class KafkaOutboxSenderIntegrationTests {
         byte[] eventTypeHeader = received.headers().lastHeader(OutboxHeaders.EVENT_TYPE.getValue()).value();
         assertThat(new String(eventTypeHeader)).isEqualTo("TEST_EVENT");
 
-        assertThat(received.value()).isInstanceOf(DummyPayload.class);
-        DummyPayload receivedPayload = (DummyPayload) received.value();
-        assertThat(receivedPayload.getTestField()).isEqualTo("Hello Kafka");
-    }
-
-    @Test
-    @DisplayName("IT sendEvents() with invalid payload class should fail and return in failedIds")
-    void sendEvents_invalidPayloadClass_returnsFailed() {
-        UUID eventId = UUID.randomUUID();
-        String payloadJson = "{\"testField\":\"Hello\"}";
-        String payloadType = "io.github.unknown.NonExistentClass";
-
-        OutboxEvent event = createEvent(eventId, "TEST_EVENT", payloadType, payloadJson);
-
-        SenderResult result = sender.sendEvents(TOPIC, List.of(event));
-
-        assertThat(result.processedIds()).isEmpty();
-        assertThat(result.failedIds()).containsExactly(eventId);
-    }
-
-    @Test
-    @DisplayName("IT sendEvents() with invalid JSON should fail and return in failedIds")
-    void sendEvents_invalidJson_returnsFailed() {
-        UUID eventId = UUID.randomUUID();
-        String invalidJson = "{broken_json:";
-        String payloadType = DummyPayload.class.getName();
-
-        OutboxEvent event = createEvent(eventId, "TEST_EVENT", payloadType, invalidJson);
-
-        SenderResult result = sender.sendEvents(TOPIC, List.of(event));
-
-        assertThat(result.processedIds()).isEmpty();
-        assertThat(result.failedIds()).containsExactly(eventId);
+        assertThat(received.value()).isInstanceOf(String.class);
+        assertThat(received.value()).isEqualTo(payloadJson);
     }
 
     @Test
@@ -172,36 +138,6 @@ class KafkaOutboxSenderIntegrationTests {
 
         assertThat(totalProcessed).isEqualTo(threads * eventsPerThread);
         assertThat(totalFailed).isZero();
-    }
-
-    @Test
-    @DisplayName("CT sendEvents() concurrent sends of valid and invalid events should not interfere")
-    void sendEvents_concurrentValidAndInvalid_noInterference() throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-
-        UUID validId = UUID.randomUUID();
-        UUID invalidId = UUID.randomUUID();
-
-        Future<SenderResult> validFuture = pool.submit(() ->
-                sender.sendEvents(TOPIC, List.of(
-                        createEvent(validId, "TEST_EVENT", DummyPayload.class.getName(), "{\"testField\":\"ok\"}")
-                ))
-        );
-        Future<SenderResult> invalidFuture = pool.submit(() ->
-                sender.sendEvents(TOPIC, List.of(
-                        createEvent(invalidId, "TEST_EVENT", "io.github.unknown.NonExistentClass", "{\"testField\":\"bad\"}")
-                ))
-        );
-        pool.shutdown();
-
-        SenderResult validResult = validFuture.get();
-        SenderResult invalidResult = invalidFuture.get();
-
-        assertThat(validResult.processedIds()).containsExactly(validId);
-        assertThat(validResult.failedIds()).isEmpty();
-
-        assertThat(invalidResult.failedIds()).containsExactly(invalidId);
-        assertThat(invalidResult.processedIds()).isEmpty();
     }
 
     @Test
@@ -283,11 +219,6 @@ class KafkaOutboxSenderIntegrationTests {
     }
 
     public static class DummyPayload {
-        private String testField;
-
         public DummyPayload() {}
-
-        public String getTestField() { return testField; }
-        public void setTestField(String testField) { this.testField = testField; }
     }
 }

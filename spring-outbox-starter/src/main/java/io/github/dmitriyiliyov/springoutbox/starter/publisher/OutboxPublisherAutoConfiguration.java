@@ -10,8 +10,6 @@ import io.github.dmitriyiliyov.springoutbox.core.locks.OutboxJob;
 import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidV7Generator;
 import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxSender;
 import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
@@ -26,15 +24,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -54,6 +51,7 @@ import java.util.concurrent.ScheduledExecutorService;
         havingValue = "true",
         matchIfMissing = true
 )
+@Import(OutboxPollingSchedulerRegistrar.class)
 public class OutboxPublisherAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherAutoConfiguration.class);
@@ -116,91 +114,19 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "kafka")
-    public OutboxSender kafkaOutboxSender(ApplicationContext context, ObjectMapper mapper) {
-        OutboxPublisherProperties.SenderProperties senderProperties = publisherProperties.getSender();
-        String beanName = senderProperties.getBeanName();
-        KafkaTemplate<String, Object> kafkaTemplate;
-        if (beanName == null || beanName.isEmpty()) {
-            log.warn("Sender bean-name is not specified. Will try to resolve by type");
-            String [] beanNames = context.getBeanNamesForType(KafkaTemplate.class);
-            if (beanNames.length == 0) {
-                throw new IllegalStateException("Cannot create OutboxSender: no KafkaTemplate bean found");
-            }
-            if (beanNames.length > 1) {
-                throw new IllegalStateException(
-                        "Cannot create OutboxSender: found more then one KafkaTemplate bean: " +
-                                Arrays.toString(beanNames) +
-                                "Please define a KafkaTemplate<String, Object> bean with this name, " +
-                                "or configure 'outbox.sender.bean-name' property"
-                );
-            }
-            beanName = beanNames[0];
-        }
-        if (!context.containsBean(beanName)) {
-            throw new IllegalArgumentException(
-                    "Cannot create OutboxSender: KafkaTemplate bean '" + beanName + "' not found. " +
-                            "Please define a KafkaTemplate<String, Object> bean with this name, " +
-                            "or configure 'outbox.sender.bean-name' property"
-            );
-        }
-        senderProperties.setBeanName(beanName);
-        kafkaTemplate = context.getBean(beanName, KafkaTemplate.class);
-        Map<String, Object> configs = kafkaTemplate.getProducerFactory().getConfigurationProperties();
-        String acks = (String) configs.get("acks");
-        if (acks == null || !acks.equals("all")) {
-            log.warn("Kafka producer factory is configured without 'acks=all'. Outbox cannot guarantee at-least-once delivery");
-        }
-        Boolean idempotence = null;
-        Object idempotenceObj = configs.get("enable.idempotence");
-        if (idempotenceObj instanceof Boolean) {
-            idempotence = (Boolean) idempotenceObj;
-        } else if (idempotenceObj instanceof String) {
-            idempotence = Boolean.parseBoolean((String) idempotenceObj);
-        }
-        if (idempotence == null || !idempotence) {
-            log.warn("Kafka producer is not idempotent. It is recommended to enabled 'enabled.idempotence=true' to avoid message duplication");
-        }
-        return new KafkaOutboxSender(kafkaTemplate, senderProperties.getEmergencyTimeout().toSeconds(), mapper);
+    public UuidGenerator outboxUuidGenerator() {
+        return new UuidV7Generator();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbit")
-    public OutboxSender rabbitOutboxSender(ApplicationContext context) {
-        OutboxPublisherProperties.SenderProperties senderProperties = publisherProperties.getSender();
-        String beanName = senderProperties.getBeanName();
-        RabbitTemplate rabbitTemplate;
-        if (beanName == null || beanName.isEmpty()) {
-            log.warn("Sender bean-name is not specified. Will try to resolve by type");
-            String [] beanNames = context.getBeanNamesForType(RabbitTemplate.class);
-            if (beanNames.length == 0) {
-                throw new IllegalStateException("Cannot create OutboxSender: no RabbitTemplate bean found");
-            }
-            if (beanNames.length > 1) {
-                throw new IllegalStateException(
-                        "Cannot create OutboxSender: found more then one RabbitTemplate bean: " +
-                                Arrays.toString(beanNames) +
-                                "Please define a RabbitTemplate bean with this name, " +
-                                "or configure 'outbox.sender.bean-name' property"
-                );
-            }
-            beanName = beanNames[0];
-        }
-        if (!context.containsBean(beanName)) {
-            throw new IllegalArgumentException(
-                    "Cannot create OutboxSender: RabbitTemplate bean '" + beanName + "' not found. " +
-                            "Please define a RabbitTemplate bean with this name, " +
-                            "or configure 'outbox.sender.bean-name' property"
-            );
-        }
-        senderProperties.setBeanName(beanName);
-        rabbitTemplate = context.getBean(beanName, RabbitTemplate.class);
-        if (!rabbitTemplate.isMandatoryFor(new Message(Boolean.FALSE.toString().getBytes(StandardCharsets.UTF_8)))) {
-            log.error("RabbitTemplate '{}' mandatory flag is false. " +
-                    "ReturnedMessage will not be received. You should set mandatory=true for at-least-once", beanName);
-        }
-        return new RabbitOutboxSender(rabbitTemplate, senderProperties.getEmergencyTimeout().toSeconds());
+    public OutboxSerializer outboxSerializer(UuidGenerator uuidGenerator, Clock clock) {
+        return new JacksonOutboxSerializer(mapper, uuidGenerator, clock);
+    }
+
+    @Bean
+    public OutboxPublisher outboxPublisher(OutboxSerializer serializer, OutboxManager manager) {
+        return new DefaultOutboxPublisher(publisherProperties, serializer, manager);
     }
 
     @Bean
@@ -210,49 +136,13 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
-    public SmartInitializingSingleton outboxSchedulersInitializer(
-            @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService executor,
-            OutboxProcessor processor,
-            ConfigurableListableBeanFactory factory,
-            OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
-            ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier
-    ) {
-        return () -> {
-            log.debug("Start initialize schedulers beans");
-
-            for (OutboxPublisherProperties.EventProperties event : publisherProperties.getEvents().values()) {
-                String beanName = BeanNameUtils.toBeanName(event.getEventType(), "OutboxPublisherScheduler");
-                if (!factory.containsBean(beanName)) {
-                    registerOutboxPollingScheduler(
-                            factory, beanName, event, executor, scheduleStrategyListenerSupplier, processor,
-                            continuableTaskDecoratorSupplier
-                    );
-                    log.debug("Created bean with beanName {}", beanName);
-                }
-            }
-
-            log.debug("Schedulers beans successfully initialized");
-        };
+    public OutboxPublishAspect outboxEventAspect(ApplicationEventPublisher eventPublisher) {
+        return new OutboxPublishAspect(eventPublisher);
     }
-    
-    private void registerOutboxPollingScheduler(ConfigurableListableBeanFactory factory,
-                                                String beanName,
-                                                OutboxPublisherProperties.EventProperties event,
-                                                ScheduledExecutorService executor,
-                                                OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
-                                                OutboxProcessor processor,
-                                                ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
-        OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(
-                event.getEventType(),
-                event.getPolling(),
-                executor,
-                scheduleStrategyListenerSupplier
-        );
-        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(event.getEventType());
-        factory.registerSingleton(
-                beanName,
-                new OutboxPollingScheduler(event, strategy, processor, continuableTaskDecorator)
-        );
+
+    @Bean
+    public RowOutboxEventListener rowOutboxEventListener(OutboxPublisher publisher) {
+        return new RowOutboxEventListener(publisher);
     }
 
     @Bean
@@ -324,29 +214,91 @@ public class OutboxPublisherAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public UuidGenerator outboxUuidGenerator() {
-        return new UuidV7Generator();
+    @ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "kafka")
+    public OutboxSender kafkaOutboxSender(ApplicationContext context) {
+        OutboxPublisherProperties.SenderProperties senderProperties = publisherProperties.getSender();
+        String beanName = senderProperties.getBeanName();
+        KafkaTemplate<String, String> kafkaTemplate;
+        if (beanName == null || beanName.isEmpty()) {
+            log.warn("Sender bean-name is not specified. Will try to resolve by type");
+            String [] beanNames = context.getBeanNamesForType(KafkaTemplate.class);
+            if (beanNames.length == 0) {
+                throw new IllegalStateException("Cannot create OutboxSender: no KafkaTemplate bean found");
+            }
+            if (beanNames.length > 1) {
+                throw new IllegalStateException(
+                        "Cannot create OutboxSender: found more then one KafkaTemplate bean: " +
+                                Arrays.toString(beanNames) +
+                                "Please define a KafkaTemplate<String, String> bean with this name, " +
+                                "or configure 'outbox.publisher.sender.bean-name' property"
+                );
+            }
+            beanName = beanNames[0];
+        }
+        if (!context.containsBean(beanName)) {
+            throw new IllegalArgumentException(
+                    "Cannot create OutboxSender: KafkaTemplate bean '" + beanName + "' not found. " +
+                            "Please define a KafkaTemplate<String, String> bean with this name, " +
+                            "or configure 'outbox.publisher.sender.bean-name' property"
+            );
+        }
+        senderProperties.setBeanName(beanName);
+        kafkaTemplate = context.getBean(beanName, KafkaTemplate.class);
+        Map<String, Object> configs = kafkaTemplate.getProducerFactory().getConfigurationProperties();
+        String acks = (String) configs.get("acks");
+        if (acks == null || !acks.equals("all")) {
+            log.warn("Kafka producer factory is configured without 'acks=all'. Outbox cannot guarantee at-least-once delivery");
+        }
+        Boolean idempotence = null;
+        Object idempotenceObj = configs.get("enable.idempotence");
+        if (idempotenceObj instanceof Boolean) {
+            idempotence = (Boolean) idempotenceObj;
+        } else if (idempotenceObj instanceof String) {
+            idempotence = Boolean.parseBoolean((String) idempotenceObj);
+        }
+        if (idempotence == null || !idempotence) {
+            log.warn("Kafka producer is not idempotent. It is recommended to enabled 'enabled.idempotence=true' to avoid message duplication");
+        }
+        return new KafkaOutboxSender(kafkaTemplate, senderProperties.getEmergencyTimeout().toSeconds());
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public OutboxSerializer outboxSerializer(UuidGenerator uuidGenerator, Clock clock) {
-        return new JacksonOutboxSerializer(mapper, uuidGenerator, clock);
-    }
-
-    @Bean
-    public OutboxPublisher outboxPublisher(OutboxSerializer serializer, OutboxManager manager) {
-        return new DefaultOutboxPublisher(publisherProperties, serializer, manager);
-    }
-
-    @Bean
-    public OutboxPublishAspect outboxEventAspect(ApplicationEventPublisher eventPublisher) {
-        return new OutboxPublishAspect(eventPublisher);
-    }
-
-    @Bean
-    public RowOutboxEventListener rowOutboxEventListener(OutboxPublisher publisher) {
-        return new RowOutboxEventListener(publisher);
+    @ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbit")
+    public OutboxSender rabbitOutboxSender(ApplicationContext context) {
+        OutboxPublisherProperties.SenderProperties senderProperties = publisherProperties.getSender();
+        String beanName = senderProperties.getBeanName();
+        RabbitTemplate rabbitTemplate;
+        if (beanName == null || beanName.isEmpty()) {
+            log.warn("Sender bean-name is not specified. Will try to resolve by type");
+            String [] beanNames = context.getBeanNamesForType(RabbitTemplate.class);
+            if (beanNames.length == 0) {
+                throw new IllegalStateException("Cannot create OutboxSender: no RabbitTemplate bean found");
+            }
+            if (beanNames.length > 1) {
+                throw new IllegalStateException(
+                        "Cannot create OutboxSender: found more then one RabbitTemplate bean: " +
+                                Arrays.toString(beanNames) +
+                                "Please define a RabbitTemplate bean with this name, " +
+                                "or configure 'outbox.publisher.sender.bean-name' property"
+                );
+            }
+            beanName = beanNames[0];
+        }
+        if (!context.containsBean(beanName)) {
+            throw new IllegalArgumentException(
+                    "Cannot create OutboxSender: RabbitTemplate bean '" + beanName + "' not found. " +
+                            "Please define a RabbitTemplate bean with this name, " +
+                            "or configure 'outbox.publisher.sender.bean-name' property"
+            );
+        }
+        senderProperties.setBeanName(beanName);
+        rabbitTemplate = context.getBean(beanName, RabbitTemplate.class);
+        if (!rabbitTemplate.isMandatoryFor(new Message(Boolean.FALSE.toString().getBytes(StandardCharsets.UTF_8)))) {
+            log.error("RabbitTemplate '{}' mandatory flag is false. " +
+                    "ReturnedMessage will not be received. You should set mandatory=true for at-least-once", beanName);
+        }
+        return new RabbitOutboxSender(rabbitTemplate, senderProperties.getEmergencyTimeout().toSeconds());
     }
 
     @Bean

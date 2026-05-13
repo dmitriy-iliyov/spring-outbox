@@ -21,10 +21,10 @@ public class MySqlConsumedOutboxRepository implements ConsumedOutboxRepository {
                                          Clock clock,
                                          BytesSqlIdHelper idHelper,
                                          BytesResultSetMapper mapper) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.clock = clock;
-        this.idHelper = idHelper;
-        this.mapper = mapper;
+        this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate cannot be null");
+        this.clock = Objects.requireNonNull(clock, "clock cannot be null");
+        this.idHelper = Objects.requireNonNull(idHelper, "idHelper cannot be null");
+        this.mapper = Objects.requireNonNull(mapper, "mapper cannot be null");
     }
 
     @Override

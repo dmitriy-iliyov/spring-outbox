@@ -3,7 +3,6 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.utils.UuidGenerator;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxMetricsRepository;
@@ -63,6 +62,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
                         "spring.datasource.password=" + dbPassword,
                         "outbox.tables.auto-create=false",
                         "outbox.publisher.sender.type=kafka",
+                        "outbox.publisher.sender.bean-name=kafkaTemplate",
                         "outbox.publisher.events.my-event.topic=my.topic"
                 );
     }
@@ -86,7 +86,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(NoopOutboxCache.class);
 
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
-                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("myeventOutboxPollingScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
 
@@ -140,8 +140,8 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
-                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
-                    assertThat(ctx).hasBean("othereventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("myeventOutboxPollingScheduler");
+                    assertThat(ctx).hasBean("othereventOutboxPollingScheduler");
                 });
     }
 
@@ -388,8 +388,8 @@ public class OutboxPublisherAutoConfigurationVerifier {
                         "outbox.publisher.events.other-event.topic=other.topic"
                 )
                 .run(ctx -> {
-                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
-                    assertThat(ctx).hasBean("othereventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("myeventOutboxPollingScheduler");
+                    assertThat(ctx).hasBean("othereventOutboxPollingScheduler");
                 });
     }
 
@@ -449,7 +449,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
                         "outbox.publisher.events.my-event.topic=my.topic"
                 )
                 .run(ctx -> {
-                    assertThat(ctx).hasBean("myeventOutboxPublisherScheduler");
+                    assertThat(ctx).hasBean("myeventOutboxPollingScheduler");
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
                     OutboxManager primary = ctx.getBean(OutboxManager.class);
                     assertThat(primary).isInstanceOf(OutboxManagerMetricsDecorator.class);

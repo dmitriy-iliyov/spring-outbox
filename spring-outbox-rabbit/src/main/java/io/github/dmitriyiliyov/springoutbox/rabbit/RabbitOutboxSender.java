@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,7 +25,7 @@ public class RabbitOutboxSender implements OutboxSender {
     private final long emergencyTimeout;
 
     public RabbitOutboxSender(RabbitTemplate rabbitTemplate, long emergencyTimeout) {
-        this.rabbitTemplate = rabbitTemplate;
+        this.rabbitTemplate = Objects.requireNonNull(rabbitTemplate, "rabbitTemplate cannot be null");
         this.emergencyTimeout = emergencyTimeout;
     }
 
@@ -49,7 +48,8 @@ public class RabbitOutboxSender implements OutboxSender {
                                 .deliveryMode(2)
                                 .headers(Map.of(
                                         OutboxHeaders.EVENT_ID.getValue(), event.getId().toString(),
-                                        OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType()
+                                        OutboxHeaders.EVENT_TYPE.getValue(), event.getEventType(),
+                                        OutboxHeaders.EVENT_PAYLOAD_TYPE.getValue(), event.getPayloadType()
                                 ))
                                 .build();
                         long deliveryTag = channel.getNextPublishSeqNo();
@@ -102,12 +102,12 @@ public class RabbitOutboxSender implements OutboxSender {
         }
 
         @Override
-        public void handleAck(long l, boolean b) throws IOException {
+        public void handleAck(long l, boolean b) {
             handle(l, b, true);
         }
 
         @Override
-        public void handleNack(long l, boolean b) throws IOException {
+        public void handleNack(long l, boolean b) {
             handle(l, b, false);
         }
 

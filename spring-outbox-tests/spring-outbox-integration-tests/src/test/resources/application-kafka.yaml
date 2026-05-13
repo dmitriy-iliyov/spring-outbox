@@ -1,0 +1,4 @@
+outbox:
+  consumer:
+    source:
+      type: kafka

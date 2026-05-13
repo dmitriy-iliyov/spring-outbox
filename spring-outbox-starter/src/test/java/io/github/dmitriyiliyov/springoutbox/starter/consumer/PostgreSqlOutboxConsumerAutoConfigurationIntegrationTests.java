@@ -21,6 +21,12 @@ class PostgreSqlOutboxConsumerAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should load full configuration when all features with rabbit enabled")
+    void shouldLoadFullConfiguration_whenAllFeaturesWithRabbitEnabled() {
+        verifier.shouldLoadFullConfiguration_whenAllFeaturesWithRabbitEnabled();
+    }
+
+    @Test
     @DisplayName("IT should load minimal configuration when only required properties set")
     void shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet() {
         verifier.shouldLoadMinimalConfiguration_whenOnlyRequiredPropertiesSet();
@@ -42,30 +48,6 @@ class PostgreSqlOutboxConsumerAutoConfigurationIntegrationTests {
     @DisplayName("IT should register ConsumedOutboxManager bean")
     void shouldRegisterConsumedOutboxManager() {
         verifier.shouldRegisterConsumedOutboxManager();
-    }
-
-    @Test
-    @DisplayName("IT should register OutboxIdempotentConsumer bean")
-    void shouldRegisterOutboxIdempotentConsumer() {
-        verifier.shouldRegisterOutboxIdempotentConsumer();
-    }
-
-    @Test
-    @DisplayName("IT should register OutboxEventIdResolveManager bean")
-    void shouldRegisterOutboxEventIdResolveManager() {
-        verifier.shouldRegisterOutboxEventIdResolveManager();
-    }
-
-    @Test
-    @DisplayName("IT should register Kafka OutboxEventIdResolver when kafka is on classpath")
-    void shouldRegisterKafkaEventIdResolver() {
-        verifier.shouldRegisterKafkaEventIdResolver();
-    }
-
-    @Test
-    @DisplayName("IT should register RabbitMq OutboxEventIdResolver when rabbit is on classpath")
-    void shouldRegisterRabbitMqEventIdResolver() {
-        verifier.shouldRegisterRabbitMqEventIdResolver();
     }
 
     @Test
@@ -117,12 +99,6 @@ class PostgreSqlOutboxConsumerAutoConfigurationIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT should not register duplicate OutboxEventIdResolveManager when custom bean provided")
-    void shouldNotRegisterDuplicateOutboxEventIdResolveManager_whenCustomBeanProvided() {
-        verifier.shouldNotRegisterDuplicateOutboxEventIdResolveManager_whenCustomBeanProvided();
-    }
-
-    @Test
     @DisplayName("IT should register ConsumedOutboxManagerMetricsDecorator as primary when metrics enabled")
     void shouldRegisterConsumedOutboxManagerDecorator_asPrimary_whenMetricsEnabled() {
         verifier.shouldRegisterConsumedOutboxManagerDecorator_asPrimary_whenMetricsEnabled();
@@ -138,12 +114,6 @@ class PostgreSqlOutboxConsumerAutoConfigurationIntegrationTests {
     @DisplayName("IT should not register OutboxIdempotentConsumerMetricsDecorator when metrics disabled")
     void shouldNotRegisterOutboxIdempotentConsumerMetricsDecorator_whenMetricsDisabled() {
         verifier.shouldNotRegisterOutboxIdempotentConsumerMetricsDecorator_whenMetricsDisabled();
-    }
-
-    @Test
-    @DisplayName("IT should register SpringMessage OutboxEventIdResolver when spring-messaging is on classpath")
-    void shouldRegisterSpringMessageEventIdResolver() {
-        verifier.shouldRegisterSpringMessageEventIdResolver();
     }
 
     @Test
