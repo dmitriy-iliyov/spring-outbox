@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.tests.integration.consume.rabbit;
 import io.github.dmitriyiliyov.springoutbox.core.consumer.OutboxIdempotentConsumer;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared.ConsumerBusinessRepository;
 import io.github.dmitriyiliyov.springoutbox.tests.integration.consume.shared.JdbcConsumerBusinessRepository;
+import io.github.dmitriyiliyov.springoutbox.tests.integration.utils.IdPreparer;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
@@ -116,11 +117,12 @@ public class RabbitIntegrationTestsConfig {
     @Bean
     public RabbitConsumerBusinessService rabbitMqJdbcConsumerBusinessService(
             OutboxIdempotentConsumer outboxIdempotentConsumer,
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+            IdPreparer idPreparer
     ) {
         return new RabbitConsumerBusinessService(
                 outboxIdempotentConsumer,
-                new JdbcConsumerBusinessRepository(jdbcTemplate, id -> id)
+                new JdbcConsumerBusinessRepository(jdbcTemplate, idPreparer)
         );
     }
 
@@ -138,11 +140,12 @@ public class RabbitIntegrationTestsConfig {
     @Bean
     public RabbitConsumerFaultyBusinessService rabbitMqJdbcFaultyConsumerBusinessService(
             OutboxIdempotentConsumer outboxIdempotentConsumer,
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate,
+            IdPreparer idPreparer
     ) {
         return new RabbitConsumerFaultyBusinessService(
                 outboxIdempotentConsumer,
-                new JdbcConsumerBusinessRepository(jdbcTemplate, id -> id)
+                new JdbcConsumerBusinessRepository(jdbcTemplate, idPreparer)
         );
     }
 
