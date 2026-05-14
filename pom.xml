@@ -49,7 +49,6 @@
         <module>spring-outbox-messaging</module>
         <module>spring-outbox-metrics</module>
         <module>spring-outbox-starter</module>
-        <module>spring-outbox-tests/spring-outbox-test-utils</module>
     </modules>
 
     <properties>
