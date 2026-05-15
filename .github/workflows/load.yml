@@ -16,6 +16,10 @@ jobs:
           java-version: 21
           cache: maven
 
+      - name: Built test utils
+        working-directory: ./spring-outbox-tests/spring-outbox-test-utils
+        run: mvn clean install -Dgpg.skip=true
+
       - name: Build lib
         run: mvn -B clean install -DskipTests=true -Dgpg.skip=true
 
