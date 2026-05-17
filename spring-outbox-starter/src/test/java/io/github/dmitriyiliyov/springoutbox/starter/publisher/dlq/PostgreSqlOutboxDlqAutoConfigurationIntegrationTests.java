@@ -1,17 +1,17 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.tests.utils.OracleTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.PostgresTestContainerSingleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class OracleOutboxDlqAutoConfigurationIntegrationTests {
+class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
 
     private final OutboxDlqAutoConfigurationVerifier verifier =
             new OutboxDlqAutoConfigurationVerifier(
-                    OracleTestContainerSingleton.INSTANCE.getJdbcUrl(),
-                    "oracle.jdbc.OracleDriver",
-                    OracleTestContainerSingleton.INSTANCE.getUsername(),
-                    OracleTestContainerSingleton.INSTANCE.getPassword()
+                    PostgresTestContainerSingleton.INSTANCE.getJdbcUrl(),
+                    "org.postgresql.Driver",
+                    PostgresTestContainerSingleton.INSTANCE.getUsername(),
+                    PostgresTestContainerSingleton.INSTANCE.getPassword()
             );
 
     @Test
@@ -42,12 +42,6 @@ class OracleOutboxDlqAutoConfigurationIntegrationTests {
     @DisplayName("IT should register OutboxDlqRepository bean")
     void shouldRegisterOutboxDlqRepository() {
         verifier.shouldRegisterOutboxDlqRepository();
-    }
-
-    @Test
-    @DisplayName("IT should register OutboxDlqEventMapper bean")
-    void shouldRegisterOutboxDlqEventMapper() {
-        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
     }
 
     @Test
@@ -87,6 +81,12 @@ class OracleOutboxDlqAutoConfigurationIntegrationTests {
     }
 
     @Test
+    @DisplayName("IT should register OutboxDlqEventMapper bean")
+    void shouldRegisterOutboxDlqEventMapper() {
+        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
+    }
+
+    @Test
     @DisplayName("IT should registered only OutboxDlqManagerMetricsDecorator when gauge is missed")
     void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
         verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed();
@@ -106,7 +106,7 @@ class OracleOutboxDlqAutoConfigurationIntegrationTests {
 
     @Test
     @DisplayName("IT should create tables when auto-create is true")
-    void shouldCreateTablesWhenAutoCreateTrue() {
+    void shouldCreateTables_whenAutoCreateTrue() {
         verifier.shouldCreateTables_whenAutoCreateTrue();
     }
 

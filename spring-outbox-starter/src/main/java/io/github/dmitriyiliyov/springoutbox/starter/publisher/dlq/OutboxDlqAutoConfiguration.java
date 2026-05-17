@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
@@ -6,26 +6,18 @@ import io.github.dmitriyiliyov.springoutbox.core.locks.OutboxJob;
 import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxManager;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
-import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.*;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Clock;
-import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
@@ -34,6 +26,11 @@ import java.util.concurrent.ScheduledExecutorService;
         name = "enabled",
         havingValue = "true"
 )
+@Import({
+        OutboxDlqMetricsAutoConfiguration.class,
+        OutboxDlqApiAutoConfiguration.class,
+        OutboxDlqApiMetricsAutoConfiguration.class
+})
 public class OutboxDlqAutoConfiguration {
 
     private final OutboxPublisherProperties publisherProperties;
@@ -49,48 +46,9 @@ public class OutboxDlqAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(name = "outboxDlqCache")
-    public OutboxCache<DlqStatus> outboxDlqCache() {
-        OutboxProperties.MetricsProperties metricsProperties = publisherProperties.getMetrics();
-        if (metricsProperties != null && metricsProperties.isEnabled()) {
-            OutboxProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
-            if (gaugeProperties != null && gaugeProperties.isEnabled()) {
-                OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProperties =
-                        gaugeProperties.getCache();
-                if (cacheProperties != null && cacheProperties.isEnabled()) {
-                    List<Duration> ttls = cacheProperties.getTtls();
-                    if (ttls == null || ttls.isEmpty()) {
-                        throw new IllegalArgumentException("Cache ttls cannot be null or empty");
-                    }
-                    if (ttls.size() != 3) {
-                        throw new IllegalArgumentException("Ttls should be 3 element size");
-                    }
-                    return new SimpleOutboxCache<>(
-                            ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
-                    );
-                }
-            }
-        }
-        return new NoopOutboxCache<>();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "outboxDlqManager")
     public OutboxDlqManager outboxDlqManager(OutboxDlqRepository repository, Clock clock) {
         return new DefaultOutboxDlqManager(repository, clock);
-    }
-
-    @Bean
-    @Primary
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxDlqManager outboxDlqManagerMetricsDecorator(OutboxDlqManager manager,
-                                                             MeterRegistry registry) {
-        return new OutboxDlqManagerMetricsDecorator(registry, manager);
-
     }
 
     @Bean
@@ -122,7 +80,7 @@ public class OutboxDlqAutoConfiguration {
                                                         OutboxScheduleStrategyListenerSupplier scheduleStrategyListenerSupplier,
                                                         ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
         OutboxPublisherProperties.DlqProperties dlqProperties = publisherProperties.getDlq();
-        String taskType = MetricsTaskType.TRANSFER_TO_DLQ.getValue();
+        String taskType = OutboxJobType.TRANSFER_TO_DLQ.getValue();
         OutboxScheduleStrategy scheduleStrategy = OutboxScheduleStrategyFactory.create(
                 taskType,
                 dlqProperties.getTransferTo().getPolling(),
@@ -133,7 +91,7 @@ public class OutboxDlqAutoConfiguration {
                 () -> publisherProperties.getDlq().getTransferTo(),
                 scheduleStrategy,
                 transfer::transferToDlq,
-                continuableTaskDecoratorSupplier.supply(MetricsTaskType.TRANSFER_TO_DLQ.getValue()),
+                continuableTaskDecoratorSupplier.supply(OutboxJobType.TRANSFER_TO_DLQ.getValue()),
                 OutboxDlqTransferScheduler.LogMessage.transferTo()
         );
     }
@@ -146,7 +104,7 @@ public class OutboxDlqAutoConfiguration {
                                                           ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
         OutboxPublisherProperties.DlqProperties dlqProperties = publisherProperties.getDlq();
         OutboxScheduleStrategy scheduleStrategy = OutboxScheduleStrategyFactory.create(
-                MetricsTaskType.TRANSFER_FROM_DLQ.getValue(),
+                OutboxJobType.TRANSFER_FROM_DLQ.getValue(),
                 dlqProperties.getTransferFrom().getPolling(),
                 executor,
                 scheduleStrategyListenerSupplier
@@ -155,7 +113,7 @@ public class OutboxDlqAutoConfiguration {
                 () -> publisherProperties.getDlq().getTransferFrom(),
                 scheduleStrategy,
                 transfer::transferFromDlq,
-                continuableTaskDecoratorSupplier.supply(MetricsTaskType.TRANSFER_FROM_DLQ.getValue()),
+                continuableTaskDecoratorSupplier.supply(OutboxJobType.TRANSFER_FROM_DLQ.getValue()),
                 OutboxDlqTransferScheduler.LogMessage.transferFrom()
         );
     }
@@ -176,7 +134,7 @@ public class OutboxDlqAutoConfiguration {
                                                      ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
         OutboxProperties.CleanUpProperties cleanUpProperties = publisherProperties.getDlq().getCleanUp();
         OutboxScheduleStrategy scheduleStrategy = OutboxScheduleStrategyFactory.create(
-                MetricsTaskType.DLQ_CLEANUP.getValue(),
+                OutboxJobType.DLQ_CLEANUP.getValue(),
                 cleanUpProperties.getPolling(),
                 executor,
                 scheduleStrategyListenerSupplier
@@ -185,7 +143,7 @@ public class OutboxDlqAutoConfiguration {
                 properties.getWorkerId(),
                 cleanUpProperties,
                 scheduleStrategy,
-                continuableTaskDecoratorSupplier.supply(MetricsTaskType.DLQ_CLEANUP.getValue()),
+                continuableTaskDecoratorSupplier.supply(OutboxJobType.DLQ_CLEANUP.getValue()),
                 manager,
                 lockRepository
         );
@@ -212,58 +170,5 @@ public class OutboxDlqAutoConfiguration {
                 lockDurations.atLeastFor(),
                 lockDurations.atMostFor()
         );
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxDlqMetricsRepository outboxDlqMetricsRepository(
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
-    ) {
-        return new MultiDialectOutboxDlqMetricsRepository(jdbcTemplate);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxDlqMetricsService outboxDlqMetricsService(OutboxDlqMetricsRepository repository,
-                                                           OutboxCache<DlqStatus> cache) {
-        return new DefaultOutboxDlqMetricsService(repository, cache);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(name = "outboxDlqMetrics")
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
-                                          MeterRegistry registry,
-                                          OutboxDlqMetricsService metricsService) {
-        return new OutboxDlqMetrics(properties, registry, metricsService);
     }
 }

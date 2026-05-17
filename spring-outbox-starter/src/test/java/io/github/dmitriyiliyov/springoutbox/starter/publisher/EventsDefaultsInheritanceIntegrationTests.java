@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq.OutboxDlqAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;

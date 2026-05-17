@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.10</version>
+        <version>3.5.14</version>
     </parent>
 
     <artifactId>spring-outbox-consumer-example</artifactId>
@@ -16,13 +16,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <spring.boot.version>3.5.10</spring.boot.version>
+        <spring.boot.version>3.5.14</spring.boot.version>
         <lombok.version>1.18.34</lombok.version>
     </properties>
 
     <dependencies>
 
-        <!-- spring -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -33,12 +32,57 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
         </dependency>
 
+        <!-- lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- outbox -->
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>spring-outbox-shared-contract</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>spring-outbox-starter</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>spring-outbox-consumer-cache</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>spring-outbox-metrics</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
+        <!-- kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <!-- rabbit -->
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit</artifactId>
+        </dependency>
+
+        <!-- db drivers -->
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
@@ -57,49 +101,10 @@
             <version>23.26.1.0.0</version>
         </dependency>
 
-        <!-- kafka -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-        </dependency>
-
-        <!-- outbox -->
-        <dependency>
-            <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-shared-contract</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-starter</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>io.github.dmitriy-iliyov</groupId>
-            <artifactId>spring-outbox-consumer-cache</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-
-        <!-- rabbit -->
-        <dependency>
-            <groupId>org.springframework.amqp</groupId>
-            <artifactId>spring-rabbit</artifactId>
-        </dependency>
-
-        <!-- lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>${lombok.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- config processor -->
+        <!-- redis -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <!-- metrics -->

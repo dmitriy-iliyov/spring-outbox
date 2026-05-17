@@ -46,7 +46,7 @@ public class OutboxPollingSchedulerRegistrar implements ImportBeanDefinitionRegi
         OutboxPublisherProperties properties = binder.bind(
                 "outbox",
                 Bindable.of(OutboxProperties.class)
-                ).orElseThrow(() -> new IllegalStateException("OutboxProperties.class not found"))
+                ).orElseThrow(() -> new IllegalStateException("outbox properties not specified"))
                 .getPublisher();
         properties.applyDefaults();
 

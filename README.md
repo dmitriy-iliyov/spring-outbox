@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/github/dmitriy-iliyov/spring-outbox/branch/main/graph/badge.svg?token=8X6B9K3AOK)](https://codecov.io/github/dmitriy-iliyov/spring-outbox)
 [![CI](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dmitriy-iliyov/spring-outbox-starter.svg?label=maven-central&color=blue)](https://central.sonatype.com/artifact/io.github.dmitriy-iliyov/spring-outbox-starter)
-[![javadoc](https://javadoc.io/badge2/io.github.dmitriy-iliyov/spring-outbox-core/javadoc.svg)](https://javadoc.io/doc/io.github.dmitriy-iliyov/spring-outbox-core)
+[![javadoc](https://javadoc.io/badge2/io.github.dmitriy-iliyov/spring-outbox-core/javadoc.svg)](https://javadoc.io/doc/io.github.dmitriy-iliyov/spring-outbox-core/latest/index.html)
 ![Release](https://img.shields.io/github/release/dmitriy-iliyov/spring-outbox)
 [![GitHub Release Date](https://img.shields.io/github/release-date/dmitriy-iliyov/spring-outbox)](https://github.com/dmitriy-iliyov/spring-outbox/releases/latest)
 ![GitHub last commit](https://img.shields.io/github/last-commit/dmitriy-iliyov/spring-outbox)
@@ -44,13 +44,13 @@ For Apache Kafka:
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-starter</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
   </dependency>
 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-kafka</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
   </dependency>
 ```
 
@@ -59,13 +59,22 @@ For RabbitMQ:
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-starter</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
   </dependency>
 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-rabbit</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
+  </dependency>
+```
+
+You can add `spring-outbox-metrics` to enable the metrics collecting, read more [here](#observability).
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>spring-outbox-metrics</artifactId>
+      <version>1.1.1</version>
   </dependency>
 ```
 
@@ -74,7 +83,7 @@ You can also add `spring-outbox-dlq-api` to enable the REST API for manual DLQ m
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-dlq-api</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
   </dependency>
 ```
 
@@ -153,7 +162,7 @@ public class ExampleService {
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-starter</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
   </dependency>
 ```
 
@@ -162,7 +171,7 @@ You can also add `spring-outbox-consumer-cache` to enable the cache on consumer 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>spring-outbox-consumer-cache</artifactId>
-      <version>1.1.0</version>
+      <version>1.1.1</version>
   </dependency>
 ```
 

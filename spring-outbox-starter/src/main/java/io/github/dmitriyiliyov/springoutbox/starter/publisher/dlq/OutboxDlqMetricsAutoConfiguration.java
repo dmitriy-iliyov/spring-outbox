@@ -1,0 +1,109 @@
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
+
+import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
+import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.OutboxDlqManager;
+import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.*;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
+import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
+import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import java.time.Duration;
+import java.util.List;
+
+@Configuration
+@ConditionalOnProperty(
+        prefix = "outbox.publisher.dlq",
+        name = "enabled",
+        havingValue = "true"
+)
+@ConditionalOnClass({MeterRegistry.class, OutboxMetrics.class})
+@ConditionalOnProperty(
+        prefix = "outbox.publisher.metrics",
+        name = "enabled",
+        havingValue = "true"
+)
+public class OutboxDlqMetricsAutoConfiguration {
+
+    private final OutboxPublisherProperties publisherProperties;
+
+    public OutboxDlqMetricsAutoConfiguration(OutboxPublisherProperties publisherProperties) {
+        this.publisherProperties = publisherProperties;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "outboxDlqCache")
+    public OutboxCache<DlqStatus> outboxDlqCache() {
+        OutboxProperties.MetricsProperties metricsProperties = publisherProperties.getMetrics();
+        if (metricsProperties != null) {
+            OutboxProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
+            if (gaugeProperties != null && gaugeProperties.isEnabled()) {
+                OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProperties = gaugeProperties.getCache();
+                if (cacheProperties != null && cacheProperties.isEnabled()) {
+                    List<Duration> ttls = cacheProperties.getTtls();
+                    return new SimpleOutboxCache<>(
+                            ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
+                    );
+                }
+            }
+        }
+        return new NoopOutboxCache<>();
+    }
+
+    @Bean
+    @Primary
+    public OutboxDlqManager outboxDlqManagerMetricsDecorator(@Qualifier("outboxDlqManager") OutboxDlqManager manager,
+                                                             MeterRegistry registry) {
+        return new OutboxDlqManagerMetricsDecorator(registry, manager);
+
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxDlqMetricsRepository outboxDlqMetricsRepository(
+            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
+    ) {
+        return new MultiDialectOutboxDlqMetricsRepository(jdbcTemplate);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxDlqMetricsService outboxDlqMetricsService(OutboxDlqMetricsRepository repository,
+                                                           OutboxCache<DlqStatus> cache) {
+        return new DefaultOutboxDlqMetricsService(repository, cache);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "outboxDlqMetrics")
+    @ConditionalOnProperty(
+            prefix = "outbox.publisher.metrics.gauge",
+            name = "enabled",
+            havingValue = "true"
+    )
+    public OutboxMetrics outboxDlqMetrics(OutboxPublisherProperties properties,
+                                          MeterRegistry registry,
+                                          OutboxDlqMetricsService metricsService) {
+        return new OutboxDlqMetrics(properties, registry, metricsService);
+    }
+}

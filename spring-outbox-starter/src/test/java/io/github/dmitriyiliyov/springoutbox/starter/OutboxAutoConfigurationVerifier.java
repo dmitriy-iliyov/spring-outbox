@@ -281,7 +281,7 @@ public class OutboxAutoConfigurationVerifier {
         getBaseContextRunner()
                 .withPropertyValues("outbox.tables.auto-create=false")
                 .run(ctx ->
-                        assertThat(ctx).hasSingleBean(PostApplicationReadyOutboxInitializer.class)
+                        assertThat(ctx).hasSingleBean(SchedulersPostApplicationReadyOutboxInitializer.class)
                 );
     }
 

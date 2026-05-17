@@ -1,9 +1,10 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,17 +12,16 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class OutboxDlqAutoConfigurationUnitTests {
+class OutboxDlqMetricsAutoConfigurationUnitTests {
 
     @Test
-    @DisplayName("UT outboxDlqCache returns Passthrough cache when metrics null")
+    @DisplayName("UT outboxDlqCache returns noop cache when metrics null")
     void outboxDlqCache_metricsNull_returnsPassthrough() {
         // given
         OutboxPublisherProperties props = new OutboxPublisherProperties();
         props.setDlq(new OutboxPublisherProperties.DlqProperties());
-        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+        OutboxDlqMetricsAutoConfiguration config = new OutboxDlqMetricsAutoConfiguration(props);
 
         // when
         OutboxCache<?> cache = config.outboxDlqCache();
@@ -31,57 +31,7 @@ class OutboxDlqAutoConfigurationUnitTests {
     }
 
     @Test
-    @DisplayName("UT outboxDlqCache throws when ttls null or empty")
-    void outboxDlqCache_ttlsNull_throws() {
-        // given
-        OutboxPublisherProperties props = new OutboxPublisherProperties();
-        OutboxPublisherProperties.DlqProperties dlq = new OutboxPublisherProperties.DlqProperties();
-        props.setDlq(dlq);
-
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-        metrics.setEnabled(true);
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
-        gauge.setEnabled(true);
-        gauge.setCache(new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties());
-        gauge.getCache().setEnabled(true);
-        metrics.setGauge(gauge);
-
-        props.setMetrics(metrics);
-
-        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
-
-        // when + then
-        assertThatThrownBy(config::outboxDlqCache)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Cache ttls cannot be null or empty");
-    }
-
-    @Test
-    @DisplayName("UT outboxDlqCache throws when ttls size != 3")
-    void outboxDlqCache_ttlsSizeIncorrect_throws() {
-        // given
-        OutboxPublisherProperties props = new OutboxPublisherProperties();
-        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
-        metrics.setEnabled(true);
-        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
-        gauge.setEnabled(true);
-        gauge.setCache(new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties());
-        gauge.getCache().setEnabled(true);
-        gauge.getCache().setTtls(List.of(Duration.ofSeconds(1)));
-        metrics.setGauge(gauge);
-        props.setDlq(new OutboxPublisherProperties.DlqProperties());
-        props.setMetrics(metrics);
-
-        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
-
-        // when + then
-        assertThatThrownBy(config::outboxDlqCache)
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Ttls should be 3 element size");
-    }
-
-    @Test
-    @DisplayName("UT outboxDlqCache returns Passthrough cache when gaugeProperties null")
+    @DisplayName("UT outboxDlqCache returns noop cache when gaugeProperties null")
     void outboxDlqCache_gaugeNull_returnsPassthrough() {
         // given
         OutboxPublisherProperties props = new OutboxPublisherProperties();
@@ -92,7 +42,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setMetrics(metrics);
         props.setDlq(dlq);
 
-        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+        OutboxDlqMetricsAutoConfiguration config = new OutboxDlqMetricsAutoConfiguration(props);
 
         // when
         OutboxCache<?> cache = config.outboxDlqCache();
@@ -115,7 +65,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setMetrics(metrics);
         props.setDlq(dlq);
 
-        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+        OutboxDlqMetricsAutoConfiguration config = new OutboxDlqMetricsAutoConfiguration(props);
 
         // when
         OutboxCache<?> cache = config.outboxDlqCache();
@@ -144,7 +94,7 @@ class OutboxDlqAutoConfigurationUnitTests {
         props.setMetrics(metrics);
         props.setDlq(dlq);
 
-        OutboxDlqAutoConfiguration config = new OutboxDlqAutoConfiguration(props);
+        OutboxDlqMetricsAutoConfiguration config = new OutboxDlqMetricsAutoConfiguration(props);
 
         // when
         OutboxCache<?> cache = config.outboxDlqCache();

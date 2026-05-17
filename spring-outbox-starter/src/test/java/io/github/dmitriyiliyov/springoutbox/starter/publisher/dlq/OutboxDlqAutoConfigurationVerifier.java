@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.*;
 import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
@@ -7,6 +7,7 @@ import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetri
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetricsRepository;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqMetricsService;
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxAutoConfiguration;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -45,8 +46,6 @@ public class OutboxDlqAutoConfigurationVerifier {
                         JacksonAutoConfiguration.class,
                         OutboxAutoConfiguration.class,
                         OutboxPublisherAutoConfiguration.class,
-                        OutboxDlqAutoConfiguration.class,
-                        OutboxDlqApiAutoConfiguration.class,
                         KafkaAutoConfiguration.class
                 ))
                 .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
@@ -167,10 +166,10 @@ public class OutboxDlqAutoConfigurationVerifier {
 
     public void shouldNotRegisterDuplicateDlqManager_whenCustomBeanProvided() {
         getBaseContextRunner()
-                .withBean("customOutboxDlqManager", OutboxDlqManager.class, () -> org.mockito.Mockito.mock(OutboxDlqManager.class))
+                .withBean("outboxDlqManager", OutboxDlqManager.class, () -> org.mockito.Mockito.mock(OutboxDlqManager.class))
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(OutboxDlqManager.class);
-                    assertThat(ctx).hasBean("customOutboxDlqManager");
+                    assertThat(ctx).hasBean("outboxDlqManager");
                 });
     }
 

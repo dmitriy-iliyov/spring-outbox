@@ -9,39 +9,20 @@ import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository
 import io.github.dmitriyiliyov.springoutbox.core.locks.OutboxJob;
 import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.kafka.KafkaOutboxSender;
-import io.github.dmitriyiliyov.springoutbox.metrics.MetricsTaskType;
-import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.*;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.NoopOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.OutboxCache;
-import io.github.dmitriyiliyov.springoutbox.metrics.publisher.utils.SimpleOutboxCache;
-import io.github.dmitriyiliyov.springoutbox.rabbit.RabbitOutboxSender;
 import io.github.dmitriyiliyov.springoutbox.starter.*;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq.OutboxDlqAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.kafka.core.KafkaTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Clock;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
@@ -51,7 +32,13 @@ import java.util.concurrent.ScheduledExecutorService;
         havingValue = "true",
         matchIfMissing = true
 )
-@Import(OutboxPollingSchedulerRegistrar.class)
+@Import({
+        OutboxPollingSchedulerRegistrar.class,
+        OutboxDlqAutoConfiguration.class,
+        OutboxPublisherMetricsAutoConfiguration.class,
+        OutboxPublisherKafkaAutoConfiguration.class,
+        OutboxPublisherMetricsAutoConfiguration.class
+})
 public class OutboxPublisherAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherAutoConfiguration.class);
@@ -72,44 +59,9 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(name = "outboxCache")
-    public OutboxCache<EventStatus> outboxCache() {
-        OutboxProperties.MetricsProperties metricsProperties = publisherProperties.getMetrics();
-        if (metricsProperties != null) {
-            OutboxProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
-            if (gaugeProperties != null) {
-                if (gaugeProperties.isEnabled()) {
-                    List<Duration> ttls = gaugeProperties.getCache().getTtls();
-                    if (ttls == null || ttls.isEmpty()) {
-                        throw new IllegalArgumentException("Cache ttls cannot be null or empty");
-                    }
-                    if (ttls.size() != 3) {
-                        throw new IllegalArgumentException("Ttls should be 3 element size");
-                    }
-                    return new SimpleOutboxCache<>(
-                            ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
-                    );
-                }
-            }
-        }
-        return new NoopOutboxCache<>();
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "outboxManager")
     public OutboxManager outboxManager(OutboxRepository repository, Clock clock) {
         return new DefaultOutboxManager(repository, clock);
-    }
-
-    @Bean
-    @Primary
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxManager outboxManagerMetricsDecorator(OutboxManager manager, MeterRegistry registry) {
-        return new OutboxManagerMetricsDecorator(publisherProperties, registry, manager);
     }
 
     @Bean
@@ -153,12 +105,12 @@ public class OutboxPublisherAutoConfiguration {
                                                    ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
         OutboxPublisherProperties.StuckRecoveryProperties stuckRecoveryProperties = publisherProperties.getStuckRecovery();
         OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(
-                MetricsTaskType.STUCK_RECOVERY.getValue(),
+                OutboxJobType.STUCK_RECOVERY.getValue(),
                 stuckRecoveryProperties.getPolling(),
                 executor,
                 scheduleStrategyListenerSupplier
         );
-        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(MetricsTaskType.STUCK_RECOVERY.getValue());
+        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(OutboxJobType.STUCK_RECOVERY.getValue());
         return new OutboxRecoveryScheduler(stuckRecoveryProperties, strategy, manager, continuableTaskDecorator);
     }
 
@@ -178,12 +130,12 @@ public class OutboxPublisherAutoConfiguration {
                                                   ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier) {
         OutboxProperties.CleanUpProperties cleanUpProperties = publisherProperties.getCleanUp();
         OutboxScheduleStrategy strategy = OutboxScheduleStrategyFactory.create(
-                MetricsTaskType.PUBLISHER_CLEANUP.getValue(),
+                OutboxJobType.PUBLISHER_CLEANUP.getValue(),
                 cleanUpProperties.getPolling(),
                 executor,
                 scheduleStrategyListenerSupplier
         );
-        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(MetricsTaskType.PUBLISHER_CLEANUP.getValue());
+        ContinuableTaskDecorator continuableTaskDecorator = continuableTaskDecoratorSupplier.supply(OutboxJobType.PUBLISHER_CLEANUP.getValue());
         return new OutboxCleanUpScheduler(
                 properties.getWorkerId(), cleanUpProperties, strategy, manager, lockRepository, continuableTaskDecorator
         );
@@ -210,144 +162,5 @@ public class OutboxPublisherAutoConfiguration {
                 lockDurations.atLeastFor(),
                 lockDurations.atMostFor()
         );
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "kafka")
-    public OutboxSender kafkaOutboxSender(ApplicationContext context) {
-        OutboxPublisherProperties.SenderProperties senderProperties = publisherProperties.getSender();
-        String beanName = senderProperties.getBeanName();
-        KafkaTemplate<String, String> kafkaTemplate;
-        if (beanName == null || beanName.isEmpty()) {
-            log.warn("Sender bean-name is not specified. Will try to resolve by type");
-            String [] beanNames = context.getBeanNamesForType(KafkaTemplate.class);
-            if (beanNames.length == 0) {
-                throw new IllegalStateException("Cannot create OutboxSender: no KafkaTemplate bean found");
-            }
-            if (beanNames.length > 1) {
-                throw new IllegalStateException(
-                        "Cannot create OutboxSender: found more then one KafkaTemplate bean: " +
-                                Arrays.toString(beanNames) +
-                                "Please define a KafkaTemplate<String, String> bean with this name, " +
-                                "or configure 'outbox.publisher.sender.bean-name' property"
-                );
-            }
-            beanName = beanNames[0];
-        }
-        if (!context.containsBean(beanName)) {
-            throw new IllegalArgumentException(
-                    "Cannot create OutboxSender: KafkaTemplate bean '" + beanName + "' not found. " +
-                            "Please define a KafkaTemplate<String, String> bean with this name, " +
-                            "or configure 'outbox.publisher.sender.bean-name' property"
-            );
-        }
-        senderProperties.setBeanName(beanName);
-        kafkaTemplate = context.getBean(beanName, KafkaTemplate.class);
-        Map<String, Object> configs = kafkaTemplate.getProducerFactory().getConfigurationProperties();
-        String acks = (String) configs.get("acks");
-        if (acks == null || !acks.equals("all")) {
-            log.warn("Kafka producer factory is configured without 'acks=all'. Outbox cannot guarantee at-least-once delivery");
-        }
-        Boolean idempotence = null;
-        Object idempotenceObj = configs.get("enable.idempotence");
-        if (idempotenceObj instanceof Boolean) {
-            idempotence = (Boolean) idempotenceObj;
-        } else if (idempotenceObj instanceof String) {
-            idempotence = Boolean.parseBoolean((String) idempotenceObj);
-        }
-        if (idempotence == null || !idempotence) {
-            log.warn("Kafka producer is not idempotent. It is recommended to enabled 'enabled.idempotence=true' to avoid message duplication");
-        }
-        return new KafkaOutboxSender(kafkaTemplate, senderProperties.getEmergencyTimeout().toSeconds());
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(prefix = "outbox.publisher.sender", name = "type", havingValue = "rabbit")
-    public OutboxSender rabbitOutboxSender(ApplicationContext context) {
-        OutboxPublisherProperties.SenderProperties senderProperties = publisherProperties.getSender();
-        String beanName = senderProperties.getBeanName();
-        RabbitTemplate rabbitTemplate;
-        if (beanName == null || beanName.isEmpty()) {
-            log.warn("Sender bean-name is not specified. Will try to resolve by type");
-            String [] beanNames = context.getBeanNamesForType(RabbitTemplate.class);
-            if (beanNames.length == 0) {
-                throw new IllegalStateException("Cannot create OutboxSender: no RabbitTemplate bean found");
-            }
-            if (beanNames.length > 1) {
-                throw new IllegalStateException(
-                        "Cannot create OutboxSender: found more then one RabbitTemplate bean: " +
-                                Arrays.toString(beanNames) +
-                                "Please define a RabbitTemplate bean with this name, " +
-                                "or configure 'outbox.publisher.sender.bean-name' property"
-                );
-            }
-            beanName = beanNames[0];
-        }
-        if (!context.containsBean(beanName)) {
-            throw new IllegalArgumentException(
-                    "Cannot create OutboxSender: RabbitTemplate bean '" + beanName + "' not found. " +
-                            "Please define a RabbitTemplate bean with this name, " +
-                            "or configure 'outbox.publisher.sender.bean-name' property"
-            );
-        }
-        senderProperties.setBeanName(beanName);
-        rabbitTemplate = context.getBean(beanName, RabbitTemplate.class);
-        if (!rabbitTemplate.isMandatoryFor(new Message(Boolean.FALSE.toString().getBytes(StandardCharsets.UTF_8)))) {
-            log.error("RabbitTemplate '{}' mandatory flag is false. " +
-                    "ReturnedMessage will not be received. You should set mandatory=true for at-least-once", beanName);
-        }
-        return new RabbitOutboxSender(rabbitTemplate, senderProperties.getEmergencyTimeout().toSeconds());
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxMetricsRepository outboxMetricsRepository(
-            @Qualifier("outboxJdbcTemplate") JdbcTemplate jdbcTemplate
-    ) {
-        return new MultiDialectOutboxMetricsRepository(jdbcTemplate);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxMetricsService outboxMetricsService(OutboxMetricsRepository repository, OutboxCache<EventStatus> cache) {
-        return new DefaultOutboxMetricsService(repository, cache);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean(name = "outboxMetrics")
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics",
-            name = "enabled",
-            havingValue = "true"
-    )
-    @ConditionalOnProperty(
-            prefix = "outbox.publisher.metrics.gauge",
-            name = "enabled",
-            havingValue = "true"
-    )
-    public OutboxMetrics outboxMetrics(MeterRegistry registry, OutboxMetricsService metricsService) {
-        return new DefaultOutboxMetrics(publisherProperties, registry, metricsService);
     }
 }

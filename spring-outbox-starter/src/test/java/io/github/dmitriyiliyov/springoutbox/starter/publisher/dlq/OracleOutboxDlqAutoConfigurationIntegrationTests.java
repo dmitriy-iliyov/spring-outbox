@@ -1,17 +1,17 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.tests.utils.MySqlTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.OracleTestContainerSingleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class MySqlOutboxDlqAutoConfigurationIntegrationTests {
+class OracleOutboxDlqAutoConfigurationIntegrationTests {
 
     private final OutboxDlqAutoConfigurationVerifier verifier =
             new OutboxDlqAutoConfigurationVerifier(
-                    MySqlTestContainerSingleton.INSTANCE.getJdbcUrl(),
-                    "com.mysql.cj.jdbc.Driver",
-                    MySqlTestContainerSingleton.INSTANCE.getUsername(),
-                    MySqlTestContainerSingleton.INSTANCE.getPassword()
+                    OracleTestContainerSingleton.INSTANCE.getJdbcUrl(),
+                    "oracle.jdbc.OracleDriver",
+                    OracleTestContainerSingleton.INSTANCE.getUsername(),
+                    OracleTestContainerSingleton.INSTANCE.getPassword()
             );
 
     @Test
@@ -42,6 +42,12 @@ class MySqlOutboxDlqAutoConfigurationIntegrationTests {
     @DisplayName("IT should register OutboxDlqRepository bean")
     void shouldRegisterOutboxDlqRepository() {
         verifier.shouldRegisterOutboxDlqRepository();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxDlqEventMapper bean")
+    void shouldRegisterOutboxDlqEventMapper() {
+        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
     }
 
     @Test
@@ -100,7 +106,7 @@ class MySqlOutboxDlqAutoConfigurationIntegrationTests {
 
     @Test
     @DisplayName("IT should create tables when auto-create is true")
-    void shouldCreateTables_whenAutoCreateTrue() {
+    void shouldCreateTablesWhenAutoCreateTrue() {
         verifier.shouldCreateTables_whenAutoCreateTrue();
     }
 
@@ -114,12 +120,6 @@ class MySqlOutboxDlqAutoConfigurationIntegrationTests {
     @DisplayName("IT should not register duplicate OutboxDlqRepository when custom bean provided")
     void shouldNotRegisterDuplicateDlqRepository_whenCustomBeanProvided() {
         verifier.shouldNotRegisterDuplicateDlqRepository_whenCustomBeanProvided();
-    }
-
-    @Test
-    @DisplayName("IT should register OutboxDlqEventMapper bean")
-    void shouldRegisterOutboxDlqEventMapper() {
-        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
     }
 
     @Test

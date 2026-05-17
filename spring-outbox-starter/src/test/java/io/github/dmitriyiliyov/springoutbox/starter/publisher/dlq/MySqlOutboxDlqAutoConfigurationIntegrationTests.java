@@ -1,17 +1,17 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
-import io.github.dmitriyiliyov.springoutbox.tests.utils.PostgresTestContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.MySqlTestContainerSingleton;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
+class MySqlOutboxDlqAutoConfigurationIntegrationTests {
 
     private final OutboxDlqAutoConfigurationVerifier verifier =
             new OutboxDlqAutoConfigurationVerifier(
-                    PostgresTestContainerSingleton.INSTANCE.getJdbcUrl(),
-                    "org.postgresql.Driver",
-                    PostgresTestContainerSingleton.INSTANCE.getUsername(),
-                    PostgresTestContainerSingleton.INSTANCE.getPassword()
+                    MySqlTestContainerSingleton.INSTANCE.getJdbcUrl(),
+                    "com.mysql.cj.jdbc.Driver",
+                    MySqlTestContainerSingleton.INSTANCE.getUsername(),
+                    MySqlTestContainerSingleton.INSTANCE.getPassword()
             );
 
     @Test
@@ -81,12 +81,6 @@ class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT should register OutboxDlqEventMapper bean")
-    void shouldRegisterOutboxDlqEventMapper() {
-        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
-    }
-
-    @Test
     @DisplayName("IT should registered only OutboxDlqManagerMetricsDecorator when gauge is missed")
     void shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed() {
         verifier.shouldRegisteredMetricsRelatedBeans_whenGaugeEnabledMissed();
@@ -120,6 +114,12 @@ class PostgreSqlOutboxDlqAutoConfigurationIntegrationTests {
     @DisplayName("IT should not register duplicate OutboxDlqRepository when custom bean provided")
     void shouldNotRegisterDuplicateDlqRepository_whenCustomBeanProvided() {
         verifier.shouldNotRegisterDuplicateDlqRepository_whenCustomBeanProvided();
+    }
+
+    @Test
+    @DisplayName("IT should register OutboxDlqEventMapper bean")
+    void shouldRegisterOutboxDlqEventMapper() {
+        verifier.shouldRegisterDefaultOutboxDlqEventMapper();
     }
 
     @Test

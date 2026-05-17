@@ -7,7 +7,7 @@
     <parent>
         <groupId>io.github.dmitriy-iliyov</groupId>
         <artifactId>spring-outbox-parent</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -21,53 +21,54 @@
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-core</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-aop</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-messaging</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-dlq-api</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-consumer-cache</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-kafka</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-rabbit</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>spring-outbox-metrics</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>

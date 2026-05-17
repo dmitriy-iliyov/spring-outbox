@@ -226,13 +226,13 @@ public class OutboxConsumerAutoConfigurationVerifier {
     public void shouldNotRegisterDuplicateConsumedOutboxManager_whenCustomBeanProvided() {
         getBaseContextRunner()
                 .withBean(
-                        "customConsumedOutboxManager",
+                        "consumedOutboxManager",
                         ConsumedOutboxManager.class,
                         () -> org.mockito.Mockito.mock(ConsumedOutboxManager.class)
                 )
                 .run(ctx -> {
                     assertThat(ctx).doesNotHaveBean(OutboxIdempotentConsumerDecoratorSupplier.class);
-                    assertThat(ctx).hasBean("customConsumedOutboxManager");
+                    assertThat(ctx).hasBean("consumedOutboxManager");
                     assertThat(ctx).hasBean("primaryOutboxIdempotentConsumer");
                 });
     }

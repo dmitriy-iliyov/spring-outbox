@@ -1,6 +1,6 @@
-package io.github.dmitriyiliyov.springoutbox.metrics;
+package io.github.dmitriyiliyov.springoutbox.starter;
 
-public enum MetricsTaskType {
+public enum OutboxJobType {
     PUBLISHER_CLEANUP("cleanup-processed-events"),
     CONSUMER_CLEANUP("cleanup-consumed-events"),
     STUCK_RECOVERY("stuck-event-recovery"),
@@ -10,7 +10,7 @@ public enum MetricsTaskType {
 
     private final String value;
 
-    MetricsTaskType(String value) {
+    OutboxJobType(String value) {
         this.value = value;
     }
 

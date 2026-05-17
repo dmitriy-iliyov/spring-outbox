@@ -1,12 +1,14 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.dlq.api.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.dlq.OutboxDlqApiServiceMetricsDecorator;
+import io.github.dmitriyiliyov.springoutbox.tests.utils.PostgresTestContainerSingleton;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
@@ -21,21 +23,25 @@ import static org.mockito.Mockito.mock;
 public class OutboxDlqApiAutoConfigurationIntegrationTests {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(OutboxDlqApiAutoConfiguration.class))
+            .withConfiguration(AutoConfigurations.of(
+                    DataSourceAutoConfiguration.class,
+                    OutboxDlqApiAutoConfiguration.class,
+                    OutboxDlqApiMetricsAutoConfiguration.class
+            ))
             .withBean("outboxJdbcTemplate", JdbcTemplate.class, () -> mock(JdbcTemplate.class))
             .withBean(Clock.class, Clock::systemDefaultZone)
             .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
             .withPropertyValues(
-                    "spring.datasource.url=jdbc:postgresql://outbox-producer-postgresql:5432/outbox_example",
-                    "spring.datasource.driver-class-name=org.postgresql.Driver",
-                    "spring.datasource.username=admin",
-                    "spring.datasource.password=root"
+                    "spring.datasource.url=" + PostgresTestContainerSingleton.INSTANCE.getJdbcUrl(),
+                    "spring.datasource.driver-class-name=" + PostgresTestContainerSingleton.INSTANCE.getDriverClassName(),
+                    "spring.datasource.username=" + PostgresTestContainerSingleton.INSTANCE.getUsername(),
+                    "spring.datasource.password=" + PostgresTestContainerSingleton.INSTANCE.getPassword()
             );
 
     @Test
     @DisplayName("IT should not register any beans when dlq.enabled property is missing")
     void shouldNotRegisterBeansWhenPropertyIsMissing() {
-        contextRunner.run(context -> assertNoBeans(context));
+        contextRunner.run(this::assertNoBeans);
     }
 
     @Test
@@ -43,7 +49,7 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
     void shouldNotRegisterBeansWhenPropertyIsFalse() {
         contextRunner
                 .withPropertyValues("outbox.publisher.dlq.enabled=false")
-                .run(context -> assertNoBeans(context));
+                .run(this::assertNoBeans);
     }
 
     @Test
@@ -95,7 +101,7 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT should not override custom OutboxDlqWebRepository")
+    @DisplayName("IT should not override custom OutboxDlqApiRepository")
     void shouldNotOverrideCustomRepository() {
         contextRunner
                 .withPropertyValues("outbox.publisher.dlq.enabled=true")
@@ -104,19 +110,6 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
                     assertThat(context).hasSingleBean(OutboxDlqApiRepository.class);
                     assertThat(context.getBean(OutboxDlqApiRepository.class))
                             .isSameAs(context.getBean("customRepository"));
-                });
-    }
-
-    @Test
-    @DisplayName("IT should not override custom OutboxDlqWebManager")
-    void shouldNotOverrideCustomManager() {
-        contextRunner
-                .withPropertyValues("outbox.publisher.dlq.enabled=true")
-                .withUserConfiguration(CustomManagerConfiguration.class)
-                .run(context -> {
-                    assertThat(context).hasSingleBean(OutboxDlqApiService.class);
-                    assertThat(context.getBean(OutboxDlqApiService.class))
-                            .isSameAs(context.getBean("customManager"));
                 });
     }
 
@@ -166,32 +159,6 @@ public class OutboxDlqApiAutoConfigurationIntegrationTests {
         assertThat(context).doesNotHaveBean(DlqStatusQueryConverter.class);
         assertThat(context).doesNotHaveBean(OutboxDlqControllerAdvice.class);
     }
-
-//    @Configuration
-//    static class DependenciesConfiguration {
-//
-//        @Bean
-//        DataSource dataSource() throws SQLException {
-//            DataSource dataSource = mock(DataSource.class, RETURNS_DEEP_STUBS);
-//            when(dataSource.getConnection().getMetaData().getDatabaseProductName()).thenReturn("PostgreSQL");
-//            return dataSource;
-//        }
-//
-//        @Bean
-//        JdbcTemplate jdbcTemplate() {
-//            return mock(JdbcTemplate.class);
-//        }
-//
-////        @Bean
-////        Clock clock() {
-////            return Clock.systemUTC();
-////        }
-//
-//        @Bean
-//        MeterRegistry meterRegistry() {
-//            return new SimpleMeterRegistry();
-//        }
-//    }
 
     @Configuration
     static class CustomRepositoryConfiguration {

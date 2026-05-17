@@ -2,10 +2,8 @@ package io.github.dmitriyiliyov.springoutbox.starter;
 
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
-import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.starter.consumer.OutboxConsumerProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -13,7 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.DataSourceInitializer;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
@@ -27,6 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 
 @Configuration
 @EnableConfigurationProperties(OutboxProperties.class)
+@Import(OutboxMetricsAutoConfiguration.class)
 public class OutboxAutoConfiguration {
 
     private final OutboxProperties properties;
@@ -115,23 +114,9 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    @Primary
-    @ConditionalOnAnyMetricsEnabled
-    public OutboxScheduleStrategyListenerSupplier metricsOutboxScheduleStrategyListenerSupplier(MeterRegistry registry) {
-        return new MetricsOutboxScheduleStrategyListenerSupplier(registry);
-    }
-
-    @Bean
     @ConditionalOnMissingBean
     public ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier() {
         return new NoopContinuableTaskDecoratorSupplier();
-    }
-
-    @Bean
-    @Primary
-    @ConditionalOnAnyMetricsEnabled
-    public ContinuableTaskDecoratorSupplier metricsContinuableTaskDecoratorSupplier(MeterRegistry registry) {
-        return new ContinuableTaskTimeMeasureDecoratorSupplier(registry);
     }
 
     @Bean(destroyMethod = "shutdown")
@@ -155,10 +140,16 @@ public class OutboxAutoConfiguration {
     }
 
     @Bean
-    public PostApplicationReadyOutboxInitializer outboxInitializer(OutboxProperties properties,
-                                                                   Map<String, OutboxScheduler> schedulers,
-                                                                   Map<String, OutboxMetrics> metrics) {
-        return new PostApplicationReadyOutboxInitializer(properties, schedulers, metrics);
+    public PostApplicationReadyOutboxInitializer schedulersOutboxInitializer(Map<String, OutboxScheduler> schedulers) {
+        return new SchedulersPostApplicationReadyOutboxInitializer(schedulers);
+    }
+
+    @Bean
+    public PostApplicationReadyOutboxInitializer compositeOutboxInitializer(
+            OutboxProperties properties,
+            List<PostApplicationReadyOutboxInitializer> initializers
+    ) {
+        return new CompositePostApplicationReadyOutboxInitializer(properties, initializers);
     }
 }
  

@@ -4,6 +4,7 @@ WORKDIR /app
 
 # build lib
 COPY . .
+RUN mvn -f spring-outbox-tests/spring-outbox-test-utils/pom.xml clean install -DskipTests
 RUN mvn clean install -DskipTests -Dgpg.skip=true
 
 # build producer

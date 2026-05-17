@@ -81,15 +81,13 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(UuidGenerator.class);
                     assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
                     assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
-                    assertThat(ctx).hasSingleBean(OutboxCache.class);
-
-                    assertThat(ctx.getBean(OutboxCache.class)).isInstanceOf(NoopOutboxCache.class);
 
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
                     assertThat(ctx).hasBean("myeventOutboxPollingScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpScheduler");
                     assertThat(ctx).hasBean("outboxCleanUpJobCreateCommand");
 
+                    assertThat(ctx).doesNotHaveBean("outboxCache");
                     assertThat(ctx).doesNotHaveBean(OutboxManagerMetricsDecorator.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsService.class);
                     assertThat(ctx).doesNotHaveBean(OutboxMetricsRepository.class);
@@ -326,10 +324,10 @@ public class OutboxPublisherAutoConfigurationVerifier {
 
     public void shouldNotRegisterOutboxManager_whenCustomBeanProvided() {
         getBaseContextRunner()
-                .withBean("customOutboxManager", OutboxManager.class, () -> org.mockito.Mockito.mock(OutboxManager.class))
+                .withBean("outboxManager", OutboxManager.class, () -> org.mockito.Mockito.mock(OutboxManager.class))
                 .run(ctx -> {
                     assertThat(ctx).hasSingleBean(OutboxManager.class);
-                    assertThat(ctx).hasBean("customOutboxManager");
+                    assertThat(ctx).hasBean("outboxManager");
                     assertThat(ctx).doesNotHaveBean(DefaultOutboxManager.class);
                 });
     }

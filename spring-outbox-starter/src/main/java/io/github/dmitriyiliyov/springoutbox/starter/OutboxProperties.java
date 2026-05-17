@@ -104,6 +104,26 @@ public class OutboxProperties implements OutboxPropertiesHolder {
         this.distributedLock = distributedLock;
     }
 
+    public String toStringWithPublisher() {
+        return "OutboxProperties{" +
+                "workerId=" + workerId +
+                ", threadPoolSize=" + threadPoolSize +
+                ", publisher=" + publisher +
+                ", tables=" + tables +
+                ", distributedLock=" + distributedLock +
+                '}';
+    }
+
+    public String toStringWithConsumer() {
+        return "OutboxProperties{" +
+                "workerId=" + workerId +
+                ", threadPoolSize=" + threadPoolSize +
+                ", consumer=" + consumer +
+                ", tables=" + tables +
+                ", distributedLock=" + distributedLock +
+                '}';
+    }
+
     @Override
     public String toString() {
         return "OutboxProperties{" +

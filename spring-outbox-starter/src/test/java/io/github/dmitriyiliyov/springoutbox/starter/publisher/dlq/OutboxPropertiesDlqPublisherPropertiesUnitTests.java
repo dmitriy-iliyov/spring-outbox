@@ -1,7 +1,8 @@
-package io.github.dmitriyiliyov.springoutbox.starter.publisher;
+package io.github.dmitriyiliyov.springoutbox.starter.publisher.dlq;
 
 import io.github.dmitriyiliyov.springoutbox.starter.OutboxProperties;
 import io.github.dmitriyiliyov.springoutbox.starter.PollingType;
+import io.github.dmitriyiliyov.springoutbox.starter.publisher.OutboxPublisherProperties;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

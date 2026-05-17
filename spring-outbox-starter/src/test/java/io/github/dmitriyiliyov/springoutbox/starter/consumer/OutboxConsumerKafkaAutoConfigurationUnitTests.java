@@ -17,9 +17,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OutboxConsumerAutoConfigurationUnitTests {
+class OutboxConsumerKafkaAutoConfigurationUnitTests {
 
-    private OutboxConsumerAutoConfiguration config;
+    private OutboxConsumerKafkaAutoConfiguration config;
 
     @Mock
     private OutboxConsumerProperties consumerProperties;
@@ -35,7 +35,7 @@ class OutboxConsumerAutoConfigurationUnitTests {
 
     @BeforeEach
     void setUp() {
-        config = new OutboxConsumerAutoConfiguration(consumerProperties);
+        config = new OutboxConsumerKafkaAutoConfiguration(consumerProperties);
     }
 
     @Test
