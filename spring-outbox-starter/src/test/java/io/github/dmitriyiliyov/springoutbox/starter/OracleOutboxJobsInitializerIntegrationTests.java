@@ -15,19 +15,19 @@ class OracleOutboxJobsInitializerIntegrationTests {
             );
 
     @Test
-    @DisplayName("IT should execute real command and insert job to PostgreSQL")
+    @DisplayName("IT should execute real command and insert job to Oracle")
     void shouldExecuteCommandsAndSaveToDatabase() {
         verifier.shouldExecuteCommandsAndSaveToDatabase();
     }
 
     @Test
-    @DisplayName("IT should execute real command and insert job to PostgreSQL when DLQ enabled")
+    @DisplayName("IT should execute real command and insert job to Oracle when DLQ enabled")
     void shouldExecuteCommandsAndSaveToDatabase_whenDlqEnabled() {
         verifier.shouldExecuteCommandsAndSaveToDatabase_whenDlqEnabled();
     }
 
     @Test
-    @DisplayName("IT should execute real command and insert job to PostgreSQL when consumer clean up enabled")
+    @DisplayName("IT should execute real command and insert job to Oracle when consumer clean up enabled")
     void shouldExecuteCommandsAndSaveToDatabase_whenConsumerEnabled() {
         verifier.shouldExecuteCommandsAndSaveToDatabase_whenConsumerEnabled();
     }

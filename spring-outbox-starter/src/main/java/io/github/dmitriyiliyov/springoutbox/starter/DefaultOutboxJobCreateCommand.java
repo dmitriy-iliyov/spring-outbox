@@ -30,20 +30,22 @@ public class DefaultOutboxJobCreateCommand implements OutboxJobCreateCommand {
     @Override
     public void create() {
         String sql = """
-                INSERT INTO outbox_jobs (job_name, lock_until, locked_by, lock_at_least_for, lock_at_most_for)
-                VALUES (?, ?, NULL, ?, ?)
+                INSERT INTO outbox_jobs (job_name, lock_until, locked_by, locked_at, lock_at_least_for, lock_at_most_for)
+                VALUES (?, ?, NULL, ?, ?, ?)
         """;
         try {
+            Timestamp pastTmstmpStub = Timestamp.from(clock.instant().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS));
             jdbcTemplate.update(
                     sql,
                     ps -> {
                         ps.setString(1, jobName);
-                        ps.setTimestamp(2, Timestamp.from(clock.instant().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS)));
-                        ps.setLong(3, lockAtLeastFor);
-                        ps.setLong(4, lockAtMostFor);
+                        ps.setTimestamp(2, pastTmstmpStub);
+                        ps.setTimestamp(3, pastTmstmpStub);
+                        ps.setLong(4, lockAtLeastFor);
+                        ps.setLong(5, lockAtMostFor);
                     }
             );
-            log.info("Successfully initialized job with name '{}'", jobName);
+            log.info("Initialized job with name '{}'", jobName);
         } catch (DuplicateKeyException dke) {
             log.info("Job with name '{}' already exists", jobName);
         }

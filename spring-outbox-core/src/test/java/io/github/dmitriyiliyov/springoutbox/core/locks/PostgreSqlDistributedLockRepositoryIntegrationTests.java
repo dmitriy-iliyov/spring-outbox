@@ -37,8 +37,20 @@ class PostgreSqlDistributedLockRepositoryIntegrationTests extends BasePostgresSq
                 raw -> (UUID) raw,
                 id -> id,
                 (jdbcTemplate, idPreparer, jobName, lockAtLeastFor, lockAtMostFor) -> {
-                    String sql = "INSERT INTO outbox_jobs (job_name, lock_until, locked_by, lock_at_least_for, lock_at_most_for) VALUES (?, ?, ?, ?, ?)";
-                    jdbcTemplate.update(sql, jobName, Timestamp.from(Instant.now().minus(1, ChronoUnit.HOURS)), idPreparer.prepare(UUID.randomUUID()), lockAtLeastFor, lockAtMostFor);
+                    Timestamp stub = Timestamp.from(Instant.now().minus(1, ChronoUnit.HOURS));
+                    String sql = """
+                        INSERT INTO outbox_jobs (job_name, lock_until, locked_by, locked_at, lock_at_least_for, lock_at_most_for) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """;
+                    jdbcTemplate.update(
+                            sql,
+                            jobName,
+                            stub,
+                            idPreparer.prepare(UUID.randomUUID()),
+                            stub,
+                            lockAtLeastFor,
+                            lockAtMostFor
+                    );
                 }
         );
     }

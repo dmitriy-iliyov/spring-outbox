@@ -44,7 +44,10 @@ class MySqlDistributedLockRepositoryIntegrationTests extends BaseMySqlIntegratio
                     return bb.array();
                 },
                 (jdbcTemplate, idPreparer, jobName, lockAtLeastFor, lockAtMostFor) -> {
-                    String sql = "INSERT INTO outbox_jobs (job_name, lock_until, locked_by, lock_at_least_for, lock_at_most_for) VALUES (?, TIMESTAMPADD(MICROSECOND, lock_at_most_for * 1000, UTC_TIMESTAMP(3)), ?, ?, ?)";
+                    String sql = """
+                        INSERT INTO outbox_jobs (job_name, lock_until, locked_by, locked_at, lock_at_least_for, lock_at_most_for) 
+                        VALUES (?, TIMESTAMPADD(MICROSECOND, lock_at_most_for * 1000, UTC_TIMESTAMP(3)), ?, TIMESTAMPADD(MICROSECOND, lock_at_most_for * 1000, UTC_TIMESTAMP(3)), ?, ?)
+                    """;
                     jdbcTemplate.update(sql, jobName, idPreparer.prepare(UUID.randomUUID()), lockAtLeastFor, lockAtMostFor);
                 }
         );

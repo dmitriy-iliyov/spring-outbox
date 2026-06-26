@@ -29,14 +29,17 @@ public class DefaultOutboxJobCreateCommandIntegrationVerifier {
     public void setUpSchema() {
         try {
             jdbcTemplate.execute("DROP TABLE outbox_jobs");
-        } catch (Exception ignored) {
-        }
-        jdbcTemplate.execute("CREATE TABLE outbox_jobs (" +
-                "job_name VARCHAR(255) PRIMARY KEY, " +
-                "lock_until TIMESTAMP, " +
-                "locked_by VARCHAR(255), " +
-                "lock_at_least_for NUMERIC(19, 0), " +
-                "lock_at_most_for NUMERIC(19, 0))");
+        } catch (Exception ignored) {}
+        jdbcTemplate.execute("""
+            CREATE TABLE outbox_jobs (
+                job_name VARCHAR(255) PRIMARY KEY,
+                lock_until TIMESTAMP,
+                locked_by VARCHAR(255),
+                locked_at TIMESTAMP NOT NULL,
+                lock_at_least_for NUMERIC(19, 0),
+                lock_at_most_for NUMERIC(19, 0)
+            )
+        """);
     }
 
     public void shouldInsertNewJob() {

@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 class MySqlDistributedLockRepositoryConcurrentTests extends BaseMySqlIntegrationTests {
@@ -38,7 +41,10 @@ class MySqlDistributedLockRepositoryConcurrentTests extends BaseMySqlIntegration
                     return bb.array();
                 },
                 (jdbcTemplate, idPreparer, jobName, lockAtLeastFor, lockAtMostFor) -> {
-                    String sql = "INSERT INTO outbox_jobs (job_name, lock_until, locked_by, lock_at_least_for, lock_at_most_for) VALUES (?, TIMESTAMPADD(HOUR, -1, UTC_TIMESTAMP(3)), NULL, ?, ?)";
+                    String sql = """
+                        INSERT INTO outbox_jobs (job_name, lock_until, locked_by, locked_at, lock_at_least_for, lock_at_most_for) 
+                        VALUES (?, TIMESTAMPADD(HOUR, -1, UTC_TIMESTAMP(3)), NULL, TIMESTAMPADD(HOUR, -1, UTC_TIMESTAMP(3)), ?, ?)
+                    """;
                     jdbcTemplate.update(sql, jobName, lockAtLeastFor, lockAtMostFor);
                 }
         );

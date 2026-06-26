@@ -21,9 +21,9 @@ public class OracleDistributedLockRepository implements DistributedLockRepositor
         String sql = """
             UPDATE outbox_jobs
             SET lock_until = SYS_EXTRACT_UTC(SYSTIMESTAMP) + NUMTODSINTERVAL(lock_at_most_for / 1000, 'SECOND'), 
-                locked_by = ?
-            WHERE job_name = ? 
-            AND lock_until <= SYS_EXTRACT_UTC(SYSTIMESTAMP)
+                locked_by = ?,
+                locked_at = SYS_EXTRACT_UTC(SYSTIMESTAMP)
+            WHERE job_name = ? AND lock_until <= SYS_EXTRACT_UTC(SYSTIMESTAMP)
         """;
         return jdbcTemplate.update(
                 sql,
@@ -38,7 +38,10 @@ public class OracleDistributedLockRepository implements DistributedLockRepositor
     public void unlock(String jobName, UUID workerId) {
         String sql = """
             UPDATE outbox_jobs 
-            SET lock_until = SYS_EXTRACT_UTC(SYSTIMESTAMP) + NUMTODSINTERVAL(lock_at_least_for / 1000, 'SECOND')
+            SET lock_until = GREATEST(
+                SYS_EXTRACT_UTC(SYSTIMESTAMP),
+                locked_at + NUMTODSINTERVAL(lock_at_least_for / 1000, 'SECOND')
+            )
             WHERE job_name = ? AND locked_by = ?
         """;
         jdbcTemplate.update(

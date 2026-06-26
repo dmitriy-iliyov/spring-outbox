@@ -20,9 +20,10 @@ public class PostgreSqlDistributedLockRepository implements DistributedLockRepos
     public boolean tryLock(String jobName, UUID workerId) {
         String sql = """
             UPDATE outbox_jobs
-            SET lock_until = clock_timestamp() + (lock_at_most_for * INTERVAL '1 millisecond'), locked_by = ?
-            WHERE job_name = ? 
-            AND lock_until <= clock_timestamp()
+            SET lock_until = clock_timestamp() + (lock_at_most_for * INTERVAL '1 millisecond'), 
+                locked_by = ?,
+                locked_at = clock_timestamp()
+            WHERE job_name = ? AND lock_until <= clock_timestamp()
         """;
         return jdbcTemplate.update(
                 sql,
@@ -37,7 +38,10 @@ public class PostgreSqlDistributedLockRepository implements DistributedLockRepos
     public void unlock(String jobName, UUID workerId) {
         String sql = """
             UPDATE outbox_jobs 
-            SET lock_until = clock_timestamp() + (lock_at_least_for * INTERVAL '1 millisecond')
+            SET lock_until = GREATEST(
+                clock_timestamp(), 
+                locked_at + (lock_at_least_for * INTERVAL '1 millisecond')
+            )
             WHERE job_name = ? AND locked_by = ?
         """;
         jdbcTemplate.update(

@@ -49,10 +49,12 @@ class DefaultOutboxJobCreateCommandUnitTests {
         PreparedStatement ps = mock(PreparedStatement.class);
         setterCaptor.getValue().setValues(ps);
 
+        Timestamp stub = Timestamp.from(clock.instant().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS));
         verify(ps).setString(1, "test_job");
-        verify(ps).setTimestamp(eq(2), eq(Timestamp.from(clock.instant().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS))));
-        verify(ps).setLong(3, 10L);
-        verify(ps).setLong(4, 50L);
+        verify(ps).setTimestamp(eq(2), eq(stub));
+        verify(ps).setTimestamp(eq(3), eq(stub));
+        verify(ps).setLong(4, 10L);
+        verify(ps).setLong(5, 50L);
     }
 
     @Test

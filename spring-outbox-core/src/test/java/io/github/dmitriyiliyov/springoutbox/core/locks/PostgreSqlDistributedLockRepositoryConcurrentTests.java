@@ -31,12 +31,17 @@ class PostgreSqlDistributedLockRepositoryConcurrentTests extends BasePostgresSql
                 raw -> (UUID) raw,
                 id -> id,
                 (jdbcTemplate, idPreparer, jobName, lockAtLeastFor, lockAtMostFor) -> {
-                    String sql = "INSERT INTO outbox_jobs (job_name, lock_until, locked_by, lock_at_least_for, lock_at_most_for) VALUES (?, ?, ?, ?, ?)";
+                    Timestamp stub = Timestamp.from(Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS));
+                    String sql = """
+                        INSERT INTO outbox_jobs (job_name, lock_until, locked_by, locked_at, lock_at_least_for, lock_at_most_for) 
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """;
                     jdbcTemplate.update(
                             sql,
                             jobName,
-                            Timestamp.from(Instant.now().minus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MILLIS)),
+                            stub,
                             idPreparer.prepare(UUID.randomUUID()),
+                            stub,
                             lockAtLeastFor,
                             lockAtMostFor
                     );

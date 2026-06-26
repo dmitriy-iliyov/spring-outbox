@@ -20,9 +20,10 @@ public class MySqlDistributedLockRepository implements DistributedLockRepository
     public boolean tryLock(String jobName, UUID workerId) {
         String sql = """
             UPDATE outbox_jobs
-            SET lock_until = TIMESTAMPADD(MICROSECOND, lock_at_most_for * 1000, UTC_TIMESTAMP(3)), locked_by = ?
-            WHERE job_name = ? 
-            AND lock_until <= UTC_TIMESTAMP(3)
+            SET lock_until = TIMESTAMPADD(MICROSECOND, lock_at_most_for * 1000, UTC_TIMESTAMP(3)), 
+                locked_by = ?,
+                locked_at = UTC_TIMESTAMP(3)
+            WHERE job_name = ? AND lock_until <= UTC_TIMESTAMP(3)
         """;
         return jdbcTemplate.update(
                 sql,
@@ -37,7 +38,9 @@ public class MySqlDistributedLockRepository implements DistributedLockRepository
     public void unlock(String jobName, UUID workerId) {
         String sql = """
             UPDATE outbox_jobs
-            SET lock_until = TIMESTAMPADD(MICROSECOND, lock_at_least_for * 1000, UTC_TIMESTAMP(3))
+            SET lock_until = GREATEST(
+                UTC_TIMESTAMP(3), TIMESTAMPADD(MICROSECOND, lock_at_least_for * 1000, locked_at)
+            )
             WHERE job_name = ? AND locked_by = ?
         """;
         jdbcTemplate.update(
