@@ -54,7 +54,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
+        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertEquals("test-event", captor.getValue().eventType());
         assertEquals(result, captor.getValue().event());
@@ -72,7 +72,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
+        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertEquals("test-event", captor.getValue().eventType());
         assertEquals(result, captor.getValue().event());
@@ -90,7 +90,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
+        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertEquals("test-event", captor.getValue().eventType());
         assertEquals(result, captor.getValue().event());
@@ -111,7 +111,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RowOutboxEvent> captor = ArgumentCaptor.forClass(RowOutboxEvent.class);
+        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertEquals("test-event", captor.getValue().eventType());
         assertEquals("value", captor.getValue().event());
@@ -129,7 +129,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RowOutboxEvents> captor = ArgumentCaptor.forClass(RowOutboxEvents.class);
+        ArgumentCaptor<RawOutboxEvents> captor = ArgumentCaptor.forClass(RawOutboxEvents.class);
         verify(eventPublisher).publishEvent(captor.capture());
         assertEquals("test-event", captor.getValue().eventType());
         assertEquals(result, captor.getValue().events());

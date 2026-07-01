@@ -17,7 +17,7 @@ import java.util.Objects;
  * Aspect that intercepts methods annotated with {@link OutboxPublish} and publishes an outbox event.
  * <p>
  * This aspect extracts the event payload from the method's return value or arguments using SpEL,
- * and then publishes a {@link RowOutboxEvent} or {@link RowOutboxEvents} via the {@link ApplicationEventPublisher}.
+ * and then publishes a {@link RawOutboxEvent} or {@link RawOutboxEvents} via the {@link ApplicationEventPublisher}.
  */
 @Aspect
 public class OutboxPublishAspect {
@@ -48,10 +48,10 @@ public class OutboxPublishAspect {
         }
         Objects.requireNonNull(payload, "payload cannot be null");
         if (payload instanceof List<?>) {
-            eventPublisher.publishEvent(new RowOutboxEvents(outboxPublish.eventType(), (List<?>) payload));
+            eventPublisher.publishEvent(new RawOutboxEvents(outboxPublish.eventType(), (List<?>) payload));
             return;
         }
-        eventPublisher.publishEvent(new RowOutboxEvent(outboxPublish.eventType(), payload));
+        eventPublisher.publishEvent(new RawOutboxEvent(outboxPublish.eventType(), payload));
     }
 
     StandardEvaluationContext getContext(JoinPoint joinPoint) {

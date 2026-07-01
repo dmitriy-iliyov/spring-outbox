@@ -13,20 +13,20 @@ import java.util.List;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
-class RowOutboxEventListenerTest {
+class RawOutboxEventListenerTest {
 
     @Mock
     private OutboxPublisher publisher;
 
     @InjectMocks
-    private RowOutboxEventListener eventListener;
+    private RawOutboxEventListener eventListener;
 
     @Test
     @DisplayName("UT publishEvent() should call publisher with single event")
     void publishEvent_shouldCallPublisherWithSingleEvent() {
         // given
         Object eventPayload = new Object();
-        RowOutboxEvent rowEvent = new RowOutboxEvent("test-event", eventPayload);
+        RawOutboxEvent rowEvent = new RawOutboxEvent("test-event", eventPayload);
 
         // when
         eventListener.publishEvent(rowEvent);
@@ -40,7 +40,7 @@ class RowOutboxEventListenerTest {
     void publishEvents_shouldCallPublisherWithListOfEvents() {
         // given
         List<Object> eventPayloads = List.of(new Object(), new Object());
-        RowOutboxEvents rowEvents = new RowOutboxEvents("test-event-batch", eventPayloads);
+        RawOutboxEvents rowEvents = new RawOutboxEvents("test-event-batch", eventPayloads);
 
         // when
         eventListener.publishEvents(rowEvents);

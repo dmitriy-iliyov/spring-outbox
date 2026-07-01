@@ -2,7 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublishAspect;
-import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
+import io.github.dmitriyiliyov.springoutbox.aop.RawOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
@@ -93,8 +93,8 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
-    public RowOutboxEventListener rowOutboxEventListener(OutboxPublisher publisher) {
-        return new RowOutboxEventListener(publisher);
+    public RawOutboxEventListener rowOutboxEventListener(OutboxPublisher publisher) {
+        return new RawOutboxEventListener(publisher);
     }
 
     @Bean

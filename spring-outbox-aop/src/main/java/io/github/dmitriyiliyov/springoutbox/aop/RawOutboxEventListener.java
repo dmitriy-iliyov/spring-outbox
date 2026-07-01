@@ -5,21 +5,21 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 
-public final class RowOutboxEventListener {
+public final class RawOutboxEventListener {
 
     private final OutboxPublisher publisher;
 
-    public RowOutboxEventListener(OutboxPublisher publisher) {
+    public RawOutboxEventListener(OutboxPublisher publisher) {
         this.publisher = publisher;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void publishEvent(RowOutboxEvent rowEvent) {
+    public void publishEvent(RawOutboxEvent rowEvent) {
         publisher.publish(rowEvent.eventType(), rowEvent.event());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void publishEvents(RowOutboxEvents rowEvent) {
+    public void publishEvents(RawOutboxEvents rowEvent) {
         publisher.publish(rowEvent.eventType(), rowEvent.events());
     }
 }

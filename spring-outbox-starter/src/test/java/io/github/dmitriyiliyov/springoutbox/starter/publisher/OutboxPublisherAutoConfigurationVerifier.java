@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublishAspect;
-import io.github.dmitriyiliyov.springoutbox.aop.RowOutboxEventListener;
+import io.github.dmitriyiliyov.springoutbox.aop.RawOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.*;
 import io.github.dmitriyiliyov.springoutbox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.springoutbox.metrics.publisher.OutboxManagerMetricsDecorator;
@@ -80,7 +80,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(OutboxPublisher.class);
                     assertThat(ctx).hasSingleBean(UuidGenerator.class);
                     assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
-                    assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
+                    assertThat(ctx).hasSingleBean(RawOutboxEventListener.class);
 
                     assertThat(ctx).hasBean("outboxRecoveryScheduler");
                     assertThat(ctx).hasBean("myeventOutboxPollingScheduler");
@@ -119,7 +119,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
                     assertThat(ctx).hasSingleBean(OutboxPublisher.class);
                     assertThat(ctx).hasSingleBean(UuidGenerator.class);
                     assertThat(ctx).hasSingleBean(OutboxPublishAspect.class);
-                    assertThat(ctx).hasSingleBean(RowOutboxEventListener.class);
+                    assertThat(ctx).hasSingleBean(RawOutboxEventListener.class);
                     assertThat(ctx).hasSingleBean(OutboxCache.class);
                     assertThat(ctx).hasSingleBean(OutboxJobCreateCommand.class);
 
@@ -250,7 +250,7 @@ public class OutboxPublisherAutoConfigurationVerifier {
 
     public void shouldRegisterRowOutboxEventListener() {
         getBaseContextRunner().run(ctx ->
-                assertThat(ctx).hasSingleBean(RowOutboxEventListener.class)
+                assertThat(ctx).hasSingleBean(RawOutboxEventListener.class)
         );
     }
 

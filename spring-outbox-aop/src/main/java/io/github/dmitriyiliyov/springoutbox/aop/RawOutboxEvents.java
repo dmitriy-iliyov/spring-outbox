@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * Represents a batch of outbox events to be published.
  */
-public record RowOutboxEvents(
+public record RawOutboxEvents(
         String eventType, 
         List<?> events
 ) { }
