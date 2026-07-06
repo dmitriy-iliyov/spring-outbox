@@ -35,7 +35,6 @@ import java.util.concurrent.ScheduledExecutorService;
 @Import({
         OutboxPollingSchedulerRegistrar.class,
         OutboxDlqAutoConfiguration.class,
-        OutboxPublisherMetricsAutoConfiguration.class,
         OutboxPublisherKafkaAutoConfiguration.class,
         OutboxPublisherMetricsAutoConfiguration.class
 })
