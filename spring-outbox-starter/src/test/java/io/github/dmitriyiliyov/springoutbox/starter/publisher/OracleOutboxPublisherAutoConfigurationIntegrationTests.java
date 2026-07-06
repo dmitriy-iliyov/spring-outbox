@@ -87,12 +87,6 @@ class OracleOutboxPublisherAutoConfigurationIntegrationTests {
     }
 
     @Test
-    @DisplayName("IT should register RowOutboxEventListener bean")
-    void shouldRegisterRowOutboxEventListener() {
-        verifier.shouldRegisterRowOutboxEventListener();
-    }
-
-    @Test
     @DisplayName("IT should registered metrics related beans when all metrics enabled")
     void shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled() {
         verifier.shouldRegisteredMetricsRelatedBeans_whenAllMetricsEnabled();

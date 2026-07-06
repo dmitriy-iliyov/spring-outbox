@@ -1,21 +1,19 @@
 package io.github.dmitriyiliyov.springoutbox.aop;
 
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisher;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,7 +22,7 @@ import static org.mockito.Mockito.when;
 class OutboxPublishAspectUnitTests {
 
     @Mock
-    ApplicationEventPublisher eventPublisher;
+    OutboxPublisher publisher;
 
     @Mock
     JoinPoint joinPoint;
@@ -39,12 +37,12 @@ class OutboxPublishAspectUnitTests {
 
     @BeforeEach
     void setUp() {
-        tested = new OutboxPublishAspect(eventPublisher);
+        tested = new OutboxPublishAspect(publisher);
     }
 
     @Test
-    @DisplayName("UT advice() when payload is default (#result) should publish RowOutboxEvent")
-    void advice_whenPayloadDefault_shouldPublishRowOutboxEvent() {
+    @DisplayName("UT advice() when payload is default (#result) should publish result")
+    void advice_whenPayloadDefault_shouldPublishResult() {
         // given
         Object result = new Object();
         when(outboxPublish.payload()).thenReturn("#result");
@@ -54,15 +52,12 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertEquals("test-event", captor.getValue().eventType());
-        assertEquals(result, captor.getValue().event());
+        verify(publisher).publish("test-event", result);
     }
 
     @Test
-    @DisplayName("UT advice() when payload is null should publish RowOutboxEvent with result")
-    void advice_whenPayloadNull_shouldPublishRowOutboxEventWithResult() {
+    @DisplayName("UT advice() when payload is null should publish result")
+    void advice_whenPayloadNull_shouldPublishResult() {
         // given
         Object result = new Object();
         when(outboxPublish.payload()).thenReturn(null);
@@ -72,15 +67,12 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertEquals("test-event", captor.getValue().eventType());
-        assertEquals(result, captor.getValue().event());
+        verify(publisher).publish("test-event", result);
     }
 
     @Test
-    @DisplayName("UT advice() when payload is blank should publish RowOutboxEvent with result")
-    void advice_whenPayloadBlank_shouldPublishRowOutboxEventWithResult() {
+    @DisplayName("UT advice() when payload is blank should publish result")
+    void advice_whenPayloadBlank_shouldPublishResult() {
         // given
         Object result = new Object();
         when(outboxPublish.payload()).thenReturn("  ");
@@ -90,10 +82,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertEquals("test-event", captor.getValue().eventType());
-        assertEquals(result, captor.getValue().event());
+        verify(publisher).publish("test-event", result);
     }
 
     @Test
@@ -111,15 +100,12 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RawOutboxEvent> captor = ArgumentCaptor.forClass(RawOutboxEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertEquals("test-event", captor.getValue().eventType());
-        assertEquals("value", captor.getValue().event());
+        verify(publisher).publish("test-event", "value");
     }
 
     @Test
-    @DisplayName("UT advice() when result is List should publish RowOutboxEvents")
-    void advice_whenResultIsList_shouldPublishRowOutboxEvents() {
+    @DisplayName("UT advice() when result is List should publish as List")
+    void advice_whenResultIsList_shouldPublishAsList() {
         // given
         List<Object> result = List.of(new Object(), new Object());
         when(outboxPublish.payload()).thenReturn("#result");
@@ -129,10 +115,7 @@ class OutboxPublishAspectUnitTests {
         tested.advice(joinPoint, outboxPublish, result);
 
         // then
-        ArgumentCaptor<RawOutboxEvents> captor = ArgumentCaptor.forClass(RawOutboxEvents.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-        assertEquals("test-event", captor.getValue().eventType());
-        assertEquals(result, captor.getValue().events());
+        verify(publisher).publish("test-event", result);
     }
 
     @Test

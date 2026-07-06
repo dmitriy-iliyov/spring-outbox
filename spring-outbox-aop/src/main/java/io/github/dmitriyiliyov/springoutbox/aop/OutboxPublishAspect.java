@@ -1,11 +1,11 @@
 package io.github.dmitriyiliyov.springoutbox.aop;
 
+import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPublisher;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -16,17 +16,16 @@ import java.util.Objects;
 /**
  * Aspect that intercepts methods annotated with {@link OutboxPublish} and publishes an outbox event.
  * <p>
- * This aspect extracts the event payload from the method's return value or arguments using SpEL,
- * and then publishes a {@link RawOutboxEvent} or {@link RawOutboxEvents} via the {@link ApplicationEventPublisher}.
- */
+ * This aspect extracts the event payload from the method's return value or arguments using SpEL.
+ * */
 @Aspect
 public class OutboxPublishAspect {
 
     private final ExpressionParser expressionParser;
-    private final ApplicationEventPublisher eventPublisher;
+    private final OutboxPublisher publisher;
 
-    public OutboxPublishAspect(ApplicationEventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
+    public OutboxPublishAspect(OutboxPublisher publisher) {
+        this.publisher = publisher;
         this.expressionParser = new SpelExpressionParser();
     }
 
@@ -48,10 +47,10 @@ public class OutboxPublishAspect {
         }
         Objects.requireNonNull(payload, "payload cannot be null");
         if (payload instanceof List<?>) {
-            eventPublisher.publishEvent(new RawOutboxEvents(outboxPublish.eventType(), (List<?>) payload));
+            publisher.publish(outboxPublish.eventType(), (List<?>) payload);
             return;
         }
-        eventPublisher.publishEvent(new RawOutboxEvent(outboxPublish.eventType(), payload));
+        publisher.publish(outboxPublish.eventType(), payload);
     }
 
     StandardEvaluationContext getContext(JoinPoint joinPoint) {
