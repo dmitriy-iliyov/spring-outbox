@@ -17,8 +17,7 @@ import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -354,7 +353,10 @@ public class DefaultOutboxManagerUnitTests {
         tested.finalizeBatch(events, processedIds, failedIds, 3, i -> Instant.now());
 
         // then
-        verify(repository, times(1)).updateBatchStatus(processedIds, EventStatus.PROCESSED);
+        ArgumentCaptor<Set<UUID>> processedIdsCaptor = ArgumentCaptor.forClass(Set.class);
+        verify(repository, times(1)).updateBatchStatus(processedIdsCaptor.capture(), eq(EventStatus.PROCESSED));
+        assertFalse(processedIdsCaptor.getValue().contains(common));
+
         ArgumentCaptor<List<OutboxEvent>> eventsCaptor = ArgumentCaptor.forClass(List.class);
         verify(repository, times(1)).partiallyUpdateBatch(eventsCaptor.capture());
         List<OutboxEvent> resultEvents = eventsCaptor.getValue();

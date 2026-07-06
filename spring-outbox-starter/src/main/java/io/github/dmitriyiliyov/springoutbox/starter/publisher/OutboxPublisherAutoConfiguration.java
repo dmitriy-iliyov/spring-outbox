@@ -2,7 +2,6 @@ package io.github.dmitriyiliyov.springoutbox.starter.publisher;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.aop.OutboxPublishAspect;
-import io.github.dmitriyiliyov.springoutbox.aop.RawOutboxEventListener;
 import io.github.dmitriyiliyov.springoutbox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.springoutbox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.locks.DistributedLockRepository;
@@ -16,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -87,13 +85,8 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
-    public OutboxPublishAspect outboxEventAspect(ApplicationEventPublisher eventPublisher) {
-        return new OutboxPublishAspect(eventPublisher);
-    }
-
-    @Bean
-    public RawOutboxEventListener rowOutboxEventListener(OutboxPublisher publisher) {
-        return new RawOutboxEventListener(publisher);
+    public OutboxPublishAspect outboxEventAspect(OutboxPublisher publisher) {
+        return new OutboxPublishAspect(publisher);
     }
 
     @Bean

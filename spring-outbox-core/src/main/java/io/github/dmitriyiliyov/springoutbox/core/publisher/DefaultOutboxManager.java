@@ -2,6 +2,7 @@ package io.github.dmitriyiliyov.springoutbox.core.publisher;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxEvent;
+import io.github.dmitriyiliyov.springoutbox.core.utils.SetUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Propagation;
@@ -11,10 +12,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
 public class DefaultOutboxManager implements OutboxManager {
@@ -62,20 +60,22 @@ public class DefaultOutboxManager implements OutboxManager {
     @Override
     public void finalizeBatch(List<OutboxEvent> events, Set<UUID> processedIds, Set<UUID> failedIds,
                               int maxRetryCount, Function<Integer, Instant> nextRetryAtSupplier) {
-        boolean hasProcessed = !CollectionUtils.isEmpty(processedIds);
-        boolean hasFailed = !CollectionUtils.isEmpty(failedIds);
+        boolean hasProcessed = !SetUtils.isEmpty(processedIds);
+        boolean hasFailed = !SetUtils.isEmpty(failedIds);
+
+        Set<UUID> processedIdsCopy = SetUtils.mutableCopy(processedIds);
 
         if (hasProcessed && hasFailed) {
-            boolean wasOverlapped = processedIds.removeAll(failedIds);
+            boolean wasOverlapped = processedIdsCopy.removeAll(failedIds);
             if (wasOverlapped) {
-                log.warn("Set of ids was overlapped, all overlapped ids deleted moved from processedIds set to failedIds");
+                log.warn("Set of ids was overlapped, all overlapped ids moved from processedIds to failedIds");
             }
-            if (!processedIds.isEmpty()) {
-                repository.updateBatchStatus(processedIds, EventStatus.PROCESSED);
+            if (!processedIdsCopy.isEmpty()) {
+                repository.updateBatchStatus(processedIdsCopy, EventStatus.PROCESSED);
             }
             repository.partiallyUpdateBatch(prepareFailedEvents(events, failedIds, maxRetryCount, nextRetryAtSupplier));
         } else if (hasProcessed) {
-            repository.updateBatchStatus(processedIds, EventStatus.PROCESSED);
+            repository.updateBatchStatus(processedIdsCopy, EventStatus.PROCESSED);
         } else if (hasFailed) {
             repository.partiallyUpdateBatch(prepareFailedEvents(events, failedIds, maxRetryCount, nextRetryAtSupplier));
         } else {
