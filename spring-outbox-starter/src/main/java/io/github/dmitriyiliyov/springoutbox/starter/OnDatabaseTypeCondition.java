@@ -18,6 +18,15 @@ public class OnDatabaseTypeCondition extends SpringBootCondition {
             DatabaseType annotationDatabaseType = (DatabaseType) attributes.get("type");
 
             String jdbcUrl = context.getEnvironment().getProperty("spring.datasource.url");
+
+            if (jdbcUrl == null) {
+                jdbcUrl = context.getEnvironment().getProperty("spring.datasource.hikari.jdbc-url");
+            }
+
+            if (jdbcUrl == null) {
+                return ConditionOutcome.noMatch("No JDBC URL found in spring.datasource.url or spring.datasource.hikari.jdbc-url");
+            }
+
             DatabaseDriver driver = DatabaseDriver.fromJdbcUrl(jdbcUrl);
 
             if (!DatabaseDriver.UNKNOWN.equals(driver)) {
@@ -27,7 +36,7 @@ public class OnDatabaseTypeCondition extends SpringBootCondition {
                 }
             }
 
-            return ConditionOutcome.noMatch("databaseType from annotation not matched with databaseType from context");
+            return ConditionOutcome.noMatch("unknown databaseDriver from annotation not matched with databaseType from context");
         } else {
             throw new IllegalStateException("annotation hasn't any attributes");
         }
