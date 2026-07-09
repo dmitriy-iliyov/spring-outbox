@@ -20,8 +20,8 @@ import javax.sql.DataSource;
 import java.time.Clock;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 @Configuration
 @EnableConfigurationProperties(OutboxProperties.class)
@@ -119,15 +119,23 @@ public class OutboxAutoConfiguration {
         return new NoopContinuableTaskDecoratorSupplier();
     }
 
-    @Bean(destroyMethod = "shutdown")
+    @Bean
     public ScheduledExecutorService outboxScheduledExecutorService() {
-        CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("otbx-thread-");
-        threadFactory.setDaemon(true);
-        threadFactory.setThreadPriority(Thread.NORM_PRIORITY);
-        return Executors.newScheduledThreadPool(
+        CustomizableThreadFactory threadFactory = new CustomizableThreadFactory("outbox-thrd-");
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(
                 properties.getThreadPoolSize(),
                 threadFactory
         );
+        executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(false);
+        executor.setRemoveOnCancelPolicy(true);
+        return executor;
+    }
+
+    @Bean(destroyMethod = "shutdown")
+    public ScheduledExecutorServiceShutdownHook outboxScheduledExecutorServiceShutdownHook(
+            @Qualifier("outboxScheduledExecutorService") ScheduledExecutorService service
+    ) {
+        return new DefaultScheduledExecutorServiceShutdownHook(service);
     }
 
     @Bean

@@ -5,6 +5,7 @@ import io.github.dmitriyiliyov.springoutbox.core.polling.OutboxScheduleStrategy;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPollingScheduler;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxProcessor;
 import io.github.dmitriyiliyov.springoutbox.starter.*;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -30,17 +31,17 @@ public class OutboxPollingSchedulerRegistrar implements ImportBeanDefinitionRegi
     private BeanFactory beanFactory;
 
     @Override
-    public void setEnvironment(Environment environment) {
+    public void setEnvironment(@NonNull Environment environment) {
         this.environment = environment;
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+    public void setBeanFactory(@NonNull BeanFactory beanFactory) throws BeansException {
         this.beanFactory = beanFactory;
     }
 
     @Override
-    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+    public void registerBeanDefinitions(@NonNull AnnotationMetadata importingClassMetadata, @NonNull BeanDefinitionRegistry registry) {
 
         Binder binder = Binder.get(environment);
         OutboxPublisherProperties properties = binder.bind(
