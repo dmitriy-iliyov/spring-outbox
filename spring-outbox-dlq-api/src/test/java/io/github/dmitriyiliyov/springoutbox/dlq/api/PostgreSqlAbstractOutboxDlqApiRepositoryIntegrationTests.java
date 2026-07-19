@@ -33,6 +33,18 @@ class PostgreSqlAbstractOutboxDlqApiRepositoryIntegrationTests extends BasePostg
     }
 
     @Test
+    @DisplayName("IT findByIdForUpdate() for not existing id should return empty")
+    void findByIdForUpdate_notExisting_returnsEmpty() {
+        delegate.findByIdForUpdate_notExisting_returnsEmpty();
+    }
+
+    @Test
+    @DisplayName("IT findByIdForUpdate() for existing id should return event")
+    void findByIdForUpdate_existingId_returnsEvent() {
+        delegate.findByIdForUpdate_existingId_returnsEvent();
+    }
+
+    @Test
     @DisplayName("IT findBatch() when no matches should return empty")
     void findBatch_noMatches_returnsEmpty() {
         delegate.findBatch_noMatches_returnsEmpty();

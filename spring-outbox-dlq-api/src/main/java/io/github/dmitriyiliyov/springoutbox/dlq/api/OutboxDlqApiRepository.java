@@ -25,6 +25,14 @@ public interface OutboxDlqApiRepository {
     Optional<OutboxDlqEvent> findById(UUID id);
 
     /**
+     * Finds and lock a DLQ event by its ID.
+     *
+     * @param id the ID of the event.
+     * @return   an {@link Optional} containing the event if found, otherwise empty.
+     */
+    Optional<OutboxDlqEvent> findByIdForUpdate(UUID id);
+
+    /**
      * Finds a batch of DLQ events by their status with pagination.
      * <p>
      * Results are ordered by {@code moved_at} and {@code id} ascending.

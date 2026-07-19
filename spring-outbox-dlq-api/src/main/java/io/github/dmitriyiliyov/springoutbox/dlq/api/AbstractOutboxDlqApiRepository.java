@@ -45,6 +45,22 @@ public abstract class AbstractOutboxDlqApiRepository implements OutboxDlqApiRepo
     }
 
     @Override
+    public Optional<OutboxDlqEvent> findByIdForUpdate(UUID id) {
+        String sql = """
+            SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at
+            FROM outbox_dlq_events
+            WHERE id = ?
+            FOR UPDATE
+        """;
+        List<OutboxDlqEvent> results = jdbcTemplate.query(
+                sql,
+                ps -> idHelper.setIdToPs(ps, 1, id),
+                (rs, rowNum) -> mapper.toDlqEvent(rs)
+        );
+        return results.stream().findFirst();
+    }
+
+    @Override
     public List<OutboxDlqEvent> findBatch(DlqFilter filter, int batchNumber, int batchSize) {
         StringBuilder sql = new StringBuilder("""
             SELECT id, status, dlq_status, event_type, payload_type, payload, retry_count, next_retry_at, created_at, updated_at, moved_at 

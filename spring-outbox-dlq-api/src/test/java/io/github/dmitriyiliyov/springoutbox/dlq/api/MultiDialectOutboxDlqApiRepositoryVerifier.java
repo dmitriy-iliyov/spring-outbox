@@ -55,6 +55,21 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .containsExactly(event.getId(), DlqStatus.MOVED, "ORDER_CREATED");
     }
 
+    void findByIdForUpdate_notExisting_returnsEmpty() {
+        assertThat(repository.findByIdForUpdate(UUID.randomUUID())).isEmpty();
+    }
+
+    void findByIdForUpdate_existingId_returnsEvent() {
+        OutboxDlqEvent event = buildEvent(DlqStatus.MOVED);
+        saveBatch(List.of(event));
+
+        assertThat(repository.findByIdForUpdate(event.getId()))
+                .isPresent()
+                .get()
+                .extracting(OutboxDlqEvent::getId, OutboxDlqEvent::getDlqStatus, OutboxDlqEvent::getEventType)
+                .containsExactly(event.getId(), DlqStatus.MOVED, "ORDER_CREATED");
+    }
+
     void findBatch_byStatus_returnsOnlyMatchingStatus() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED),

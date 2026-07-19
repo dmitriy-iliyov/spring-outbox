@@ -122,6 +122,33 @@ class AbstractOutboxDlqApiRepositoryUnitTests {
     }
 
     @Test
+    @DisplayName("UT findByIdForUpdate() should return event when found")
+    void findByIdForUpdate_shouldReturnEvent() {
+        UUID id = UUID.randomUUID();
+        OutboxDlqEvent event = mock(OutboxDlqEvent.class);
+
+        when(jdbcTemplate.query(anyString(), any(PreparedStatementSetter.class), any(RowMapper.class)))
+                .thenReturn(List.of(event));
+
+        Optional<OutboxDlqEvent> result = tested.findByIdForUpdate(id);
+
+        assertThat(result).isPresent().contains(event);
+    }
+
+    @Test
+    @DisplayName("UT findByIdForUpdate() should return empty when not found")
+    void findByIdForUpdate_shouldReturnEmpty() {
+        UUID id = UUID.randomUUID();
+
+        when(jdbcTemplate.query(anyString(), any(PreparedStatementSetter.class), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        Optional<OutboxDlqEvent> result = tested.findByIdForUpdate(id);
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     @DisplayName("UT findBatch() with empty filter should call jdbcTemplate")
     void findBatch_withEmptyFilter_shouldCallJdbc() {
         DlqFilter filter = mock(DlqFilter.class);

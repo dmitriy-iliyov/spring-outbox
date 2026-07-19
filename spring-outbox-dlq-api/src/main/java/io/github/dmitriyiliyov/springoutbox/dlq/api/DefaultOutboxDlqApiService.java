@@ -48,10 +48,10 @@ public class DefaultOutboxDlqApiService implements OutboxDlqApiService {
         return repository.count(filter);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     @Override
     public void updateStatus(UUID id, DlqStatus status) {
-        OutboxDlqEvent event = repository.findById(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
+        OutboxDlqEvent event = repository.findByIdForUpdate(id).orElseThrow(() -> new OutboxDlqEventNotFoundException(id));
         if (DlqStatus.IN_PROCESS.equals(event.getDlqStatus())) {
             log.debug("Update requested, but event is in 'IN_PROCESS' status; update impossible");
             throw new OutboxDlqEventInProcessException(event.getId());
@@ -74,10 +74,10 @@ public class DefaultOutboxDlqApiService implements OutboxDlqApiService {
         return BatchModificationResponse.ofUpdate(updatedCount);
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     @Override
     public int deleteById(UUID id) {
-        OutboxDlqEvent event = repository.findById(id).orElseThrow(
+        OutboxDlqEvent event = repository.findByIdForUpdate(id).orElseThrow(
                 () -> new OutboxDlqEventNotFoundException(id)
         );
         if (DlqStatus.IN_PROCESS.equals(event.getDlqStatus())) {
