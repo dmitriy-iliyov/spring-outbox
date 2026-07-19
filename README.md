@@ -1,6 +1,7 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox)
 [![codecov](https://codecov.io/github/dmitriy-iliyov/spring-outbox/branch/main/graph/badge.svg?token=8X6B9K3AOK)](https://codecov.io/github/dmitriy-iliyov/spring-outbox)
 [![CI](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml)
+[![E2E](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/e2e.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/e2e.yml)
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.dmitriy-iliyov/spring-outbox-starter.svg?label=maven-central&color=blue)](https://central.sonatype.com/artifact/io.github.dmitriy-iliyov/spring-outbox-starter)
 [![javadoc](https://javadoc.io/badge2/io.github.dmitriy-iliyov/spring-outbox-core/javadoc.svg)](https://javadoc.io/doc/io.github.dmitriy-iliyov/spring-outbox-core)
 ![Release](https://img.shields.io/github/release/dmitriy-iliyov/spring-outbox)

@@ -1,0 +1,110 @@
+spring:
+  kafka:
+    consumer:
+      group-id: e2e-consumer-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+
+logging:
+  level:
+    io.github.dmitriyiliyov.springoutbox: DEBUG
+
+# Aggressive timings: e2e scenarios simulate time passage by shifting row timestamps,
+# so polling delays and initial delays are kept near-minimal for fast, deterministic tests
+outbox:
+  thread-pool-size: 9
+  tables:
+    auto-create: true
+
+  publisher:
+    sender:
+      type: kafka
+      bean-name: outboxKafkaTemplate
+      emergency-timeout: 10s
+
+    defaults:
+      batch-size: 100
+      polling:
+        type: fixed
+        initial-delay: 1s
+        fixed-delay: 500ms
+      max-retries: 2
+      backoff:
+        enabled: true
+        delay: 1s
+        multiplier: 2.0
+
+    events:
+      e2e-event:
+        topic: e2e.events
+      e2e-aop-event:
+        topic: e2e.events
+      e2e-retry-event:
+        topic: e2e.events
+        max-retries: 10
+        backoff:
+          delay: 500ms
+          multiplier: 1.5
+      e2e-dlq-event:
+        topic: e2e.events
+        max-retries: 1
+        backoff:
+          delay: 500ms
+          multiplier: 2.0
+
+    stuck-recovery:
+      batch-size: 100
+      max-batch-processing-time: 3s
+      polling:
+        type: fixed
+        initial-delay: 1s
+        fixed-delay: 500ms
+
+    clean-up:
+      enabled: true
+      batch-size: 100
+      ttl: 30s
+      polling:
+        type: fixed
+        initial-delay: 1s
+        fixed-delay: 500ms
+
+    dlq:
+      enabled: true
+      batch-size: 100
+      polling:
+        type: fixed
+        initial-delay: 1s
+        fixed-delay: 500ms
+      clean-up:
+        enabled: true
+        batch-size: 100
+        ttl: 30s
+        polling:
+          type: fixed
+          initial-delay: 1s
+          fixed-delay: 500ms
+
+  consumer:
+    enabled: true
+    source:
+      type: kafka
+    mappings:
+      e2e-event: io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent
+      e2e-aop-event: io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent
+      e2e-retry-event: io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent
+      e2e-dlq-event: io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent
+    cache:
+      enabled: false
+    clean-up:
+      enabled: true
+      batch-size: 100
+      ttl: 30s
+      polling:
+        type: fixed
+        initial-delay: 1s
+        fixed-delay: 500ms
