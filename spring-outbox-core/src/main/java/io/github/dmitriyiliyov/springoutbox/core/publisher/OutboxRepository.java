@@ -46,8 +46,7 @@ public interface OutboxRepository {
      * @return           a list of locked outbox events with status set to {@code lockStatus};
      *                   empty list if none available.
      */
-    List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status,
-                                                           int batchSize, EventStatus lockStatus);
+    List<OutboxEvent> findAndLockBatchByEventTypeAndStatus(String eventType, EventStatus status, int batchSize, EventStatus lockStatus);
 
     /**
      * Finds and locks a batch of events by their status, without filtering by event type.
@@ -91,8 +90,7 @@ public interface OutboxRepository {
      * @param newStatus the new status to set.
      * @return          the number of updated events.
      */
-    int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold,
-                                              int batchSize, EventStatus newStatus);
+    int updateBatchStatusByStatusAndThreshold(EventStatus status, Instant threshold, int batchSize, EventStatus newStatus);
 
     /**
      * Updates a batch of events using the state carried by each event object.
