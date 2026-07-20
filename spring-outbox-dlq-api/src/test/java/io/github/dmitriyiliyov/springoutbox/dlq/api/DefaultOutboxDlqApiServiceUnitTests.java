@@ -110,14 +110,14 @@ public class DefaultOutboxDlqApiServiceUnitTests {
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
         when(event.getDlqStatus()).thenReturn(DlqStatus.IN_PROCESS);
         when(event.getId()).thenReturn(id);
-        when(repository.findById(id)).thenReturn(Optional.of(event));
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(event));
 
         // when + then
         OutboxDlqEventInProcessException e = assertThrows(
                 OutboxDlqEventInProcessException.class, () -> tested.updateStatus(id, DlqStatus.RESOLVED)
         );
         assertEquals("Outbox DLQ event with id=%s is IN_PROCESS, interaction impossible".formatted(id), e.getDetail());
-        verify(repository).findById(id);
+        verify(repository).findByIdForUpdate(id);
         verifyNoMoreInteractions(repository);
     }
 
@@ -126,11 +126,11 @@ public class DefaultOutboxDlqApiServiceUnitTests {
     void updateStatus_whenEventNotFound_shouldThrow() {
         // given
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.empty());
 
         // when + then
         assertThrows(OutboxDlqEventNotFoundException.class, () -> tested.updateStatus(id, DlqStatus.RESOLVED));
-        verify(repository).findById(id);
+        verify(repository).findByIdForUpdate(id);
         verifyNoMoreInteractions(repository);
     }
 
@@ -141,13 +141,13 @@ public class DefaultOutboxDlqApiServiceUnitTests {
         UUID id = UUID.randomUUID();
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
         when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
-        when(repository.findById(id)).thenReturn(Optional.of(event));
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(event));
 
         // when
         tested.updateStatus(id, DlqStatus.RESOLVED);
 
         // then
-        verify(repository).findById(id);
+        verify(repository).findByIdForUpdate(id);
         verify(repository).updateStatus(id, DlqStatus.RESOLVED);
         verifyNoMoreInteractions(repository);
     }
@@ -203,11 +203,11 @@ public class DefaultOutboxDlqApiServiceUnitTests {
     void deleteById_whenEventNotFound_shouldThrow() {
         // given
         UUID id = UUID.randomUUID();
-        when(repository.findById(id)).thenReturn(Optional.empty());
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.empty());
 
         // when + then
         assertThrows(OutboxDlqEventNotFoundException.class, () -> tested.deleteById(id));
-        verify(repository).findById(id);
+        verify(repository).findByIdForUpdate(id);
         verifyNoMoreInteractions(repository);
     }
 
@@ -219,11 +219,11 @@ public class DefaultOutboxDlqApiServiceUnitTests {
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
         when(event.getDlqStatus()).thenReturn(DlqStatus.IN_PROCESS);
         when(event.getId()).thenReturn(id);
-        when(repository.findById(id)).thenReturn(Optional.of(event));
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(event));
 
         // when + then
         assertThrows(OutboxDlqEventInProcessException.class, () -> tested.deleteById(id));
-        verify(repository).findById(id);
+        verify(repository).findByIdForUpdate(id);
         verifyNoMoreInteractions(repository);
     }
 
@@ -234,7 +234,7 @@ public class DefaultOutboxDlqApiServiceUnitTests {
         UUID id = UUID.randomUUID();
         OutboxDlqEvent event = mock(OutboxDlqEvent.class);
         when(event.getDlqStatus()).thenReturn(DlqStatus.MOVED);
-        when(repository.findById(id)).thenReturn(Optional.of(event));
+        when(repository.findByIdForUpdate(id)).thenReturn(Optional.of(event));
         when(repository.deleteById(id)).thenReturn(1);
 
         // when
@@ -242,7 +242,7 @@ public class DefaultOutboxDlqApiServiceUnitTests {
 
         // then
         assertEquals(1, result);
-        verify(repository).findById(id);
+        verify(repository).findByIdForUpdate(id);
         verify(repository).deleteById(id);
         verifyNoMoreInteractions(repository);
     }
