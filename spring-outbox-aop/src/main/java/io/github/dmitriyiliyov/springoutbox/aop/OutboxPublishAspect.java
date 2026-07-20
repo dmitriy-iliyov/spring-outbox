@@ -6,6 +6,8 @@ import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -19,6 +21,7 @@ import java.util.Objects;
  * This aspect extracts the event payload from the method's return value or arguments using SpEL.
  * */
 @Aspect
+@Order(Ordered.LOWEST_PRECEDENCE - 1)
 public class OutboxPublishAspect {
 
     private final ExpressionParser expressionParser;
