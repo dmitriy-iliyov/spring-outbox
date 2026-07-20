@@ -6,8 +6,6 @@ import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxPollingSchedule
 import io.github.dmitriyiliyov.springoutbox.core.publisher.OutboxProcessor;
 import io.github.dmitriyiliyov.springoutbox.starter.*;
 import org.jspecify.annotations.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -24,8 +22,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 
 public class OutboxPollingSchedulerRegistrar implements ImportBeanDefinitionRegistrar, EnvironmentAware, BeanFactoryAware {
-
-    private static final Logger log = LoggerFactory.getLogger(OutboxPollingSchedulerRegistrar.class);
 
     private Environment environment;
     private BeanFactory beanFactory;

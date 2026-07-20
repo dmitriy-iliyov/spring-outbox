@@ -18,6 +18,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.Order;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Clock;
@@ -34,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
         OutboxPollingSchedulerRegistrar.class,
         OutboxDlqAutoConfiguration.class,
         OutboxPublisherKafkaAutoConfiguration.class,
+        OutboxPublisherRabbitAutoConfiguration.class,
         OutboxPublisherMetricsAutoConfiguration.class
 })
 public class OutboxPublisherAutoConfiguration {
@@ -85,7 +87,8 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
-    public OutboxPublishAspect outboxEventAspect(OutboxPublisher publisher) {
+    @Order(2)
+    public OutboxPublishAspect outboxPublishAspect(OutboxPublisher publisher) {
         return new OutboxPublishAspect(publisher);
     }
 
