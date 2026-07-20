@@ -1,0 +1,11 @@
+scrape_configs:
+  - job_name: 'oncebox-producer'
+    scheme: http
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+  - job_name: 'oncebox-consumer'
+    scheme: http
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:8081']

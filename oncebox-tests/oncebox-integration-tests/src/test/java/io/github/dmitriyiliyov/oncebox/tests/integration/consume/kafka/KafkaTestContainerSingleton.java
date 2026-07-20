@@ -1,0 +1,17 @@
+package io.github.dmitriyiliyov.oncebox.tests.integration.consume.kafka;
+
+import org.testcontainers.kafka.KafkaContainer;
+import org.testcontainers.utility.DockerImageName;
+
+public class KafkaTestContainerSingleton {
+
+    public static final KafkaContainer INSTANCE;
+
+    static {
+        INSTANCE = new KafkaContainer(DockerImageName.parse("apache/kafka:4.2.0"))
+                .withReuse(true);
+        INSTANCE.start();
+    }
+
+    private KafkaTestContainerSingleton() {}
+}

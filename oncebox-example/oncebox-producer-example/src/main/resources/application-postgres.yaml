@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://oncebox-producer-postgresql:5432/oncebox_example
+    username: admin
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect

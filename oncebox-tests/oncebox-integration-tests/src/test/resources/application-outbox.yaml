@@ -1,0 +1,31 @@
+spring:
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true
+        format_sql: true
+    hibernate:
+      ddl-auto: none
+logging:
+  level:
+    io.github.dmitriyiliyov.oncebox: DEBUG
+oncebox:
+  thread-pool-size: 2
+  publisher:
+    sender:
+      type: kafka
+    events:
+      business-event:
+        topic: business-event
+    dlq:
+      enabled: true
+    metrics:
+      enabled: true
+      gauge:
+        enabled: true
+        cache:
+          enabled: true

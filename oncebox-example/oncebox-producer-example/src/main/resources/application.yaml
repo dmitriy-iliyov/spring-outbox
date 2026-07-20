@@ -1,0 +1,82 @@
+spring:
+  application:
+    name: oncebox-producer-example
+  jpa:
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 100
+        order_inserts: true
+        order_updates: true
+        generate_statistics: true
+        format_sql: true
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration/{vendor}
+    baseline-on-migrate: true
+logging:
+  level:
+    root: info
+    io.github.dmitriyiliyov.oncebox: debug
+oncebox:
+  thread-pool-size: 7
+  tables:
+    auto-create: true
+  distributed-lock:
+    resolve-by-polling-properties: true
+  publisher:
+    defaults:
+      batch-size: 200
+      polling:
+        initial-delay: 30s
+        min-fixed-delay: 250ms
+        max-fixed-delay: 1m
+        multiplier: 5.0
+      max-retries: 3
+      backoff:
+        delay: 1m
+        multiplier: 1.5
+    clean-up:
+      enabled: true
+      batch-size: 500
+      ttl: 10m
+      polling:
+        type: adaptive
+        initial-delay: 30s
+        min-fixed-delay: 200ms
+        max-fixed-delay: 1m
+        multiplier: 2.0
+    stuck-recovery:
+      batch-size: 500
+      polling:
+        type: adaptive
+        initial-delay: 30s
+        min-fixed-delay: 1s
+        max-fixed-delay: 5m
+        multiplier: 2.0
+    dlq:
+      enabled: true
+      batch-size: 500
+      polling:
+        type: adaptive
+        initial-delay: 30s
+        min-fixed-delay: 5s
+        max-fixed-delay: 1m
+        multiplier: 2.0
+    metrics:
+      enabled: true
+      gauge:
+        enabled: true
+        cache:
+          ttls: [60s, 60s, 60s]
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    enable:
+      all: true

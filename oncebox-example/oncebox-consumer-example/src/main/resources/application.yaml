@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: oncebox-consumer-example
+  data:
+    redis:
+      port: 6379
+      host: oncebox-consumer-redis
+server:
+  port: 8080
+logging:
+  level:
+    io.github.dmitriyiliyov.oncebox: debug
+oncebox:
+  thread-pool-size: 2
+  publisher:
+    enabled: false
+  consumer:
+    enabled: true
+    mappings:
+      create-order: io.github.dmitriyiliyov.oncebox.example.shared.OrderDto
+      update-order: io.github.dmitriyiliyov.oncebox.example.shared.OrderDto
+      delete-order: java.lang.Long
+    clean-up:
+      enabled: true
+      ttl: 10m
+    cache:
+      enabled: true
+      cache-name: "oncebox:consumed"
+    metrics:
+      enabled: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    enable:
+      all: true

@@ -1,0 +1,227 @@
+{
+  "info": {
+    "_postman_id": "45dac528-0a01-4d74-8358-ef28acf567ad",
+    "name": "oncebox-dlq",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "31061267"
+  },
+  "item": [
+    {
+      "name": "get by id",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{PROTOCOL}}://{{HOST}}:{{PORT}}/api/outbox-dlq/events/c57fd009-9ea5-4038-b12e-8180f1c0c6dd",
+          "protocol": "{{PROTOCOL}}",
+          "host": [
+            "{{HOST}}"
+          ],
+          "port": "{{PORT}}",
+          "path": [
+            "api",
+            "outbox-dlq",
+            "events",
+            "c57fd009-9ea5-4038-b12e-8180f1c0c6dd"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "get batch",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"MOVED\",\n  \"batchNumber\": 1,\n  \"batchSize\": 50\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{PROTOCOL}}://{{HOST}}:{{PORT}}/api/outbox-dlq/events/batch",
+          "protocol": "{{PROTOCOL}}",
+          "host": [
+            "{{HOST}}"
+          ],
+          "port": "{{PORT}}",
+          "path": [
+            "api",
+            "outbox-dlq",
+            "events",
+            "batch"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "count",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"MOVED\",\n  \"batchNumber\": 1,\n  \"batchSize\": 50\n}"
+        },
+        "url": {
+          "raw": "{{PROTOCOL}}://{{HOST}}:{{PORT}}/api/outbox-dlq/events/count",
+          "protocol": "{{PROTOCOL}}",
+          "host": [
+            "{{HOST}}"
+          ],
+          "port": "{{PORT}}",
+          "path": [
+            "api",
+            "outbox-dlq",
+            "events",
+            "count"
+          ],
+          "query": [
+            {
+              "key": "status",
+              "value": "MOVED",
+              "type": "text",
+              "disabled": true
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update by id",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "url": {
+          "raw": "{{PROTOCOL}}://{{HOST}}:{{PORT}}/api/outbox-dlq/events/c57fd009-9ea5-4038-b12e-8180f1c0c6dd",
+          "protocol": "{{PROTOCOL}}",
+          "host": [
+            "{{HOST}}"
+          ],
+          "port": "{{PORT}}",
+          "path": [
+            "api",
+            "outbox-dlq",
+            "events",
+            "c57fd009-9ea5-4038-b12e-8180f1c0c6dd"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "update batch",
+      "request": {
+        "method": "PATCH",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\": \"RESOLVED\",\n    \"ids\": [\"c57fd009-9ea5-4038-b12e-8180f1c0c6dd\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{PROTOCOL}}://{{HOST}}:{{PORT}}/api/outbox-dlq/events/batch",
+          "protocol": "{{PROTOCOL}}",
+          "host": [
+            "{{HOST}}"
+          ],
+          "port": "{{PORT}}",
+          "path": [
+            "api",
+            "outbox-dlq",
+            "events",
+            "batch"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "delete by id",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"status\": \"RESOLVED\",\n    \"ids\": [\"c57fd009-9ea5-4038-b12e-8180f1c0c6dd\"]\n}"
+        },
+        "url": {
+          "raw": "{{PROTOCOL}}://{{HOST}}:{{PORT}}/api/outbox-dlq/events/c57fd009-9ea5-4038-b12e-8180f1c0c6dd",
+          "protocol": "{{PROTOCOL}}",
+          "host": [
+            "{{HOST}}"
+          ],
+          "port": "{{PORT}}",
+          "path": [
+            "api",
+            "outbox-dlq",
+            "events",
+            "c57fd009-9ea5-4038-b12e-8180f1c0c6dd"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "PROTOCOL",
+      "value": ""
+    },
+    {
+      "key": "HOST",
+      "value": ""
+    },
+    {
+      "key": "PORT",
+      "value": ""
+    }
+  ]
+}

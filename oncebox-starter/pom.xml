@@ -1,0 +1,140 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.dmitriy-iliyov</groupId>
+        <artifactId>oncebox-parent</artifactId>
+        <version>1.1.2</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>oncebox-starter</artifactId>
+    <packaging>jar</packaging>
+
+    <name>oncebox-starter</name>
+    <description>Spring Boot Starter for Transactional Outbox pattern</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-core</artifactId>
+            <version>1.1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-aop</artifactId>
+            <version>1.1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-messaging</artifactId>
+            <version>1.1.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-dlq-api</artifactId>
+            <version>1.1.2</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-consumer-cache</artifactId>
+            <version>1.1.2</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-kafka</artifactId>
+            <version>1.1.2</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-rabbit</artifactId>
+            <version>1.1.2</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-metrics</artifactId>
+            <version>1.1.2</version>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-test-utils</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+</project>

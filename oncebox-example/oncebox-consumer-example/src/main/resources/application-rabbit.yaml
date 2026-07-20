@@ -1,0 +1,10 @@
+oncebox:
+  consumer:
+    source:
+      type: rabbit
+spring:
+  rabbitmq:
+    host: oncebox-rabbit
+    port: 5672
+    username: guest
+    password: guest

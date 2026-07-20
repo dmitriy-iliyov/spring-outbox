@@ -1,6 +1,0 @@
-spring:
-  datasource:
-    url: jdbc:postgresql://outbox-consumer-postgresql:5432/outbox_example
-    username: admin
-    password: root
-    driver-class-name: org.postgresql.Driver

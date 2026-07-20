@@ -1,0 +1,4 @@
+oncebox:
+  consumer:
+    source:
+      type: kafka

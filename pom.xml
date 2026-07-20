@@ -8,13 +8,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.github.dmitriy-iliyov</groupId>
-    <artifactId>spring-outbox-parent</artifactId>
-    <version>1.1.1</version>
+    <artifactId>oncebox-parent</artifactId>
+    <version>1.1.2</version>
     <packaging>pom</packaging>
 
-    <name>spring-outbox</name>
+    <name>oncebox</name>
     <description>Transactional Outbox pattern for Spring Boot</description>
-    <url>https://github.com/dmitriy-iliyov/spring-outbox</url>
+    <url>https://github.com/dmitriy-iliyov/oncebox</url>
 
     <licenses>
         <license>
@@ -33,22 +33,22 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/dmitriy-iliyov/spring-outbox.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com:dmitriy-iliyov/spring-outbox.git</developerConnection>
-        <url>https://github.com/dmitriy-iliyov/spring-outbox</url>
+        <connection>scm:git:https://github.com/dmitriy-iliyov/oncebox.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:dmitriy-iliyov/oncebox.git</developerConnection>
+        <url>https://github.com/dmitriy-iliyov/oncebox</url>
         <tag>v1.1.0</tag>
     </scm>
 
     <modules>
-        <module>spring-outbox-core</module>
-        <module>spring-outbox-aop</module>
-        <module>spring-outbox-dlq-api</module>
-        <module>spring-outbox-consumer-cache</module>
-        <module>spring-outbox-kafka</module>
-        <module>spring-outbox-rabbit</module>
-        <module>spring-outbox-messaging</module>
-        <module>spring-outbox-metrics</module>
-        <module>spring-outbox-starter</module>
+        <module>oncebox-core</module>
+        <module>oncebox-aop</module>
+        <module>oncebox-dlq-api</module>
+        <module>oncebox-consumer-cache</module>
+        <module>oncebox-kafka</module>
+        <module>oncebox-rabbit</module>
+        <module>oncebox-messaging</module>
+        <module>oncebox-metrics</module>
+        <module>oncebox-starter</module>
     </modules>
 
     <properties>

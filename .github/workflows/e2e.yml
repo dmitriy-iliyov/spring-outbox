@@ -74,8 +74,8 @@ jobs:
           else
             echo "Running E2E against already-published library version $version"
           fi
-          echo "arg=-Doutbox.version=$version" >> "$GITHUB_OUTPUT"
+          echo "arg=-Doncebox.version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Run ${{ matrix.broker }} + ${{ matrix.db }} E2E
-        working-directory: ./spring-outbox-tests/spring-outbox-e2e-tests
+        working-directory: ./oncebox-tests/oncebox-e2e-tests
         run: mvn -B verify -Ddb=${{ matrix.db }} -Dbroker=${{ matrix.broker }} ${{ steps.resolve.outputs.arg }}

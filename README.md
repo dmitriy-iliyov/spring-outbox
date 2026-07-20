@@ -1,12 +1,12 @@
-[![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/spring-outbox)
-[![codecov](https://codecov.io/github/dmitriy-iliyov/spring-outbox/branch/main/graph/badge.svg?token=8X6B9K3AOK)](https://codecov.io/github/dmitriy-iliyov/spring-outbox)
-[![CI](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/ci.yml)
-[![E2E](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/e2e.yml/badge.svg)](https://github.com/dmitriy-iliyov/spring-outbox/actions/workflows/e2e.yml)
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.dmitriy-iliyov/spring-outbox-starter.svg?label=maven-central&color=blue)](https://central.sonatype.com/artifact/io.github.dmitriy-iliyov/spring-outbox-starter)
-[![javadoc](https://javadoc.io/badge2/io.github.dmitriy-iliyov/spring-outbox-core/javadoc.svg)](https://javadoc.io/doc/io.github.dmitriy-iliyov/spring-outbox-core)
-![Release](https://img.shields.io/github/release/dmitriy-iliyov/spring-outbox)
-[![GitHub Release Date](https://img.shields.io/github/release-date/dmitriy-iliyov/spring-outbox)](https://github.com/dmitriy-iliyov/spring-outbox/releases/latest)
-![GitHub last commit](https://img.shields.io/github/last-commit/dmitriy-iliyov/spring-outbox)
+[![CodeFactor](https://www.codefactor.io/repository/github/dmitriy-iliyov/oncebox/badge)](https://www.codefactor.io/repository/github/dmitriy-iliyov/oncebox)
+[![codecov](https://codecov.io/github/dmitriy-iliyov/oncebox/branch/main/graph/badge.svg?token=8X6B9K3AOK)](https://codecov.io/github/dmitriy-iliyov/oncebox)
+[![CI](https://github.com/dmitriy-iliyov/oncebox/actions/workflows/ci.yml/badge.svg)](https://github.com/dmitriy-iliyov/oncebox/actions/workflows/ci.yml)
+[![E2E](https://github.com/dmitriy-iliyov/oncebox/actions/workflows/e2e.yml/badge.svg)](https://github.com/dmitriy-iliyov/oncebox/actions/workflows/e2e.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.dmitriy-iliyov/oncebox-starter.svg?label=maven-central&color=blue)](https://central.sonatype.com/artifact/io.github.dmitriy-iliyov/oncebox-starter)
+[![javadoc](https://javadoc.io/badge2/io.github.dmitriy-iliyov/oncebox-core/javadoc.svg)](https://javadoc.io/doc/io.github.dmitriy-iliyov/oncebox-core)
+![Release](https://img.shields.io/github/release/dmitriy-iliyov/oncebox)
+[![GitHub Release Date](https://img.shields.io/github/release-date/dmitriy-iliyov/oncebox)](https://github.com/dmitriy-iliyov/oncebox/releases/latest)
+![GitHub last commit](https://img.shields.io/github/last-commit/dmitriy-iliyov/oncebox)
 
 ## Overview
 This library provides an implementation of the [Transactional Outbox Pattern](https://microservices.io/patterns/data/transactional-outbox.html) based on polling events from a relational database and publishing them to a message broker.
@@ -44,14 +44,14 @@ For Apache Kafka:
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-starter</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-starter</artifactId>
+      <version>1.1.2</version>
   </dependency>
 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-kafka</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-kafka</artifactId>
+      <version>1.1.2</version>
   </dependency>
 ```
 
@@ -59,32 +59,32 @@ For RabbitMQ:
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-starter</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-starter</artifactId>
+      <version>1.1.2</version>
   </dependency>
 
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-rabbit</artifactId>
-      <version>1.1.1</version>
-  </dependency>
-```
-
-You can add `spring-outbox-metrics` to enable the metrics collecting, read more [here](#observability).
-```xml
-  <dependency>
-      <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-metrics</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-rabbit</artifactId>
+      <version>1.1.2</version>
   </dependency>
 ```
 
-You can also add `spring-outbox-dlq-api` to enable the REST API for manual DLQ management, read more [here](#dlq-rest-api).
+You can add `oncebox-metrics` to enable the metrics collecting, read more [here](#observability).
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-dlq-api</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-metrics</artifactId>
+      <version>1.1.2</version>
+  </dependency>
+```
+
+You can also add `oncebox-dlq-api` to enable the REST API for manual DLQ management, read more [here](#dlq-rest-api).
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>oncebox-dlq-api</artifactId>
+      <version>1.1.2</version>
   </dependency>
 ```
 
@@ -108,7 +108,7 @@ public class PublisherRunner {
 > DLQ is disabled by default.
 
 ```yaml
-outbox:
+oncebox:
   publisher:
     sender:
       type: kafka              # or rabbit
@@ -162,17 +162,17 @@ public class ExampleService {
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-starter</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-starter</artifactId>
+      <version>1.1.2</version>
   </dependency>
 ```
 
-You can also add `spring-outbox-consumer-cache` to enable the cache on consumer side, read more [here](#idempotent-processing).
+You can also add `oncebox-consumer-cache` to enable the cache on consumer side, read more [here](#idempotent-processing).
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>spring-outbox-consumer-cache</artifactId>
-      <version>1.1.1</version>
+      <artifactId>oncebox-consumer-cache</artifactId>
+      <version>1.1.2</version>
   </dependency>
 ```
 
@@ -183,7 +183,7 @@ You can also add `spring-outbox-consumer-cache` to enable the cache on consumer 
 > Cleanup and cache are enabled by default.
 
 ```yaml
-outbox:
+oncebox:
   publisher:
     enabled: false
   consumer:
@@ -193,7 +193,7 @@ outbox:
       # Your specific mappings    
     enabled: true
     cache:
-      cache-name: "outbox:consumed"
+      cache-name: "oncebox:consumed"
 ```
 
 Read more about the configuration [here](#consumer-2).
@@ -246,7 +246,7 @@ Read more about event metadata [here](#event-headers)
 
 ## Example & Test Environment
 
-Example of full configured project with simple traffic generator is [here](https://github.com/dmitriy-iliyov/spring-outbox/tree/main/spring-outbox-example). Project is fully containerised with Docker.
+Example of full configured project with simple traffic generator is [here](https://github.com/dmitriy-iliyov/oncebox/tree/main/oncebox-example). Project is fully containerised with Docker.
 
 ## Design
 
@@ -340,7 +340,7 @@ public @interface OutboxPublish {
 Both approaches require specifying the eventType in accordance with the YAML configuration and support saving events in batches.
 When using the annotation-based approach, the payload can be derived from method parameters or the return value and is configured via SpEL expressions (e.g. by referencing a parameter name).
 
-More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-producer-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/producer/OrderService.java).
+More usage examples [here](https://github.com/dmitriy-iliyov/oncebox/blob/main/oncebox-example/oncebox-producer-example/src/main/java/io/github/dmitriyiliyov/oncebox/example/producer/OrderService.java).
 
 ---
 
@@ -362,6 +362,15 @@ PENDING → IN_PROCESS → PROCESSED (future cleanup)
 The library ensures atomic storage of outbox events within the same database transaction as business entity modifications. This guarantees that either both the business change and the event are saved, or neither is saved, preventing inconsistencies between the database and message broker.
 
 All methods for saving simultaneously with a business event are annotated with `@Transactional(propagation = Propagation.MANDATORY)`, which means that the transaction is mandatory and is opened by the client code.
+
+> [!WARNING]
+> When using the `@OutboxPublish` annotation together with `@Transactional` on the same method, event
+> persistence relies on the library's AOP aspect running before the transaction commits. This works
+> under Spring Boot's default (unconfigured) transaction advisor precedence. If your application
+> customizes `@EnableTransactionManagement(order = ...)` to a higher-precedence value than the default,
+> the aspect may end up running after commit and publishing will fail with
+> `IllegalTransactionStateException`. In that case, use manual `OutboxPublisher#publish()` inside the
+> transactional method instead of the annotation.
 
 ---
 
@@ -494,7 +503,7 @@ public interface OutboxIdempotentConsumer {
 }
 ```
 
-More usage examples [here](https://github.com/dmitriy-iliyov/spring-outbox/blob/main/spring-outbox-example/spring-outbox-consumer-example/src/main/java/io/github/dmitriyiliyov/springoutbox/example/consumer/OrderAnalyticKafkaListener.java)
+More usage examples [here](https://github.com/dmitriy-iliyov/oncebox/blob/main/oncebox-example/oncebox-consumer-example/src/main/java/io/github/dmitriyiliyov/oncebox/example/consumer/OrderAnalyticKafkaListener.java)
 
 ---
 
@@ -626,7 +635,7 @@ Consumer side requires only one thread for cleanup as background operation, the 
 Used to guarantee that the clean-up job runs on only one instance at a time. You can set global values for all jobs or use adaptive calculation based on the polling mechanism by setting `resolve-by-polling-properties=true`.
 
 ```yaml
-outbox:
+oncebox:
   thread-pool-size: 5
   tables:
     auto-create: true
@@ -648,7 +657,7 @@ outbox:
 
 #### Sender
 ```yaml
-outbox:
+oncebox:
   publisher:
     sender:
       type: kafka
@@ -702,7 +711,7 @@ polling:
 
 The `defaults` section defines default values that apply to all events unless overridden in individual event configuration.
 ```yaml
-outbox:
+oncebox:
   publisher:
     defaults:
       batch-size: 200
@@ -736,7 +745,7 @@ Individual event configurations override defaults for specific event types.
 
 Apache Kafka example:
 ```yaml
-outbox:
+oncebox:
   publisher:
     events:
       create-order:
@@ -774,7 +783,7 @@ All other parameters same as `defaults` section, but override defaults for this 
 
 RabbitMQ example:
 ```yaml
-outbox:
+oncebox:
   publisher:
     events:
       create-order:
@@ -807,7 +816,7 @@ outbox:
 
 **Example with inheritance from `defaults`:**
 ```yaml
-outbox:
+oncebox:
   publisher:
     defaults:
       batch-size: 200
@@ -843,7 +852,7 @@ outbox:
 
 #### Stuck Event Recovery
 ```yaml
-outbox:
+oncebox:
   publisher:
     stuck-recovery:
       batch-size: 500
@@ -869,7 +878,7 @@ outbox:
 
 #### Cleanup
 ```yaml
-outbox:
+oncebox:
   publisher:
     clean-up:
       enabled: true
@@ -901,7 +910,7 @@ outbox:
 
 #### Dead Letter Queue
 ```yaml
-outbox:
+oncebox:
   publisher:
     dlq:
       enabled: true  
@@ -946,7 +955,7 @@ DLQ has shared section with `batch-size`, `polling`. Values from this section wi
 
 **Override example**: 
 ```yaml
-outbox:
+oncebox:
   publisher:
     dlq:
       enabled: true  
@@ -973,7 +982,7 @@ outbox:
 
 #### Metrics
 ```yaml
-outbox:
+oncebox:
   publisher:
     metrics:
       enabled: true
@@ -991,7 +1000,7 @@ outbox:
 
 This enable metrics collecting and gauges with cache default ttls:
 ```yaml
-outbox:
+oncebox:
   publisher:
     metrics:
       enabled: true
@@ -1002,7 +1011,7 @@ outbox:
 
 #### Source
 ```yaml
-outbox:
+oncebox:
   consumer:
     source:
       type: kafka
@@ -1017,7 +1026,7 @@ outbox:
 #### Mappings
 
 ```yaml
-outbox:
+oncebox:
   consumer:
     mappings:
       create-order: "com.example.OrderCreatedDto"
@@ -1033,7 +1042,7 @@ outbox:
 
 #### Cleanup
 ```yaml
-outbox:
+oncebox:
   consumer:
     clean-up:
       enabled: true
@@ -1053,11 +1062,11 @@ All parameters and defaults same as [here](#cleanup-3).
 #### Cache
 The library uses Spring's `CacheManager` from application context.
 ```yaml
-outbox:
+oncebox:
   consumer:
     cache:
       enabled: true
-      cache-name: "outbox:consumed"
+      cache-name: "oncebox:consumed"
 ```
 
 > [!WARNING]
@@ -1072,7 +1081,7 @@ outbox:
 
 #### Metrics
 ```yaml
-outbox:
+oncebox:
   consumer:
     metrics:
       enabled: true
@@ -1091,7 +1100,7 @@ Minimal:
 > Dead Letter Queue and Metrics Collecting are disabled by default. All other values will use defaults.
 
 ```yaml
-outbox:
+oncebox:
   publisher:
     sender:
       type: kafka
@@ -1101,7 +1110,7 @@ outbox:
 Minimal with all features:
 
 ```yaml
-outbox:
+oncebox:
   publisher:
     sender:
       type: kafka
@@ -1117,7 +1126,7 @@ outbox:
 
 Full:
 ```yaml
-outbox:
+oncebox:
   thread-pool-size: 5
   tables:
     auto-create: true
@@ -1195,7 +1204,7 @@ Minimal:
 > Clean up and cache enable by default, metrics disable.
 
 ```yaml
-outbox:
+oncebox:
   publisher:
     enabled: false
   consumer:
@@ -1205,12 +1214,12 @@ outbox:
     mappings:
       # Your specific mappings
     cache:
-      cache-name: "outbox:consumed"
+      cache-name: "oncebox:consumed"
 ```
 
 Minimal with all features:
 ```yaml
-outbox:
+oncebox:
   publisher:
     enabled: false
   consumer:
@@ -1220,14 +1229,14 @@ outbox:
     mappings:
       # Your specific mappings
     cache:
-      cache-name: "outbox:consumed"
+      cache-name: "oncebox:consumed"
     metrics:
       enabled: true
 ```
 
 Full:
 ```yaml
-outbox:
+oncebox:
   thread-pool-size: 2
   tables:
     auto-create: true
@@ -1253,7 +1262,7 @@ outbox:
         multiplier: 2.0
     cache:
       enabled: true
-      cache-name: "outbox:consumed"
+      cache-name: "oncebox:consumed"
     metrics:
       enabled: true
 ```

@@ -1,0 +1,6 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://oncebox-consumer-postgresql:5432/oncebox_example
+    username: admin
+    password: root
+    driver-class-name: org.postgresql.Driver

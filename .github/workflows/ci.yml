@@ -20,7 +20,7 @@ jobs:
           cache: maven
 
       - name: Built test utils
-        working-directory: ./spring-outbox-tests/spring-outbox-test-utils
+        working-directory: ./oncebox-tests/oncebox-test-utils
         run: mvn clean install -Dgpg.skip=true
 
       - name: Build + UT + IT
@@ -63,7 +63,7 @@ jobs:
           cache: maven
 
       - name: Run infra OUTBOX IT
-        working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
+        working-directory: ./oncebox-tests/oncebox-integration-tests
         run: mvn -B verify -Dgpg.skip=true -Dgroups=outbox -Dspring.profiles.active=outbox -Ddb=postgres
 
   kafka-infra-inbox-it:
@@ -90,7 +90,7 @@ jobs:
           cache: maven
 
       - name: Run infra INBOX IT
-        working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
+        working-directory: ./oncebox-tests/oncebox-integration-tests
         run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox,kafka -Ddb=postgres
 
   rabbit-infra-inbox-it:
@@ -117,5 +117,5 @@ jobs:
           cache: maven
 
       - name: Run infra INBOX IT
-        working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
+        working-directory: ./oncebox-tests/oncebox-integration-tests
         run: mvn -B verify -Dgpg.skip=true -Dgroups=rabbit-inbox -Dspring.profiles.active=inbox,rabbit -Ddb=postgres

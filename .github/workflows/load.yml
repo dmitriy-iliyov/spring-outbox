@@ -17,7 +17,7 @@ jobs:
           cache: maven
 
       - name: Built test utils
-        working-directory: ./spring-outbox-tests/spring-outbox-test-utils
+        working-directory: ./oncebox-tests/oncebox-test-utils
         run: mvn clean install -Dgpg.skip=true
 
       - name: Build lib
@@ -53,7 +53,7 @@ jobs:
           cache: maven
 
       - name: Start infrastructure
-        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        working-directory: ./oncebox-tests/oncebox-load-tests
         run: COMPOSE_PROFILES=kafka,${{ matrix.db }} docker compose up -d --build
 
       - name: Wait for database to be ready
@@ -75,7 +75,7 @@ jobs:
 
       - name: Show container logs
         if: always()
-        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        working-directory: ./oncebox-tests/oncebox-load-tests
         run: docker compose logs --tail=300
 
       - name: Wait for application to be ready
@@ -83,11 +83,11 @@ jobs:
 
       - name: Show container logs on failure
         if: failure()
-        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        working-directory: ./oncebox-tests/oncebox-load-tests
         run: docker compose logs --tail=300
 
       - name: Run Gatling Load Tests
-        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        working-directory: ./oncebox-tests/oncebox-load-tests
         run: mvn gatling:test
 
       - name: Upload Gatling Reports
@@ -95,10 +95,10 @@ jobs:
         if: always()
         with:
           name: gatling-report-${{ matrix.db }}
-          path: ${{ github.workspace }}/spring-outbox-tests/spring-outbox-load-tests/target/gatling/
+          path: ${{ github.workspace }}/oncebox-tests/oncebox-load-tests/target/gatling/
           retention-days: 7
 
       - name: Stop infrastructure
         if: always()
-        working-directory: ./spring-outbox-tests/spring-outbox-load-tests
+        working-directory: ./oncebox-tests/oncebox-load-tests
         run: COMPOSE_PROFILES=kafka,${{ matrix.db }} docker compose down -v
