@@ -7,36 +7,40 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
-public class PostgresTestOutboxRepository extends AbstractTestOutboxRepository {
+public class MySqlTestOutboxRepository extends AbstractTestOutboxRepository {
 
-    public PostgresTestOutboxRepository(JdbcTemplate jdbcTemplate) {
+    public MySqlTestOutboxRepository(JdbcTemplate jdbcTemplate) {
         super(jdbcTemplate);
     }
 
     @Override
     protected Object idParam(UUID id) {
-        return id;
+        return UuidBytes.toBytes(id);
     }
 
     @Override
     protected Object verifyIdParam(UUID id) {
-        return id;
+        return id.toString();
     }
 
     @Override
     protected UUID readId(ResultSet rs, String column) throws SQLException {
-        return rs.getObject(column, UUID.class);
+        return UuidBytes.fromBytes(rs.getBytes(column));
     }
 
     @Override
     protected String minusSeconds(String column) {
-        return column + " - make_interval(secs => ?)";
+        return "DATE_SUB(" + column + ", INTERVAL ? SECOND)";
     }
 
     @Override
     protected List<String> truncateStatements() {
         return List.of(
-                "TRUNCATE outbox_events, outbox_dlq_events, outbox_consumed_events, e2e_produced_events, e2e_consumed_events"
+                "TRUNCATE TABLE outbox_events",
+                "TRUNCATE TABLE outbox_dlq_events",
+                "TRUNCATE TABLE outbox_consumed_events",
+                "TRUNCATE TABLE e2e_produced_events",
+                "TRUNCATE TABLE e2e_consumed_events"
         );
     }
 }

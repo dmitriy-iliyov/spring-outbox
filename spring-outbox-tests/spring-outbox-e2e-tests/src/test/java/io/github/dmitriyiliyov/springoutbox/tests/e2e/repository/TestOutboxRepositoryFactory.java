@@ -10,9 +10,8 @@ public final class TestOutboxRepositoryFactory {
     public static TestOutboxRepository generate(DatabaseType databaseType, JdbcTemplate jdbcTemplate) {
         return switch (databaseType) {
             case POSTGRES_SQL -> new PostgresTestOutboxRepository(jdbcTemplate);
-            default -> throw new UnsupportedOperationException(
-                    "TestOutboxRepository for databaseType=" + databaseType + " is not implemented yet"
-            );
+            case MY_SQL -> new MySqlTestOutboxRepository(jdbcTemplate);
+            case ORACLE -> new OracleTestOutboxRepository(jdbcTemplate);
         };
     }
 }

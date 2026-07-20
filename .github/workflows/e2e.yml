@@ -1,4 +1,4 @@
-name: E2E Tests
+name: E2E
 
 on:
   release:
@@ -12,8 +12,14 @@ on:
 
 jobs:
 
-  kafka-postgres-e2e:
+  e2e:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [postgres, mysql, oracle]
+        broker: [kafka, rabbit]
+    name: ${{ matrix.broker }} + ${{ matrix.db }} E2E
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -38,6 +44,6 @@ jobs:
             echo "Running E2E against the module default library version"
           fi
 
-      - name: Run Kafka + Postgres E2E
+      - name: Run ${{ matrix.broker }} + ${{ matrix.db }} E2E
         working-directory: ./spring-outbox-tests/spring-outbox-e2e-tests
-        run: mvn -B verify -Ddb=postgres ${{ steps.resolve.outputs.arg }}
+        run: mvn -B verify -Ddb=${{ matrix.db }} -Dbroker=${{ matrix.broker }} ${{ steps.resolve.outputs.arg }}

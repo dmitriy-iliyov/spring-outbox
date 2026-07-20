@@ -1,20 +1,10 @@
-spring:
-  kafka:
-    consumer:
-      group-id: e2e-consumer-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      auto-offset-reset: earliest
-      enable-auto-commit: false
-    listener:
-      ack-mode: manual
-
 logging:
   level:
     io.github.dmitriyiliyov.springoutbox: DEBUG
 
 # Aggressive timings: e2e scenarios simulate time passage by shifting row timestamps,
-# so polling delays and initial delays are kept near-minimal for fast, deterministic tests
+# so polling delays and initial delays are kept near-minimal for fast, deterministic tests.
+# Broker-specific settings (sender/consumer type, connection) live in application-{kafka,rabbit}.yaml.
 outbox:
   thread-pool-size: 9
   tables:
@@ -22,8 +12,6 @@ outbox:
 
   publisher:
     sender:
-      type: kafka
-      bean-name: outboxKafkaTemplate
       emergency-timeout: 10s
 
     defaults:
@@ -43,12 +31,16 @@ outbox:
         topic: e2e.events
       e2e-aop-event:
         topic: e2e.events
+      # High retry budget with constant backoff: the broker-recovery test must keep retrying through the
+      # whole outage without exhausting to the DLQ. On Rabbit a downed broker fails instantly (connection
+      # refused), so a small fixed max-retries would burn out before the broker restarts; a constant backoff
+      # also keeps post-recovery delivery prompt instead of drifting far into the future.
       e2e-retry-event:
         topic: e2e.events
-        max-retries: 10
+        max-retries: 100
         backoff:
           delay: 500ms
-          multiplier: 1.5
+          multiplier: 1.0
       e2e-dlq-event:
         topic: e2e.events
         max-retries: 1
@@ -91,8 +83,6 @@ outbox:
 
   consumer:
     enabled: true
-    source:
-      type: kafka
     mappings:
       e2e-event: io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent
       e2e-aop-event: io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent

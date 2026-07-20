@@ -2,18 +2,13 @@ package io.github.dmitriyiliyov.springoutbox.tests.e2e;
 
 import io.github.dmitriyiliyov.springoutbox.core.publisher.dlq.DlqStatus;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.KafkaContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.BrokerFaultControl;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.E2eEvents;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
 import java.time.Duration;
 import java.util.Map;
@@ -30,7 +25,7 @@ class DlqEventLifeCycleTests extends BaseE2eTests {
 
     @Test
     void shouldMoveFailedEventToDlqAndDeliverAfterManualRetry() {
-        KafkaContainerSingleton.stopBroker();
+        BrokerFaultControl.stopBroker();
 
         BusinessEvent event = publisherService.saveAndPublish(E2eEvents.DLQ_EVENT);
 
@@ -40,7 +35,7 @@ class DlqEventLifeCycleTests extends BaseE2eTests {
         );
         assertThat(outboxRepository.countEvents()).isZero();
 
-        KafkaContainerSingleton.startBroker();
+        BrokerFaultControl.startBroker();
 
         UUID dlqEventId = outboxRepository.findDlqEventIdsByStatus(DlqStatus.MOVED).getFirst();
         ResponseEntity<Void> response = patchStatus(dlqEventId, DlqStatus.TO_RETRY);
@@ -56,7 +51,7 @@ class DlqEventLifeCycleTests extends BaseE2eTests {
 
     @Test
     void shouldCleanUpResolvedDlqEvent() {
-        KafkaContainerSingleton.stopBroker();
+        BrokerFaultControl.stopBroker();
 
         publisherService.saveAndPublish(E2eEvents.DLQ_EVENT);
 
@@ -64,7 +59,7 @@ class DlqEventLifeCycleTests extends BaseE2eTests {
                 assertThat(outboxRepository.countDlqEventsByStatus(DlqStatus.MOVED)).isEqualTo(1)
         );
 
-        KafkaContainerSingleton.startBroker();
+        BrokerFaultControl.startBroker();
 
         UUID dlqEventId = outboxRepository.findDlqEventIdsByStatus(DlqStatus.MOVED).getFirst();
         ResponseEntity<Void> response = patchStatus(dlqEventId, DlqStatus.RESOLVED);

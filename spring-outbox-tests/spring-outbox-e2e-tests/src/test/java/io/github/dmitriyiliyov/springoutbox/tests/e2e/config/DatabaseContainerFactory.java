@@ -14,6 +14,8 @@ public final class DatabaseContainerFactory {
     private static DatabaseContainer generate() {
         return switch (DB) {
             case "postgres" -> new PostgresDatabaseContainer();
+            case "mysql" -> new MySqlDatabaseContainer();
+            case "oracle" -> new OracleDatabaseContainer();
             default -> throw new UnsupportedOperationException(
                     "E2E infrastructure for db='" + DB + "' is not implemented yet"
             );

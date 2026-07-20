@@ -7,33 +7,29 @@ import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.E2eEvents;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.repository.TestOutboxRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.Message;
 
-public class KafkaConsumerBusinessService {
+public class RabbitConsumerBusinessService {
 
-    public static final String CONSUMER_GROUP = "e2e-consumer-group";
-
-    private static final Logger log = LoggerFactory.getLogger(KafkaConsumerBusinessService.class);
+    private static final Logger log = LoggerFactory.getLogger(RabbitConsumerBusinessService.class);
 
     private final OutboxIdempotentConsumer outboxConsumer;
     private final TestOutboxRepository repository;
 
-    public KafkaConsumerBusinessService(OutboxIdempotentConsumer outboxConsumer, TestOutboxRepository repository) {
+    public RabbitConsumerBusinessService(OutboxIdempotentConsumer outboxConsumer, TestOutboxRepository repository) {
         this.outboxConsumer = outboxConsumer;
         this.repository = repository;
     }
 
-    @KafkaListener(topics = E2eEvents.TOPIC, groupId = CONSUMER_GROUP, containerFactory = "outboxKafkaListenerContainerFactory")
-    public void listen(Message<BusinessEvent> message, Acknowledgment ack) {
+    @RabbitListener(queues = E2eEvents.QUEUE, containerFactory = "outboxRabbitListenerContainerFactory")
+    public void listen(Message<BusinessEvent> message) {
         try {
             outboxConsumer.consume(
                     message,
                     OutboxHeadersUtils::extractId,
                     msg -> repository.saveConsumedBusiness(msg.getPayload().verifyId())
             );
-            ack.acknowledge();
         } catch (Exception e) {
             log.error("Error when consuming message", e);
             throw e;

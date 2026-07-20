@@ -1,7 +1,6 @@
 package io.github.dmitriyiliyov.springoutbox.tests.e2e;
 
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.DatabaseContainer;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.KafkaContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.*;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.PublisherBusinessService;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.repository.TestOutboxRepository;
 import org.awaitility.core.ConditionFactory;
@@ -9,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -19,6 +19,7 @@ import static io.github.dmitriyiliyov.springoutbox.tests.e2e.config.E2eTestConfi
 import static org.awaitility.Awaitility.await;
 
 @Tag("e2e")
+@ActiveProfiles(resolver = BrokerProfileResolver.class)
 @SpringBootTest(classes = E2eTestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public abstract class BaseE2eTests {
 
@@ -29,7 +30,22 @@ public abstract class BaseE2eTests {
         registry.add("spring.datasource.username", container::getUsername);
         registry.add("spring.datasource.password", container::getPassword);
         registry.add("spring.datasource.driver-class-name", DATABASE_TYPE::getDriverClassName);
-        registry.add("spring.kafka.bootstrap-servers", KafkaContainerSingleton.INSTANCE::getBootstrapServers);
+        configureBroker(registry);
+    }
+
+    // Only the selected broker's container is touched, so the other one is never booted
+    private static void configureBroker(DynamicPropertyRegistry registry) {
+        switch (BrokerType.current()) {
+            case KAFKA -> registry.add(
+                    "spring.kafka.bootstrap-servers", KafkaContainerSingleton.INSTANCE::getBootstrapServers
+            );
+            case RABBIT -> {
+                registry.add("spring.rabbitmq.host", RabbitContainerSingleton::getHost);
+                registry.add("spring.rabbitmq.port", RabbitContainerSingleton::getAmqpPort);
+                registry.add("spring.rabbitmq.username", RabbitContainerSingleton::getUsername);
+                registry.add("spring.rabbitmq.password", RabbitContainerSingleton::getPassword);
+            }
+        }
     }
 
     @Autowired
@@ -40,7 +56,8 @@ public abstract class BaseE2eTests {
 
     @BeforeEach
     void resetState() {
-        KafkaContainerSingleton.startBroker();
+        // A previous test may have left the broker stopped
+        BrokerFaultControl.startBroker();
         outboxRepository.truncateAll();
     }
 

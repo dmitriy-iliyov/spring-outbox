@@ -2,17 +2,12 @@ package io.github.dmitriyiliyov.springoutbox.tests.e2e;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.EventStatus;
-import io.github.dmitriyiliyov.springoutbox.core.publisher.domain.OutboxHeaders;
-import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.KafkaContainerSingleton;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.config.BrokerFaultControl;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.BusinessEvent;
 import io.github.dmitriyiliyov.springoutbox.tests.e2e.domain.E2eEvents;
+import io.github.dmitriyiliyov.springoutbox.tests.e2e.publish.RawEventResender;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
 import java.util.List;
@@ -24,8 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class DefaultEventLifeCycleTests extends BaseE2eTests {
 
     @Autowired
-    @Qualifier("outboxKafkaTemplate")
-    KafkaTemplate<String, String> kafkaTemplate;
+    RawEventResender rawEventResender;
 
     @Autowired
     ObjectMapper objectMapper;
@@ -86,16 +80,10 @@ class DefaultEventLifeCycleTests extends BaseE2eTests {
                 assertThat(outboxRepository.countConsumedBusiness(event.verifyId())).isEqualTo(1)
         );
 
-        // Simulate broker redelivery: resend the same payload with the same outbox event id
         UUID eventId = outboxRepository.findEventIds().getFirst();
-        Message<String> duplicate = MessageBuilder
-                .withPayload(objectMapper.writeValueAsString(event))
-                .setHeader(KafkaHeaders.TOPIC, E2eEvents.TOPIC)
-                .setHeader(OutboxHeaders.EVENT_ID.getValue(), eventId.toString())
-                .setHeader(OutboxHeaders.EVENT_TYPE.getValue(), E2eEvents.DEFAULT_EVENT)
-                .setHeader(OutboxHeaders.EVENT_PAYLOAD_TYPE.getValue(), BusinessEvent.class.getName())
-                .build();
-        kafkaTemplate.send(duplicate).join();
+        rawEventResender.resend(
+                eventId, E2eEvents.DEFAULT_EVENT, BusinessEvent.class.getName(), objectMapper.writeValueAsString(event)
+        );
 
         awaitAtMost(Duration.ofSeconds(10)).during(Duration.ofSeconds(5)).untilAsserted(() ->
                 assertThat(outboxRepository.countConsumedBusiness(event.verifyId())).isEqualTo(1)
@@ -122,7 +110,7 @@ class DefaultEventLifeCycleTests extends BaseE2eTests {
 
     @Test
     void shouldRetryAfterBrokerRecovery() {
-        KafkaContainerSingleton.stopBroker();
+        BrokerFaultControl.stopBroker();
         try {
             BusinessEvent event = publisherService.saveAndPublish(E2eEvents.RETRY_EVENT);
 
@@ -132,14 +120,14 @@ class DefaultEventLifeCycleTests extends BaseE2eTests {
             });
             assertThat(outboxRepository.countConsumedBusiness(event.verifyId())).isZero();
 
-            KafkaContainerSingleton.startBroker();
+            BrokerFaultControl.startBroker();
 
             awaitAtMost(Duration.ofSeconds(60)).untilAsserted(() -> {
                 assertThat(outboxRepository.countConsumedBusiness(event.verifyId())).isEqualTo(1);
                 assertThat(outboxRepository.countEventsByStatus(EventStatus.PROCESSED)).isEqualTo(1);
             });
         } finally {
-            KafkaContainerSingleton.startBroker();
+            BrokerFaultControl.startBroker();
         }
     }
 
@@ -157,7 +145,6 @@ class DefaultEventLifeCycleTests extends BaseE2eTests {
         awaitState().untilAsserted(() ->
                 assertThat(outboxRepository.countEvents()).isZero()
         );
-        // The consumed business effect is not affected by outbox cleanup
         assertThat(outboxRepository.countConsumedBusiness(event.verifyId())).isEqualTo(1);
     }
 

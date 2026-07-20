@@ -1,0 +1,14 @@
+spring:
+  rabbitmq:
+    # Short connection timeout so publishing fails fast while the broker is down (retry/DLQ scenarios),
+    # instead of blocking up to the sender emergency-timeout. Host/port/credentials come from the container.
+    connection-timeout: 2s
+
+outbox:
+  publisher:
+    sender:
+      type: rabbit
+      bean-name: outboxRabbitTemplate
+  consumer:
+    source:
+      type: rabbit
