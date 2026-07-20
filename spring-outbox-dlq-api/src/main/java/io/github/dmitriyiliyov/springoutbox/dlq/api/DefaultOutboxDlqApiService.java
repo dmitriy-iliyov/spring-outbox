@@ -6,7 +6,6 @@ import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventInPr
 import io.github.dmitriyiliyov.springoutbox.dlq.api.exception.OutboxDlqEventNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
