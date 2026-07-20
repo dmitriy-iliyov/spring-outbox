@@ -1,8 +1,9 @@
 name: Infrastructure IT
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: ["main"]
+    tags: [ 'v*' ]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
@@ -40,13 +41,14 @@ jobs:
           path: ~/.m2/repository/io/github/dmitriy-iliyov
           retention-days: 1
 
-  outbox-tests:
+  outbox-it:
     runs-on: ubuntu-latest
     needs: build-lib
     strategy:
       fail-fast: false
       matrix:
         db: [postgres, mysql, oracle]
+    name: outbox + ${{ matrix.db }} IT
     steps:
       - name: Download workspace
         uses: actions/download-artifact@v4
@@ -70,13 +72,14 @@ jobs:
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
         run: mvn -B verify -Dgpg.skip=true -Dgroups=outbox -Dspring.profiles.active=outbox -Ddb=${{ matrix.db }}
 
-  kafka-inbox-tests:
+  kafka-inbox-it:
     runs-on: ubuntu-latest
     needs: build-lib
     strategy:
       fail-fast: false
       matrix:
         db: [postgres, mysql, oracle]
+    name: kafka + ${{ matrix.db }} INBOX IT
     steps:
       - name: Download workspace
         uses: actions/download-artifact@v4
@@ -100,13 +103,14 @@ jobs:
         working-directory: ./spring-outbox-tests/spring-outbox-integration-tests
         run: mvn -B verify -Dgpg.skip=true -Dgroups=kafka-inbox -Dspring.profiles.active=inbox,kafka -Ddb=${{ matrix.db }}
 
-  rabbit-inbox-tests:
+  rabbit-inbox-it:
     runs-on: ubuntu-latest
     needs: build-lib
     strategy:
       fail-fast: false
       matrix:
         db: [postgres, mysql, oracle]
+    name: rabbit + ${{ matrix.db }} INBOX IT
     steps:
       - name: Download workspace
         uses: actions/download-artifact@v4
