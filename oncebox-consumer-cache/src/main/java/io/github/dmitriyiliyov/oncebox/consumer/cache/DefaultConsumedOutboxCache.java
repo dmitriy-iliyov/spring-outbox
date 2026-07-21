@@ -1,5 +1,7 @@
 package io.github.dmitriyiliyov.oncebox.consumer.cache;
 
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCacheListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;

@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.oncebox.consumer.cache;
+package io.github.dmitriyiliyov.oncebox.core.consumer.cache;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;

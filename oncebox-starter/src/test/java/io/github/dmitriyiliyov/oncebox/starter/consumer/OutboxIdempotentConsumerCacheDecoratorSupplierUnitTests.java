@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

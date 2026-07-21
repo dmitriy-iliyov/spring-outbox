@@ -1,4 +1,4 @@
-package io.github.dmitriyiliyov.oncebox.consumer.cache;
+package io.github.dmitriyiliyov.oncebox.core.consumer.cache;
 
 import io.github.dmitriyiliyov.oncebox.core.consumer.OutboxEventIdExtractor;
 import io.github.dmitriyiliyov.oncebox.core.consumer.OutboxIdempotentConsumer;

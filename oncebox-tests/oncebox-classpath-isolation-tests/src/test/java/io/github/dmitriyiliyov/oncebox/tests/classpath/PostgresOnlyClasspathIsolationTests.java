@@ -18,9 +18,7 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import java.time.Clock;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * Characterises what happens when a consumer puts ONLY the PostgreSQL dialect module on its

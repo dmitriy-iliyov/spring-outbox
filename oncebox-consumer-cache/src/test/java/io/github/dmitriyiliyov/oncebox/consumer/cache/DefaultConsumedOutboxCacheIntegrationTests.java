@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.oncebox.consumer.cache;
 
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCacheListener;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

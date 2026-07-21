@@ -1,9 +1,9 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCache;
-import io.github.dmitriyiliyov.oncebox.consumer.cache.OutboxIdempotentConsumerCacheDecorator;
 import io.github.dmitriyiliyov.oncebox.core.consumer.AbstractOutboxIdempotentConsumerDecorator;
 import io.github.dmitriyiliyov.oncebox.core.consumer.OutboxIdempotentConsumer;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.OutboxIdempotentConsumerCacheDecorator;
 
 import java.util.Objects;
 

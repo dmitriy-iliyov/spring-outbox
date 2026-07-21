@@ -1,8 +1,7 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCache;
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCacheListener;
 import io.github.dmitriyiliyov.oncebox.consumer.cache.DefaultConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCacheListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -16,7 +15,7 @@ import org.springframework.core.annotation.Order;
         name = "enabled",
         havingValue = "true"
 )
-@ConditionalOnClass(ConsumedOutboxCache.class)
+@ConditionalOnClass(DefaultConsumedOutboxCache.class)
 @ConditionalOnProperty(
         prefix = "oncebox.consumer.cache",
         name = "enabled",

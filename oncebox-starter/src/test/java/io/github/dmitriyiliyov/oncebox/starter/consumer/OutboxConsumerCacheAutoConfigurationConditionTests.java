@@ -1,6 +1,6 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.consumer.cache.DefaultConsumedOutboxCache;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -81,14 +81,14 @@ class OutboxConsumerCacheAutoConfigurationConditionTests {
     }
 
     @Test
-    @DisplayName("IT should NOT load configuration when ConsumedOutboxCache class is missing on classpath")
+    @DisplayName("IT should NOT load configuration when DefaultConsumedOutboxCache class is missing on classpath")
     void shouldNotLoadWhenRequiredClassIsMissing() {
         contextRunner
                 .withPropertyValues(
                         "oncebox.consumer.enabled=true",
                         "oncebox.consumer.cache.enabled=true"
                 )
-                .withClassLoader(new FilteredClassLoader(ConsumedOutboxCache.class))
+                .withClassLoader(new FilteredClassLoader(DefaultConsumedOutboxCache.class))
                 .run(context -> assertThat(context).doesNotHaveBean(OutboxConsumerCacheAutoConfiguration.class));
     }
 }

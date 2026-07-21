@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.dmitriyiliyov.oncebox.consumer.cache.OutboxIdempotentConsumerCacheDecorator;
 import io.github.dmitriyiliyov.oncebox.core.consumer.*;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.OutboxIdempotentConsumerCacheDecorator;
 import io.github.dmitriyiliyov.oncebox.metrics.consumer.ConsumedOutboxManagerMetricsDecorator;
 import io.github.dmitriyiliyov.oncebox.metrics.consumer.MetricsConsumedOutboxCacheListener;
 import io.github.dmitriyiliyov.oncebox.metrics.consumer.OutboxIdempotentConsumerMetricsDecorator;

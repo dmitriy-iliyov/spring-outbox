@@ -1,7 +1,7 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCache;
-import io.github.dmitriyiliyov.oncebox.consumer.cache.ConsumedOutboxCacheListener;
+import io.github.dmitriyiliyov.oncebox.consumer.cache.DefaultConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCacheListener;
 import io.github.dmitriyiliyov.oncebox.metrics.OutboxMetrics;
 import io.github.dmitriyiliyov.oncebox.metrics.consumer.MetricsConsumedOutboxCacheListener;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
         name = "enabled",
         havingValue = "true"
 )
-@ConditionalOnClass({ConsumedOutboxCache.class, OutboxMetrics.class, MeterRegistry.class})
+@ConditionalOnClass({DefaultConsumedOutboxCache.class, OutboxMetrics.class, MeterRegistry.class})
 @ConditionalOnProperty(
         prefix = "oncebox.consumer.cache",
         name = "enabled",
