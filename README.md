@@ -40,11 +40,19 @@ This approach ensures reliable event publication without relying on database log
 
 1. Add dependencies
 
+`oncebox-starter` is always required:
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>oncebox-starter</artifactId>
+      <version>1.1.2</version>
+  </dependency>
+```
+
 > [!IMPORTANT]
 > `oncebox-starter` does not bundle a database dialect by default - you must explicitly add exactly
 > one of `oncebox-postgresql`, `oncebox-mysql`, or `oncebox-oracle`, matching your database. Without
-> it, the library has no `OutboxRepository` implementation to wire up and the application context
-> will fail to start.
+> it, the library has no DAO implementation to wire up and the application context will fail to start.
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
@@ -53,14 +61,10 @@ This approach ensures reliable event publication without relying on database log
   </dependency>
 ```
 
+You also need exactly one message transport module, matching your broker:
+
 For Apache Kafka:
 ```xml
-  <dependency>
-      <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>oncebox-starter</artifactId>
-      <version>1.1.2</version>
-  </dependency>
-
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>oncebox-kafka</artifactId>
@@ -72,18 +76,14 @@ For RabbitMQ:
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
-      <artifactId>oncebox-starter</artifactId>
-      <version>1.1.2</version>
-  </dependency>
-
-  <dependency>
-      <groupId>io.github.dmitriy-iliyov</groupId>
       <artifactId>oncebox-rabbit</artifactId>
       <version>1.1.2</version>
   </dependency>
 ```
 
-You can add `oncebox-metrics` to enable the metrics collecting, read more [here](#observability).
+Optionally, you can also add:
+
+`oncebox-metrics` to enable the metrics collecting, read more [here](#observability).
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
@@ -92,7 +92,8 @@ You can add `oncebox-metrics` to enable the metrics collecting, read more [here]
   </dependency>
 ```
 
-You can also add `oncebox-dlq-api` to enable the REST API for manual DLQ management, read more [here](#dlq-rest-api).
+`oncebox-dlq-api` to enable the REST API for manual DLQ management, read more [here](#dlq-rest-api).
+No extra dialect dependency is needed - it reuses the one you already added above.
 ```xml
   <dependency>
       <groupId>io.github.dmitriy-iliyov</groupId>
