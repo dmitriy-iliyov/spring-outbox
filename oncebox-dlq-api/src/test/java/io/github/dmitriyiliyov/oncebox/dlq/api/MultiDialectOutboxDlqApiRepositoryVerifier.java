@@ -21,14 +21,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 
-class MultiDialectOutboxDlqApiRepositoryVerifier {
+public class MultiDialectOutboxDlqApiRepositoryVerifier {
 
     private final OutboxDlqApiRepository repository;
     private final JdbcTemplate jdbcTemplate;
     private final SqlIdHelper idHelper;
     private final ResultSetMapper mapper;
 
-    MultiDialectOutboxDlqApiRepositoryVerifier(
+    public MultiDialectOutboxDlqApiRepositoryVerifier(
             OutboxDlqApiRepository repository,
             JdbcTemplate jdbcTemplate,
             SqlIdHelper idHelper,
@@ -40,11 +40,11 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         this.mapper = mapper;
     }
 
-    void findById_notExisting_returnsEmpty() {
+    public void findById_notExisting_returnsEmpty() {
         assertThat(repository.findById(UUID.randomUUID())).isEmpty();
     }
 
-    void findById_existingId_returnsEvent() {
+    public void findById_existingId_returnsEvent() {
         OutboxDlqEvent event = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(event));
 
@@ -55,11 +55,11 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .containsExactly(event.getId(), DlqStatus.MOVED, "ORDER_CREATED");
     }
 
-    void findByIdForUpdate_notExisting_returnsEmpty() {
+    public void findByIdForUpdate_notExisting_returnsEmpty() {
         assertThat(repository.findByIdForUpdate(UUID.randomUUID())).isEmpty();
     }
 
-    void findByIdForUpdate_existingId_returnsEvent() {
+    public void findByIdForUpdate_existingId_returnsEvent() {
         OutboxDlqEvent event = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(event));
 
@@ -70,7 +70,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .containsExactly(event.getId(), DlqStatus.MOVED, "ORDER_CREATED");
     }
 
-    void findBatch_byStatus_returnsOnlyMatchingStatus() {
+    public void findBatch_byStatus_returnsOnlyMatchingStatus() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED),
                 buildEvent(DlqStatus.MOVED),
@@ -86,7 +86,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .containsOnly(DlqStatus.MOVED);
     }
 
-    void findBatch_pagination_page1AndPage2DoNotOverlap() {
+    public void findBatch_pagination_page1AndPage2DoNotOverlap() {
         List<OutboxDlqEvent> events = IntStream.range(0, 5)
                 .mapToObj(i -> buildEvent(DlqStatus.MOVED))
                 .toList();
@@ -103,12 +103,12 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(page1).doesNotContainAnyElementsOf(page2);
     }
 
-    void findBatch_noMatches_returnsEmpty() {
+    public void findBatch_noMatches_returnsEmpty() {
         DlqFilter filter = DlqFilter.builder().status(DlqStatus.RESOLVED).build();
         assertThat(repository.findBatch(filter, 1, 10)).isEmpty();
     }
 
-    void findBatch_orderedByMovedAt() {
+    public void findBatch_orderedByMovedAt() {
         Instant base = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         OutboxDlqEvent first = buildEventWithMovedAt(DlqStatus.MOVED, base);
         OutboxDlqEvent second = buildEventWithMovedAt(DlqStatus.MOVED, base.plusSeconds(10));
@@ -123,7 +123,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .containsExactly(first.getId(), second.getId(), third.getId());
     }
 
-    void findBatch_byEventType_returnsOnlyMatchingType() {
+    public void findBatch_byEventType_returnsOnlyMatchingType() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED, "ORDER_CREATED"),
                 buildEvent(DlqStatus.RESOLVED, "ORDER_CREATED"),
@@ -139,7 +139,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .containsOnly("ORDER_CREATED");
     }
 
-    void findBatch_byStatusAndEventType_returnsOnlyMatching() {
+    public void findBatch_byStatusAndEventType_returnsOnlyMatching() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED, "ORDER_CREATED"),
                 buildEvent(DlqStatus.MOVED, "ORDER_CREATED"),
@@ -161,7 +161,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 });
     }
 
-    void findBatch_noFilters_returnsAll() {
+    public void findBatch_noFilters_returnsAll() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED),
                 buildEvent(DlqStatus.RESOLVED),
@@ -183,11 +183,11 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(result).hasSize(10);
     }
 
-    void count_emptyTable_returnsZero() {
+    public void count_emptyTable_returnsZero() {
         assertThat(repository.count(DlqFilter.builder().build())).isEqualTo(0);
     }
 
-    void count_withEvents_returnsTotalCount() {
+    public void count_withEvents_returnsTotalCount() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED),
                 buildEvent(DlqStatus.RESOLVED),
@@ -197,14 +197,14 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.count(DlqFilter.builder().build())).isEqualTo(3);
     }
 
-    void count_byStatus_noMatches_returnsZero() {
+    public void count_byStatus_noMatches_returnsZero() {
         saveBatch(List.of(buildEvent(DlqStatus.RESOLVED)));
 
         DlqFilter filter = DlqFilter.builder().status(DlqStatus.MOVED).build();
         assertThat(repository.count(filter)).isEqualTo(0);
     }
 
-    void count_byStatus_withMatches_returnsOnlyMatchingCount() {
+    public void count_byStatus_withMatches_returnsOnlyMatchingCount() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED),
                 buildEvent(DlqStatus.MOVED),
@@ -216,14 +216,14 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.count(DlqFilter.builder().status(DlqStatus.IN_PROCESS).build())).isEqualTo(0);
     }
 
-    void count_byEventType_noMatches_returnsZero() {
+    public void count_byEventType_noMatches_returnsZero() {
         saveBatch(List.of(buildEvent(DlqStatus.MOVED, "ORDER_CREATED")));
 
         DlqFilter filter = DlqFilter.builder().eventType("PAYMENT_PROCESSED").build();
         assertThat(repository.count(filter)).isEqualTo(0);
     }
 
-    void count_byEventType_withMatches_returnsOnlyMatchingCount() {
+    public void count_byEventType_withMatches_returnsOnlyMatchingCount() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED, "ORDER_CREATED"),
                 buildEvent(DlqStatus.RESOLVED, "ORDER_CREATED"),
@@ -234,14 +234,14 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.count(DlqFilter.builder().eventType("PAYMENT_PROCESSED").build())).isEqualTo(1);
     }
 
-    void count_byStatusAndEventType_noMatches_returnsZero() {
+    public void count_byStatusAndEventType_noMatches_returnsZero() {
         saveBatch(List.of(buildEvent(DlqStatus.MOVED, "ORDER_CREATED")));
 
         assertThat(repository.count(DlqFilter.builder().status(DlqStatus.RESOLVED).eventType("ORDER_CREATED").build())).isEqualTo(0);
         assertThat(repository.count(DlqFilter.builder().status(DlqStatus.MOVED).eventType("PAYMENT_PROCESSED").build())).isEqualTo(0);
     }
 
-    void count_byStatusAndEventType_withMatches_returnsOnlyMatchingCount() {
+    public void count_byStatusAndEventType_withMatches_returnsOnlyMatchingCount() {
         saveBatch(List.of(
                 buildEvent(DlqStatus.MOVED, "ORDER_CREATED"),
                 buildEvent(DlqStatus.MOVED, "ORDER_CREATED"),
@@ -255,7 +255,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.count(DlqFilter.builder().status(DlqStatus.IN_PROCESS).eventType("ORDER_CREATED").build())).isEqualTo(0);
     }
 
-    void updateStatus_existingEvent_statusChanged() {
+    public void updateStatus_existingEvent_statusChanged() {
         OutboxDlqEvent event = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(event));
 
@@ -268,12 +268,12 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .isEqualTo(DlqStatus.RESOLVED);
     }
 
-    void updateStatus_notExistingId_doesNotThrow() {
+    public void updateStatus_notExistingId_doesNotThrow() {
         assertThatCode(() -> repository.updateStatus(UUID.randomUUID(), DlqStatus.RESOLVED))
                 .doesNotThrowAnyException();
     }
 
-    void updateBatchStatus_multipleIds_allUpdated() {
+    public void updateBatchStatus_multipleIds_allUpdated() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(e1, e2));
@@ -285,7 +285,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(e2.getId()).get().getDlqStatus()).isEqualTo(DlqStatus.RESOLVED);
     }
 
-    void updateBatchStatus_doesNotAffectOtherEvents() {
+    public void updateBatchStatus_doesNotAffectOtherEvents() {
         OutboxDlqEvent target = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent unrelated = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(target, unrelated));
@@ -297,13 +297,13 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .isEqualTo(DlqStatus.MOVED);
     }
 
-    void updateBatchStatus_emptyIds_throwsException() {
+    public void updateBatchStatus_emptyIds_throwsException() {
         DlqFilter filter = DlqFilter.builder().status(DlqStatus.RESOLVED).ids(Set.of()).build();
         assertThatThrownBy(() -> repository.updateBatchStatus(filter, DlqStatus.IN_PROCESS))
                 .isInstanceOf(InvalidDlqFilterException.class);
     }
 
-    void updateBatchStatus_skipsInProcess() {
+    public void updateBatchStatus_skipsInProcess() {
         OutboxDlqEvent movable = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent locked = buildEvent(DlqStatus.IN_PROCESS);
         saveBatch(List.of(movable, locked));
@@ -318,7 +318,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .isEqualTo(DlqStatus.IN_PROCESS);
     }
 
-    void updateBatchStatus_byEventType_updatesOnlyMatchingType() {
+    public void updateBatchStatus_byEventType_updatesOnlyMatchingType() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED, "TYPE_B");
         saveBatch(List.of(e1, e2));
@@ -333,7 +333,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .isEqualTo(DlqStatus.MOVED);
     }
 
-    void updateBatchStatus_byEventType_skipsInProcess() {
+    public void updateBatchStatus_byEventType_skipsInProcess() {
         OutboxDlqEvent movable = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent locked = buildEvent(DlqStatus.IN_PROCESS, "TYPE_A");
         saveBatch(List.of(movable, locked));
@@ -348,7 +348,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
                 .isEqualTo(DlqStatus.IN_PROCESS);
     }
 
-    void updateBatchStatus_returnsActualUpdatedCount() {
+    public void updateBatchStatus_returnsActualUpdatedCount() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e3 = buildEvent(DlqStatus.IN_PROCESS);
@@ -363,7 +363,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(updated).isEqualTo(2);
     }
 
-    void updateBatchStatus_byEventType_returnsActualUpdatedCount() {
+    public void updateBatchStatus_byEventType_returnsActualUpdatedCount() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent e3 = buildEvent(DlqStatus.MOVED, "TYPE_B");
@@ -378,19 +378,19 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(updated).isEqualTo(2);
     }
 
-    void updateBatchStatus_neitherIdsNorEventType_throwsException() {
+    public void updateBatchStatus_neitherIdsNorEventType_throwsException() {
         DlqFilter filter = DlqFilter.builder().status(DlqStatus.RESOLVED).build();
         assertThatThrownBy(() -> repository.updateBatchStatus(filter, DlqStatus.IN_PROCESS))
                 .isInstanceOf(InvalidDlqFilterException.class);
     }
 
-    void updateBatchStatus_withoutStatus_throwsException() {
+    public void updateBatchStatus_withoutStatus_throwsException() {
         DlqFilter filter = DlqFilter.builder().eventType("ORDER_CREATED").build();
         assertThatThrownBy(() -> repository.updateBatchStatus(filter, DlqStatus.IN_PROCESS))
                 .isInstanceOf(InvalidDlqFilterException.class);
     }
 
-    void deleteBatch_skipsInProcess() {
+    public void deleteBatch_skipsInProcess() {
         OutboxDlqEvent deletable = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent locked = buildEvent(DlqStatus.IN_PROCESS);
         saveBatch(List.of(deletable, locked));
@@ -402,7 +402,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(locked.getId())).isPresent();
     }
 
-    void deleteById_existingEvent_deletedAndReturnsOne() {
+    public void deleteById_existingEvent_deletedAndReturnsOne() {
         OutboxDlqEvent event = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(event));
 
@@ -412,7 +412,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(event.getId())).isEmpty();
     }
 
-    void deleteBatch_byEventType_deletesOnlyMatchingType() {
+    public void deleteBatch_byEventType_deletesOnlyMatchingType() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED, "TYPE_B");
         saveBatch(List.of(e1, e2));
@@ -424,7 +424,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(e2.getId())).isPresent();
     }
 
-    void deleteBatch_byEventType_skipsInProcess() {
+    public void deleteBatch_byEventType_skipsInProcess() {
         OutboxDlqEvent deletable = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent locked = buildEvent(DlqStatus.IN_PROCESS, "TYPE_A");
         saveBatch(List.of(deletable, locked));
@@ -436,11 +436,11 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(locked.getId())).isPresent();
     }
 
-    void deleteById_notExisting_returnsZero() {
+    public void deleteById_notExisting_returnsZero() {
         assertThat(repository.deleteById(UUID.randomUUID())).isEqualTo(0);
     }
 
-    void deleteBatch_existingIds_deletedAndReturnsCount() {
+    public void deleteBatch_existingIds_deletedAndReturnsCount() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(e1, e2));
@@ -453,13 +453,13 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(e2.getId())).isEmpty();
     }
 
-    void deleteBatch_emptyIds_throwsException() {
+    public void deleteBatch_emptyIds_throwsException() {
         DlqFilter filter = DlqFilter.builder().ids(Set.of()).build();
         assertThatThrownBy(() -> repository.deleteBatch(filter, DlqStatus.IN_PROCESS))
                 .isInstanceOf(InvalidDlqFilterException.class);
     }
 
-    void deleteBatch_doesNotAffectOtherEvents() {
+    public void deleteBatch_doesNotAffectOtherEvents() {
         OutboxDlqEvent target = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent unrelated = buildEvent(DlqStatus.MOVED);
         saveBatch(List.of(target, unrelated));
@@ -470,7 +470,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(repository.findById(unrelated.getId())).isPresent();
     }
 
-    void deleteBatch_returnsActualDeletedCount() {
+    public void deleteBatch_returnsActualDeletedCount() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e3 = buildEvent(DlqStatus.IN_PROCESS);
@@ -484,7 +484,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(deleted).isEqualTo(2);
     }
 
-    void deleteBatch_byEventType_returnsActualDeletedCount() {
+    public void deleteBatch_byEventType_returnsActualDeletedCount() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED, "TYPE_A");
         OutboxDlqEvent e3 = buildEvent(DlqStatus.MOVED, "TYPE_B");
@@ -496,17 +496,17 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         assertThat(deleted).isEqualTo(2);
     }
 
-    void deleteBatch_neitherIdsNorEventType_throwsException() {
+    public void deleteBatch_neitherIdsNorEventType_throwsException() {
         DlqFilter filter = DlqFilter.builder().build();
         assertThatThrownBy(() -> repository.deleteBatch(filter, DlqStatus.IN_PROCESS))
                 .isInstanceOf(InvalidDlqFilterException.class);
     }
 
-    protected OutboxDlqEvent buildEvent(DlqStatus dlqStatus) {
+    public OutboxDlqEvent buildEvent(DlqStatus dlqStatus) {
         return buildEventWithMovedAt(dlqStatus, Instant.now().truncatedTo(ChronoUnit.MILLIS));
     }
 
-    protected OutboxDlqEvent buildEventWithMovedAt(DlqStatus dlqStatus, Instant movedAt) {
+    public OutboxDlqEvent buildEventWithMovedAt(DlqStatus dlqStatus, Instant movedAt) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxDlqEvent(
                 UUID.randomUUID(),
@@ -523,7 +523,7 @@ class MultiDialectOutboxDlqApiRepositoryVerifier {
         );
     }
 
-    protected OutboxDlqEvent buildEvent(DlqStatus dlqStatus, String eventType) {
+    public OutboxDlqEvent buildEvent(DlqStatus dlqStatus, String eventType) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxDlqEvent(
                 UUID.randomUUID(),

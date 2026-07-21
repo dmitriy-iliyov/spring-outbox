@@ -1,8 +1,8 @@
 package io.github.dmitriyiliyov.oncebox.tests.integration.consume.rabbit;
 
 import io.github.dmitriyiliyov.oncebox.tests.integration.utils.IdExtractor;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

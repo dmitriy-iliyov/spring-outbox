@@ -13,15 +13,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 
-class AbstractOutboxRepositoryIntegrationTests {
+public class AbstractOutboxRepositoryIntegrationTests {
 
     private final OutboxRepository repository;
 
-    AbstractOutboxRepositoryIntegrationTests(OutboxRepository repository) {
+    public AbstractOutboxRepositoryIntegrationTests(OutboxRepository repository) {
         this.repository = repository;
     }
 
-    void save_singleEvent_persistedCorrectly() {
+    public void save_singleEvent_persistedCorrectly() {
         OutboxEvent event = buildEvent(EventStatus.PENDING);
 
         repository.save(event);
@@ -41,7 +41,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         assertThat(found.getRetryCount()).isEqualTo(event.getRetryCount());
     }
 
-    void saveBatch_multipleEvents_allPersisted() {
+    public void saveBatch_multipleEvents_allPersisted() {
         List<OutboxEvent> events = List.of(
                 buildEvent(EventStatus.PENDING),
                 buildEvent(EventStatus.PENDING),
@@ -60,12 +60,12 @@ class AbstractOutboxRepositoryIntegrationTests {
         );
     }
 
-    void saveBatch_emptyList_doesNotThrow() {
+    public void saveBatch_emptyList_doesNotThrow() {
         assertThatCode(() -> repository.saveBatch(List.of()))
                 .doesNotThrowAnyException();
     }
 
-    void updateBatchStatus_toPending_updatesAll() {
+    public void updateBatchStatus_toPending_updatesAll() {
         OutboxEvent e1 = buildEvent(EventStatus.IN_PROCESS);
         OutboxEvent e2 = buildEvent(EventStatus.IN_PROCESS);
         repository.saveBatch(List.of(e1, e2));
@@ -77,7 +77,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         assertThat(updated).isEqualTo(2);
     }
 
-    void updateBatchStatus_toProcessed_updatesAll() {
+    public void updateBatchStatus_toProcessed_updatesAll() {
         OutboxEvent e1 = buildEvent(EventStatus.IN_PROCESS);
         OutboxEvent e2 = buildEvent(EventStatus.IN_PROCESS);
         repository.saveBatch(List.of(e1, e2));
@@ -89,7 +89,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         assertThat(updated).isEqualTo(2);
     }
 
-    void updateBatchStatus_toFailed_throwsException() {
+    public void updateBatchStatus_toFailed_throwsException() {
         OutboxEvent event = buildEvent(EventStatus.IN_PROCESS);
         repository.saveBatch(List.of(event));
 
@@ -99,12 +99,12 @@ class AbstractOutboxRepositoryIntegrationTests {
                 .hasMessageContaining("partiallyUpdateBatch");
     }
 
-    void updateBatchStatus_emptyIds_returnsZero() {
+    public void updateBatchStatus_emptyIds_returnsZero() {
         assertThat(repository.updateBatchStatus(Set.of(), EventStatus.PROCESSED))
                 .isEqualTo(0);
     }
 
-    void updateBatchStatus_doesNotAffectOtherEvents() {
+    public void updateBatchStatus_doesNotAffectOtherEvents() {
         OutboxEvent target    = buildEvent(EventStatus.IN_PROCESS);
         OutboxEvent unrelated = buildEvent(EventStatus.PENDING);
         repository.saveBatch(List.of(target, unrelated));
@@ -119,7 +119,7 @@ class AbstractOutboxRepositoryIntegrationTests {
                 .contains(unrelated.getId());
     }
 
-    void partiallyUpdateBatch_incrementsRetryCount() {
+    public void partiallyUpdateBatch_incrementsRetryCount() {
         OutboxEvent event = buildEvent(EventStatus.IN_PROCESS);
         repository.saveBatch(List.of(event));
 
@@ -132,15 +132,15 @@ class AbstractOutboxRepositoryIntegrationTests {
         assertThat(count).isEqualTo(1);
     }
 
-    void partiallyUpdateBatch_emptyList_returnsZero() {
+    public void partiallyUpdateBatch_emptyList_returnsZero() {
         assertThat(repository.partiallyUpdateBatch(List.of())).isEqualTo(0);
     }
 
-    void partiallyUpdateBatch_nullList_returnsZero() {
+    public void partiallyUpdateBatch_nullList_returnsZero() {
         assertThat(repository.partiallyUpdateBatch(null)).isEqualTo(0);
     }
 
-    void partiallyUpdateBatch_multipleEvents_allUpdated() {
+    public void partiallyUpdateBatch_multipleEvents_allUpdated() {
         OutboxEvent e1 = buildEvent(EventStatus.IN_PROCESS);
         OutboxEvent e2 = buildEvent(EventStatus.IN_PROCESS);
         repository.saveBatch(List.of(e1, e2));
@@ -154,7 +154,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         assertThat(count).isEqualTo(2);
     }
 
-    void deleteBatch_existingIds_deletedAndReturnsCount() {
+    public void deleteBatch_existingIds_deletedAndReturnsCount() {
         OutboxEvent e1 = buildEvent(EventStatus.PENDING);
         OutboxEvent e2 = buildEvent(EventStatus.PENDING);
         repository.saveBatch(List.of(e1, e2));
@@ -164,11 +164,11 @@ class AbstractOutboxRepositoryIntegrationTests {
         assertThat(deleted).isEqualTo(2);
     }
 
-    void deleteBatch_emptyIds_returnsZero() {
+    public void deleteBatch_emptyIds_returnsZero() {
         assertThat(repository.deleteBatch(Set.of())).isEqualTo(0);
     }
 
-    void deleteBatch_doesNotAffectOtherEvents() {
+    public void deleteBatch_doesNotAffectOtherEvents() {
         OutboxEvent target    = buildEvent(EventStatus.PENDING);
         OutboxEvent unrelated = buildEvent(EventStatus.PENDING);
         repository.saveBatch(List.of(target, unrelated));
@@ -184,13 +184,13 @@ class AbstractOutboxRepositoryIntegrationTests {
                 .doesNotContain(target.getId());
     }
 
-    void deleteBatch_notExistingIds_returnsZero() {
+    public void deleteBatch_notExistingIds_returnsZero() {
         assertThat(repository.deleteBatch(
                 Set.of(UUID.randomUUID(), UUID.randomUUID()))
         ).isEqualTo(0);
     }
 
-    OutboxEvent buildEvent(EventStatus status) {
+    public OutboxEvent buildEvent(EventStatus status) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxEvent(
                 UUID.randomUUID(),
@@ -222,7 +222,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         );
     }
 
-    OutboxEvent buildEventWithType(EventStatus status, String eventType) {
+    public OutboxEvent buildEventWithType(EventStatus status, String eventType) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxEvent(
                 UUID.randomUUID(), status, eventType,
@@ -231,7 +231,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         );
     }
 
-    OutboxEvent buildEventWithNextRetryAt(EventStatus status, Instant nextRetryAt) {
+    public OutboxEvent buildEventWithNextRetryAt(EventStatus status, Instant nextRetryAt) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxEvent(
                 UUID.randomUUID(), status, "ORDER_CREATED",
@@ -240,7 +240,7 @@ class AbstractOutboxRepositoryIntegrationTests {
         );
     }
 
-    OutboxEvent buildEventWithTypeAndNextRetryAt(EventStatus status, String eventType, Instant nextRetryAt) {
+    public OutboxEvent buildEventWithTypeAndNextRetryAt(EventStatus status, String eventType, Instant nextRetryAt) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxEvent(
                 UUID.randomUUID(), status, eventType,

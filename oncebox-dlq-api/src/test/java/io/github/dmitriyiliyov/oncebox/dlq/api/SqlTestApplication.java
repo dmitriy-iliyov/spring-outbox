@@ -1,7 +1,8 @@
 package io.github.dmitriyiliyov.oncebox.dlq.api;
 
 
-import io.github.dmitriyiliyov.oncebox.dlq.api.it.config.*;
+import io.github.dmitriyiliyov.oncebox.dlq.api.it.config.BaseIntegrationTestsConfig;
+import io.github.dmitriyiliyov.oncebox.dlq.api.it.config.ClockConfig;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
@@ -30,9 +31,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @EnableTransactionManagement
 @Import({
         ClockConfig.class,
-        BaseIntegrationTestsConfig.class,
-        PostgresSqlIntegrationTestsConfig.class,
-        MySqlIntegrationTestsConfig.class,
-        OracleIntegrationTestsConfig.class
+        BaseIntegrationTestsConfig.class
 })
+// Dialect-specific configs (Postgres/MySql/Oracle) are imported directly by each dialect
+// module's own Base*IntegrationTests, since they now live in those modules, not here.
 public class SqlTestApplication { }

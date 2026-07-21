@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DefaultOutboxDlqTransferVerifier {
+public class DefaultOutboxDlqTransferVerifier {
 
     private final JdbcTemplate jdbcTemplate;
     private final OutboxRepository outboxRepository;
@@ -27,11 +27,11 @@ class DefaultOutboxDlqTransferVerifier {
     private final IdExtractor idExtractor;
 
     @FunctionalInterface
-    interface IdExtractor {
+    public interface IdExtractor {
         UUID extract(Object raw);
     }
 
-    DefaultOutboxDlqTransferVerifier(
+    public DefaultOutboxDlqTransferVerifier(
             JdbcTemplate jdbcTemplate,
             OutboxRepository outboxRepository,
             OutboxDlqRepository dlqRepository,
@@ -45,7 +45,7 @@ class DefaultOutboxDlqTransferVerifier {
         this.transfer = transfer;
     }
 
-    void transferToDlq_failedEvents_movedToDlqAndDeletedFromOutbox() {
+    public void transferToDlq_failedEvents_movedToDlqAndDeletedFromOutbox() {
         OutboxEvent failed1 = saveOutboxEvent(EventStatus.FAILED);
         OutboxEvent failed2 = saveOutboxEvent(EventStatus.FAILED);
         OutboxEvent pending = saveOutboxEvent(EventStatus.PENDING);
@@ -64,7 +64,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(deletedIds).isEmpty();
     }
 
-    void transferToDlq_noFailedEvents_doesNothing() {
+    public void transferToDlq_noFailedEvents_doesNothing() {
         saveOutboxEvent(EventStatus.PENDING);
 
         transfer.transferToDlq(10);
@@ -72,7 +72,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(queryDlqIdsByStatus("MOVED")).isEmpty();
     }
 
-    void transferToDlq_respectsBatchSize() {
+    public void transferToDlq_respectsBatchSize() {
         saveOutboxEvent(EventStatus.FAILED);
         saveOutboxEvent(EventStatus.FAILED);
         saveOutboxEvent(EventStatus.FAILED);
@@ -83,7 +83,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(queryOutboxIdsByStatus("FAILED")).hasSize(1);
     }
 
-    void transferToDlq_preservesEventData() {
+    public void transferToDlq_preservesEventData() {
         OutboxEvent failed = saveOutboxEvent(EventStatus.FAILED);
 
         transfer.transferToDlq(10);
@@ -99,7 +99,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(row.get("dlq_status")).isEqualTo("MOVED");
     }
 
-    void transferFromDlq_toRetryEvents_movedBackToOutbox() {
+    public void transferFromDlq_toRetryEvents_movedBackToOutbox() {
         OutboxDlqEvent toRetry1 = saveDlqEvent(DlqStatus.TO_RETRY);
         OutboxDlqEvent toRetry2 = saveDlqEvent(DlqStatus.TO_RETRY);
         OutboxDlqEvent moved = saveDlqEvent(DlqStatus.MOVED);
@@ -115,7 +115,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(countDlqByStatus("MOVED")).isEqualTo(1);
     }
 
-    void transferFromDlq_noToRetryEvents_doesNothing() {
+    public void transferFromDlq_noToRetryEvents_doesNothing() {
         saveDlqEvent(DlqStatus.MOVED);
 
         transfer.transferFromDlq(10);
@@ -124,7 +124,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(countDlqByStatus("MOVED")).isEqualTo(1);
     }
 
-    void transferFromDlq_respectsBatchSize() {
+    public void transferFromDlq_respectsBatchSize() {
         saveDlqEvent(DlqStatus.TO_RETRY);
         saveDlqEvent(DlqStatus.TO_RETRY);
         saveDlqEvent(DlqStatus.TO_RETRY);
@@ -135,7 +135,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(countDlqByStatus("TO_RETRY")).isEqualTo(1);
     }
 
-    void transferFromDlq_resetsRetryCountToZero() {
+    public void transferFromDlq_resetsRetryCountToZero() {
         saveDlqEventWithRetryCount(DlqStatus.TO_RETRY, 3);
 
         transfer.transferFromDlq(10);
@@ -147,7 +147,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(retryCount).isEqualTo(-1);
     }
 
-    void transferFromDlq_preservesEventData() {
+    public void transferFromDlq_preservesEventData() {
         OutboxDlqEvent toRetry = saveDlqEvent(DlqStatus.TO_RETRY);
 
         transfer.transferFromDlq(10);
@@ -161,7 +161,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(row.get("payload")).isEqualTo(toRetry.getPayload());
     }
 
-    void transferToDlq_concurrent(int eventCount, int threadCount) throws InterruptedException {
+    public void transferToDlq_concurrent(int eventCount, int threadCount) throws InterruptedException {
         List<OutboxEvent> events = saveEventsWithRetryCount(eventCount, EventStatus.FAILED);
         CountDownLatch latch = new CountDownLatch(threadCount);
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
@@ -184,7 +184,7 @@ class DefaultOutboxDlqTransferVerifier {
         assertThat(queryOutboxIdsByStatus("FAILED")).isEmpty();
     }
 
-    void transferFromDlq_concurrent(int eventCount, int threadCount) throws InterruptedException {
+    public void transferFromDlq_concurrent(int eventCount, int threadCount) throws InterruptedException {
         List<OutboxDlqEvent> events = saveDlqEventsWithRetryCount(eventCount, DlqStatus.TO_RETRY, 3);
         CountDownLatch latch = new CountDownLatch(threadCount);
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);

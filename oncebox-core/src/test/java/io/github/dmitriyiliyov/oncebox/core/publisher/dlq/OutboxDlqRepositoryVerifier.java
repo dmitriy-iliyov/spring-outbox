@@ -14,14 +14,14 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class OutboxDlqRepositoryVerifier {
+public class OutboxDlqRepositoryVerifier {
 
     private final OutboxDlqRepository repository;
     private final JdbcTemplate jdbcTemplate;
     private final SqlIdHelper sqlIdHelper;
     private final ResultSetMapper mapper;
 
-    OutboxDlqRepositoryVerifier(OutboxDlqRepository repository,
+    public OutboxDlqRepositoryVerifier(OutboxDlqRepository repository,
                                 JdbcTemplate jdbcTemplate,
                                 SqlIdHelper sqlIdHelper,
                                 ResultSetMapper mapper) {
@@ -31,7 +31,7 @@ class OutboxDlqRepositoryVerifier {
         this.mapper = mapper;
     }
 
-    void saveBatch_singleEvent_persistedCorrectly() {
+    public void saveBatch_singleEvent_persistedCorrectly() {
         OutboxDlqEvent event = buildEvent(DlqStatus.MOVED);
 
         repository.saveBatch(List.of(event));
@@ -49,7 +49,7 @@ class OutboxDlqRepositoryVerifier {
         });
     }
 
-    void saveBatch_multipleEvents_allPersisted() {
+    public void saveBatch_multipleEvents_allPersisted() {
         List<OutboxDlqEvent> events = List.of(
                 buildEvent(DlqStatus.MOVED),
                 buildEvent(DlqStatus.RESOLVED),
@@ -61,7 +61,7 @@ class OutboxDlqRepositoryVerifier {
         events.forEach(e -> assertThat(findById(e.getId())).isPresent());
     }
 
-    void deleteBatch_existingIds_deletedAndReturnsCount() {
+    public void deleteBatch_existingIds_deletedAndReturnsCount() {
         OutboxDlqEvent e1 = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent e2 = buildEvent(DlqStatus.MOVED);
         repository.saveBatch(List.of(e1, e2));
@@ -73,11 +73,11 @@ class OutboxDlqRepositoryVerifier {
         assertThat(findById(e2.getId())).isEmpty();
     }
 
-    void deleteBatch_emptyIds_returnsZero() {
+    public void deleteBatch_emptyIds_returnsZero() {
         assertThat(repository.deleteBatch(Set.of())).isEqualTo(0);
     }
 
-    void deleteBatch_doesNotAffectOtherEvents() {
+    public void deleteBatch_doesNotAffectOtherEvents() {
         OutboxDlqEvent target = buildEvent(DlqStatus.MOVED);
         OutboxDlqEvent unrelated = buildEvent(DlqStatus.MOVED);
         repository.saveBatch(List.of(target, unrelated));
@@ -87,7 +87,7 @@ class OutboxDlqRepositoryVerifier {
         assertThat(findById(unrelated.getId())).isPresent();
     }
 
-    void deleteBatchByStatusAndThreshold_matches_deleted() {
+    public void deleteBatchByStatusAndThreshold_matches_deleted() {
         Instant now = Instant.now();
         OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(6000));
         OutboxDlqEvent e2 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now.minusSeconds(6000));
@@ -100,7 +100,7 @@ class OutboxDlqRepositoryVerifier {
         assertThat(findById(e2.getId())).isEmpty();
     }
 
-    void deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted() {
+    public void deleteBatchByStatusAndThreshold_newerThanThreshold_notDeleted() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, now);
         repository.saveBatch(List.of(e1));
@@ -111,7 +111,7 @@ class OutboxDlqRepositoryVerifier {
         assertThat(findById(e1.getId())).isPresent();
     }
 
-    void deleteBatchByStatusAndThreshold_wrongStatus_notDeleted() {
+    public void deleteBatchByStatusAndThreshold_wrongStatus_notDeleted() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.MOVED, now.minusSeconds(1000));
         repository.saveBatch(List.of(e1));
@@ -122,7 +122,7 @@ class OutboxDlqRepositoryVerifier {
         assertThat(findById(e1.getId())).isPresent();
     }
 
-    void deleteBatchByStatusAndThreshold_respectsBatchSize() {
+    public void deleteBatchByStatusAndThreshold_respectsBatchSize() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         Instant past = now.minusSeconds(1000);
         OutboxDlqEvent e1 = buildEventWithUpdatedAt(DlqStatus.RESOLVED, past);
@@ -137,12 +137,12 @@ class OutboxDlqRepositoryVerifier {
         assertThat(remaining).isEqualTo(1);
     }
 
-    void deleteBatchByStatusAndThreshold_noMatches_returnsZero() {
+    public void deleteBatchByStatusAndThreshold_noMatches_returnsZero() {
         int deleted = repository.deleteBatchByStatusAndThreshold(DlqStatus.RESOLVED, Instant.now(), 10);
         assertThat(deleted).isZero();
     }
 
-    protected OutboxDlqEvent buildEventWithUpdatedAt(DlqStatus dlqStatus, Instant updatedAt) {
+    public OutboxDlqEvent buildEventWithUpdatedAt(DlqStatus dlqStatus, Instant updatedAt) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxDlqEvent(
                 UUID.randomUUID(),
@@ -159,11 +159,11 @@ class OutboxDlqRepositoryVerifier {
         );
     }
 
-    protected OutboxDlqEvent buildEvent(DlqStatus dlqStatus) {
+    public OutboxDlqEvent buildEvent(DlqStatus dlqStatus) {
         return buildEventWithMovedAt(dlqStatus, Instant.now().truncatedTo(ChronoUnit.MILLIS));
     }
 
-    protected OutboxDlqEvent buildEventWithMovedAt(DlqStatus dlqStatus, Instant movedAt) {
+    public OutboxDlqEvent buildEventWithMovedAt(DlqStatus dlqStatus, Instant movedAt) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         return new OutboxDlqEvent(
                 UUID.randomUUID(),

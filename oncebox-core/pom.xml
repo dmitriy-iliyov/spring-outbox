@@ -82,4 +82,22 @@
         </dependency>
 
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Publishes a test-jar so oncebox-postgresql/mysql/oracle can reuse the shared
+                 dialect-agnostic Verifier test fixtures instead of duplicating them per dialect. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

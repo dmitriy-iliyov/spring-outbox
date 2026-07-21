@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DistributedLockRepositoryConcurrentVerifier {
+public class DistributedLockRepositoryConcurrentVerifier {
 
     private final JdbcTemplate jdbcTemplate;
     private final DistributedLockRepository repository;
@@ -21,7 +21,7 @@ class DistributedLockRepositoryConcurrentVerifier {
     private final DistributedLockRepositoryVerifier.IdPreparer idPreparer;
     private final SetupJobScript setupJobScript;
 
-    DistributedLockRepositoryConcurrentVerifier(
+    public DistributedLockRepositoryConcurrentVerifier(
             JdbcTemplate jdbcTemplate,
             DistributedLockRepository repository,
             DistributedLockRepositoryVerifier.IdExtractor idExtractor,
@@ -35,7 +35,7 @@ class DistributedLockRepositoryConcurrentVerifier {
         this.setupJobScript = setupJobScript;
     }
 
-    void concurrent_multipleTryLock_onlyOneSucceeds() throws Exception {
+    public void concurrent_multipleTryLock_onlyOneSucceeds() throws Exception {
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 1000L, 5000L);
 
@@ -76,7 +76,7 @@ class DistributedLockRepositoryConcurrentVerifier {
         assertThat(getLockedBy(jobName)).isEqualTo(successfulWorkers.get(0));
     }
 
-    void concurrent_lockAndUnlock_noRaceCondition() throws Exception {
+    public void concurrent_lockAndUnlock_noRaceCondition() throws Exception {
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 1000L, 5000L);
 
@@ -109,7 +109,7 @@ class DistributedLockRepositoryConcurrentVerifier {
         assertThat(successCount.get()).isGreaterThan(0);
     }
 
-    void concurrent_lockExpiredAndRetry_onlyOneGetsLock() throws Exception {
+    public void concurrent_lockExpiredAndRetry_onlyOneGetsLock() throws Exception {
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 100L, 200L);
 
@@ -155,7 +155,7 @@ class DistributedLockRepositoryConcurrentVerifier {
         assertThat(getLockedBy(jobName)).isNotEqualTo(worker1);
     }
 
-    void concurrent_highContention_correctBehavior() throws Exception {
+    public void concurrent_highContention_correctBehavior() throws Exception {
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 5000L, 1000L);
 
@@ -196,7 +196,7 @@ class DistributedLockRepositoryConcurrentVerifier {
         assertThat(successfulLocks.get()).isLessThan(totalAttempts.get());
     }
 
-    void concurrent_unlockByDifferentWorkers_onlyOwnerUnlocks() throws Exception {
+    public void concurrent_unlockByDifferentWorkers_onlyOwnerUnlocks() throws Exception {
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 1000L, 5000L);
 
@@ -236,7 +236,7 @@ class DistributedLockRepositoryConcurrentVerifier {
         assertThat(canLock).isTrue();
     }
 
-    void concurrent_multipleJobsLocking_independentLocks() throws Exception {
+    public void concurrent_multipleJobsLocking_independentLocks() throws Exception {
         int jobCount = 5;
         List<String> jobNames = new ArrayList<>();
         for (int i = 0; i < jobCount; i++) {

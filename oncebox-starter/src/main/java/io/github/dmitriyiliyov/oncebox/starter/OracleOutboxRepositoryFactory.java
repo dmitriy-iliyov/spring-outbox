@@ -1,15 +1,11 @@
 package io.github.dmitriyiliyov.oncebox.starter;
 
 import io.github.dmitriyiliyov.oncebox.core.consumer.ConsumedOutboxRepository;
-import io.github.dmitriyiliyov.oncebox.core.consumer.OracleConsumedOutboxRepository;
 import io.github.dmitriyiliyov.oncebox.core.locks.DistributedLockRepository;
-import io.github.dmitriyiliyov.oncebox.core.locks.OracleDistributedLockRepository;
-import io.github.dmitriyiliyov.oncebox.core.publisher.OracleOutboxRepository;
 import io.github.dmitriyiliyov.oncebox.core.publisher.OutboxRepository;
-import io.github.dmitriyiliyov.oncebox.core.publisher.dlq.OracleOutboxDlqRepository;
 import io.github.dmitriyiliyov.oncebox.core.publisher.dlq.OutboxDlqRepository;
 import io.github.dmitriyiliyov.oncebox.core.utils.DefaultBytesResultSetMapper;
-import io.github.dmitriyiliyov.oncebox.core.utils.OracleSqlIdHelper;
+import io.github.dmitriyiliyov.oncebox.oracle.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.time.Clock;

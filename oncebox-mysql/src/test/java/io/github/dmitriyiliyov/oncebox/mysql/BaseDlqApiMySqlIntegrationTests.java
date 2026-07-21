@@ -1,0 +1,20 @@
+package io.github.dmitriyiliyov.oncebox.mysql;
+
+import io.github.dmitriyiliyov.oncebox.dlq.api.it.BaseIntegrationTests;
+import io.github.dmitriyiliyov.oncebox.tests.utils.MySqlTestContainerSingleton;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+
+@ActiveProfiles("mysql-it")
+@Import(DlqApiMySqlIntegrationTestsConfig.class)
+public abstract class BaseDlqApiMySqlIntegrationTests extends BaseIntegrationTests {
+
+    @DynamicPropertySource
+    static void configureProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.datasource.url", MySqlTestContainerSingleton.INSTANCE::getJdbcUrl);
+        registry.add("spring.datasource.username", MySqlTestContainerSingleton.INSTANCE::getUsername);
+        registry.add("spring.datasource.password", MySqlTestContainerSingleton.INSTANCE::getPassword);
+    }
+}

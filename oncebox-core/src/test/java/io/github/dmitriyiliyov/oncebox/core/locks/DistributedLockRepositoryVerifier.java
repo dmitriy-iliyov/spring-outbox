@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DistributedLockRepositoryVerifier {
+public class DistributedLockRepositoryVerifier {
 
     private final JdbcTemplate jdbcTemplate;
     private final DistributedLockRepository repository;
@@ -24,7 +24,7 @@ class DistributedLockRepositoryVerifier {
         Object prepare(UUID id);
     }
 
-    DistributedLockRepositoryVerifier(
+    public DistributedLockRepositoryVerifier(
             JdbcTemplate jdbcTemplate,
             DistributedLockRepository repository,
             IdExtractor idExtractor,
@@ -37,7 +37,7 @@ class DistributedLockRepositoryVerifier {
         this.setupJobScript = setupJobScript;
     }
 
-    void tryLock_jobAvailable_locksSuccessfully() {
+    public void tryLock_jobAvailable_locksSuccessfully() {
         UUID workerId = UUID.randomUUID();
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 100L, 500L);
@@ -48,7 +48,7 @@ class DistributedLockRepositoryVerifier {
         assertThat(getLockedBy(jobName)).isEqualTo(workerId);
     }
 
-    void tryLock_jobAlreadyLocked_returnsFalse() {
+    public void tryLock_jobAlreadyLocked_returnsFalse() {
         UUID worker1 = UUID.randomUUID();
         UUID worker2 = UUID.randomUUID();
         String jobName = "test-job-" + UUID.randomUUID();
@@ -61,7 +61,7 @@ class DistributedLockRepositoryVerifier {
         assertThat(getLockedBy(jobName)).isEqualTo(worker1);
     }
 
-    void tryLock_lockExpired_locksSuccessfully() {
+    public void tryLock_lockExpired_locksSuccessfully() {
         UUID worker1 = UUID.randomUUID();
         UUID worker2 = UUID.randomUUID();
         String jobName = "test-job-" + UUID.randomUUID();
@@ -75,7 +75,7 @@ class DistributedLockRepositoryVerifier {
         assertThat(getLockedBy(jobName)).isEqualTo(worker2);
     }
 
-    void unlock_validWorker_unlocksJob() {
+    public void unlock_validWorker_unlocksJob() {
         UUID workerId = UUID.randomUUID();
         String jobName = "test-job-" + UUID.randomUUID();
         setupJobScript.setup(jdbcTemplate, idPreparer, jobName, 100L, 500L);
@@ -88,7 +88,7 @@ class DistributedLockRepositoryVerifier {
         assertThat(canLock).isTrue();
     }
 
-    void unlock_differentWorker_doesNotUnlock() {
+    public void unlock_differentWorker_doesNotUnlock() {
         UUID worker1 = UUID.randomUUID();
         UUID worker2 = UUID.randomUUID();
         String jobName = "test-job-" + UUID.randomUUID();
@@ -102,7 +102,7 @@ class DistributedLockRepositoryVerifier {
         assertThat(getLockedBy(jobName)).isEqualTo(worker1);
     }
 
-    void tryLock_nonExistentJob_returnsFalse() {
+    public void tryLock_nonExistentJob_returnsFalse() {
         UUID workerId = UUID.randomUUID();
         String jobName = "non-existent-job-" + UUID.randomUUID();
 

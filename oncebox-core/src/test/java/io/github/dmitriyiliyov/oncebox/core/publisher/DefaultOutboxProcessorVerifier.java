@@ -17,7 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-class DefaultOutboxProcessorVerifier {
+public class DefaultOutboxProcessorVerifier {
 
     private final JdbcTemplate jdbcTemplate;
     private final OutboxRepository outboxRepository;
@@ -28,16 +28,16 @@ class DefaultOutboxProcessorVerifier {
     private final ResultSetMapper mapper;
 
     @FunctionalInterface
-    interface IdExtractor {
+    public interface IdExtractor {
         UUID extract(Object raw);
     }
 
     @FunctionalInterface
-    interface IdPreparer {
+    public interface IdPreparer {
         Object prepare(UUID id);
     }
 
-    DefaultOutboxProcessorVerifier(
+    public DefaultOutboxProcessorVerifier(
             JdbcTemplate jdbcTemplate,
             OutboxRepository outboxRepository,
             DefaultOutboxProcessor processor,
@@ -53,19 +53,19 @@ class DefaultOutboxProcessorVerifier {
         this.mapper = mapper;
     }
 
-    void process_nullProperties_throwsNullPointerException() {
+    public void process_nullProperties_throwsNullPointerException() {
         assertThatThrownBy(() -> processor.process(null))
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("properties cannot be null");
     }
 
-    void process_emptyOutbox_doesNothing() {
+    public void process_emptyOutbox_doesNothing() {
         OutboxPublisherPropertiesHolder.EventPropertiesHolder properties = createProperties(10, 3, 2, 10L);
         processor.process(properties);
         verify(outboxSenderMock, never()).sendEvents(any(), any());
     }
 
-    void process_allEventsSentSuccessfully_statusChangedToProcessed() {
+    public void process_allEventsSentSuccessfully_statusChangedToProcessed() {
         OutboxEvent event1 = saveOutboxEvent(EventStatus.PENDING, 0);
         OutboxEvent event2 = saveOutboxEvent(EventStatus.PENDING, 0);
         OutboxPublisherPropertiesHolder.EventPropertiesHolder properties = createProperties(10, 3, 2, 10L);
@@ -84,7 +84,7 @@ class DefaultOutboxProcessorVerifier {
         verify(outboxSenderMock, times(1)).sendEvents(eq(properties.getTopic()), any());
     }
 
-    void process_someEventsFailed_retryCountIncrementedAndNextRetryUpdated() {
+    public void process_someEventsFailed_retryCountIncrementedAndNextRetryUpdated() {
         OutboxEvent successEvent = saveOutboxEvent(EventStatus.PENDING, 1);
         OutboxEvent failEvent = saveOutboxEvent(EventStatus.PENDING, 1);
         OutboxPublisherPropertiesHolder.EventPropertiesHolder properties = createProperties(10, 3, 2, 10L);
@@ -109,7 +109,7 @@ class DefaultOutboxProcessorVerifier {
         assertThat(event.getNextRetryAt()).isCloseTo(expectedTime, within(2, ChronoUnit.SECONDS));
     }
 
-    void process_senderThrowsException_allEventsTreatedAsFailed() {
+    public void process_senderThrowsException_allEventsTreatedAsFailed() {
         OutboxEvent event1 = saveOutboxEvent(EventStatus.PENDING, 0);
         OutboxEvent event2 = saveOutboxEvent(EventStatus.PENDING, 0);
         OutboxPublisherPropertiesHolder.EventPropertiesHolder properties = createProperties(10, 3, 2, 10L);
@@ -126,7 +126,7 @@ class DefaultOutboxProcessorVerifier {
         assertThat(e.getRetryCount()).isEqualTo(1);
     }
 
-    void process_maxRetriesExceeded_statusChangedToFailed() {
+    public void process_maxRetriesExceeded_statusChangedToFailed() {
         int maxRetries = 3;
         OutboxEvent event = saveOutboxEvent(EventStatus.PENDING, maxRetries);
         OutboxPublisherPropertiesHolder.EventPropertiesHolder properties = createProperties(10, maxRetries, 2, 10L);

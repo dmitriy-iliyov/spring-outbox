@@ -9,10 +9,6 @@ import java.util.UUID;
 
 /**
  * Repository abstraction for accessing and modifying DLQ events.
- * <p>
- * Implementations (such as {@link PostgreSqlOutboxDlqApiRepository}, {@link OracleOutboxDlqApiRepository}
- * and {@link MySqlOutboxDlqApiRepository}) are expected to perform direct persistence operations
- * without enforcing business-level validations.
  */
 public interface OutboxDlqApiRepository {
 

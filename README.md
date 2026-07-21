@@ -40,6 +40,19 @@ This approach ensures reliable event publication without relying on database log
 
 1. Add dependencies
 
+> [!IMPORTANT]
+> `oncebox-starter` does not bundle a database dialect by default - you must explicitly add exactly
+> one of `oncebox-postgresql`, `oncebox-mysql`, or `oncebox-oracle`, matching your database. Without
+> it, the library has no `OutboxRepository` implementation to wire up and the application context
+> will fail to start.
+```xml
+  <dependency>
+      <groupId>io.github.dmitriy-iliyov</groupId>
+      <artifactId>oncebox-postgresql</artifactId>
+      <version>1.1.2</version>
+  </dependency>
+```
+
 For Apache Kafka:
 ```xml
   <dependency>
