@@ -40,6 +40,32 @@ jobs:
           path: ~/.m2/repository/io/github/dmitriy-iliyov
           retention-days: 1
 
+  classpath-isolation-it:
+    runs-on: ubuntu-latest
+    needs: build-and-ut-it
+    steps:
+      - name: Download workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
+          path: .
+
+      - name: Download local Maven repo
+        uses: actions/download-artifact@v4
+        with:
+          name: maven-repo
+          path: ~/.m2/repository/io/github/dmitriy-iliyov
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      - name: Run classpath isolation IT (postgres-only, no mysql/oracle modules)
+        working-directory: ./oncebox-tests/oncebox-classpath-isolation-tests
+        run: mvn -B verify -Dgpg.skip=true
+
   infra-outbox-it:
     runs-on: ubuntu-latest
     needs: build-and-ut-it
