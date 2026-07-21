@@ -41,6 +41,28 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- database dialect selected at test-runtime via -Ddb= -->
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-postgresql</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-mysql</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.dmitriy-iliyov</groupId>
+            <artifactId>oncebox-oracle</artifactId>
+            <version>1.1.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>io.github.dmitriy-iliyov</groupId>
             <artifactId>oncebox-consumer-cache</artifactId>

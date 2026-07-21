@@ -93,14 +93,24 @@ public class RabbitJdbcConsumerIntegrationTests extends BaseRabbitIntegrationTes
         verifier.consume_shouldRollbackBothTables_whenBatchOperationFails(batchSize);
     }
 
-    @Disabled
+    @Disabled("""
+        retry-after-rollback: simulated redelivery is unreliable with the consumer container config (requeue=false + batch listener), 
+        causing deterministic partial/no reprocessing of the resent event; 
+        the core guarantee (event id not persisted to the consumed table on rollback) 
+        is asserted by these tests before the resend and also covered elsewhere
+    """)
     @Test
     @DisplayName("IT consume() should allow retry after rollback: event id not burned on failure (single)")
     void consume_shouldBeRetryable_afterTransactionRollback() {
         verifier.consume_shouldBeRetryable_afterTransactionRollback();
     }
 
-    @Disabled
+    @Disabled("""
+        retry-after-rollback: simulated redelivery is unreliable with the consumer container config (requeue=false + batch listener), 
+        causing deterministic partial/no reprocessing of the resent event; 
+        the core guarantee (event id not persisted to the consumed table on rollback) 
+        is asserted by these tests before the resend and also covered elsewhere
+    """)
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
     @DisplayName("IT consume() should allow retry after rollback: event id not burned on failure (batch)")
@@ -160,14 +170,24 @@ public class RabbitJdbcConsumerIntegrationTests extends BaseRabbitIntegrationTes
         verifier.consumeId_shouldRollbackBothTables_whenBatchOperationFails(batchSize);
     }
 
-    @Disabled
+    @Disabled("""
+        retry-after-rollback: simulated redelivery is unreliable with the consumer container config (requeue=false + batch listener), 
+        causing deterministic partial/no reprocessing of the resent event; 
+        the core guarantee (event id not persisted to the consumed table on rollback) 
+        is asserted by these tests before the resend and also covered elsewhere
+    """)
     @Test
     @DisplayName("IT consume() ID should allow retry after rollback: event id not burned on failure (single)")
     void consumeId_shouldBeRetryable_afterTransactionRollback() {
         verifier.consumeId_shouldBeRetryable_afterTransactionRollback();
     }
 
-    @Disabled
+    @Disabled("""
+        retry-after-rollback: simulated redelivery is unreliable with the consumer container config (requeue=false + batch listener), 
+        causing deterministic partial/no reprocessing of the resent event; 
+        the core guarantee (event id not persisted to the consumed table on rollback) 
+        is asserted by these tests before the resend and also covered elsewhere
+    """)
     @MethodSource("batchSizeArguments")
     @ParameterizedTest
     @DisplayName("IT consume() ID should allow retry after rollback: event id not burned on failure (batch)")
