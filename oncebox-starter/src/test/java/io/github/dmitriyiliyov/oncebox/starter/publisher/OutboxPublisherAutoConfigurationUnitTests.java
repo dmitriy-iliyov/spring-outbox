@@ -1,6 +1,5 @@
 package io.github.dmitriyiliyov.oncebox.starter.publisher;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.oncebox.core.ContinuableTaskDecorator;
 import io.github.dmitriyiliyov.oncebox.core.OutboxScheduler;
 import io.github.dmitriyiliyov.oncebox.core.locks.DistributedLockRepository;
@@ -43,13 +42,10 @@ class OutboxPublisherAutoConfigurationUnitTests {
     @Mock
     private ContinuableTaskDecoratorSupplier continuableTaskDecoratorSupplier;
 
-    @Mock
-    private ObjectMapper mapper;
-
     @BeforeEach
     void setUp() {
         props = mock(OutboxPublisherProperties.class);
-        config = new OutboxPublisherAutoConfiguration(props, mapper);
+        config = new OutboxPublisherAutoConfiguration(props);
     }
 
     @Test

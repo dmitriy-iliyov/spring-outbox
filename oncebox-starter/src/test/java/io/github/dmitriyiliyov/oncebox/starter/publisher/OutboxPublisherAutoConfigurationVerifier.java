@@ -1,5 +1,6 @@
 package io.github.dmitriyiliyov.oncebox.starter.publisher;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dmitriyiliyov.oncebox.aop.OutboxPublishAspect;
 import io.github.dmitriyiliyov.oncebox.core.publisher.*;
 import io.github.dmitriyiliyov.oncebox.metrics.OutboxMetrics;
@@ -20,7 +21,6 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerA
 import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.Clock;
 

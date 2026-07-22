@@ -400,6 +400,33 @@ public interface OutboxSerializer {
 }
 ```
 
+Jackson is an optional dependency of `oncebox-core` - it is `oncebox-starter` that brings it in, through
+`spring-boot-starter-json`. If you provide your own `OutboxSerializer` and exclude that starter, Jackson
+stays off your classpath entirely.
+
+---
+
+#### Event Ids
+
+Every outbox event gets a **UUIDv7** identifier - a time-ordered UUID, so inserts hit the tail of the
+primary key index instead of scattering across it, which matters for a table with this write volume.
+
+The ids are produced by the default `UuidGenerator` bean:
+```java
+public interface UuidGenerator {
+    UUID generate();
+}
+```
+
+> [!NOTE]
+> The default implementation delegates to [`com.github.f4b6a3:uuid-creator`](https://github.com/f4b6a3/uuid-creator),
+> a required dependency of `oncebox-core`, so it lands on your classpath transitively. It is a small
+> (~140 KB), MIT licensed library with no runtime dependencies of its own. Registering your own
+> `UuidGenerator` bean overrides the generation, but does not remove the dependency.
+
+Keep in mind that the id is also what makes consumer-side idempotency work, so a custom generator must
+still produce globally unique values.
+
 ---
 
 #### Retry Policy

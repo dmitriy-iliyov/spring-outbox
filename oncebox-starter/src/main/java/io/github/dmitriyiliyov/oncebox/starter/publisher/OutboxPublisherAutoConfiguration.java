@@ -13,6 +13,7 @@ import io.github.dmitriyiliyov.oncebox.starter.publisher.dlq.OutboxDlqAutoConfig
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -40,13 +41,10 @@ import java.util.concurrent.ScheduledExecutorService;
 public class OutboxPublisherAutoConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPublisherAutoConfiguration.class);
-
     private final OutboxPublisherProperties publisherProperties;
-    private final ObjectMapper mapper;
 
-    public OutboxPublisherAutoConfiguration(OutboxPublisherProperties publisherProperties, ObjectMapper mapper) {
+    public OutboxPublisherAutoConfiguration(OutboxPublisherProperties publisherProperties) {
         this.publisherProperties = publisherProperties;
-        this.mapper = mapper;
         log.debug("OutboxPublisherAutoConfiguration successfully created");
     }
 
@@ -69,8 +67,9 @@ public class OutboxPublisherAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnClass(ObjectMapper.class)
     @ConditionalOnMissingBean
-    public OutboxSerializer outboxSerializer(UuidGenerator uuidGenerator, Clock clock) {
+    public OutboxSerializer outboxSerializer(ObjectMapper mapper, UuidGenerator uuidGenerator, Clock clock) {
         return new JacksonOutboxSerializer(mapper, uuidGenerator, clock);
     }
 
