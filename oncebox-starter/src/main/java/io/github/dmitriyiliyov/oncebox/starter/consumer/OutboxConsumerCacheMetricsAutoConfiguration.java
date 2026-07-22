@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Configuration
 @ConditionalOnProperty(
@@ -30,6 +31,7 @@ import org.springframework.context.annotation.Configuration;
 public class OutboxConsumerCacheMetricsAutoConfiguration {
 
     @Bean
+    @Primary
     public ConsumedOutboxCacheListener metricsConsumedOutboxCacheListener(MeterRegistry registry) {
         return new MetricsConsumedOutboxCacheListener(registry);
     }

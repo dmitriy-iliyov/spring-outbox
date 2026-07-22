@@ -3,6 +3,7 @@ package io.github.dmitriyiliyov.oncebox.starter.consumer;
 import io.github.dmitriyiliyov.oncebox.consumer.cache.DefaultConsumedOutboxCache;
 import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCacheListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
@@ -30,12 +31,7 @@ public class OutboxConsumerCacheAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnProperty(
-            prefix = "oncebox.consumer.metrics",
-            name = "enabled",
-            havingValue = "false",
-            matchIfMissing = true
-    )
+    @ConditionalOnMissingBean(ConsumedOutboxCacheListener.class)
     public ConsumedOutboxCacheListener noopConsumedOutboxCacheListener() {
         return ConsumedOutboxCacheListener.NOOP;
     }

@@ -88,4 +88,54 @@ public class OutboxPublisherMetricsAutoConfigurationUnitTests {
 
         assertThat(cache).isInstanceOf(SimpleOutboxCache.class);
     }
+
+    @Test
+    @DisplayName("UT outboxCache returns noop when gauge enabled but cache disabled")
+    void outboxCache_gaugeEnabledCacheDisabled_returnsNoop() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        metrics.setEnabled(true);
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(true);
+        OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProps =
+                new OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties();
+        cacheProps.setEnabled(false);
+        gauge.setCache(cacheProps);
+        metrics.setGauge(gauge);
+        // applyDefaults empties the ttls of a disabled cache
+        metrics.applyDefaults();
+        when(props.getMetrics()).thenReturn(metrics);
+
+        OutboxCache<?> cache = config.outboxCache();
+
+        assertThat(cache).isInstanceOf(NoopOutboxCache.class);
+    }
+
+    @Test
+    @DisplayName("UT outboxCache returns noop when gauge enabled flag is null")
+    void outboxCache_gaugeEnabledNull_returnsNoop() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(null);
+        metrics.setGauge(gauge);
+        when(props.getMetrics()).thenReturn(metrics);
+
+        OutboxCache<?> cache = config.outboxCache();
+
+        assertThat(cache).isInstanceOf(NoopOutboxCache.class);
+    }
+
+    @Test
+    @DisplayName("UT outboxCache returns noop when gauge enabled but cache null")
+    void outboxCache_gaugeEnabledCacheNull_returnsNoop() {
+        OutboxProperties.MetricsProperties metrics = new OutboxProperties.MetricsProperties();
+        OutboxProperties.MetricsProperties.GaugeProperties gauge = new OutboxProperties.MetricsProperties.GaugeProperties();
+        gauge.setEnabled(true);
+        gauge.setCache(null);
+        metrics.setGauge(gauge);
+        when(props.getMetrics()).thenReturn(metrics);
+
+        OutboxCache<?> cache = config.outboxCache();
+
+        assertThat(cache).isInstanceOf(NoopOutboxCache.class);
+    }
 }

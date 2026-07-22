@@ -1,6 +1,11 @@
 package io.github.dmitriyiliyov.oncebox.starter.consumer;
 
 import io.github.dmitriyiliyov.oncebox.consumer.cache.DefaultConsumedOutboxCache;
+import io.github.dmitriyiliyov.oncebox.core.consumer.cache.ConsumedOutboxCacheListener;
+import io.github.dmitriyiliyov.oncebox.metrics.OutboxMetrics;
+import io.github.dmitriyiliyov.oncebox.metrics.consumer.MetricsConsumedOutboxCacheListener;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -90,5 +95,89 @@ class OutboxConsumerCacheAutoConfigurationConditionTests {
                 )
                 .withClassLoader(new FilteredClassLoader(DefaultConsumedOutboxCache.class))
                 .run(context -> assertThat(context).doesNotHaveBean(OutboxConsumerCacheAutoConfiguration.class));
+    }
+
+    @Test
+    @DisplayName("IT should expose NOOP cache listener when metrics are disabled")
+    void shouldUseNoopCacheListenerWhenMetricsDisabled() {
+        stubCache();
+        contextRunner
+                .withConfiguration(AutoConfigurations.of(OutboxConsumerCacheMetricsAutoConfiguration.class))
+                .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                .withPropertyValues(
+                        "oncebox.consumer.enabled=true",
+                        "oncebox.consumer.cache.enabled=true",
+                        "oncebox.consumer.metrics.enabled=false"
+                )
+                .run(context -> {
+                    assertThat(context).hasSingleBean(ConsumedOutboxCacheListener.class);
+                    assertThat(context).hasBean("noopConsumedOutboxCacheListener");
+                    assertThat(context).doesNotHaveBean(MetricsConsumedOutboxCacheListener.class);
+                });
+    }
+
+    @Test
+    @DisplayName("IT should expose metrics cache listener when metrics are enabled")
+    void shouldUseMetricsCacheListenerWhenMetricsEnabled() {
+        stubCache();
+        contextRunner
+                .withConfiguration(AutoConfigurations.of(OutboxConsumerCacheMetricsAutoConfiguration.class))
+                .withBean(MeterRegistry.class, SimpleMeterRegistry::new)
+                .withPropertyValues(
+                        "oncebox.consumer.enabled=true",
+                        "oncebox.consumer.cache.enabled=true",
+                        "oncebox.consumer.metrics.enabled=true"
+                )
+                .run(context -> {
+                    assertThat(context).hasBean("metricsConsumedOutboxCacheListener");
+                    // the noop bean is also registered, the metrics one wins by being @Primary
+                    assertThat(context.getBean(ConsumedOutboxCacheListener.class))
+                            .isInstanceOf(MetricsConsumedOutboxCacheListener.class);
+                });
+    }
+
+    @Test
+    @DisplayName("IT should fall back to NOOP cache listener when metrics are enabled but oncebox-metrics is missing")
+    void shouldFallBackToNoopWhenMetricsEnabledButMetricsModuleMissing() {
+        stubCache();
+        contextRunner
+                .withConfiguration(AutoConfigurations.of(OutboxConsumerCacheMetricsAutoConfiguration.class))
+                .withPropertyValues(
+                        "oncebox.consumer.enabled=true",
+                        "oncebox.consumer.cache.enabled=true",
+                        "oncebox.consumer.metrics.enabled=true"
+                )
+                .withClassLoader(new FilteredClassLoader(OutboxMetrics.class))
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(ConsumedOutboxCacheListener.class);
+                    assertThat(context).hasBean("noopConsumedOutboxCacheListener");
+                });
+    }
+
+    @Test
+    @DisplayName("IT should fall back to NOOP cache listener when metrics are enabled but micrometer is missing")
+    void shouldFallBackToNoopWhenMetricsEnabledButMicrometerMissing() {
+        stubCache();
+        contextRunner
+                .withConfiguration(AutoConfigurations.of(OutboxConsumerCacheMetricsAutoConfiguration.class))
+                .withPropertyValues(
+                        "oncebox.consumer.enabled=true",
+                        "oncebox.consumer.cache.enabled=true",
+                        "oncebox.consumer.metrics.enabled=true"
+                )
+                .withClassLoader(new FilteredClassLoader(MeterRegistry.class))
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(ConsumedOutboxCacheListener.class);
+                    assertThat(context).hasBean("noopConsumedOutboxCacheListener");
+                });
+    }
+
+    private void stubCache() {
+        OutboxConsumerProperties.CacheProperties cache = mock(OutboxConsumerProperties.CacheProperties.class);
+        when(cache.getCacheName()).thenReturn("cache-name");
+        when(properties.getCache()).thenReturn(cache);
+        when(cacheManager.getCache("cache-name")).thenReturn(mock(Cache.class));
     }
 }

@@ -48,9 +48,10 @@ public class OutboxPublisherMetricsAutoConfiguration {
         OutboxProperties.MetricsProperties metricsProperties = publisherProperties.getMetrics();
         if (metricsProperties != null) {
             OutboxProperties.MetricsProperties.GaugeProperties gaugeProperties = metricsProperties.getGauge();
-            if (gaugeProperties != null) {
-                if (gaugeProperties.isEnabled()) {
-                    List<Duration> ttls = gaugeProperties.getCache().getTtls();
+            if (gaugeProperties != null && Boolean.TRUE.equals(gaugeProperties.isEnabled())) {
+                OutboxProperties.MetricsProperties.GaugeProperties.CacheProperties cacheProperties = gaugeProperties.getCache();
+                if (cacheProperties != null && !Boolean.FALSE.equals(cacheProperties.isEnabled())) {
+                    List<Duration> ttls = cacheProperties.getTtls();
                     return new SimpleOutboxCache<>(
                             ttls.get(0).toSeconds(), ttls.get(1).toSeconds(), ttls.get(2).toSeconds()
                     );
