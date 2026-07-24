@@ -8,6 +8,7 @@ import io.github.dmitriyiliyov.oncebox.core.utils.RepositoryUtils;
 import io.github.dmitriyiliyov.oncebox.core.utils.SqlIdHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -32,22 +33,18 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         String selectSql = """
             SELECT *
             FROM outbox_events
-            WHERE id IN (
-                SELECT id 
-                FROM outbox_events
-                WHERE event_type = ? AND status = ? AND next_retry_at <= ?
-                ORDER BY next_retry_at
-                FETCH FIRST ? ROWS ONLY
-            )
+            WHERE event_type = ? AND status = ? AND next_retry_at <= ?
+            ORDER BY next_retry_at
             FOR UPDATE SKIP LOCKED
         """;
         List<OutboxEvent> events = jdbcTemplate.query(
-                selectSql,
-                ps -> {
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(selectSql);
+                    ps.setMaxRows(batchSize);
                     ps.setString(1, eventType);
                     ps.setString(2, status.name());
                     ps.setTimestamp(3, Timestamp.from(clock.instant()));
-                    ps.setInt(4, batchSize);
+                    return ps;
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
         );
@@ -59,20 +56,16 @@ public class OracleOutboxRepository extends AbstractOutboxRepository {
         String selectSql = """
             SELECT *
             FROM outbox_events
-            WHERE id IN(
-                SELECT id 
-                FROM outbox_events
-                WHERE status = ?
-                ORDER BY updated_at
-                FETCH FIRST ? ROWS ONLY
-            )
+            WHERE status = ?
+            ORDER BY updated_at
             FOR UPDATE SKIP LOCKED
         """;
         List<OutboxEvent> events = jdbcTemplate.query(
-                selectSql,
-                ps -> {
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(selectSql);
+                    ps.setMaxRows(batchSize);
                     ps.setString(1, status.name());
-                    ps.setInt(2, batchSize);
+                    return ps;
                 },
                 (rs, rowNum) -> mapper.toEvent(rs)
         );

@@ -9,6 +9,7 @@ import io.github.dmitriyiliyov.oncebox.core.utils.BytesSqlIdHelper;
 import io.github.dmitriyiliyov.oncebox.core.utils.RepositoryUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.PreparedStatement;
 import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
@@ -32,21 +33,17 @@ public class OracleOutboxDlqRepository extends AbstractOutboxDlqRepository {
             SELECT id, status, dlq_status, event_type, payload_type, payload,
                    retry_count, next_retry_at, created_at, updated_at, moved_at
             FROM outbox_dlq_events
-            WHERE id IN (
-                SELECT id
-                FROM outbox_dlq_events
-                WHERE dlq_status = ?
-                ORDER BY moved_at
-                FETCH FIRST ? ROWS ONLY
-            )
+            WHERE dlq_status = ?
+            ORDER BY moved_at
             FOR UPDATE SKIP LOCKED
         """;
 
         List<OutboxDlqEvent> events = jdbcTemplate.query(
-                selectSql,
-                ps -> {
+                con -> {
+                    PreparedStatement ps = con.prepareStatement(selectSql);
+                    ps.setMaxRows(batchSize);
                     ps.setString(1, status.name());
-                    ps.setInt(2, batchSize);
+                    return ps;
                 },
                 (rs, rowNum) -> mapper.toDlqEvent(rs)
         );
