@@ -136,6 +136,7 @@ public class MySqlOutboxRepository extends AbstractOutboxRepository {
         String sql = """
             DELETE FROM outbox_events
             WHERE status = ? AND updated_at <= ?
+            ORDER BY updated_at
             LIMIT ?
         """;
         return jdbcTemplate.update(

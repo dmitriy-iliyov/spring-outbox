@@ -61,7 +61,12 @@ public class MySqlDefaultOutboxDlqTransferConcurrentTests extends BaseMySqlInteg
         verifier.getJdbcTemplate().execute("DELETE FROM outbox_dlq_events");
     }
 
-    @Disabled
+    @Disabled("""
+            MySQL only. Under InnoDB REPEATABLE READ the two-step SELECT ... FOR UPDATE SKIP LOCKED +
+            UPDATE deadlocks on gap locks; running the outbox datasource at READ COMMITTED fixes this
+            case. See README (MySQL note). oncebox does not set the isolation itself, so this stays
+            disabled.
+    """)
     @MethodSource("concurrentArgs")
     @ParameterizedTest
     @DisplayName("CT transferToDlq() concurrent execution should move each event exactly once")
@@ -72,7 +77,12 @@ public class MySqlDefaultOutboxDlqTransferConcurrentTests extends BaseMySqlInteg
         }
     }
 
-    @Disabled
+    @Disabled("""
+            MySQL only. READ COMMITTED removes the gap-lock deadlock, but at extreme fan-in (batch size
+            equal to the whole backlog, e.g. 1000/10) concurrent transfers still hit record-lock
+            deadlocks on the bulk INSERT into outbox_events + DELETE FROM outbox_dlq_events, which needs
+            retry-on-deadlock to survive.
+    """)
     @MethodSource("concurrentArgs")
     @ParameterizedTest
     @DisplayName("CT transferFromDlq() concurrent execution should move each event exactly once")

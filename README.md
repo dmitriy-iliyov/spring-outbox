@@ -35,6 +35,14 @@ This approach ensures reliable event publication without relying on database log
 ## Limitations
 - **Horizontal scaling** - performance degradation may occur when reaching a certain number of instances due to `SKIP LOCKED` - based concurrent polling mechanism. The optimal number of instances depends on the number of event types and database load.
 - **No ordering guarantees** - events are processed in parallel by type, with no guaranteed delivery order within or across event types.
+- **MySQL requires READ COMMITTED** - see the note below.
+
+> [!IMPORTANT]
+> **MySQL: run the outbox datasource at `READ COMMITTED`.**
+> Under InnoDB's default `REPEATABLE READ`, the `SELECT ... FOR UPDATE SKIP LOCKED` polling query takes
+> next-key (gap) locks, so several instances polling the same table concurrently deadlock instead of
+> each grabbing a disjoint batch. `READ COMMITTED` disables gap locking and lets the pollers scale out.
+> An outbox poller never needs repeatable reads, so this is safe. PostgreSQL and Oracle are unaffected.
 
 ## Quick Start
 
