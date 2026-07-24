@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class MySqlConcurrentPollersIntegrationTests extends BaseMySqlIntegrationTests {
+class MySqlOutboxRepositoryConcurrentTests extends BaseMySqlIntegrationTests {
 
     private static final int TOTAL_EVENTS = 500;
     private static final int POLLER_COUNT = 8;
@@ -31,8 +31,8 @@ class MySqlConcurrentPollersIntegrationTests extends BaseMySqlIntegrationTests {
     private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    MySqlConcurrentPollersIntegrationTests(@Qualifier("mysqlOutboxManager") OutboxManager manager,
-                                           @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate) {
+    MySqlOutboxRepositoryConcurrentTests(@Qualifier("mysqlOutboxManager") OutboxManager manager,
+                                         @Qualifier("mysqlJdbcTemplate") JdbcTemplate jdbcTemplate) {
         this.manager = manager;
         this.jdbcTemplate = jdbcTemplate;
     }
